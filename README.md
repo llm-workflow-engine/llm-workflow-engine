@@ -12,9 +12,8 @@ To use this repository, you will need to have the following packages installed:
 Clone this repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/mmabrouk/chatgpt-python-wrapper
-cd chatgpt-python-wrapper
-pip install chatgpt-python-wrapper
+git clone https://github.com/mmabrouk/chatgpt-wrapper
+pip install chatgpt-wrapper
 ```
 
 
@@ -24,7 +23,7 @@ pip install chatgpt-python-wrapper
 To use the `ChatGPT` class, create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
-from chatgpt-python-wrapper import ChatGPT
+from chatgpt-wrapper import ChatGPT
 
 bot = ChatGPT()
 response = bot.ask("Hello, world!")
