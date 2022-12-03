@@ -1,7 +1,7 @@
 # ChatGPT Python Wrapper
 
-
-https://user-images.githubusercontent.com/4510758/205457296-db895975-4efb-4a08-8a5c-4ac1e558f693.mp4
+<img src="https://user-images.githubusercontent.com/4510758/205457296-db895975-4efb-4a08-8a5c-4ac1e558f693.mp4
+" width="200">
 
 
 A simple Python class that allows you to interact with OpenAI's ChatGPT using Playwright.
