@@ -37,7 +37,7 @@ class ChatGPT:
             print(Fore.YELLOW + "Please log in to OpenAI Chat and accept the cookies box")
             print(Fore.YELLOW + "Press enter when you're done")
             input()
-        print(Fore.GREEN + "Server started" + "\n")
+        print(Fore.BLUE + "Server started" + "\n")
 
     def __get_input_box(self):
         """Get the child textarea of `PromptTextarea__TextareaWrapper`"""
@@ -105,11 +105,11 @@ class ChatGPT:
 def main():
     chatbot = ChatGPT()
     while True:
-        inp = input("You: ")
+        inp = input(Fore.YELLOW + "You: ")
         if inp == "exit":
             sys.exit(0)
         response = chatbot.ask(inp)
-        print("\nChatGPT: " + response + "\n")
+        print(Fore.GREEN + "\nChatGPT: " + response + "\n")
 
 
 if __name__ == "__main__":
