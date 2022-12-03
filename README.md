@@ -12,8 +12,7 @@ To use this repository, you will need to have the following packages installed:
 Clone this repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/mmabrouk/chatgpt-wrapper
-pip install chatgpt-wrapper
+pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 ```
 
 
