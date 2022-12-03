@@ -54,6 +54,12 @@ Clone this repository and install the required dependencies:
 pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 ```
 
+Setup the script by logging in to your openai account for the first time only.
+
+```bash
+chatgpt install
+```
+
 ## Usage
 
 ### Python
