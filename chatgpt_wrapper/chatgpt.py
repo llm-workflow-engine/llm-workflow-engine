@@ -20,6 +20,7 @@ class ChatGPT:
     """
 
     def __init__(self, timeout: int = 60):
+        print(Fore.MAGENTA + "Starting ...", end=" ")
         self.timeout = timeout
         self.last_msg = None
         self.play = sync_playwright().start()
@@ -37,7 +38,7 @@ class ChatGPT:
             print(Fore.YELLOW + "Please log in to OpenAI Chat and accept the cookies box")
             print(Fore.YELLOW + "Press enter when you're done")
             input()
-        print(Fore.BLUE + "Server started" + "\n")
+        print(Fore.WHITE + "Done")
 
     def __get_input_box(self):
         """Get the child textarea of `PromptTextarea__TextareaWrapper`"""
@@ -104,6 +105,11 @@ class ChatGPT:
 
 def main():
     chatbot = ChatGPT()
+    if len(sys.argv) > 1:
+        # Print the output of chatbot.ask and exit the script
+        print(Fore.MAGENTA + "Asking...", end="\n")
+        print(Fore.GREEN + chatbot.ask(" ".join(sys.argv[1:])))
+        sys.exit()
     while True:
         inp = input(Fore.YELLOW + "You: ")
         if inp == "exit":
