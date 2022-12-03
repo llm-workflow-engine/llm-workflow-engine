@@ -35,6 +35,7 @@ Or get the response for one question
 ``` bash
 $ chatGPT Write a grep command to find all names of functions in a python script
 ```
+<img width="600" alt="Screenshot 2022-12-03 at 21 11 44" src="https://user-images.githubusercontent.com/4510758/205460076-1defee06-7d62-4cfa-9f31-714d9cc669fc.png">
 
 https://user-images.githubusercontent.com/4510758/205457296-db895975-4efb-4a08-8a5c-4ac1e558f693.mp4
 
