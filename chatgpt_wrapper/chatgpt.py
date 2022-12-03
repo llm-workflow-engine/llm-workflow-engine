@@ -1,8 +1,10 @@
 
 import logging
 import re
+import os
 import sys
 import time
+import tempfile
 from time import sleep
 
 from colorama import Fore, init
@@ -24,7 +26,7 @@ class ChatGPT:
         self.last_msg = None
         self.play = sync_playwright().start()
         self.browser = self.play.chromium.launch_persistent_context(
-            user_data_dir="/tmp/playwright",
+            user_data_dir=f"{tempfile.gettempdir()}{os.path.sep}playwright",
             headless=True,
         )
         self.page = self.browser.new_page()
