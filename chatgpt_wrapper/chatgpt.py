@@ -19,14 +19,16 @@ class ChatGPT:
     Developed with the help of chatgpt :)
     """
 
-    def __init__(self, timeout: int = 60):
+    def __init__(self, headless: bool = True, timeout: int = 60):
         print(Fore.MAGENTA + "Starting ...", end=" ")
+        if not headless:
+            print(Fore.WHITE + "\n Please login to OpenAI Chat and accept the cookies box then restart the script")
         self.timeout = timeout
         self.last_msg = None
         self.play = sync_playwright().start()
         self.browser = self.play.chromium.launch_persistent_context(
             user_data_dir="/tmp/playwright",
-            headless=True,
+            headless=headless,
         )
         self.page = self.browser.new_page()
         self.__start_browser()
@@ -104,12 +106,17 @@ class ChatGPT:
 
 
 def main():
-    chatbot = ChatGPT()
     if len(sys.argv) > 1:
-        # Print the output of chatbot.ask and exit the script
-        print(Fore.MAGENTA + "Asking...", end="\n")
-        print(Fore.GREEN + chatbot.ask(" ".join(sys.argv[1:])))
-        sys.exit()
+        if sys.argv[1] == "install":
+            chatbot = ChatGPT(headless=False)
+            sleep(100)
+        else:
+            chatbot = ChatGPT()
+            # Print the output of chatbot.ask and exit the script
+            print(Fore.MAGENTA + "Asking...", end="\n")
+            print(Fore.GREEN + chatbot.ask(" ".join(sys.argv[1:])))
+            sys.exit()
+    chatbot = ChatGPT()
     while True:
         inp = input(Fore.YELLOW + "You: ")
         if inp == "exit":
