@@ -24,6 +24,18 @@ while True:
 
 You can also use the ChatGPT Wrapper on the command line:
 
+Run an interactive session in the terminal by using
+
+```
+$ chatGPT
+```
+
+Or get the response for one question
+
+``` bash
+$ chatGPT Write a grep command to find all names of functions in a python script
+```
+
 https://user-images.githubusercontent.com/4510758/205457296-db895975-4efb-4a08-8a5c-4ac1e558f693.mp4
 
 ## Requirements
