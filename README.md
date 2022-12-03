@@ -1,7 +1,7 @@
-# ChatGPT Python Wrapper
+# ChatGPT Wrapper
 
 
-ChatGPT Wrapper is an open-source tool that lets you use ChatGPT programmably in Python or the terminal using Playwright.
+ChatGPT Wrapper is an open-source tool unofficial API that lets you interact with ChatGPT in Python and from Terminal.
 
 ## Highlights
 
