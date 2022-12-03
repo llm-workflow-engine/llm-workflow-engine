@@ -6,7 +6,7 @@ Requirements
 
 To use this repository, you will need to have the following packages installed:
 
-    `setuptools`: This package is used to create and manage Python packages. You can install it using `pip install setuptools`.
+`setuptools`: This package is used to create and manage Python packages. You can install it using `pip install setuptools`.
 ## Installation
 
 Clone this repository and install the required dependencies:
