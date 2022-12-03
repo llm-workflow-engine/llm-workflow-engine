@@ -23,7 +23,7 @@ pip install chatgpt-wrapper
 To use the `ChatGPT` class, create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
-from chatgpt-wrapper import ChatGPT
+from chatgpt_wrapper import ChatGPT
 
 bot = ChatGPT()
 response = bot.ask("Hello, world!")
