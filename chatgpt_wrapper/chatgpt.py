@@ -114,11 +114,21 @@ def main():
             sys.exit()
     chatbot = ChatGPT()
     while True:
-        inp = input("You: ")
+
+        lines = []
+        while True:
+            line = input('> ')
+            if line:
+                lines.append(line)
+            else:
+                break
+        
+        inp = "\n".join(lines).strip()
+        
         if inp == "exit":
             sys.exit(0)
         response = chatbot.ask(inp)
-        print("\nChatGPT: " + response + "\n")
+        print("\n" + response + "\n")
 
 
 if __name__ == "__main__":
