@@ -1,4 +1,5 @@
-
+import uuid
+import json
 import logging
 import re
 import os
@@ -20,9 +21,7 @@ class ChatGPT:
     Developed with the help of chatgpt :)
     """
 
-    def __init__(self, headless: bool = True, timeout: int = 60):
-        if not headless:
-            print("\n Please login to OpenAI Chat and accept the cookies box then restart the script")
+    def __init__(self, headless: bool = True, timeout: int = 600):
         self.timeout = timeout
         self.last_msg = None
         self.play = sync_playwright().start()
@@ -32,51 +31,100 @@ class ChatGPT:
         )
         self.page = self.browser.new_page()
         self._start_browser()
-
+        self.parent_message_id = "00007cb2-5d13-4333-a696-cabb7b0303b2"
+        self.conversation_id = None
 
     def _start_browser(self):
         self.page.goto("https://chat.openai.com/")
-        if not self._is_logged_in():
-            print("Please log in to OpenAI Chat and accept the cookies box")
-            print("Press enter when you're done")
-            input()
 
-    def _get_input_box(self):
-        """Get the child textarea of `PromptTextarea__TextareaWrapper`"""
-        return self.page.query_selector("textarea")
+        self.page.evaluate(
+            """
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://chat.openai.com/api/auth/session');
+        xhr.onload = () => {
+          if(xhr.status == 200) {
+            var mydiv = document.createElement('DIV');
+            mydiv.id = "chatgpt-wrapper-session-data"
+            mydiv.innerHTML = xhr.responseText;
+            document.body.appendChild(mydiv);
+          }
+        };
+        xhr.send();
+        """
+        )
 
-    def _is_logged_in(self):
-        # See if we have a textarea with data-id="root"
-        return self._get_input_box() is not None
+        while True:
+            session_datas = self.page.query_selector_all(
+                "div#chatgpt-wrapper-session-data"
+            )
+            if len(session_datas) > 0:
+                break
 
-    def _parse_last_elem(self) -> str:
-        """Get the latest message"""
-        try:
-            msg = self.page.query_selector_all("div[class*='ConversationItem__Message']")[-1].inner_text()
-        except:
-            msg = ""
-        msg = re.sub('\u200b', '', msg)
-        return msg
+        session_data = json.loads(session_datas[0].inner_text())
+        self.session = session_data
+
+        self.page.evaluate(
+            "document.getElementById('chatgpt-wrapper-session-data').remove()"
+        )
 
     def _send_message(self, message: str):
-        # Send the message
-        box = self._get_input_box()
-        box.click()
-        box.fill(message)
-        self.last_msg = self._parse_last_elem()
-        box.press("Enter")
 
-    def _get_last_message(self) -> str:
-        """Get the latest message"""
-        page_elements = self.page.query_selector_all("div[class*='ConversationItem__Message']")
-        if self._parse_last_elem() != self.last_msg:
-            while True:
-                msg = self._parse_last_elem()
-                sleep(1)
-                if msg == self._parse_last_elem():
-                    break
-            return msg
-        return None
+        new_message_id = str(uuid.uuid4())
+        code = """
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://chat.openai.com/backend-api/conversation');
+            xhr.setRequestHeader('accept', 'text/event-stream');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('Authorization', 'Bearer BEARER_TOKEN');
+            xhr.onload = () => {
+              if(xhr.status == 200) {
+                var mydiv = document.createElement('DIV');
+                mydiv.id = "chatgpt-wrapper-conversation-data";
+                mydiv.innerHTML = xhr.responseText;
+                document.body.appendChild(mydiv);
+              }
+            };
+            xhr.send(JSON.stringify(REQUEST_JSON));
+            """.replace(
+            "BEARER_TOKEN", self.session["accessToken"]
+        ).replace(
+            "REQUEST_JSON",
+            json.dumps(
+                {
+                    "messages": [
+                        {
+                            "id": new_message_id,
+                            "role": "user",
+                            "content": {"content_type": "text", "parts": [message]},
+                        }
+                    ],
+                    "model": "text-davinci-002-render",
+                    "parent_message_id": self.parent_message_id,
+                    "conversation_id": self.conversation_id,
+                    "action": "next",
+                }
+            ),
+        )
+
+        self.page.evaluate(code)
+
+        while True:
+            conversation_datas = self.page.query_selector_all(
+                "div#chatgpt-wrapper-conversation-data"
+            )
+            if len(conversation_datas) > 0:
+                break
+
+        self.parent_message_id = new_message_id
+
+        response = json.loads(conversation_datas[0].inner_html().split("\n\n")[-3][6:])
+        self.page.evaluate(
+            "document.getElementById('chatgpt-wrapper-conversation-data').remove()"
+        )
+
+        self.conversation_id = response["conversation_id"]
+
+        return "\n".join(response["message"]["content"]["parts"])
 
     def ask(self, message: str) -> str:
         """
@@ -88,43 +136,30 @@ class ChatGPT:
         Returns:
             str: The response received from OpenAI.
         """
-        self._send_message(message)
-
-        timeout = time.time() + self.timeout
-        while True:
-            response = self._get_last_message()
-            if response:
-                break
-            if time.time() > timeout:
-                raise TimeoutError("Timed out while waiting for the response")
-
-        response = self._get_last_message()
-        return response
+        return self._send_message(message)
 
 
 def main():
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "install":
-            chatbot = ChatGPT(headless=False)
-            sleep(100)
-        else:
-            chatbot = ChatGPT()
-            # Print the output of chatbot.ask and exit the script
-            print(chatbot.ask(" ".join(sys.argv[1:])))
-            sys.exit()
-    chatbot = ChatGPT()
+    install_mode = len(sys.argv) > 1 and (sys.argv[1] == "install")
+
+    if install_mode:
+        print(
+            "Log in to ChatGPT in the browser that pops up.  Once that is acheived, you can ask questions here."
+        )
+
+    chatbot = ChatGPT(headless=not install_mode)
     while True:
 
         lines = []
         while True:
-            line = input('> ')
+            line = input("> ")
             if line:
                 lines.append(line)
             else:
                 break
-        
+
         inp = "\n".join(lines).strip()
-        
+
         if inp == "exit":
             sys.exit(0)
         response = chatbot.ask(inp)
