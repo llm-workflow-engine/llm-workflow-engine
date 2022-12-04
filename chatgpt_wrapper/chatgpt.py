@@ -7,7 +7,6 @@ import time
 import tempfile
 from time import sleep
 import tempfile
-from colorama import Fore, init
 from playwright.sync_api import sync_playwright
 
 logging.basicConfig(level=logging.INFO)
@@ -22,27 +21,25 @@ class ChatGPT:
     """
 
     def __init__(self, headless: bool = True, timeout: int = 60):
-        print(Fore.MAGENTA + "Starting ...", end=" ")
         if not headless:
-            print(Fore.WHITE + "\n Please login to OpenAI Chat and accept the cookies box then restart the script")
+            print("\n Please login to OpenAI Chat and accept the cookies box then restart the script")
         self.timeout = timeout
         self.last_msg = None
         self.play = sync_playwright().start()
-        self.browser = self.play.chromium.launch_persistent_context(
+        self.browser = self.play.firefox.launch_persistent_context(
             user_data_dir=f"/tmp/playwright",
             headless=headless,
         )
         self.page = self.browser.new_page()
         self.__start_browser()
 
+
     def __start_browser(self):
         self.page.goto("https://chat.openai.com/")
         if not self.__is_logged_in():
-            init()  # Enable ANSI escape sequences
-            print(Fore.YELLOW + "Please log in to OpenAI Chat and accept the cookies box")
-            print(Fore.YELLOW + "Press enter when you're done")
+            print("Please log in to OpenAI Chat and accept the cookies box")
+            print("Press enter when you're done")
             input()
-        print(Fore.WHITE + "Done")
 
     def __get_input_box(self):
         """Get the child textarea of `PromptTextarea__TextareaWrapper`"""
@@ -115,16 +112,15 @@ def main():
         else:
             chatbot = ChatGPT()
             # Print the output of chatbot.ask and exit the script
-            print(Fore.MAGENTA + "Asking...", end="\n")
-            print(Fore.GREEN + chatbot.ask(" ".join(sys.argv[1:])))
+            print(chatbot.ask(" ".join(sys.argv[1:])))
             sys.exit()
     chatbot = ChatGPT()
     while True:
-        inp = input(Fore.YELLOW + "You: ")
+        inp = input("You: ")
         if inp == "exit":
             sys.exit(0)
         response = chatbot.ask(inp)
-        print(Fore.GREEN + "\nChatGPT: " + response + "\n")
+        print("\nChatGPT: " + response + "\n")
 
 
 if __name__ == "__main__":
