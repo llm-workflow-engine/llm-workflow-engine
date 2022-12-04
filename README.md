@@ -1,3 +1,17 @@
+# Fork Notes
+
+This project is a fork of [mmabrouk/chatgpt-wrapper](https://github.com/mmabrouk/chatgpt-wrapper).
+
+Here's whats different about it:
+
+* Works by injecting JS in to the browser to interact with the chatgpt API directly, rather than interacting with the website.  This should be more responsive and robust, and produce higher quality output.
+* Add a multi-line input system (blank line to end input)
+* Removed colors
+* Switched the browser to firefox
+
+-------
+
+
 # ChatGPT Wrapper
 
 
