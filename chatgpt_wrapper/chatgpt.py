@@ -31,25 +31,25 @@ class ChatGPT:
             headless=headless,
         )
         self.page = self.browser.new_page()
-        self.__start_browser()
+        self._start_browser()
 
 
-    def __start_browser(self):
+    def _start_browser(self):
         self.page.goto("https://chat.openai.com/")
-        if not self.__is_logged_in():
+        if not self._is_logged_in():
             print("Please log in to OpenAI Chat and accept the cookies box")
             print("Press enter when you're done")
             input()
 
-    def __get_input_box(self):
+    def _get_input_box(self):
         """Get the child textarea of `PromptTextarea__TextareaWrapper`"""
         return self.page.query_selector("textarea")
 
-    def __is_logged_in(self):
+    def _is_logged_in(self):
         # See if we have a textarea with data-id="root"
-        return self.__get_input_box() is not None
+        return self._get_input_box() is not None
 
-    def __parse_last_elem(self) -> str:
+    def _parse_last_elem(self) -> str:
         """Get the latest message"""
         try:
             msg = self.page.query_selector_all("div[class*='ConversationItem__Message']")[-1].inner_text()
@@ -58,22 +58,22 @@ class ChatGPT:
         msg = re.sub('\u200b', '', msg)
         return msg
 
-    def __send_message(self, message: str):
+    def _send_message(self, message: str):
         # Send the message
-        box = self.__get_input_box()
+        box = self._get_input_box()
         box.click()
         box.fill(message)
-        self.last_msg = self.__parse_last_elem()
+        self.last_msg = self._parse_last_elem()
         box.press("Enter")
 
-    def __get_last_message(self) -> str:
+    def _get_last_message(self) -> str:
         """Get the latest message"""
         page_elements = self.page.query_selector_all("div[class*='ConversationItem__Message']")
-        if self.__parse_last_elem() != self.last_msg:
+        if self._parse_last_elem() != self.last_msg:
             while True:
-                msg = self.__parse_last_elem()
+                msg = self._parse_last_elem()
                 sleep(1)
-                if msg == self.__parse_last_elem():
+                if msg == self._parse_last_elem():
                     break
             return msg
         return None
@@ -88,19 +88,17 @@ class ChatGPT:
         Returns:
             str: The response received from OpenAI.
         """
-        # logging.info("Sending message: %s", message)
-        self.__send_message(message)
+        self._send_message(message)
 
         timeout = time.time() + self.timeout
         while True:
-            response = self.__get_last_message()
+            response = self._get_last_message()
             if response:
                 break
             if time.time() > timeout:
                 raise TimeoutError("Timed out while waiting for the response")
 
-        response = self.__get_last_message()
-        # logging.info("Response: %s", response)
+        response = self._get_last_message()
         return response
 
 
