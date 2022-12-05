@@ -31,7 +31,7 @@ class ChatGPT:
         )
         self.page = self.browser.new_page()
         self._start_browser()
-        self.parent_message_id = "00007cb2-5d13-4333-a696-cabb7b0303b2"
+        self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
 
     def _start_browser(self):
@@ -59,6 +59,7 @@ class ChatGPT:
             )
             if len(session_datas) > 0:
                 break
+            sleep(0.2)
 
         session_data = json.loads(session_datas[0].inner_text())
         self.session = session_data
@@ -68,12 +69,27 @@ class ChatGPT:
         )
 
     def _send_message(self, message: str):
-
         new_message_id = str(uuid.uuid4())
-        code = """
+
+        request = {
+            "messages": [
+                {
+                    "id": new_message_id,
+                    "role": "user",
+                    "content": {"content_type": "text", "parts": [message]},
+                }
+            ],
+            "model": "text-davinci-002-render",
+            "conversation_id": self.conversation_id,
+            "parent_message_id": self.parent_message_id,
+            "action": "next",
+        }
+
+        code = (
+            """
             const xhr = new XMLHttpRequest();
             xhr.open('POST', 'https://chat.openai.com/backend-api/conversation');
-            xhr.setRequestHeader('accept', 'text/event-stream');
+            xhr.setRequestHeader('Accept', 'text/event-stream');
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.setRequestHeader('Authorization', 'Bearer BEARER_TOKEN');
             xhr.onload = () => {
@@ -85,25 +101,9 @@ class ChatGPT:
               }
             };
             xhr.send(JSON.stringify(REQUEST_JSON));
-            """.replace(
-            "BEARER_TOKEN", self.session["accessToken"]
-        ).replace(
-            "REQUEST_JSON",
-            json.dumps(
-                {
-                    "messages": [
-                        {
-                            "id": new_message_id,
-                            "role": "user",
-                            "content": {"content_type": "text", "parts": [message]},
-                        }
-                    ],
-                    "model": "text-davinci-002-render",
-                    "parent_message_id": self.parent_message_id,
-                    "conversation_id": self.conversation_id,
-                    "action": "next",
-                }
-            ),
+            """
+            .replace("BEARER_TOKEN", self.session["accessToken"])
+            .replace("REQUEST_JSON", json.dumps(request))
         )
 
         self.page.evaluate(code)
@@ -114,6 +114,7 @@ class ChatGPT:
             )
             if len(conversation_datas) > 0:
                 break
+            sleep(0.2)
 
         self.parent_message_id = new_message_id
 
