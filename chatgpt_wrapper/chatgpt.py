@@ -1,3 +1,4 @@
+import cmd
 import base64
 import json
 import os
@@ -148,34 +149,49 @@ class ChatGPT:
         return self._send_message(message)
 
 
+class GPTShell(cmd.Cmd):
+    intro = "Provide a prompt for ChatGPT, or type help or ? to list commands."
+    prompt = "> "
+
+    chatgpt = None
+
+    def do_clear(self, _):
+        "`clear` starts a new conversation, chatgpt will lose all conversational context."
+        self.chatgpt.parent_message_id = str(uuid.uuid4())
+        self.chatgpt.conversation_id = None
+        print("* Conversation cleared.")
+
+    def do_exit(self, _):
+        "`exit` closes the program."
+        sys.exit(0)
+
+    def default(self, line):
+        response = self.chatgpt.ask(line)
+        print("")
+        console.print(Markdown(response))
+        print("")
+
+
 def main():
 
     install_mode = len(sys.argv) > 1 and (sys.argv[1] == "install")
     if install_mode:
         print(
-            "Log in to ChatGPT in the browser that pops up, and click through all the dialogs, etc.  Once that is acheived, ctrl-c and restart this program without the 'install' parameter."
+            "Install mode: Log in to ChatGPT in the browser that pops up, and click\n"
+            "through all the dialogs, etc. Once that is acheived, exit and restart\n"
+            "this program without the 'install' parameter.\n"
         )
 
     chatgpt = ChatGPT(headless=not install_mode)
 
-    def ask_and_answer(prompt):
-        response = chatgpt.ask(prompt)
-        print("")
-        console.print(Markdown(response))
-        print("")
-
     if len(sys.argv) > 1 and not install_mode:
-        ask_and_answer(" ".join(sys.argv[1:]))
+        response = chatgpt.ask(" ".join(sys.argv[1:]))
+        console.print(Markdown(response))
         return
 
-    while True:
-
-        inp = input("> ")
-
-        if inp == "exit":
-            sys.exit(0)
-
-        ask_and_answer(inp)
+    shell = GPTShell()
+    shell.chatgpt = chatgpt
+    shell.cmdloop()
 
 
 if __name__ == "__main__":
