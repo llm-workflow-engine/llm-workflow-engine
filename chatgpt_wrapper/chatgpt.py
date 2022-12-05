@@ -162,15 +162,7 @@ def main():
 
     while True:
 
-        lines = []
-        while True:
-            line = input("> ")
-            if line:
-                lines.append(line)
-            else:
-                break
-
-        inp = "\n".join(lines).strip()
+        inp = input("> ")
 
         if inp == "exit":
             sys.exit(0)
