@@ -119,6 +119,11 @@ class ChatGPT:
 
         self.parent_message_id = new_message_id
 
+        # the xhr response is an http event stream of json objects.
+        # the div contains that entire response, base64 encoded to
+        # avoid html entities issues.  the complete response is always
+        # the third from last event.  the json itself always begins at
+        # character 6.
         response = json.loads(
             base64.b64decode(conversation_datas[0].inner_html()).split(b"\n\n")[-3][6:]
         )
