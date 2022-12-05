@@ -15,6 +15,7 @@ from rich.markdown import Markdown
 
 console = Console()
 
+
 class ChatGPT:
     """
     A ChatGPT interface that uses Playwright to run a browser,
@@ -84,8 +85,7 @@ class ChatGPT:
             "action": "next",
         }
 
-        code = (
-            """
+        code = """
             const xhr = new XMLHttpRequest();
             xhr.open('POST', 'https://chat.openai.com/backend-api/conversation');
             xhr.setRequestHeader('Accept', 'text/event-stream');
@@ -101,9 +101,10 @@ class ChatGPT:
             };
 
             xhr.send(JSON.stringify(REQUEST_JSON));
-            """
-            .replace("BEARER_TOKEN", self.session["accessToken"])
-            .replace("REQUEST_JSON", json.dumps(request))
+            """.replace(
+            "BEARER_TOKEN", self.session["accessToken"]
+        ).replace(
+            "REQUEST_JSON", json.dumps(request)
         )
 
         self.page.evaluate(code)
@@ -118,7 +119,9 @@ class ChatGPT:
 
         self.parent_message_id = new_message_id
 
-        response = json.loads(base64.b64decode(conversation_datas[0].inner_html()).split(b"\n\n")[-3][6:])
+        response = json.loads(
+            base64.b64decode(conversation_datas[0].inner_html()).split(b"\n\n")[-3][6:]
+        )
         self.page.evaluate(
             "document.getElementById('chatgpt-wrapper-conversation-data').remove()"
         )
