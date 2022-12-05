@@ -1,3 +1,4 @@
+import base64
 import uuid
 import json
 import re
@@ -94,7 +95,7 @@ class ChatGPT:
               if(xhr.status == 200) {
                 var mydiv = document.createElement('DIV');
                 mydiv.id = "chatgpt-wrapper-conversation-data";
-                mydiv.innerHTML = xhr.responseText;
+                mydiv.innerHTML = btoa(xhr.responseText);
                 document.body.appendChild(mydiv);
               }
             };
@@ -117,7 +118,7 @@ class ChatGPT:
 
         self.parent_message_id = new_message_id
 
-        response = json.loads(conversation_datas[0].inner_html().split("\n\n")[-3][6:])
+        response = json.loads(base64.b64decode(conversation_datas[0].inner_html()).split(b"\n\n")[-3][6:])
         self.page.evaluate(
             "document.getElementById('chatgpt-wrapper-conversation-data').remove()"
         )
