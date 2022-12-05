@@ -7,8 +7,7 @@ Here's whats different about it:
 * Works by injecting JS in to the browser to interact with the chatgpt API directly, rather than interacting with the website.  This is more responsive and robust, and produces higher quality output.
 * Use `rich` library to render ChatGPT's markdown output in a terminal-friendly way.
 * Add a multi-line input system (blank line to end input)
-* Removed colors (they kept messing up my terminal)
-* Switched the browser to firefox.  In my experience, firefox can log in to Google oauth and Chromium can not.
+* Switched the browser to Firefox.  In my experience, Firefox can log in to Google oauth and Chromium can not.
 
 
 The contributions on this fork are licensed under the MIT license to match the parent project.

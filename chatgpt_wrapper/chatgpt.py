@@ -1,15 +1,14 @@
 import base64
-import uuid
 import json
-import re
 import os
+import re
 import sys
+import tempfile
 import time
-import tempfile
+import uuid
 from time import sleep
-import tempfile
-from playwright.sync_api import sync_playwright
 
+from playwright.sync_api import sync_playwright
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -141,14 +140,24 @@ class ChatGPT:
 
 
 def main():
-    install_mode = len(sys.argv) > 1 and (sys.argv[1] == "install")
 
+    install_mode = len(sys.argv) > 1 and (sys.argv[1] == "install")
     if install_mode:
         print(
             "Log in to ChatGPT in the browser that pops up, and click through all the dialogs, etc.  Once that is acheived, ctrl-c and restart this program without the 'install' parameter."
         )
 
     chatgpt = ChatGPT(headless=not install_mode)
+
+    def ask_and_answer(prompt):
+        response = chatgpt.ask(prompt)
+        print("")
+        console.print(Markdown(response))
+        print("")
+
+    if len(sys.argv) > 1 and not install_mode:
+        ask_and_answer(" ".join(sys.argv[1:]))
+        return
 
     while True:
 
@@ -164,10 +173,8 @@ def main():
 
         if inp == "exit":
             sys.exit(0)
-        response = chatgpt.ask(inp)
-        print("\n")
-        console.print(Markdown(response))
-        print("\n")
+
+        ask_and_answer(inp)
 
 
 if __name__ == "__main__":
