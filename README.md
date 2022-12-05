@@ -5,6 +5,7 @@ This project is a fork of [mmabrouk/chatgpt-wrapper](https://github.com/mmabrouk
 Here's whats different about it:
 
 * Works by injecting JS in to the browser to interact with the chatgpt API directly, rather than interacting with the website.  This should be more responsive and robust, and produce higher quality output.
+* Use `rich` library to render ChatGPT's markdown output in a terminal-friendly way.
 * Add a multi-line input system (blank line to end input)
 * Removed colors (they kept messing up my terminal)
 * Switched the browser to firefox.  In my experience, firefox can log in to Google oauth and Chromium can not.

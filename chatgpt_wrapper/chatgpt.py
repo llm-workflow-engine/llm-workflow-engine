@@ -1,6 +1,5 @@
 import uuid
 import json
-import logging
 import re
 import os
 import sys
@@ -10,20 +9,19 @@ from time import sleep
 import tempfile
 from playwright.sync_api import sync_playwright
 
-logging.basicConfig(level=logging.INFO)
+from rich.console import Console
+from rich.markdown import Markdown
 
+console = Console()
 
 class ChatGPT:
     """
-    An ChatGPT chatbot that uses Playwright to simulate a Chrome browser.
-    The chatbot can be used to send messages to OpenAI and receive responses.
-    First time used, the user must log in to OpenAI Chat and accept the cookies box.
-    Developed with the help of chatgpt :)
+    A ChatGPT interface that uses Playwright to run a browser,
+    and interacts with that browser to communicate with ChatGPT in
+    order to provide a command line interface to ChatGPT.
     """
 
-    def __init__(self, headless: bool = True, timeout: int = 600):
-        self.timeout = timeout
-        self.last_msg = None
+    def __init__(self, headless: bool = True):
         self.play = sync_playwright().start()
         self.browser = self.play.firefox.launch_persistent_context(
             user_data_dir=f"/tmp/playwright",
@@ -100,6 +98,7 @@ class ChatGPT:
                 document.body.appendChild(mydiv);
               }
             };
+
             xhr.send(JSON.stringify(REQUEST_JSON));
             """
             .replace("BEARER_TOKEN", self.session["accessToken"])
@@ -148,7 +147,8 @@ def main():
             "Log in to ChatGPT in the browser that pops up, and click through all the dialogs, etc.  Once that is acheived, ctrl-c and restart this program without the 'install' parameter."
         )
 
-    chatbot = ChatGPT(headless=not install_mode)
+    chatgpt = ChatGPT(headless=not install_mode)
+
     while True:
 
         lines = []
@@ -163,8 +163,10 @@ def main():
 
         if inp == "exit":
             sys.exit(0)
-        response = chatbot.ask(inp)
-        print("\n" + response + "\n")
+        response = chatgpt.ask(inp)
+        print("\n")
+        console.print(Markdown(response))
+        print("\n")
 
 
 if __name__ == "__main__":
