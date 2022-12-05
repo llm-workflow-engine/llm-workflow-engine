@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import re
+import readline
 import sys
 import tempfile
 import time
