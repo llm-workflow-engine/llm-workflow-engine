@@ -144,7 +144,7 @@ def main():
 
     if install_mode:
         print(
-            "Log in to ChatGPT in the browser that pops up.  Once that is acheived, you can ask questions here."
+            "Log in to ChatGPT in the browser that pops up, and click through all the dialogs, etc.  Once that is acheived, ctrl-c and restart this program without the 'install' parameter."
         )
 
     chatbot = ChatGPT(headless=not install_mode)
