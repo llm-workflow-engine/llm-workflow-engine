@@ -1,7 +1,7 @@
-# ChatGPT Wrapper
+# ChatGPT CLI and Python Wrapper
 
 
-ChatGPT Wrapper is an open-source tool unofficial API that lets you interact with ChatGPT in Python and from Terminal.
+ChatGPT Wrapper is an open-source tool unofficial API that lets you interact with ChatGPT in Python and as a CLI.
 
 ## Highlights
 
@@ -75,12 +75,32 @@ print(response)  # prints the response from chatGPT
 
 The say method takes a string argument representing the message to send to ChatGPT, and returns a string representing the response received from ChatGPT.
 
-### shell
-You can run the command chatGPT in shell and you can talk with it in shell
+### Shell
+
+The `chatGPT` command can be run in the shell, allowing you to have a conversation with GPT-3 directly in the terminal. Simply run the command and start chatting!
+
+## Upcoming Features
+
+- [ ] Async mode
+- [ ] Remove reliance on playwright
+- [ ] Improve error messaging
+- [ ] Automatic installation start when not logged in
+
+Note: We welcome pull requests for any of the above features, or any other improvements you'd like to see in the project.
+
+## Updates
+
+- Thanks to @Tecuya for the following improvements:
+  - Improved inputs in the CLI, including support for history and arrow keys
+  - Fancy markdown rendering for outputs
+  - Fixes for the login process
+  - The ability to clear conversations
+  - Direct interaction with the API
 
 ## Contributing
 
 We welcome contributions to ChatGPT Wrapper! If you have an idea for a new feature or have found a bug, please open an issue on the GitHub repository.
+
 
 ## License
 
