@@ -1,2 +1,4 @@
 flask
 playwright
+readline
+rich

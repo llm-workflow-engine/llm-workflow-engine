@@ -27,13 +27,13 @@ You can also use the ChatGPT Wrapper on the command line:
 Run an interactive session in the terminal by using
 
 ```
-$ chatGPT
+$ chatgpt
 ```
 
 Or get the response for one question
 
 ``` bash
-$ chatGPT Write a grep command to find all names of functions in a python script
+$ chatgpt Write a grep command to find all names of functions in a python script
 ```
 <img width="600" alt="Screenshot 2022-12-03 at 21 11 44" src="https://user-images.githubusercontent.com/4510758/205460076-1defee06-7d62-4cfa-9f31-714d9cc669fc.png">
 
