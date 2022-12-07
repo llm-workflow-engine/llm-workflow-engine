@@ -37,7 +37,9 @@ class ChatGPT:
 
     def _start_browser(self):
         self.page.goto("https://chat.openai.com/")
+        self.refresh_session()
 
+    def refresh_session(self):
         self.page.evaluate(
             """
         const xhr = new XMLHttpRequest();
@@ -93,12 +95,14 @@ class ChatGPT:
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.setRequestHeader('Authorization', 'Bearer BEARER_TOKEN');
             xhr.onload = () => {
+              var mydiv = document.createElement('DIV');
+              mydiv.id = "chatgpt-wrapper-conversation-data";
               if(xhr.status == 200) {
-                var mydiv = document.createElement('DIV');
-                mydiv.id = "chatgpt-wrapper-conversation-data";
                 mydiv.innerHTML = btoa(xhr.responseText);
-                document.body.appendChild(mydiv);
+              } else {
+                mydiv.innerHTML = "";
               }
+              document.body.appendChild(mydiv);
             };
 
             xhr.send(JSON.stringify(REQUEST_JSON));
@@ -118,20 +122,29 @@ class ChatGPT:
                 break
             sleep(0.2)
 
+        try:
+            # the xhr response is an http event stream of json objects.
+            # the div contains that entire response, base64 encoded to
+            # avoid html entities issues.  the complete response is always
+            # the third from last event.  the json itself always begins at
+            # character 6.
+            response = json.loads(
+                base64.b64decode(conversation_datas[0].inner_html()).split(b"\n\n")[-3][6:]
+            )
+        except:
+            return (
+                "* Failed to read response from ChatGPT.  Tips:\n"
+                "   * Try again.  ChatGPT can be flaky.\n"
+                "   * Use the `session` command to refresh your session, and then try again.\n"
+                "   * Restart the program in the `install` mode and make sure you are logged in."
+            )
+
+        finally:
+            self.page.evaluate(
+                "document.getElementById('chatgpt-wrapper-conversation-data').remove()"
+            )
+
         self.parent_message_id = new_message_id
-
-        # the xhr response is an http event stream of json objects.
-        # the div contains that entire response, base64 encoded to
-        # avoid html entities issues.  the complete response is always
-        # the third from last event.  the json itself always begins at
-        # character 6.
-        response = json.loads(
-            base64.b64decode(conversation_datas[0].inner_html()).split(b"\n\n")[-3][6:]
-        )
-        self.page.evaluate(
-            "document.getElementById('chatgpt-wrapper-conversation-data').remove()"
-        )
-
         self.conversation_id = response["conversation_id"]
 
         return "\n".join(response["message"]["content"]["parts"])
@@ -155,11 +168,15 @@ class GPTShell(cmd.Cmd):
 
     chatgpt = None
 
+    def _print_output(self, output):
+        console.print(Markdown(output))
+        print("")
+
     def do_clear(self, _):
         "`clear` starts a new conversation, chatgpt will lose all conversational context."
         self.chatgpt.parent_message_id = str(uuid.uuid4())
         self.chatgpt.conversation_id = None
-        print("* Conversation cleared.")
+        self._print_output('* Conversation cleared')
 
     def do_exit(self, _):
         "`exit` closes the program."
@@ -168,9 +185,12 @@ class GPTShell(cmd.Cmd):
     def default(self, line):
         response = self.chatgpt.ask(line)
         print("")
-        console.print(Markdown(response))
-        print("")
+        self._print_output(response)
 
+    def do_session(self, _):
+        "`session` refreshes your session information"
+        self.chatgpt.refresh_session()
+        self._print_output('* Session refreshed')
 
 def main():
 
