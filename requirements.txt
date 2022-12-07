@@ -1,4 +1,4 @@
 flask
 playwright
-readline
+pyreadline
 rich
