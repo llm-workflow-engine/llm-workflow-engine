@@ -1,5 +1,4 @@
 flask
 playwright
-readline
-pyreadline3
+pyreadline3; platform_system=="Windows"
 rich
