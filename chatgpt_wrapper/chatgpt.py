@@ -80,6 +80,12 @@ class ChatGPT:
     def _send_message(self, message: str):
         new_message_id = str(uuid.uuid4())
 
+        if not "accessToken" in self.session:
+            return (
+                "Your ChatGPT session is not usable.\n"
+                "* Run this program with the `install` parameter and log in to ChatGPT."
+            )
+
         request = {
             "messages": [
                 {
@@ -139,10 +145,10 @@ class ChatGPT:
             )
         except:
             return (
-                "* Failed to read response from ChatGPT.  Tips:\n"
-                "   * Try again.  ChatGPT can be flaky.\n"
-                "   * Use the `session` command to refresh your session, and then try again.\n"
-                "   * Restart the program in the `install` mode and make sure you are logged in."
+                "Failed to read response from ChatGPT.  Tips:\n"
+                " * Try again.  ChatGPT can be flaky.\n"
+                " * Use the `session` command to refresh your session, and then try again.\n"
+                " * Restart the program in the `install` mode and make sure you are logged in."
             )
 
         finally:
