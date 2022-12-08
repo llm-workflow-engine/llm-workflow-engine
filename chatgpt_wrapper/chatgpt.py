@@ -173,22 +173,63 @@ class ChatGPT:
         """
         return self._send_message(message)
 
+    def new_conversation(self):
+        self.parent_message_id = str(uuid.uuid4())
+        self.conversation_id = None
+
 
 class GPTShell(cmd.Cmd):
+    # overrides
     intro = "Provide a prompt for ChatGPT, or type help or ? to list commands."
     prompt = "> "
 
+    # our stuff
+    prompt_number = 0
     chatgpt = None
+    message_map = {}
+
+    def _set_chatgpt(self, chatgpt):
+        self.chatgpt = chatgpt
+        self._update_message_map()
+
+    def _set_prompt(self):
+        self.prompt = f"{self.prompt_number}> "
+
+    def _update_message_map(self):
+        self.prompt_number += 1
+        self.message_map[self.prompt_number] = (self.chatgpt.conversation_id, self.chatgpt.parent_message_id)
+        self._set_prompt()
 
     def _print_output(self, output):
         console.print(Markdown(output))
         print("")
 
-    def do_clear(self, _):
-        "`clear` starts a new conversation, chatgpt will lose all conversational context."
-        self.chatgpt.parent_message_id = str(uuid.uuid4())
-        self.chatgpt.conversation_id = None
-        self._print_output('* Conversation cleared')
+    def do_new(self, _):
+        "`new` starts a new conversation."
+        self.chatgpt.new_conversation()
+        self._print_output(f"* New conversation started.")
+        self._update_message_map()
+
+    def do_nav(self, arg):
+        "`nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
+
+        try:
+            msg_id = int(arg)
+        except Exception:
+            self._print_output(f"The argument to nav must be an integer.")
+            return
+
+        if msg_id == self.prompt_number:
+            self._print_output(f"You are already using prompt {msg_id}.")
+            return
+
+        if msg_id not in self.message_map:
+            self._print_output(f"The argument to `nav` contained an unknown prompt number.")
+            return
+
+        self.chatgpt.conversation_id, self.chatgpt.parent_message_id = self.message_map[msg_id]
+        self._update_message_map()
+        self._print_output(f"* Prompt {self.prompt_number} will use the context from prompt {arg}.")
 
     def do_exit(self, _):
         "`exit` closes the program."
@@ -198,11 +239,13 @@ class GPTShell(cmd.Cmd):
         response = self.chatgpt.ask(line)
         print("")
         self._print_output(response)
+        self._update_message_map()
 
     def do_session(self, _):
         "`session` refreshes your session information"
         self.chatgpt.refresh_session()
         self._print_output('* Session refreshed')
+
 
 def main():
 
@@ -222,7 +265,7 @@ def main():
         return
 
     shell = GPTShell()
-    shell.chatgpt = chatgpt
+    shell._set_chatgpt(chatgpt)
     shell.cmdloop()
 
 
