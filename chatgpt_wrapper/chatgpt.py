@@ -3,12 +3,18 @@ import base64
 import json
 import os
 import re
-import readline
 import sys
 import tempfile
 import time
 import uuid
 from time import sleep
+
+# use pyreadline3 instead of readline on windows
+import platform
+if platform.system() == "Windows":
+  import pyreadline3
+else:
+  import readline
 
 from playwright.sync_api import sync_playwright
 from rich.console import Console
