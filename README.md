@@ -26,18 +26,17 @@ You can also use the ChatGPT Wrapper on the command line:
 
 Run an interactive session in the terminal by using
 
-```
+``` bash
 $ chatgpt
 ```
 
 Or get the response for one question
 
 ``` bash
-$ chatgpt Write a grep command to find all names of functions in a python script
+$ chatgpt What is six times seven?
 ```
-<img width="600" alt="Screenshot 2022-12-03 at 21 11 44" src="https://user-images.githubusercontent.com/4510758/205460076-1defee06-7d62-4cfa-9f31-714d9cc669fc.png">
 
-https://user-images.githubusercontent.com/4510758/205457296-db895975-4efb-4a08-8a5c-4ac1e558f693.mp4
+https://user-images.githubusercontent.com/233113/206799611-8807f659-cd4c-449f-9937-843153533a15.mp4
 
 ## Requirements
 
@@ -75,9 +74,16 @@ print(response)  # prints the response from chatGPT
 
 The say method takes a string argument representing the message to send to ChatGPT, and returns a string representing the response received from ChatGPT.
 
+You may also stream the response as it comes in from chatGPT in chunks using the `ask_stream` generator.
+
 ### Shell
 
-The `chatGPT` command can be run in the shell, allowing you to have a conversation with GPT-3 directly in the terminal. Simply run the command and start chatting!
+The `chatgpt` command can be run in the shell, allowing you to have a conversation with ChatGPT directly in the terminal. Simply run the command and start chatting!
+
+The shell includes some nice features:
+* It provides commands to navigate to past points in the conversation.
+* It provides a command to start new conversations.
+* It allows the user to choose between markdown and streaming output.
 
 ## Upcoming Features
 
