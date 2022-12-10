@@ -186,7 +186,7 @@ class ChatGPT:
                 if len(event_raw) > 0:
                     event = json.loads(event_raw)
                     if event is not None:
-                        self.parent_message_id = new_message_id
+                        self.parent_message_id = event["message"]["id"]
                         self.conversation_id = event["conversation_id"]
                         full_event_message = "\n".join(
                             event["message"]["content"]["parts"]

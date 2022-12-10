@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     
 setup(
     name="chatGPT",
-    version="0.3.0",
+    version="0.3.1",
     author="Mahmoud Mabrouk",
     author_email="mahmoudmabrouk.mail@gmail.com",
     description="A simple Python class for interacting with OpenAI's chatGPT using Playwright",
