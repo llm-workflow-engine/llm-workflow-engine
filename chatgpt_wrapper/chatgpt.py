@@ -68,9 +68,7 @@ class ChatGPT:
         )
 
         while True:
-            session_datas = self.page.query_selector_all(
-                f"div#{self.session_div_id}"
-            )
+            session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
             if len(session_datas) > 0:
                 break
             sleep(0.2)
@@ -78,17 +76,13 @@ class ChatGPT:
         session_data = json.loads(session_datas[0].inner_text())
         self.session = session_data
 
-        self.page.evaluate(
-            f"document.getElementById('{self.session_div_id}').remove()"
-        )
+        self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
 
     def _cleanup_divs(self):
         self.page.evaluate(
-            f"document.getElementById('{self.stream_div_id}')" ".remove()"
+            f"document.getElementById('{self.stream_div_id}').remove()"
         )
-        self.page.evaluate(
-            f"document.getElementById('{self.eof_div_id}')" ".remove()"
-        )
+        self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
     def ask_stream(self, prompt: str):
         new_message_id = str(uuid.uuid4())
@@ -224,7 +218,12 @@ class ChatGPT:
         Returns:
             str: The response received from OpenAI.
         """
-        return reduce(operator.add, self.ask_stream(message))
+        response = list(self.ask_stream(message))
+        return (
+            reduce(operator.add, response)
+            if len(response) > 0
+            else "Unusable response produced by ChatGPT, maybe its unavailable."
+        )
 
     def new_conversation(self):
         self.parent_message_id = str(uuid.uuid4())
@@ -321,7 +320,7 @@ class GPTShell(cmd.Cmd):
                 sys.stdout.flush()
             print("\n")
         else:
-            response = reduce(operator.add, self.chatgpt.ask_stream(line))
+            response = self.chatgpt.ask(line)
             print("")
             self._print_markdown(response)
 
