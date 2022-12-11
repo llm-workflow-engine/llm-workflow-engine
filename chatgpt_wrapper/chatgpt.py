@@ -262,6 +262,13 @@ class GPTShell(cmd.Cmd):
         console.print(Markdown(output))
         print("")
 
+    def emptyline(self):
+        """
+        override cmd.Cmd.emptyline so it does not repeat
+        the last command when you hit enter
+        """
+        return
+
     def do_stream(self, _):
         "`stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream)"
         self.stream = not self.stream
