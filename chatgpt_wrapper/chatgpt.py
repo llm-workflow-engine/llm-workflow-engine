@@ -343,7 +343,8 @@ class GPTShell(cmd.Cmd):
 
     def do_read(self, _):
         "`read` begins reading multi-line input"
-        self._print_markdown(f"* Reading prompt, hit ^d when done.  In windows use ^z")
+        ctrl_sequence = "^z" if is_windows else "^d"
+        self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done.")
 
         if not is_windows:
             readline.set_auto_history(False)
