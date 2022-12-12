@@ -9,11 +9,11 @@ from functools import reduce
 from time import sleep
 
 # use pyreadline3 instead of readline on windows
-
-if platform.system() == "Windows":
+is_windows = platform.system() == "Windows"
+if is_windows:
     import pyreadline3  # noqa: F401
 else:
-    import readline  # noqa: F401
+    import readline
 
 from playwright.sync_api import sync_playwright
 from rich.console import Console
@@ -79,9 +79,7 @@ class ChatGPT:
         self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
 
     def _cleanup_divs(self):
-        self.page.evaluate(
-            f"document.getElementById('{self.stream_div_id}').remove()"
-        )
+        self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
         self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
     def ask_stream(self, prompt: str):
@@ -264,6 +262,13 @@ class GPTShell(cmd.Cmd):
         console.print(Markdown(output))
         print("")
 
+    def emptyline(self):
+        """
+        override cmd.Cmd.emptyline so it does not repeat
+        the last command when you hit enter
+        """
+        return
+
     def do_stream(self, _):
         "`stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream)"
         self.stream = not self.stream
@@ -335,6 +340,30 @@ class GPTShell(cmd.Cmd):
             else "The session is not usable.  Try `install` mode."
         )
         self._print_markdown(f"* Session information refreshed.  {usable}")
+
+    def do_read(self, _):
+        "`read` begins reading multi-line input"
+        ctrl_sequence = "^z" if is_windows else "^d"
+        self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done.")
+
+        if not is_windows:
+            readline.set_auto_history(False)
+
+        prompt = ""
+        while True:
+            try:
+                line = input()
+            except EOFError:
+                break
+            if line == "":
+                print("")
+            prompt += line + "\n"
+
+        if not is_windows:
+            readline.set_auto_history(True)
+            readline.add_history(prompt)
+
+        self.default(prompt)
 
 
 def main():
