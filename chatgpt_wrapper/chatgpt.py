@@ -242,6 +242,7 @@ class GPTShell(cmd.Cmd):
     chatgpt = None
     message_map = {}
     stream = False
+    logfile = None
 
     def _set_chatgpt(self, chatgpt):
         self.chatgpt = chatgpt
@@ -262,6 +263,18 @@ class GPTShell(cmd.Cmd):
         console.print(Markdown(output))
         print("")
 
+    def _write_log(self, prompt, response):
+        if self.logfile is not None:
+            self.logfile.write(f"{self.prompt_number}> {prompt}\n\n{response}\n\n")
+            self._write_log_context()
+
+    def _write_log_context(self):
+        if self.logfile is not None:
+            self.logfile.write(
+                f"## context {self.chatgpt.conversation_id}:{self.chatgpt.parent_message_id}\n"
+            )
+            self.logfile.flush()
+
     def emptyline(self):
         """
         override cmd.Cmd.emptyline so it does not repeat
@@ -270,7 +283,7 @@ class GPTShell(cmd.Cmd):
         return
 
     def do_stream(self, _):
-        "`stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream)"
+        "`stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream)."
         self.stream = not self.stream
         self._print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
@@ -281,6 +294,7 @@ class GPTShell(cmd.Cmd):
         self.chatgpt.new_conversation()
         self._print_markdown("* New conversation started.")
         self._update_message_map()
+        self._write_log_context()
 
     def do_nav(self, arg):
         "`nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
@@ -306,6 +320,7 @@ class GPTShell(cmd.Cmd):
             self.chatgpt.parent_message_id,
         ) = self.message_map[msg_id]
         self._update_message_map()
+        self._write_log_context()
         self._print_markdown(
             f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
         )
@@ -315,7 +330,9 @@ class GPTShell(cmd.Cmd):
         sys.exit(0)
 
     def default(self, line):
+
         if self.stream:
+            response = ""
             first = True
             for chunk in self.chatgpt.ask_stream(line):
                 if first:
@@ -323,12 +340,14 @@ class GPTShell(cmd.Cmd):
                     first = False
                 print(chunk, end="")
                 sys.stdout.flush()
+                response += chunk
             print("\n")
         else:
             response = self.chatgpt.ask(line)
             print("")
             self._print_markdown(response)
 
+        self._write_log(line, response)
         self._update_message_map()
 
     def do_session(self, _):
@@ -342,7 +361,7 @@ class GPTShell(cmd.Cmd):
         self._print_markdown(f"* Session information refreshed.  {usable}")
 
     def do_read(self, _):
-        "`read` begins reading multi-line input"
+        "`read` begins reading multi-line input."
         ctrl_sequence = "^z" if is_windows else "^d"
         self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done.")
 
@@ -373,6 +392,37 @@ class GPTShell(cmd.Cmd):
             self._print_markdown(f"Failed to read file '{arg}'")
             return
         self.default(fileprompt)
+
+    def do_log(self, arg):
+        "`log` enables logging to a file.  Example: `log mylog.txt` to enable, or `log` to disable."
+        if arg:
+            try:
+                self.logfile = open(arg, "a")
+            except Exception:
+                self._print_markdown(f"Failed to open log file '{arg}'.")
+                return
+
+            self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
+        else:
+            self.logfile = None
+            self._print_markdown(f"* Logging is now disabled.")
+
+    def do_context(self, arg):
+        "`context` lets you load old contexts from the log.  It takes one parameter; a context string from logs."
+        try:
+            (conversation_id, parent_message_id) = arg.split(":")
+            assert conversation_id == "None" or len(conversation_id) == 36
+            assert len(parent_message_id) == 36
+        except:
+            self._print_markdown("Invalid parameter to `context`.")
+            return
+        self._print_markdown(f"* Loaded specified context.")
+        self.chatgpt.conversation_id = (
+            conversation_id if conversation_id != "None" else None
+        )
+        self.chatgpt.parent_message_id = parent_message_id
+        self._update_message_map()
+        self._write_log_context()
 
 
 def main():
