@@ -365,6 +365,15 @@ class GPTShell(cmd.Cmd):
 
         self.default(prompt)
 
+    def do_file(self, arg):
+        "`file` sends a prompt read from the named file.  Example: `file myprompt.txt`"
+        try:
+            fileprompt = open(arg).read()
+        except Exception:
+            self._print_markdown(f"Failed to read file '{arg}'")
+            return
+        self.default(fileprompt)
+
 
 def main():
 
