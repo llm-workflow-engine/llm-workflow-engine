@@ -1,3 +1,4 @@
+import argparse
 import base64
 import cmd
 import json
@@ -33,9 +34,16 @@ class ChatGPT:
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    def __init__(self, headless: bool = True):
+    def __init__(self, headless: bool = True, browser = "firefox"):
         self.play = sync_playwright().start()
-        self.browser = self.play.firefox.launch_persistent_context(
+
+        try:
+            playbrowser = getattr(self.play, browser)
+        except Exception:
+            print(f"Browser {browser} is invalid, falling back on firefox")
+            playbrowser = self.play.firefox
+
+        self.browser = playbrowser.launch_persistent_context(
             user_data_dir="/tmp/playwright",
             headless=headless,
         )
@@ -43,10 +51,10 @@ class ChatGPT:
         self._start_browser()
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
+        self.session = None
 
     def _start_browser(self):
         self.page.goto("https://chat.openai.com/")
-        self.refresh_session()
 
     def refresh_session(self):
         self.page.evaluate(
@@ -83,6 +91,9 @@ class ChatGPT:
         self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
     def ask_stream(self, prompt: str):
+        if self.session is None:
+            self.refresh_session()
+
         new_message_id = str(uuid.uuid4())
 
         if "accessToken" not in self.session:
@@ -193,7 +204,7 @@ class ChatGPT:
                 break
 
             if full_event_message is not None:
-                chunk = full_event_message[len(last_event_msg):]
+                chunk = full_event_message[len(last_event_msg) :]
                 last_event_msg = full_event_message
                 yield chunk
 
@@ -243,6 +254,12 @@ class GPTShell(cmd.Cmd):
     message_map = {}
     stream = False
     logfile = None
+
+    def _set_args(self, args):
+        self.stream = args.stream
+        if args.log is not None:
+            if not self._open_log(args.log):
+                sys.exit(0)
 
     def _set_chatgpt(self, chatgpt):
         self.chatgpt = chatgpt
@@ -393,16 +410,19 @@ class GPTShell(cmd.Cmd):
             return
         self.default(fileprompt)
 
+    def _open_log(self, filename) -> bool:
+        try:
+            self.logfile = open(filename, "a")
+        except Exception:
+            self._print_markdown(f"Failed to open log file '{filename}'.")
+            return False
+        return True
+
     def do_log(self, arg):
         "`log` enables logging to a file.  Example: `log mylog.txt` to enable, or `log` to disable."
         if arg:
-            try:
-                self.logfile = open(arg, "a")
-            except Exception:
-                self._print_markdown(f"Failed to open log file '{arg}'.")
-                return
-
-            self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
+            if self._open_log(arg):
+                self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
         else:
             self.logfile = None
             self._print_markdown(f"* Logging is now disabled.")
@@ -427,7 +447,30 @@ class GPTShell(cmd.Cmd):
 
 def main():
 
-    install_mode = len(sys.argv) > 1 and (sys.argv[1] == "install")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "params",
+        nargs="*",
+        help="Use 'install' for install mode, or provide a prompt for ChatGPT.",
+    )
+    parser.add_argument(
+        "-s", "--stream", action="store_true", help="enable streaming mode"
+    )
+    parser.add_argument(
+        "-l",
+        "--log",
+        action="store",
+        help="log prompts and responses to the named file",
+    )
+    parser.add_argument(
+        "-b",
+        "--browser",
+        action="store",
+        help="set preferred browser; 'firefox' 'chromium' or 'webkit'",
+    )
+    args = parser.parse_args()
+    install_mode = len(args.params) == 1 and args.params[0] == "install"
+
     if install_mode:
         print(
             "Install mode: Log in to ChatGPT in the browser that pops up, and click\n"
@@ -435,15 +478,17 @@ def main():
             "this program without the 'install' parameter.\n"
         )
 
-    chatgpt = ChatGPT(headless=not install_mode)
-
-    if len(sys.argv) > 1 and not install_mode:
-        response = chatgpt.ask(" ".join(sys.argv[1:]))
-        console.print(Markdown(response))
-        return
+    extra_kwargs = {} if args.browser is None else {"browser": args.browser}
+    chatgpt = ChatGPT(headless=not install_mode, **extra_kwargs)
 
     shell = GPTShell()
     shell._set_chatgpt(chatgpt)
+    shell._set_args(args)
+
+    if len(args.params) > 0 and not install_mode:
+        shell.default(" ".join(args.params))
+        return
+
     shell.cmdloop()
 
 
