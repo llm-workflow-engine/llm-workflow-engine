@@ -1,7 +1,6 @@
 # ChatGPT CLI and Python Wrapper
 
-
-ChatGPT Wrapper is an open-source tool unofficial API that lets you interact with ChatGPT in Python and as a CLI.
+ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you interact with ChatGPT.
 
 ## Highlights
 
@@ -11,32 +10,26 @@ ChatGPT Wrapper is an open-source tool unofficial API that lets you interact wit
 
 ## How it works
 
-Here's an example of how to use the ChatGPT Wrapper in Python:
-
-```python
-from chatgpt_wrapper import ChatGPT 
-chatbot = ChatGPT()
-while True:
-    inp = input("You: ")
-    response = chatbot.ask(inp)
-    print("\nChatGPT: " + response + "\n")
-```
-
-You can also use the ChatGPT Wrapper on the command line:
-
-Run an interactive session in the terminal by using
+Run an interactive CLI in the terminal:
 
 ``` bash
 $ chatgpt
+Provide a prompt for ChatGPT, or type help or ? to list commands.
+1> 
 ```
 
-Or get the response for one question
+Or just get a quick response for one question:
 
 ``` bash
 $ chatgpt What is six times seven?
+
+Six times seven is 42.      
 ```
 
+Here's a short demo of some of the CLI features:
 https://user-images.githubusercontent.com/233113/206799611-8807f659-cd4c-449f-9937-843153533a15.mp4
+
+See below for details on using ChatGPT as an API.
 
 ## Requirements
 
@@ -47,22 +40,41 @@ You can install it using `pip install setuptools`.
 
 ## Installation
 
-Clone this repository and install the required dependencies:
+You can install the latest version of this software directly from github with pip:
 
 ```bash
 pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 ```
 
-Setup the script by logging in to your openai account for the first time only.
+This will install chatgpt-wrapper and it's dependencies.  
+
+Before starting the program, you will need to install a browser in playwright (if you haven't already).  The program will use firefox by default.
+
+```
+playwright install firefox
+```
+
+With that done, you should start up the program in `install` mode, which will open up a browser window. 
 
 ```bash
 chatgpt install
 ```
 
+Log in to ChatGPT in the browser window, then stop the program.  After doing this, restart the program without the `install` parameter to begin using it.
+
 ## Usage
 
+### Shell
+
+The shell includes some nice features:
+* It provides commands to start a new conversation, or navigate to past points in the conversation.
+* It provides a command that allows the user to choose between rendered markdown and streaming output (can't have both).
+* It provides a logging option, and the ability to restore any context that's been logged, even from old sessions.
+* It provides a command to read prompts from files, and a command to support reading multi-line prompts.
+
 ### Python
-To use the `ChatGPT` class, create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
+
+To use the `ChatGPT` class as an API for talking to ChatGPT, create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
 from chatgpt_wrapper import ChatGPT
@@ -74,16 +86,7 @@ print(response)  # prints the response from chatGPT
 
 The say method takes a string argument representing the message to send to ChatGPT, and returns a string representing the response received from ChatGPT.
 
-You may also stream the response as it comes in from chatGPT in chunks using the `ask_stream` generator.
-
-### Shell
-
-The `chatgpt` command can be run in the shell, allowing you to have a conversation with ChatGPT directly in the terminal. Simply run the command and start chatting!
-
-The shell includes some nice features:
-* It provides commands to navigate to past points in the conversation.
-* It provides a command to start new conversations.
-* It allows the user to choose between markdown and streaming output.
+You may also stream the response as it comes in from ChatGPT in chunks using the `ask_stream` generator.
 
 ## Upcoming Features
 
@@ -94,19 +97,9 @@ The shell includes some nice features:
 
 Note: We welcome pull requests for any of the above features, or any other improvements you'd like to see in the project.
 
-## Updates
-
-- Thanks to @Tecuya for the following improvements:
-  - Improved inputs in the CLI, including support for history and arrow keys
-  - Fancy markdown rendering for outputs
-  - Fixes for the login process
-  - The ability to clear conversations
-  - Direct interaction with the API
-
 ## Contributing
 
 We welcome contributions to ChatGPT Wrapper! If you have an idea for a new feature or have found a bug, please open an issue on the GitHub repository.
-
 
 ## License
 
