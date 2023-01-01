@@ -47,7 +47,10 @@ class ChatGPT:
             user_data_dir="/tmp/playwright",
             headless=headless,
         )
-        self.page = self.browser.new_page()
+        if len(self.browser.pages) > 0:
+            self.page = self.browser.pages[0]
+        else:
+            self.page = self.browser.new_page()
         self._start_browser()
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
