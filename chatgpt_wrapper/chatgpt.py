@@ -234,7 +234,7 @@ class ChatGPT:
         return (
             reduce(operator.add, response)
             if len(response) > 0
-            else "Unusable response produced by ChatGPT, maybe its unavailable."
+            else "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
         )
 
     def new_conversation(self):
