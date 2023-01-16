@@ -477,7 +477,7 @@ def main():
     if install_mode:
         print(
             "Install mode: Log in to ChatGPT in the browser that pops up, and click\n"
-            "through all the dialogs, etc. Once that is acheived, exit and restart\n"
+            "through all the dialogs, etc. Once that is achieved, exit and restart\n"
             "this program without the 'install' parameter.\n"
         )
 
