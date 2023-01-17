@@ -92,6 +92,7 @@ You may also stream the response as it comes in from ChatGPT in chunks using the
 
   - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
   - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
+  - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
 
 ## Contributing
 
