@@ -1,3 +1,6 @@
+from rich.markdown import Markdown
+from rich.console import Console
+from playwright.sync_api import sync_playwright
 import argparse
 import base64
 import cmd
@@ -6,6 +9,7 @@ import operator
 import platform
 import sys
 import uuid
+import time
 from functools import reduce
 from time import sleep
 
@@ -16,9 +20,6 @@ if is_windows:
 else:
     import readline
 
-from playwright.sync_api import sync_playwright
-from rich.console import Console
-from rich.markdown import Markdown
 
 console = Console()
 
@@ -34,7 +35,7 @@ class ChatGPT:
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    def __init__(self, headless: bool = True, browser = "firefox"):
+    def __init__(self, headless: bool = True, browser="firefox"):
         self.play = sync_playwright().start()
 
         try:
@@ -93,7 +94,7 @@ class ChatGPT:
         self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
         self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
-    def ask_stream(self, prompt: str):
+    def ask_stream(self, prompt: str, timeout: int = 45):
         if self.session is None:
             self.refresh_session()
 
@@ -176,6 +177,7 @@ class ChatGPT:
         self.page.evaluate(code)
 
         last_event_msg = ""
+        start_time = time.time()
         while True:
             eof_datas = self.page.query_selector_all(f"div#{self.eof_div_id}")
 
@@ -207,13 +209,13 @@ class ChatGPT:
                 break
 
             if full_event_message is not None:
-                chunk = full_event_message[len(last_event_msg) :]
+                chunk = full_event_message[len(last_event_msg):]
                 last_event_msg = full_event_message
                 yield chunk
 
             # if we saw the eof signal, this was the last event we
             # should process and we are done
-            if len(eof_datas) > 0:
+            if len(eof_datas) > 0 or ((time.time() - start_time) > timeout):
                 break
 
             sleep(0.2)
