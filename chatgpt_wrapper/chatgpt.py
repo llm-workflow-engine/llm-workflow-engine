@@ -66,6 +66,7 @@ class ChatGPT:
 
     def _cleanup(self):
         self.browser.close()
+        self.play.stop()
 
     def refresh_session(self):
         self.page.evaluate(
@@ -466,7 +467,8 @@ def main():
         help="Use 'install' for install mode, or provide a prompt for ChatGPT.",
     )
     parser.add_argument(
-        "-s", "--stream", action="store_true", help="enable streaming mode"
+        "-n", "--no-stream", default=True, dest="stream", action="store_false",
+        help="disable streaming mode"
     )
     parser.add_argument(
         "-l",
