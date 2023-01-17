@@ -88,14 +88,11 @@ The say method takes a string argument representing the message to send to ChatG
 
 You may also stream the response as it comes in from ChatGPT in chunks using the `ask_stream` generator.
 
-## Upcoming Features
+## Projects built with chatgpt-wrapper
 
-- [ ] Async mode
-- [ ] Remove reliance on playwright
-- [ ] Improve error messaging
-- [ ] Automatic installation start when not logged in
-
-Note: We welcome pull requests for any of the above features, or any other improvements you'd like to see in the project.
+  - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
+  - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
+  - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
 
 ## Contributing
 
