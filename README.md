@@ -4,7 +4,7 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 
 ## Highlights
 
-🤖 Programmable ChatGPT. The ChatGPT Wrapper lets you use the powerful ChatGPT bot in your Python scripts or on the command line, making it easy to leverage its functionality into your projects.
+🤖 Programmable ChatGPT. The ChatGPT Wrapper lets you use the powerful ChatGPT bot in your *Python scripts* or on the *command line*, making it easy to leverage its functionality into your projects.
 
 💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
 
@@ -12,52 +12,40 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 
 Run an interactive CLI in the terminal:
 
-``` bash
-$ chatgpt
-Provide a prompt for ChatGPT, or type help or ? to list commands.
-1> 
-```
+![kod](https://user-images.githubusercontent.com/4510758/212907070-602d61fe-708d-4a39-aaa2-0e84fcf88dcf.png)
 
 Or just get a quick response for one question:
 
-``` bash
-$ chatgpt What is six times seven?
+![kod(1)](https://user-images.githubusercontent.com/4510758/212906773-666be6fe-90e1-4f5e-b962-7748143bd744.png)
 
-Six times seven is 42.      
-```
-
-See below for details on using ChatGPT as an API.
+See below for details on using ChatGPT as an API from Python.
 
 ## Requirements
 
-To use this repository, you will need to have the following packages installed:
-
-`setuptools`: This package is used to create and manage Python packages.
-You can install it using `pip install setuptools`.
+To use this repository, you need  `setuptools` installed. You can install it using `pip install setuptools`.
 
 ## Installation
 
-You can install the latest version of this software directly from github with pip:
-
+1. Install the latest version of this software directly from github with pip:
 ```bash
 pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 ```
 
-This will install chatgpt-wrapper and it's dependencies.  
-
-Before starting the program, you will need to install a browser in playwright (if you haven't already).  The program will use firefox by default.
+2. Install a browser in playwright (if you haven't already).  The program will use firefox by default.
 
 ```
 playwright install firefox
 ```
 
-With that done, you should start up the program in `install` mode, which will open up a browser window. 
+3. Start up the program in `install` mode. This opens up a browser window. Log in to ChatGPT in the browser window, then stop the program. 
 
 ```bash
 chatgpt install
 ```
 
-Log in to ChatGPT in the browser window, then stop the program.  After doing this, restart the program without the `install` parameter to begin using it.
+4. Restart the program without the `install` parameter to begin using it.
+
+Note: For more help, this [Blog post](https://medium.com/geekculture/using-chatgpt-in-python-eeaed9847e72) provides a visual step-by-step guide for installing this library.
 
 ## Usage
 
