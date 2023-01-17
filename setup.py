@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
-    
+
 setup(
     name="chatGPT",
-    version="0.3.6",
+    version="0.3.7",
     author="Mahmoud Mabrouk",
     author_email="mahmoudmabrouk.mail@gmail.com",
     description="A simple Python class for interacting with OpenAI's chatGPT using Playwright",

@@ -26,9 +26,6 @@ $ chatgpt What is six times seven?
 Six times seven is 42.      
 ```
 
-Here's a short demo of some of the CLI features:
-https://user-images.githubusercontent.com/233113/206799611-8807f659-cd4c-449f-9937-843153533a15.mp4
-
 See below for details on using ChatGPT as an API.
 
 ## Requirements
@@ -101,6 +98,9 @@ We welcome contributions to ChatGPT Wrapper! If you have an idea for a new featu
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Updates
+- 17/01/2022: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. 
 
 ## Acknowledgments
 
