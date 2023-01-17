@@ -1,17 +1,19 @@
-from rich.markdown import Markdown
-from rich.console import Console
-from playwright.sync_api import sync_playwright
 import argparse
+import atexit
 import base64
 import cmd
 import json
 import operator
 import platform
 import sys
-import uuid
 import time
+import uuid
 from functools import reduce
 from time import sleep
+
+from playwright.sync_api import sync_playwright
+from rich.console import Console
+from rich.markdown import Markdown
 
 # use pyreadline3 instead of readline on windows
 is_windows = platform.system() == "Windows"
@@ -35,7 +37,7 @@ class ChatGPT:
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    def __init__(self, headless: bool = True, browser="firefox"):
+    def __init__(self, headless: bool = True, browser="firefox", timeout=60):
         self.play = sync_playwright().start()
 
         try:
@@ -56,9 +58,14 @@ class ChatGPT:
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.session = None
+        self.timeout = timeout
+        atexit.register(self._cleanup)
 
     def _start_browser(self):
         self.page.goto("https://chat.openai.com/")
+
+    def _cleanup(self):
+        self.browser.close()
 
     def refresh_session(self):
         self.page.evaluate(
@@ -94,7 +101,7 @@ class ChatGPT:
         self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
         self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
-    def ask_stream(self, prompt: str, timeout: int = 45):
+    def ask_stream(self, prompt: str):
         if self.session is None:
             self.refresh_session()
 
@@ -215,7 +222,7 @@ class ChatGPT:
 
             # if we saw the eof signal, this was the last event we
             # should process and we are done
-            if len(eof_datas) > 0 or ((time.time() - start_time) > timeout):
+            if len(eof_datas) > 0 or ((time.time() - start_time) > self.timeout):
                 break
 
             sleep(0.2)
@@ -484,7 +491,7 @@ def main():
         )
 
     extra_kwargs = {} if args.browser is None else {"browser": args.browser}
-    chatgpt = ChatGPT(headless=not install_mode, **extra_kwargs)
+    chatgpt = ChatGPT(headless=not install_mode, timeout=60, **extra_kwargs)
 
     shell = GPTShell()
     shell._set_chatgpt(chatgpt)
