@@ -100,7 +100,8 @@ We welcome contributions to ChatGPT Wrapper! If you have an idea for a new featu
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Updates
-- 17/01/2022: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. 
+- 17/01/2022: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
+
 
 ## Acknowledgments
 
