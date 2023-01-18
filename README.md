@@ -51,11 +51,15 @@ Note: For more help, this [Blog post](https://medium.com/geekculture/using-chatg
 
 ### Shell
 
-The shell includes some nice features:
-* It provides commands to start a new conversation, or navigate to past points in the conversation.
-* It provides a command that allows the user to choose between rendered markdown and streaming output (can't have both).
-* It provides a logging option, and the ability to restore any context that's been logged, even from old sessions.
-* It provides a command to read prompts from files, and a command to support reading multi-line prompts.
+In addition to directly prompting ChatGPT, The shell provides the following commands:
+* `!new` allows to start a new conversation
+* `!nav` lets you navigate to a past point in the conversation. Example: `!nav 2`
+* `!stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream).
+* `!read` begins reading multi-line input. Usefull when copy-pasting
+* `!file` sends a prompt read from the named file.  Example: `file myprompt.txt`
+* `!log` enables logging to a file.  Example: `!log mylog.txt` to enable, or `!log` to disable.
+* `!context` lets you load old contexts from the log (previous sessions).  It takes one parameter; a context string from logs.
+* `!session` refreshes your session information.  This can resolve errors under certain scenarios.
 
 ### Python
 
