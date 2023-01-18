@@ -88,6 +88,7 @@ We welcome contributions to ChatGPT Wrapper! If you have an idea for a new featu
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Updates
+- 18/01/2022: v0.3.8 - Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
 - 17/01/2022: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
 
 

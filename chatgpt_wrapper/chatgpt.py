@@ -223,7 +223,7 @@ class ChatGPT:
 
             # if we saw the eof signal, this was the last event we
             # should process and we are done
-            if len(eof_datas) > 0 or ((time.time() - start_time) > self.timeout):
+            if len(eof_datas) > 0 or (((time.time() - start_time) > self.timeout) and full_event_message is None):
                 break
 
             sleep(0.2)
@@ -258,8 +258,9 @@ class GPTShell(cmd.Cmd):
     """
 
     # overrides
-    intro = "Provide a prompt for ChatGPT, or type help or ? to list commands."
+    intro = "Provide a prompt for ChatGPT, or type !help or ? to list commands."
     prompt = "> "
+    doc_header = "Documented commands (type !help <topic>):"
 
     # our stuff
     prompt_number = 0
@@ -313,21 +314,21 @@ class GPTShell(cmd.Cmd):
         return
 
     def do_stream(self, _):
-        "`stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream)."
+        "`!stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream)."
         self.stream = not self.stream
         self._print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
 
     def do_new(self, _):
-        "`new` starts a new conversation."
+        "`!new` starts a new conversation."
         self.chatgpt.new_conversation()
         self._print_markdown("* New conversation started.")
         self._update_message_map()
         self._write_log_context()
 
     def do_nav(self, arg):
-        "`nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
+        "`!nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
 
         try:
             msg_id = int(arg)
@@ -356,8 +357,12 @@ class GPTShell(cmd.Cmd):
         )
 
     def do_exit(self, _):
-        "`exit` closes the program."
+        "`!exit` closes the program."
         sys.exit(0)
+
+    def do_ask(self, line):
+        "`!ask` asks a question to chatgpt. It is purely optional. Example: `!ask what is 6+6` is the same as `what is 6+6`"
+        return self.default(line)
 
     def default(self, line):
 
@@ -381,7 +386,7 @@ class GPTShell(cmd.Cmd):
         self._update_message_map()
 
     def do_session(self, _):
-        "`session` refreshes your session information.  This can resolve errors under certain scenarios."
+        "`!session` refreshes your session information.  This can resolve errors under certain scenarios."
         self.chatgpt.refresh_session()
         usable = (
             "The session appears to be usable."
@@ -391,7 +396,7 @@ class GPTShell(cmd.Cmd):
         self._print_markdown(f"* Session information refreshed.  {usable}")
 
     def do_read(self, _):
-        "`read` begins reading multi-line input."
+        "`!read` begins reading multi-line input."
         ctrl_sequence = "^z" if is_windows else "^d"
         self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
 
@@ -417,7 +422,7 @@ class GPTShell(cmd.Cmd):
         self.default(prompt)
 
     def do_file(self, arg):
-        "`file` sends a prompt read from the named file.  Example: `file myprompt.txt`"
+        "`!file` sends a prompt read from the named file.  Example: `file myprompt.txt`"
         try:
             fileprompt = open(arg).read()
         except Exception:
@@ -434,7 +439,7 @@ class GPTShell(cmd.Cmd):
         return True
 
     def do_log(self, arg):
-        "`log` enables logging to a file.  Example: `log mylog.txt` to enable, or `log` to disable."
+        "`!log` enables logging to a file.  Example: `log mylog.txt` to enable, or `log` to disable."
         if arg:
             if self._open_log(arg):
                 self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
@@ -443,7 +448,7 @@ class GPTShell(cmd.Cmd):
             self._print_markdown(f"* Logging is now disabled.")
 
     def do_context(self, arg):
-        "`context` lets you load old contexts from the log.  It takes one parameter; a context string from logs."
+        "`!context` lets you load old contexts from the log.  It takes one parameter; a context string from logs."
         try:
             (conversation_id, parent_message_id) = arg.split(":")
             assert conversation_id == "None" or len(conversation_id) == 36
@@ -458,6 +463,63 @@ class GPTShell(cmd.Cmd):
         self.chatgpt.parent_message_id = parent_message_id
         self._update_message_map()
         self._write_log_context()
+
+    def precmd(self, line):
+        if len(line) > 0 and line[0] == "!":
+            line = line[1:]
+        elif len(line) > 0 and line[0] == "?":
+            pass
+        else:
+            line = "ask " + line
+        return line
+
+    def do_help(self, arg):
+        'List available commands with "!help" or detailed help with "!help cmd".'
+        if arg:
+            # XXX check arg syntax
+            if arg[0] == "!":
+                arg = arg[1:]
+            try:
+                func = getattr(self, 'help_' + arg)
+            except AttributeError:
+                try:
+                    doc = getattr(self, 'do_' + arg).__doc__
+                    if doc:
+                        self.stdout.write("%s\n" % str(doc))
+                        return
+                except AttributeError:
+                    pass
+                self.stdout.write("%s\n" % str(self.nohelp % (arg,)))
+                return
+            func()
+        else:
+            names = self.get_names()
+            cmds_doc = []
+            cmds_undoc = []
+            help = {}
+            for name in names:
+                if name[:5] == 'help_':
+                    help[name[5:]] = 1
+            names.sort()
+            # There can be duplicates if routines overridden
+            prevname = ''
+            for name in names:
+                if name[:3] == 'do_':
+                    if name == prevname:
+                        continue
+                    prevname = name
+                    cmd = name[3:]
+                    if cmd in help:
+                        cmds_doc.append("!"+cmd)
+                        del help[cmd]
+                    elif getattr(self, name).__doc__:
+                        cmds_doc.append("!"+cmd)
+                    else:
+                        cmds_undoc.append("!"+cmd)
+            self.stdout.write("%s\n" % str(self.doc_leader))
+            self.print_topics(self.doc_header,   cmds_doc,   15, 80)
+            self.print_topics(self.misc_header,  list(help.keys()), 15, 80)
+            self.print_topics(self.undoc_header, cmds_undoc, 15, 80)
 
 
 def main():
@@ -495,7 +557,7 @@ def main():
         )
 
     extra_kwargs = {} if args.browser is None else {"browser": args.browser}
-    chatgpt = ChatGPT(headless=not install_mode, timeout=60, **extra_kwargs)
+    chatgpt = ChatGPT(headless=not install_mode, timeout=90, **extra_kwargs)
 
     shell = GPTShell()
     shell._set_chatgpt(chatgpt)
