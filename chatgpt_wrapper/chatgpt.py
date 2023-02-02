@@ -1,3 +1,4 @@
+import os
 import argparse
 import atexit
 import base64
@@ -432,7 +433,10 @@ class GPTShell(cmd.Cmd):
 
     def _open_log(self, filename) -> bool:
         try:
-            self.logfile = open(filename, "a")
+            if os.path.isabs(filename):
+                self.logfile = open(filename, "a")
+            else:
+                self.logfile = open(os.path.join(os.getcwd(), filename), "a")
         except Exception:
             self._print_markdown(f"Failed to open log file '{filename}'.")
             return False
