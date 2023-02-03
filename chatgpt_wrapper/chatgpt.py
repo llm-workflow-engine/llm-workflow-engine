@@ -16,7 +16,7 @@ from playwright.sync_api import sync_playwright
 from rich.console import Console
 from rich.markdown import Markdown
 
-VERSION = "0.3.12"
+VERSION = "0.3.13"
 
 
 # use pyreadline3 instead of readline on windows
@@ -164,7 +164,7 @@ class ChatGPT:
                   }
                 } catch (err) {
                   console.log(err);
-                  return;
+                  newEvent = undefined;
                 }
                 if(newEvent !== undefined) {
                   stream_div.innerHTML = btoa(newEvent);
