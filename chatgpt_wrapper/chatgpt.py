@@ -16,6 +16,9 @@ from playwright.sync_api import sync_playwright
 from rich.console import Console
 from rich.markdown import Markdown
 
+VERSION = "0.3.12"
+
+
 # use pyreadline3 instead of readline on windows
 is_windows = platform.system() == "Windows"
 if is_windows:
@@ -533,7 +536,7 @@ def main():
         "--version",
         "-v",
         action="version",
-        version="Chatgpt version 0.3.11",
+        version=f"{sys.argv[0]} version {VERSION}",
         help="Print version and exit.",
     )
     parser.add_argument(
