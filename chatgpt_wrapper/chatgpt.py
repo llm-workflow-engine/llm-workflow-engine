@@ -1,10 +1,10 @@
-import os
 import argparse
 import atexit
 import base64
 import cmd
 import json
 import operator
+import os
 import platform
 import sys
 import time
@@ -529,6 +529,13 @@ class GPTShell(cmd.Cmd):
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version="Chatgpt version 0.3.11",
+        help="Print version and exit.",
+    )
     parser.add_argument(
         "params",
         nargs="*",
