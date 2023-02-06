@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 from chatgpt_wrapper.chatgpt import VERSION
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -26,7 +27,7 @@ setup(
     python_requires=">=3.7",
     entry_points={
         "console_scripts": [
-            "chatgpt = chatgpt_wrapper.chatgpt:main"
+            "chatgpt = chatgpt_wrapper.main:main"
         ]
     },
     scripts=["postinstall.sh"],
