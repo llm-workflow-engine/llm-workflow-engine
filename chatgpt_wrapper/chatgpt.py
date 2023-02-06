@@ -8,9 +8,6 @@ from functools import reduce
 from time import sleep
 
 from playwright.sync_api import sync_playwright
-from rich.console import Console
-
-console = Console()
 
 
 class ChatGPT:

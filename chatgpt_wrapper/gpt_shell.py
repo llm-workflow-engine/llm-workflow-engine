@@ -3,9 +3,12 @@ import os
 import platform
 import sys
 
+from rich.console import Console
 from rich.markdown import Markdown
 
 from chatgpt import ChatGPT
+
+console = Console()
 
 # use pyreadline3 instead of readline on windows
 is_windows = platform.system() == "Windows"
