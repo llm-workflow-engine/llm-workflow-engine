@@ -6,7 +6,7 @@ import sys
 from rich.console import Console
 from rich.markdown import Markdown
 
-from chatgpt import ChatGPT
+from chatgpt_wrapper.chatgpt import ChatGPT
 
 console = Console()
 
@@ -16,6 +16,7 @@ if is_windows:
     import pyreadline3  # noqa: F401
 else:
     import readline
+
 
 class GPTShell(cmd.Cmd):
     """

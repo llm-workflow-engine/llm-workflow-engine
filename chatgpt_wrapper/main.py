@@ -1,8 +1,9 @@
 import argparse
 import sys
 
-from chatgpt import ChatGPT
-from gpt_shell import GPTShell
+# TODO: resolve this path
+from chatgpt_wrapper.chatgpt import ChatGPT
+from chatgpt_wrapper.gpt_shell import GPTShell
 
 VERSION = "0.3.13"
 
