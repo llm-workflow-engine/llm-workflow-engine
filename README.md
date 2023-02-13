@@ -22,7 +22,12 @@ See below for details on using ChatGPT as an API from Python.
 
 ## Requirements
 
-To use this repository, you need  `setuptools` installed. You can install it using `pip install setuptools`.
+To use this repository, you need the following python modules: `setuptools`, `playwright` and `rich`. You can install them using:
+```
+pip install setuptools
+pip install playwright
+pip install rich
+```
 
 ## Installation
 
