@@ -3,6 +3,8 @@ import sys
 
 from chatgpt_wrapper.chatgpt import ChatGPT
 from chatgpt_wrapper.gpt_shell import GPTShell
+from chatgpt_wrapper.version import __version__
+
 
 def main():
 
@@ -11,7 +13,7 @@ def main():
         "--version",
         "-v",
         action="version",
-        version=f"{sys.argv[0]} version {VERSION}",
+        version=f"{sys.argv[0]} version {__version__}",
         help="Print version and exit.",
     )
     parser.add_argument(
