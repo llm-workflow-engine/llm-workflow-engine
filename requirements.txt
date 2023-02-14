@@ -1,5 +1,4 @@
-flask
 playwright
-readline; platform_system!="Windows"
+readline; platform_system=="Linux"
 pyreadline3; platform_system=="Windows"
 rich

@@ -3,6 +3,9 @@ from setuptools import find_packages, setup
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+with open('requirements.txt') as f:
+    install_requirement = f.readlines()
+
 setup(
     name="chatGPT",
     version="0.3.14",
@@ -13,10 +16,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mmabrouk/chatgpt-wrapper",
     packages=find_packages(),
-    install_requires=[
-        "playwright",
-        "rich",
-    ],
+    install_requires=install_requirement,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
