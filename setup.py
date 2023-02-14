@@ -1,12 +1,11 @@
 from setuptools import find_packages, setup
-from chatgpt_wrapper.version import __version__
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="chatGPT",
-    version=__version__,
+    version="0.3.14",
     author="Mahmoud Mabrouk",
     author_email="mahmoudmabrouk.mail@gmail.com",
     description="A simple Python class for interacting with OpenAI's chatGPT using Playwright",
