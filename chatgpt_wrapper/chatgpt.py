@@ -17,6 +17,9 @@ try:
     from rich.console import Console
     from rich.markdown import Markdown
 except ImportError:
+    Console = lambda: None
+    sync_playwright = None
+    Markdown = lambda _: None
     print("This error message indicates you have not install the python packages `playwright` and/or `rich`. It should only show during installation")
     
 VERSION = "0.3.13"
