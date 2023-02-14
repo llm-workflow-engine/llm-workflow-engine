@@ -190,7 +190,7 @@ class GPTShell(cmd.Cmd):
     def do_file(self, arg):
         "`!file` sends a prompt read from the named file.  Example: `file myprompt.txt`"
         try:
-            fileprompt = open(arg).read()
+            fileprompt = open(arg, encoding="utf-8").read()
         except Exception:
             self._print_markdown(f"Failed to read file '{arg}'")
             return
@@ -199,9 +199,9 @@ class GPTShell(cmd.Cmd):
     def _open_log(self, filename) -> bool:
         try:
             if os.path.isabs(filename):
-                self.logfile = open(filename, "a")
+                self.logfile = open(filename, "a", encoding="utf-8")
             else:
-                self.logfile = open(os.path.join(os.getcwd(), filename), "a")
+                self.logfile = open(os.path.join(os.getcwd(), filename), "a", encoding="utf-8")
         except Exception:
             self._print_markdown(f"Failed to open log file '{filename}'.")
             return False
@@ -214,7 +214,7 @@ class GPTShell(cmd.Cmd):
                 self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
         else:
             self.logfile = None
-            self._print_markdown(f"* Logging is now disabled.")
+            self._print_markdown("* Logging is now disabled.")
 
     def do_context(self, arg):
         "`!context` lets you load old contexts from the log.  It takes one parameter; a context string from logs."
@@ -222,10 +222,10 @@ class GPTShell(cmd.Cmd):
             (conversation_id, parent_message_id) = arg.split(":")
             assert conversation_id == "None" or len(conversation_id) == 36
             assert len(parent_message_id) == 36
-        except:
+        except Exception:
             self._print_markdown("Invalid parameter to `context`.")
             return
-        self._print_markdown(f"* Loaded specified context.")
+        self._print_markdown("* Loaded specified context.")
         self.chatgpt.conversation_id = (
             conversation_id if conversation_id != "None" else None
         )
@@ -289,5 +289,3 @@ class GPTShell(cmd.Cmd):
             self.print_topics(self.doc_header,   cmds_doc,   15, 80)
             self.print_topics(self.misc_header,  list(help.keys()), 15, 80)
             self.print_topics(self.undoc_header, cmds_undoc, 15, 80)
-
-
