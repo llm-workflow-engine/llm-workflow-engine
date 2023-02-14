@@ -106,3 +106,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=mmabrouk/chatgpt-wrapper&type=Date)](https://star-history.com/#mmabrouk/chatgpt-wrapper&Date)
+
+## Fund my ChatGPT Plus subscription :)
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/mmabrouk)
