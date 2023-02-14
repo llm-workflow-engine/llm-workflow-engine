@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
-from chatgpt_wrapper.chatgpt import VERSION
+from setuptools import find_packages, setup
+
+from chatgpt_wrapper.main import VERSION
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -12,7 +13,7 @@ setup(
     description="A simple Python class for interacting with OpenAI's chatGPT using Playwright",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/openai/playwright-chatbot",
+    url="https://github.com/mmabrouk/chatgpt-wrapper",
     packages=find_packages(),
     install_requires=[
         "playwright",
@@ -26,7 +27,7 @@ setup(
     python_requires=">=3.7",
     entry_points={
         "console_scripts": [
-            "chatgpt = chatgpt_wrapper.chatgpt:main"
+            "chatgpt = chatgpt_wrapper.main:main"
         ]
     },
     scripts=["postinstall.sh"],
