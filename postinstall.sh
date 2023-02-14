@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "Installing playwright"
-playwright install
+playwright install firefox
