@@ -6,8 +6,9 @@ import time
 import uuid
 from functools import reduce
 from time import sleep
-
+from typing import Optional
 from playwright.sync_api import sync_playwright
+from playwright._impl._api_structures import ProxySettings
 
 
 class ChatGPT:
@@ -21,7 +22,7 @@ class ChatGPT:
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    def __init__(self, headless: bool = True, browser="firefox", timeout=60):
+    def __init__(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
         self.play = sync_playwright().start()
 
         try:
@@ -33,6 +34,7 @@ class ChatGPT:
         self.browser = playbrowser.launch_persistent_context(
             user_data_dir="/tmp/playwright",
             headless=headless,
+            proxy=proxy,
         )
         if len(self.browser.pages) > 0:
             self.page = self.browser.pages[0]
