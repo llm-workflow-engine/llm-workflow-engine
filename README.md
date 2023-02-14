@@ -45,7 +45,10 @@ chatgpt install
 
 4. Restart the program without the `install` parameter to begin using it.
 
-Note: For more help, this [Blog post](https://medium.com/geekculture/using-chatgpt-in-python-eeaed9847e72) provides a visual step-by-step guide for installing this library.
+## Tutorials:
+
+- Youtube Tutorial: [How To Use ChatGPT With Unity: Python And API Setup #2](https://www.youtube.com/watch?v=CthF8c8qk4c) includes a step by step guide to installing this repository on a windows machine
+- This [Blog post](https://medium.com/geekculture/using-chatgpt-in-python-eeaed9847e72) provides a visual step-by-step guide for installing this library.
 
 ## Usage
 
