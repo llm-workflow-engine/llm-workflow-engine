@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-from chatgpt_wrapper.main import VERSION
+VERSION="0.3.14"
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
