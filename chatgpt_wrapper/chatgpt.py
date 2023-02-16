@@ -128,7 +128,7 @@ class ChatGPT:
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": "text-davinci-002-render",
+            "model": "text-davinci-002-render-paid",
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",
@@ -221,13 +221,16 @@ class ChatGPT:
                 break
 
             if full_event_message is not None:
-                chunk = full_event_message[len(last_event_msg):]
+                chunk = full_event_message[len(last_event_msg) :]
                 last_event_msg = full_event_message
                 yield chunk
 
             # if we saw the eof signal, this was the last event we
             # should process and we are done
-            if len(eof_datas) > 0 or (((time.time() - start_time) > self.timeout) and full_event_message is None):
+            if len(eof_datas) > 0 or (
+                ((time.time() - start_time) > self.timeout)
+                and full_event_message is None
+            ):
                 break
 
             sleep(0.2)
@@ -369,7 +372,6 @@ class GPTShell(cmd.Cmd):
         return self.default(line)
 
     def default(self, line):
-
         if self.stream:
             response = ""
             first = True
@@ -402,7 +404,9 @@ class GPTShell(cmd.Cmd):
     def do_read(self, _):
         "`!read` begins reading multi-line input."
         ctrl_sequence = "^z" if is_windows else "^d"
-        self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
+        self._print_markdown(
+            f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end."
+        )
 
         if not is_windows:
             readline.set_auto_history(False)
@@ -487,10 +491,10 @@ class GPTShell(cmd.Cmd):
             if arg[0] == "!":
                 arg = arg[1:]
             try:
-                func = getattr(self, 'help_' + arg)
+                func = getattr(self, "help_" + arg)
             except AttributeError:
                 try:
-                    doc = getattr(self, 'do_' + arg).__doc__
+                    doc = getattr(self, "do_" + arg).__doc__
                     if doc:
                         self.stdout.write("%s\n" % str(doc))
                         return
@@ -505,32 +509,31 @@ class GPTShell(cmd.Cmd):
             cmds_undoc = []
             help = {}
             for name in names:
-                if name[:5] == 'help_':
+                if name[:5] == "help_":
                     help[name[5:]] = 1
             names.sort()
             # There can be duplicates if routines overridden
-            prevname = ''
+            prevname = ""
             for name in names:
-                if name[:3] == 'do_':
+                if name[:3] == "do_":
                     if name == prevname:
                         continue
                     prevname = name
                     cmd = name[3:]
                     if cmd in help:
-                        cmds_doc.append("!"+cmd)
+                        cmds_doc.append("!" + cmd)
                         del help[cmd]
                     elif getattr(self, name).__doc__:
-                        cmds_doc.append("!"+cmd)
+                        cmds_doc.append("!" + cmd)
                     else:
-                        cmds_undoc.append("!"+cmd)
+                        cmds_undoc.append("!" + cmd)
             self.stdout.write("%s\n" % str(self.doc_leader))
-            self.print_topics(self.doc_header,   cmds_doc,   15, 80)
-            self.print_topics(self.misc_header,  list(help.keys()), 15, 80)
+            self.print_topics(self.doc_header, cmds_doc, 15, 80)
+            self.print_topics(self.misc_header, list(help.keys()), 15, 80)
             self.print_topics(self.undoc_header, cmds_undoc, 15, 80)
 
 
 def main():
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--version",
@@ -545,8 +548,12 @@ def main():
         help="Use 'install' for install mode, or provide a prompt for ChatGPT.",
     )
     parser.add_argument(
-        "-n", "--no-stream", default=True, dest="stream", action="store_false",
-        help="disable streaming mode"
+        "-n",
+        "--no-stream",
+        default=True,
+        dest="stream",
+        action="store_false",
+        help="disable streaming mode",
     )
     parser.add_argument(
         "-l",
