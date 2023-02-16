@@ -110,7 +110,7 @@ class ChatGPT:
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": "text-davinci-002-render",
+            "model": "text-davinci-002-render-sha",
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",
