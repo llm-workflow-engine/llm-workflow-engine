@@ -4,6 +4,8 @@ import json
 import operator
 import time
 import uuid
+import os
+import shutil
 from functools import reduce
 from time import sleep
 from typing import Optional
@@ -30,12 +32,21 @@ class ChatGPT:
         except Exception:
             print(f"Browser {browser} is invalid, falling back on firefox")
             playbrowser = self.play.firefox
+        try:
+            self.browser = playbrowser.launch_persistent_context(
+                user_data_dir="/tmp/playwright",
+                headless=headless,
+                proxy=proxy,
+            )
+        except Exception:
+            self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
+            shutil.copytree("/tmp/playwright", self.user_data_dir)
+            self.browser = playbrowser.launch_persistent_context(
+                user_data_dir=self.user_data_dir,
+                headless=headless,
+                proxy=proxy,
+            )
 
-        self.browser = playbrowser.launch_persistent_context(
-            user_data_dir="/tmp/playwright",
-            headless=headless,
-            proxy=proxy,
-        )
         if len(self.browser.pages) > 0:
             self.page = self.browser.pages[0]
         else:
@@ -52,6 +63,9 @@ class ChatGPT:
 
     def _cleanup(self):
         self.browser.close()
+        # remove the user data dir in case this is a second instance
+        if hasattr(self, "user_data_dir"):
+            shutil.rmtree(self.user_data_dir)
         self.play.stop()
 
     def refresh_session(self):
