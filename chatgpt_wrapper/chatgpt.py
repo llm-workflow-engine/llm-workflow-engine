@@ -12,6 +12,11 @@ from typing import Optional
 from playwright.sync_api import sync_playwright
 from playwright._impl._api_structures import ProxySettings
 
+RENDER_MODELS = {
+    "default": "text-davinci-002-render-sha",
+    "legacy": "text-davinci-002-render-paid",
+}
+
 
 class ChatGPT:
     """
@@ -24,7 +29,7 @@ class ChatGPT:
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    def __init__(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
+    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, proxy: Optional[ProxySettings] = None):
         self.play = sync_playwright().start()
 
         try:
@@ -55,6 +60,7 @@ class ChatGPT:
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.session = None
+        self.model = model
         self.timeout = timeout
         atexit.register(self._cleanup)
 
@@ -124,7 +130,7 @@ class ChatGPT:
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": "text-davinci-002-render-sha",
+            "model": RENDER_MODELS[self.model],
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",

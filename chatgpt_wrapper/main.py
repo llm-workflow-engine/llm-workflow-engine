@@ -37,6 +37,13 @@ def main():
         action="store",
         help="set preferred browser; 'firefox' 'chromium' or 'webkit'",
     )
+    parser.add_argument(
+        "-m",
+        "--model",
+        choices=['default', 'legacy'],
+        action="store",
+        help="set preferred model",
+    )
     args = parser.parse_args()
     install_mode = len(args.params) == 1 and args.params[0] == "install"
 
@@ -47,7 +54,11 @@ def main():
             "this program without the 'install' parameter.\n"
         )
 
-    extra_kwargs = {} if args.browser is None else {"browser": args.browser}
+    extra_kwargs = {}
+    if args.browser is not None:
+        extra_kwargs["browser"] = args.browser
+    if args.model is not None:
+        extra_kwargs["model"] = args.model
     chatgpt = ChatGPT(headless=not install_mode, timeout=90, **extra_kwargs)
 
     shell = GPTShell()
