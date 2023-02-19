@@ -122,6 +122,11 @@ class ChatGPT:
         response = self.page.request.post(url, headers=headers, data=data)
         return response
 
+    def _api_patch_request(self, url, data={}, custom_headers={}):
+        headers = self._api_request_build_headers(custom_headers)
+        response = self.page.request.patch(url, headers=headers, data=data)
+        return response
+
     def _set_title(self):
         if not self.conversation_id or self.conversation_id and self.conversation_title_set:
             return
@@ -137,6 +142,17 @@ class ChatGPT:
             self.conversation_title_set = True
         else:
             raise urllib.error.HttpError("Set title request failed with status code: %s, status message: %s\n" % (response.status, response.status_text))
+
+    def delete_conversation(self):
+        if not self.conversation_id:
+            return
+        url = f"https://chat.openai.com/backend-api/conversation/{self.conversation_id}"
+        data = {
+            "is_visible": False,
+        }
+        response = self._api_patch_request(url, data)
+        if not response.ok:
+            raise urllib.error.HttpError("Delete conversation request failed for conversation %s with status code: %s, status message: %s\n" % (self.conversation_id, response.status, response.status_text))
 
     def ask_stream(self, prompt: str):
         if self.session is None:
