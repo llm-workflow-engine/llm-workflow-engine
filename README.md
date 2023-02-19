@@ -10,11 +10,11 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
 
 ## Updates
-- 17/02/2022: v0.3.16 - Ability to open **multiple sessions in parallel**. Code now works with **ChatGPT Plus** subscription.
-- 14/02/2022: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model)
-- 14/02/2022: v0.3.11 - Fixed many bugs with installation. Code is refactored. Now able to use the python wrapper with a proxy.
-- 18/01/2022: v0.3.8 - Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
-- 17/01/2022: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
+- 17/02/2023: v0.3.16 - Ability to open **multiple sessions in parallel**. Code now works with **ChatGPT Plus** subscription.
+- 14/02/2023: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model)
+- 14/02/2023: v0.3.11 - Fixed many bugs with installation. Code is refactored. Now able to use the python wrapper with a proxy.
+- 18/01/2023: v0.3.8 - Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
+- 17/01/2023: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
 
 ## How it works
 
