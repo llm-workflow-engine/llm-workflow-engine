@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  chatgpt-wrapper:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: chatgpt-wrapper-container
+    restart: always
+    volumes:
+      - ./:/src
+    environment:
+      - VNC_RESOLUTION=1600x900
+    ports:
+      - 6901:6901 # Just for logging in with noVNC
+    command: "bash /src/docker-entrypoint.sh" # Run the entrypoint script
+
