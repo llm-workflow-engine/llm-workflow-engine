@@ -15,7 +15,8 @@ from playwright._impl._api_structures import ProxySettings
 
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
-    "legacy": "text-davinci-002-render-paid",
+    "legacy-paid": "text-davinci-002-render-paid",
+    "legacy-free": "text-davinci-002-render"
 }
 
 
@@ -141,7 +142,8 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            raise urllib.error.HttpError("Set title request failed with status code: %s, status message: %s\n" % (response.status, response.status_text))
+            raise urllib.error.HttpError("Set title request failed with status code: %s, status message: %s\n" % (
+                response.status, response.status_text))
 
     def delete_conversation(self):
         if not self.conversation_id:
@@ -152,7 +154,8 @@ class ChatGPT:
         }
         response = self._api_patch_request(url, data)
         if not response.ok:
-            raise urllib.error.HttpError("Delete conversation request failed for conversation %s with status code: %s, status message: %s\n" % (self.conversation_id, response.status, response.status_text))
+            raise urllib.error.HttpError("Delete conversation request failed for conversation %s with status code: %s, status message: %s\n" % (
+                self.conversation_id, response.status, response.status_text))
 
     def ask_stream(self, prompt: str):
         if self.session is None:

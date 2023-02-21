@@ -40,9 +40,16 @@ def main():
     parser.add_argument(
         "-m",
         "--model",
-        choices=['default', 'legacy'],
+        choices=['default', 'legacy-paid', 'legacy-free'],
         action="store",
         help="set preferred model",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="enable debug mode in which the browser window is not hidden",
     )
     args = parser.parse_args()
     install_mode = len(args.params) == 1 and args.params[0] == "install"
@@ -59,7 +66,7 @@ def main():
         extra_kwargs["browser"] = args.browser
     if args.model is not None:
         extra_kwargs["model"] = args.model
-    chatgpt = ChatGPT(headless=not install_mode, timeout=90, **extra_kwargs)
+    chatgpt = ChatGPT(headless=not (install_mode or args.debug), timeout=90, **extra_kwargs)
 
     shell = GPTShell()
     shell._set_chatgpt(chatgpt)
