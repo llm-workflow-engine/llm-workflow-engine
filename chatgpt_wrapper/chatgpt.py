@@ -245,7 +245,112 @@ class AsyncChatGPT:
 
         await self._cleanup_divs()
 
-        self._cleanup_divs()
+    async def my_ask_stream(self, prompt: str):
+        if self.session is None:
+            print("Refreshing session...")
+            await self.refresh_session()
+            print("Session refreshed")
+
+        new_message_id = str(uuid.uuid4())
+
+        if "accessToken" not in self.session:
+            yield (
+                "Your ChatGPT session is not usable.\n"
+                "* Run this program with the `install` parameter and log in to ChatGPT.\n"
+                "* If you think you are already logged in, try running the `session` command."
+            )
+            return
+
+        prompt=prompt.replace('\n','\\n')
+
+        code = (
+            f"""
+            let bottom=document.getElementsByTagName("textarea")[0].parentElement
+            let textbox=bottom.children[0]
+            let ask_btn=bottom.children[1]
+
+            textbox.value="{prompt}"
+
+
+            ask_btn.click()
+            setTimeout(function(){{
+                let answers=document.getElementsByClassName("bg-gray-50")
+                let answer=answers[answers.length-1]
+
+                let response_store = document.createElement('div')
+                response_store.id = "{self.stream_div_id}"
+                response_store.innerHTML = answer.innerText
+                document.body.appendChild(response_store)
+
+                let check_done=function(){{
+                    let outer_judges=answer.getElementsByClassName("justify-between")[0]
+                    let inner_judges=outer_judges.getElementsByTagName("div")[0]
+                    if(inner_judges.classList.contains("visible")){{
+                        // Done
+                        let done_sign=document.createElement('div')
+                        response_store.innerHTML = answer.innerText
+                        done_sign.id="{self.eof_div_id}"
+                        document.body.appendChild(done_sign)
+                    }}else{{
+                        // Not done yet
+                        response_store.innerHTML = answer.innerText
+                        setTimeout(check_done,200)
+                    }}
+                }}
+
+                check_done()
+            }},100)
+            """
+        )
+
+        try:
+            await self.page.evaluate(code)
+        except playwright._impl._api_types.Error:
+            print("Error detected when sending request")
+            await self.page.reload()
+            await asyncio.sleep(10)
+            async for i in self.my_ask_stream(prompt):
+                yield i
+            return
+
+        await asyncio.sleep(0.1) # Wait for response container to be created
+
+        last_event_msg = ""
+        start_time = time.time()
+        print('< ',end='',flush=True)
+        while True:
+            eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
+
+            response_container = await self.page.query_selector_all(
+                f"div#{self.stream_div_id}"
+            )
+            response=await response_container[0].inner_text()
+            response=response.replace('\u200b','')
+
+            if len(response) > 0:
+                chunk = response[len(last_event_msg):]
+                last_event_msg = response
+                print(chunk,end='',flush=True)
+
+                if 'An error occurred. If this issue persists please contact us through' in response or\
+                    'The server had an error while processing your request.' in response:
+                    print("Error detected when receiving response")
+                    await self.page.reload()
+                    await asyncio.sleep(10)
+                    async for i in self.my_ask_stream(prompt):
+                        yield i
+                    return
+                yield chunk
+
+            # if we saw the eof signal, this was the last event we
+            # should process and we are done
+            if len(eof_datas) > 0 or (((time.time() - start_time) > self.timeout) and response!=""):
+                break
+
+            await asyncio.sleep(0.2)
+
+        await self._cleanup_divs()
+
 
     async def ask(self, message: str) -> str:
         """
