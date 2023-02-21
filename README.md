@@ -16,6 +16,7 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
   - @thehunmonkgroup Added !delete command to remove/hide conversations
   - @thehunmonkgroup Added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
   - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT
+  - @thehunmonkgroup added !history command to show the list of the last 20 conversations
 - 17/02/2023: v0.3.16
   - Ability to open **multiple sessions in parallel**.
   - Code now works with **ChatGPT Plus** subscription.
@@ -84,6 +85,7 @@ In addition to directly prompting ChatGPT, The shell provides the following comm
 * `!session` refreshes your session information.  This can resolve errors under certain scenarios.
 * `!delete` deletes the current conversation from the webview
 * `!editor` opens the current prompt in the default editor (as defined by the EDITOR environment variable) and allows you to edit it.  The edited prompt is then sent to ChatGPT.
+* `!history` command shows the list of last 20 conversations
 
 Command arguments can be passed in the following ways:
 * --debug: enables debug mode (visible browser window)
