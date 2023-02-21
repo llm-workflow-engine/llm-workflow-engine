@@ -74,6 +74,32 @@ class GPTShell(cmd.Cmd):
             )
             self.logfile.flush()
 
+    def _parse_conversation_ids(self, string):
+        items = [item.strip() for item in string.split(',')]
+        final_list = []
+        for item in items:
+            if len(item) == 36:
+                final_list.append(item)
+            else:
+                sub_items = item.split('-')
+                try:
+                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= 20]
+                except ValueError:
+                    return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
+                if len(sub_items) == 1:
+                    final_list.extend(sub_items)
+                elif len(sub_items) == 2 and sub_items[0] < sub_items[1]:
+                    final_list.extend(list(range(sub_items[0], sub_items[1] + 1)))
+                else:
+                    return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
+        return list(set(final_list))
+
+    def _delete_conversation(self, id, label=None):
+        label = label or id
+        self._print_markdown("* Deleting conversation: %s" % label)
+        self.chatgpt.delete_conversation(id)
+        self._print_markdown("* Deleted conversation: %s" % label)
+
     def emptyline(self):
         """
         override cmd.Cmd.emptyline so it does not repeat
@@ -95,16 +121,36 @@ class GPTShell(cmd.Cmd):
         self._update_message_map()
         self._write_log_context()
 
-    def do_delete(self, _):
-        "`!delete` deletes current conversation from history, and starts a new conversation."
-        self.chatgpt.delete_conversation()
-        self._print_markdown("* Deleted current conversation.")
-        self.do_new(_)
+    def do_delete(self, arg):
+        "`!delete` delete a conversation from history by id, or current conversation. Example: `!delete 1,3-5` or `` or !delete`"
+        if arg:
+            result = self._parse_conversation_ids(arg)
+            if isinstance(result, list):
+                self._print_markdown("* Fetching conversation history...")
+                history = self.chatgpt.get_history()
+                history_list = [h for h in history.values()]
+                for item in result:
+                    if isinstance(item, str) and len(item) == 36:
+                        self._delete_conversation(item)
+                    else:
+                        if item <= len(history_list):
+                            conversation = history_list[item - 1]
+                            self._delete_conversation(conversation['id'], conversation['title'])
+                        else:
+                            self._print_markdown("* Cannont delete history item %d, does not exist" % item)
+            else:
+                self._print_markdown(result)
+        else:
+            self._print_markdown("* Deleting current conversation")
+            self.chatgpt.delete_conversation()
+            self._print_markdown("* Deleted current conversation")
+            self.do_new(None)
 
     def do_history(self, _):
         "`!history` show recent conversation history, last 20 conversations."
         history = self.chatgpt.get_history()
-        self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history['items']]))
+        history_list = [h for h in history.values()]
+        self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
 
     def do_nav(self, arg):
         "`!nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
