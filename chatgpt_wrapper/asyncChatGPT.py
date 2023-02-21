@@ -1,4 +1,4 @@
-"""ChatGPT and AsyncChatGPT classes
+""" AsyncChatGPT class
 """
 import atexit
 import base64
