@@ -247,7 +247,7 @@ class AsyncChatGPT:
 
         self._cleanup_divs()
 
-    def ask(self, message: str) -> str:
+    async def ask(self, message: str) -> str:
         """
         Send a message to chatGPT and return the response.
 
