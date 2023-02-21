@@ -8,9 +8,9 @@ services:
     restart: always
     volumes:
       - ./:/src
+      - ./tmp:/tmp
     environment:
       - VNC_RESOLUTION=1600x900
     ports:
       - 6901:6901 # Just for logging in with noVNC
     command: "bash /src/docker-entrypoint.sh" # Run the entrypoint script
-
