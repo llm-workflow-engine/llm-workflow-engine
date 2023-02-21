@@ -6,6 +6,7 @@ import time
 import uuid
 import os
 import shutil
+import urllib
 from functools import reduce
 from time import sleep
 from typing import Optional
@@ -59,6 +60,7 @@ class ChatGPT:
         self._start_browser()
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
+        self.conversation_title_set = None
         self.session = None
         self.model = model
         self.timeout = timeout
@@ -107,6 +109,50 @@ class ChatGPT:
     def _cleanup_divs(self):
         self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
         self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+
+    def _api_request_build_headers(self, custom_headers={}):
+        headers = {
+            "Authorization": "Bearer %s" % self.session["accessToken"],
+        }
+        headers.update(custom_headers)
+        return headers
+
+    def _api_post_request(self, url, data={}, custom_headers={}):
+        headers = self._api_request_build_headers(custom_headers)
+        response = self.page.request.post(url, headers=headers, data=data)
+        return response
+
+    def _api_patch_request(self, url, data={}, custom_headers={}):
+        headers = self._api_request_build_headers(custom_headers)
+        response = self.page.request.patch(url, headers=headers, data=data)
+        return response
+
+    def _set_title(self):
+        if not self.conversation_id or self.conversation_id and self.conversation_title_set:
+            return
+        url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
+        data = {
+            "message_id": self.parent_message_id,
+            "model": RENDER_MODELS[self.model],
+        }
+        response = self._api_post_request(url, data)
+        if response.ok:
+            # TODO: Do we want to do anything with the title we got back?
+            # response_data = response.json()
+            self.conversation_title_set = True
+        else:
+            raise urllib.error.HttpError("Set title request failed with status code: %s, status message: %s\n" % (response.status, response.status_text))
+
+    def delete_conversation(self):
+        if not self.conversation_id:
+            return
+        url = f"https://chat.openai.com/backend-api/conversation/{self.conversation_id}"
+        data = {
+            "is_visible": False,
+        }
+        response = self._api_patch_request(url, data)
+        if not response.ok:
+            raise urllib.error.HttpError("Delete conversation request failed for conversation %s with status code: %s, status message: %s\n" % (self.conversation_id, response.status, response.status_text))
 
     def ask_stream(self, prompt: str):
         if self.session is None:
@@ -235,6 +281,7 @@ class ChatGPT:
             sleep(0.2)
 
         self._cleanup_divs()
+        self._set_title()
 
     def ask(self, message: str) -> str:
         """
@@ -256,3 +303,4 @@ class ChatGPT:
     def new_conversation(self):
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
+        self.conversation_title_set = None

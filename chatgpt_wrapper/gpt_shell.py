@@ -93,6 +93,12 @@ class GPTShell(cmd.Cmd):
         self._update_message_map()
         self._write_log_context()
 
+    def do_delete(self, _):
+        "`!delete` deletes current conversation from history, and starts a new conversation."
+        self.chatgpt.delete_conversation()
+        self._print_markdown("* Deleted current conversation.")
+        self.do_new(_)
+
     def do_nav(self, arg):
         "`!nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
 
