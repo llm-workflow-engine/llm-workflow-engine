@@ -116,6 +116,23 @@ You may also stream the response as it comes in from ChatGPT in chunks using the
   - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
   - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
 
+## Docker for testing
+
+> Already tested on `x86/64`.
+
+Build a image for testing `chatgpt-wrapper` with following commands.
+
+```bash
+docker-compose build && docker-compose up -d
+docker exec -it chatgpt-wrapper-container /bin/bash -c "chatgpt install"
+```
+
+Then, visit http://localhost:6901/vnc.html with password `headless` and login ChatGPT.
+
+Then, turn back to terminal and enjoy the chat!
+
+![chat](https://i.imgur.com/nRlzUzm.png)
+
 ## Contributing
 
 We welcome contributions to ChatGPT Wrapper! If you have an idea for a new feature or have found a bug, please open an issue on the GitHub repository.
