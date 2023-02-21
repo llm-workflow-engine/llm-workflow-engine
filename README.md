@@ -117,9 +117,7 @@ You may also stream the response as it comes in from ChatGPT in chunks using the
   - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
   - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
 
-## Docker for testing
-
-> Already tested on `x86/64`.
+## Docker
 
 Build a image for testing `chatgpt-wrapper` with following commands.
 
