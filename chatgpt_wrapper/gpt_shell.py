@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 import datetime
+import subprocess
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -200,6 +201,21 @@ class GPTShell(cmd.Cmd):
             readline.add_history(prompt)
 
         self.default(prompt)
+
+    def do_editor(self, args):
+        "`!editor` Open an editor for entering a command (requires `vipe` executable). `!editor some default text`"
+        try:
+            process = subprocess.Popen(['vipe'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            self._print_markdown(
+                "Failed to execute `vipe`, must be installed and in path. Install package `moreutils`. `brew install moreutils` on macOS and `apt install moreutils` on Ubuntu.")
+            return
+        process.stdin.write(args.encode())
+        process.stdin.close()
+        process.wait()
+        output = process.stdout.read().decode()
+        print(output)
+        self.default(output)
 
     def do_file(self, arg):
         "`!file` sends a prompt read from the named file.  Example: `file myprompt.txt`"
