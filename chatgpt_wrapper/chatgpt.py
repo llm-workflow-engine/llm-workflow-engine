@@ -6,14 +6,18 @@ import time
 import uuid
 import os
 import shutil
+import asyncio
+import datetime
 from functools import reduce
 from time import sleep
 from typing import Optional
+import playwright
 from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
 
-class ChatGPT:
+class AsyncChatGPT:
     """
     A ChatGPT interface that uses Playwright to run a browser,
     and interacts with that browser to communicate with ChatGPT in
@@ -23,9 +27,12 @@ class ChatGPT:
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
+    lock=asyncio.Lock()
 
-    def __init__(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
-        self.play = sync_playwright().start()
+    @classmethod
+    async def create(cls, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None, instance = None):
+        self=cls() if instance==None else instance
+        self.play = await async_playwright().start()
 
         try:
             playbrowser = getattr(self.play, browser)
@@ -33,7 +40,7 @@ class ChatGPT:
             print(f"Browser {browser} is invalid, falling back on firefox")
             playbrowser = self.play.firefox
         try:
-            self.browser = playbrowser.launch_persistent_context(
+            self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir="/tmp/playwright",
                 headless=headless,
                 proxy=proxy,
@@ -41,7 +48,7 @@ class ChatGPT:
         except Exception:
             self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
             shutil.copytree("/tmp/playwright", self.user_data_dir)
-            self.browser = playbrowser.launch_persistent_context(
+            self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir=self.user_data_dir,
                 headless=headless,
                 proxy=proxy,
@@ -50,26 +57,28 @@ class ChatGPT:
         if len(self.browser.pages) > 0:
             self.page = self.browser.pages[0]
         else:
-            self.page = self.browser.new_page()
-        self._start_browser()
+            self.page = await self.browser.new_page()
+        await self._start_browser()
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.session = None
         self.timeout = timeout
         atexit.register(self._cleanup)
 
-    def _start_browser(self):
-        self.page.goto("https://chat.openai.com/")
+        return self
 
-    def _cleanup(self):
-        self.browser.close()
+    async def _start_browser(self):
+        await self.page.goto("https://chat.openai.com/")
+
+    async def _cleanup(self):
+        await self.browser.close()
         # remove the user data dir in case this is a second instance
         if hasattr(self, "user_data_dir"):
             shutil.rmtree(self.user_data_dir)
-        self.play.stop()
+        await self.play.stop()
 
-    def refresh_session(self):
-        self.page.evaluate(
+    async def refresh_session(self,timeout=20):
+        await self.page.evaluate(
             """
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://chat.openai.com/api/auth/session');
@@ -91,20 +100,20 @@ class ChatGPT:
             session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
             if len(session_datas) > 0:
                 break
-            sleep(0.2)
+            await asyncio.sleep(0.2)
 
-        session_data = json.loads(session_datas[0].inner_text())
+        session_data = json.loads(await session_datas[0].inner_text())
         self.session = session_data
 
-        self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
+        await self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
 
-    def _cleanup_divs(self):
-        self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
-        self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+    async def _cleanup_divs(self):
+        await self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
+        await self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
-    def ask_stream(self, prompt: str):
+    async def ask_stream(self, prompt: str):
         if self.session is None:
-            self.refresh_session()
+            await self.refresh_session()
 
         new_message_id = str(uuid.uuid4())
 
@@ -181,15 +190,21 @@ class ChatGPT:
             .replace("STREAM_DIV_ID", self.stream_div_id)
             .replace("EOF_DIV_ID", self.eof_div_id)
         )
-
-        self.page.evaluate(code)
+        try:
+            await self.page.evaluate(code)
+        except playwright.__impl._api_types.Error:
+            print("Error detected when sending request")
+            await self.refresh_session()
+            async for i in self.ask_stream(prompt):
+                yield i
+            return
 
         last_event_msg = ""
         start_time = time.time()
         while True:
-            eof_datas = self.page.query_selector_all(f"div#{self.eof_div_id}")
+            eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
 
-            conversation_datas = self.page.query_selector_all(
+            conversation_datas = await self.page.query_selector_all(
                 f"div#{self.stream_div_id}"
             )
             if len(conversation_datas) == 0:
@@ -198,7 +213,7 @@ class ChatGPT:
             full_event_message = None
 
             try:
-                event_raw = base64.b64decode(conversation_datas[0].inner_html())
+                event_raw = base64.b64decode(await conversation_datas[0].inner_html())
                 if len(event_raw) > 0:
                     event = json.loads(event_raw)
                     if event is not None:
@@ -226,7 +241,9 @@ class ChatGPT:
             if len(eof_datas) > 0 or (((time.time() - start_time) > self.timeout) and full_event_message is None):
                 break
 
-            sleep(0.2)
+            await asyncio.sleep(0.2)
+
+        await self._cleanup_divs()
 
         self._cleanup_divs()
 
@@ -240,13 +257,43 @@ class ChatGPT:
         Returns:
             str: The response received from OpenAI.
         """
-        response = list(self.ask_stream(message))
-        return (
-            reduce(operator.add, response)
-            if len(response) > 0
-            else "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
-        )
+        async with self.lock:
+            response = list([i async for i in self.ask_stream(message)])
+            if len(response)!=0:
+                return ''.join(response)
+        # Else: retry
+        await self.refresh_session()
+        response=await self.ask(message)
+        return response
 
-    def new_conversation(self):
+    async def new_conversation(self):
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
+
+
+class ChatGPT(AsyncChatGPT):
+    def __init__(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
+        asyncio.run(super().create(headless, browser, timeout, proxy,self))
+    def refresh_session(self):
+        return asyncio.run(super().refresh_session())
+    def ask_stream(self,prompt:str):
+        def iter_over_async(ait):
+            loop=asyncio.get_event_loop()
+            ait = ait.__aiter__()
+            async def get_next():
+                try:
+                    obj = await ait.__anext__()
+                    return False, obj
+                except StopAsyncIteration:
+                    return True, None
+            while True:
+                done, obj = loop.run_until_complete(get_next())
+                if done:
+                    break
+                yield obj
+        yield from iter_over_async(super().ask_stream(prompt))
+    def ask(self,message:str) -> str:
+        return asyncio.run(super().ask(message))
+
+    def new_conversation(self):
+        return asyncio.run(super().new_conversation())
