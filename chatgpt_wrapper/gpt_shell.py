@@ -137,6 +137,8 @@ class GPTShell(cmd.Cmd):
         return self.default(line)
 
     def default(self, line):
+        if not line:
+            return
 
         if self.stream:
             response = ""
