@@ -6,11 +6,11 @@ import json
 import time
 import uuid
 import shutil
+import asyncio
 import datetime
 import logging
-import threading
 from typing import Optional
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 # from . import error
 import error
@@ -19,7 +19,8 @@ logging.basicConfig(format='[%(asctime)s] %(message)s', datefmt='%I:%M:%S %p')
 logger=logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class ChatGPT:
+
+class AsyncChatGPT:
     """
     A ChatGPT interface that uses Playwright to run a browser,
     and interacts with that browser to communicate with ChatGPT in
@@ -30,18 +31,48 @@ class ChatGPT:
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
     error_div_id = "chatgpt-wrapper-error-data"
-    lock=threading.Lock()
+    lock=asyncio.Lock()
 
-    def __init__(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None, instance = None):
+    def __init__(self):
         """Set some attributes, so that linter doesn't complain about setting attributes outside __init__.
-        Should not be called. Use the create instead.
+        Should not be called. Use the async create instead.
         For sync methods, use the ChatGPT class.
 
         Returns:
             None
         """
+        self.play = None
+        self.browser=None
+        self.page=None
+        self.parent_message_id=None
+        self.conversation_id=None
+        self.session=None
+        self.timeout=None
+        self.user_data_dir=None
 
-        self.play = sync_playwright().start()
+    @classmethod
+    async def create(cls, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None, instance = None):
+        """Factory method to create an AsyncChatGPT asynchronously
+
+        Args:
+            headless (bool, optional): Start headless (no GUI) browser. Defaults to True.
+            browser (str, optional): Which browser to use. Defaults to "firefox".
+            timeout (int, optional): Timeout waiting for ChatGPT to generate message. Defaults to 60.
+            proxy (Optional[ProxySettings], optional): Network proxy. Will be passwd to playwright. Defaults to None.
+            instance (object, optional): If you already have an instance, pass it here. Used in the synchronous API. When set to None, create a new one. Defaults to None.
+
+        Returns:
+            AsyncChatGPT: The AsyncChatGPT object
+        """
+        self=cls() if instance is None else instance
+        await self.init(headless=headless,browser=browser,timeout=timeout,proxy=proxy)
+        return self
+    async def init(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
+        """Don't use this. Use ChatGPT.create()
+
+        This exists so that linter wouldn't complain about accessing protected members.
+        """
+        self.play = await async_playwright().start()
 
         try:
             playbrowser = getattr(self.play, browser)
@@ -50,7 +81,7 @@ class ChatGPT:
             playbrowser = self.play.firefox
 
         try:
-            self.browser = playbrowser.launch_persistent_context(
+            self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir="/tmp/playwright",
                 headless=headless,
                 proxy=proxy,
@@ -59,7 +90,7 @@ class ChatGPT:
             self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
             logger.warning(f"Failed to launch browser at /tmp/playwright. Launching at {self.user_data_dir}")
             shutil.copytree("/tmp/playwright", self.user_data_dir)
-            self.browser = playbrowser.launch_persistent_context(
+            self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir=self.user_data_dir,
                 headless=headless,
                 proxy=proxy,
@@ -68,8 +99,8 @@ class ChatGPT:
         if len(self.browser.pages) > 0:
             self.page = self.browser.pages[0]
         else:
-            self.page = self.browser.new_page()
-        self._start_browser()
+            self.page = await self.browser.new_page()
+        await self._start_browser()
         js_logger=logging.getLogger("js console")
         js_logger.setLevel(logging.INFO)
         def js_log(msg):
@@ -85,22 +116,24 @@ class ChatGPT:
         self.timeout = timeout
         atexit.register(self._cleanup)
 
-    def _start_browser(self):
-        self.page.goto("https://chat.openai.com/")
+        return self
 
-    def _cleanup(self):
-        self.browser.close()
+    async def _start_browser(self):
+        await self.page.goto("https://chat.openai.com/")
+
+    async def _cleanup(self):
+        await self.browser.close()
         # remove the user data dir in case this is a second instance
         if hasattr(self, "user_data_dir"):
             shutil.rmtree(self.user_data_dir)
-        self.play.stop()
+        await self.play.stop()
 
-    def refresh_session(self,timeout=20,remaining_retry=5):
+    async def async_refresh_session(self,timeout=20,remaining_retry=5):
         logger.info("Refreshing session")
         if remaining_retry==0:
             logger.error("Cannot refresh session. ")
             raise error.NetworkError("Cannot refresh session. ")
-        self.page.evaluate(
+        await self.page.evaluate(
             """
             const xhr = new XMLHttpRequest();
             xhr.open('GET', 'https://chat.openai.com/api/auth/session');
@@ -112,7 +145,7 @@ class ChatGPT:
                     document.body.appendChild(mydiv);
                 }else{
                     let err = document.createElement('div')
-                    err.id=ERROR_DIV_ID
+                    err.id="ERROR_DIV_ID"
                     console.error(xhr)
                     document.body.appendChild(err)
                 }
@@ -124,42 +157,42 @@ class ChatGPT:
         )
         starttime=datetime.datetime.now()
         while (datetime.datetime.now()-starttime).total_seconds()<=timeout:
-            session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
-            error_datas = self.page.query_selector_all(f"div#{self.error_div_id}")
+            session_datas = await self.page.query_selector_all(f"div#{self.session_div_id}")
+            error_datas = await self.page.query_selector_all(f"div#{self.error_div_id}")
             if len(session_datas) > 0:
-                session_data = json.loads(session_datas[0].inner_text())
+                session_data = json.loads(await session_datas[0].inner_text())
                 self.session = session_data
-                self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
+                await self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
                 return
 
-            elif len(error_datas) > 0:
+            if len(error_datas) > 0:
                 logger.warning("Refreshing session failed. Retrying...")
-                self.page.evaluate(f"document.getElementById('{self.error_div_id}').remove()")
+                await self.page.evaluate(f"document.getElementById('{self.error_div_id}').remove()")
                 # break and retry
                 break
-            time.sleep(0.2)
+            await asyncio.sleep(0.2)
         else:
             logging.warning("Refreshing session timed out. Retrying...")
 
         # Try again
-        self.refresh_session(remaining_retry=remaining_retry-1)
+        await self.async_refresh_session(remaining_retry=remaining_retry-1)
         return
 
 
 
-    def _cleanup_divs(self):
+    async def _cleanup_divs(self):
         try:
-            self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
-            self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+            await self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
+            await self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
         except Exception as err:
             logger.error("Failed to clean up divs: \n%s", err.with_traceback())
 
-    def ask_stream(self, prompt: str, remaining_retry=5):
+    async def async_ask_stream(self, prompt: str, remaining_retry=5):
         """Ask ChatGPT something by sending XHR requests. Response is streamed
 
         Example:
         ```python3
-        for chunk in gpt.ask_stream("Good night!"):
+        async for chunk in gpt.ask_stream("Good night!"):
             # chunk will be, for example, one or a few words
             print(chunk,end='',flush=True)
         ```
@@ -178,7 +211,7 @@ class ChatGPT:
             logger.error("Cannot communicate with ChatGPT. ")
             raise error.NetworkError("Cannot communicate with ChatGPT.")
         if self.session is None:
-            self.refresh_session()
+            await self.async_refresh_session()
 
         new_message_id = str(uuid.uuid4())
 
@@ -256,11 +289,11 @@ class ChatGPT:
             .replace("EOF_DIV_ID", self.eof_div_id)
         )
         try:
-            self.page.evaluate(code)
+            await self.page.evaluate(code)
         except Exception as err:
             logger.warning("Error occurred when asking ChatGPT (Retrying...): %s",err.with_traceback())
-            self.refresh_session()
-            for i in self.ask_stream(prompt):
+            await self.async_refresh_session()
+            async for i in self.async_ask_stream(prompt):
                 yield i
             return
 
@@ -268,9 +301,9 @@ class ChatGPT:
         start_time = time.time()
         full_event_message = None
         while time.time() - start_time <= self.timeout or full_event_message != None:
-            eof_datas = self.page.query_selector_all(f"div#{self.eof_div_id}")
+            eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
 
-            conversation_datas = self.page.query_selector_all(
+            conversation_datas = await self.page.query_selector_all(
                 f"div#{self.stream_div_id}"
             )
             if len(conversation_datas) == 0:
@@ -279,7 +312,7 @@ class ChatGPT:
             full_event_message = None
 
             try:
-                event_raw = base64.b64decode(conversation_datas[0].inner_html())
+                event_raw = base64.b64decode(await conversation_datas[0].inner_html())
                 if len(event_raw) > 0:
                     event = json.loads(event_raw)
                     if event is not None:
@@ -308,23 +341,23 @@ class ChatGPT:
             if len(eof_datas)>0:
                 break
 
-            time.sleep(0.2)
+            await asyncio.sleep(0.2)
         else:
             # Timeout
             logger.error("Timeout when asking ChatGPT. Retrying...")
-            self.refresh_session()
-            for chunk in self.ask_stream(prompt=prompt,remaining_retry=remaining_retry-1):
+            await self.async_refresh_session()
+            async for chunk in self.async_ask_stream(prompt=prompt,remaining_retry=remaining_retry-1):
                 yield chunk
             return
 
-        self._cleanup_divs()
+        await self._cleanup_divs()
 
-    def ask_stream_clicking(self, prompt: str, remaining_retry=5):
+    async def async_ask_stream_clicking(self, prompt: str, remaining_retry=5):
         """Ask ChatGPT by clicking the buttons on the website. Response is streamed.
 
         Example:
         ```python3
-        for chunk in gpt.ask_stream("Good night!"):
+        async for chunk in gpt.ask_stream("Good night!"):
             # chunk will be, for example, one or a few words
             print(chunk,end='',flush=True)
         ```
@@ -343,7 +376,7 @@ class ChatGPT:
             logger.error("Cannot ask ChatGPT. ")
             raise error.NetworkError("Cannot ask ChatGPT. ")
         if self.session is None:
-            self.refresh_session()
+            await self.async_refresh_session()
 
         if "accessToken" not in self.session:
             logger.error("Session not usable. You need to log in. ")
@@ -396,26 +429,26 @@ class ChatGPT:
         )
 
         try:
-            self.page.evaluate(code)
+            await self.page.evaluate(code)
         except Exception as err:
             logger.warning("Error occurred when asking ChatGPT (Retrying...): %s",err.with_traceback())
-            self.refresh_session()
-            for i in self.ask_stream_clicking(prompt):
+            await self.async_refresh_session()
+            async for i in self.async_ask_stream_clicking(prompt):
                 yield i
             return
 
-        time.sleep(0.3) # Wait for response container to be created
+        await asyncio.sleep(0.3) # Wait for response container to be created
 
         last_event_msg = ""
         start_time = time.time()
         response=""
         while time.time() - start_time <= self.timeout or response!="":
-            eof_datas = self.page.query_selector_all(f"div#{self.eof_div_id}")
+            eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
 
-            response_container = self.page.query_selector_all(
+            response_container = await self.page.query_selector_all(
                 f"div#{self.stream_div_id}"
             )
-            response=response_container[0].inner_text()
+            response=await response_container[0].inner_text()
             response=response.replace('\u200b','')
 
             if len(response) > 0:
@@ -428,9 +461,9 @@ class ChatGPT:
                     print("Error detected when receiving response")
                     logger.error("ChatGPT gave an Error (Retrying...): %s",response)
                     # TODO: Choose the right conversation
-                    self.page.reload()
-                    time.sleep(10)
-                    for i in self.ask_stream_clicking(prompt,remaining_retry=remaining_retry-1):
+                    await self.page.reload()
+                    await asyncio.sleep(10)
+                    async for i in self.async_ask_stream_clicking(prompt,remaining_retry=remaining_retry-1):
                         yield i
                     return
 
@@ -442,20 +475,20 @@ class ChatGPT:
             if len(eof_datas) > 0:
                 break
 
-            time.sleep(0.2)
+            await asyncio.sleep(0.2)
         else:
             # Timeout
             logger.error("Timed out waiting for ChatGPT response. ")
-            self.page.reload()
-            time.sleep(10)
-            for i in self.ask_stream_clicking(prompt,remaining_retry=remaining_retry-1):
+            await self.page.reload()
+            await asyncio.sleep(10)
+            async for i in self.async_ask_stream_clicking(prompt,remaining_retry=remaining_retry-1):
                 yield i
             return
 
-        self._cleanup_divs()
+        await self._cleanup_divs()
 
 
-    def ask(self, message: str, remaining_retry=5) -> str:
+    async def async_ask(self, message: str, remaining_retry=5) -> str:
         """
         Send a message to chatGPT and return the response.
 
@@ -469,29 +502,32 @@ class ChatGPT:
         if remaining_retry==0:
             logger.error("Cannot ask ChatGPT. Repeatedly receiving empty response. ")
             raise error.ChatGPTResponseError("Cannot ask ChatGPT. Repeatedly receiving empty response. ")
-        with self.lock:
-            response = [i for i in self.ask_stream(message)]
+        async with self.lock:
+            response = [i async for i in self.async_ask_stream(message)]
             if len(response)!=0:
                 return ''.join(response)
         # Else: retry
         logger.error("Received empty response from ChatGPT. Retrying... ")
-        self.refresh_session()
-        return self.ask(message,remaining_retry=remaining_retry-1)
+        await self.async_refresh_session()
+        return await self.async_ask(message,remaining_retry=remaining_retry-1)
 
-    def new_conversation(self):
+    async def async_new_conversation(self):
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
 
 
-def main():
-    gpt=ChatGPT(headless=False)
+
+async def main():
+    gpt=await AsyncChatGPT.create(headless=False)
+    # loop=asyncio.get_event_loop()
+    # prompt=input("> ")
     prompt="Good night!"
     while prompt!='exit':
         prompt=input("> ")
         print('< ',end='',flush=True)
-        print(gpt.ask(prompt))
+        print(await gpt.async_ask(prompt))
         print('')
 
 if __name__=='__main__':
-    main()
+    asyncio.run(main())
 
