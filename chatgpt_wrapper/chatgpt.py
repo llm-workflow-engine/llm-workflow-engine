@@ -118,6 +118,11 @@ class ChatGPT:
         headers.update(custom_headers)
         return headers
 
+    def _api_get_request(self, url, query_params={}, custom_headers={}):
+        headers = self._api_request_build_headers(custom_headers)
+        response = self.page.request.get(url, headers=headers, params=query_params)
+        return response
+
     def _api_post_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
         response = self.page.request.post(url, headers=headers, data=data)
@@ -156,6 +161,20 @@ class ChatGPT:
         if not response.ok:
             raise urllib.error.HttpError("Delete conversation request failed for conversation %s with status code: %s, status message: %s\n" % (
                 self.conversation_id, response.status, response.status_text))
+
+    def get_history(self, limit=20, offset=0):
+        if self.session is None:
+            self.refresh_session()
+        url = f"https://chat.openai.com/backend-api/conversations"
+        query_params = {
+            "offset": offset,
+            "limit": limit,
+        }
+        response = self._api_get_request(url, query_params)
+        if response.ok:
+            return response.json()
+        else:
+            raise urllib.error.HttpError("Error retrieving history with status code: %s, status message: %s\n" % (response.status, response.status_text))
 
     def ask_stream(self, prompt: str):
         if self.session is None:

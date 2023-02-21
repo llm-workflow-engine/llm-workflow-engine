@@ -2,6 +2,7 @@ import cmd
 import os
 import platform
 import sys
+import datetime
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -98,6 +99,11 @@ class GPTShell(cmd.Cmd):
         self.chatgpt.delete_conversation()
         self._print_markdown("* Deleted current conversation.")
         self.do_new(_)
+
+    def do_history(self, _):
+        "`!history` show recent conversation history, last 20 conversations."
+        history = self.chatgpt.get_history()
+        self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history['items']]))
 
     def do_nav(self, arg):
         "`!nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
