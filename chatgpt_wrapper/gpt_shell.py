@@ -4,6 +4,8 @@ import platform
 import sys
 import datetime
 import subprocess
+import string
+import readline
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -29,6 +31,7 @@ class GPTShell(cmd.Cmd):
     intro = "Provide a prompt for ChatGPT, or type !help or ? to list commands."
     prompt = "> "
     doc_header = "Documented commands (type !help <topic>):"
+    identchars = string.ascii_letters + string.digits + '_' + '!'
 
     # our stuff
     prompt_number = 0
@@ -36,6 +39,63 @@ class GPTShell(cmd.Cmd):
     message_map = {}
     stream = False
     logfile = None
+
+    def parseline(self, line):
+        """Parse the line into a command name and a string containing
+        the arguments.  Returns a tuple containing (command, args, line).
+        'command' and 'args' may be None if the line couldn't be parsed.
+        """
+        line = line.strip()
+        if not line:
+            return None, None, line
+        elif line[0] == '?':
+            line = 'help ' + line[1:]
+        i, n = 0, len(line)
+        while i < n and line[i] in self.identchars: i = i+1
+        cmd, arg = line[:i], line[i:].strip()
+        return cmd, arg, line
+
+    def complete(self, text, state):
+        """Return the next possible completion for 'text'.
+        If a command has not been entered, then complete against command list.
+        Otherwise try to call complete_<command> to get list of completions.
+        """
+        origline = readline.get_line_buffer()
+        line = origline.lstrip()
+        if line[0] == '!':
+            text = "!" + text
+        if state == 0:
+            stripped = len(origline) - len(line)
+            begidx = readline.get_begidx() - stripped
+            endidx = readline.get_endidx() - stripped
+            if begidx>0:
+                cmd, args, line = self.parseline(line)
+                if cmd == '':
+                    compfunc = self.command_names
+                else:
+                    if cmd in self.command_names():
+                        try:
+                            compfunc = getattr(self, 'complete_' + cmd[1:])
+                        except AttributeError:
+                            compfunc = self.completedefault
+                    else:
+                        compfunc = self.command_names_filtered
+            else:
+                compfunc = self.command_names
+            self.completion_matches = compfunc(text, line, begidx, endidx)
+        try:
+            if line[0] == '!':
+                return self.completion_matches[state][1:] + ' '
+            else:
+                return self.completion_matches[state]
+        except IndexError:
+            return None
+
+    def command_names(self, *ignored):
+        return [('!%s' % a[3:]) for a in self.get_names() if a.startswith("do_")]
+
+    def command_names_filtered(self, text, *ignored):
+        return [a for a in self.command_names() if a.startswith(text)]
 
     def _set_args(self, args):
         self.stream = args.stream
@@ -275,6 +335,13 @@ class GPTShell(cmd.Cmd):
         else:
             line = "ask " + line
         return line
+
+    def complete_help(self, text, line, begidx, endidx):
+        if not text:
+            completions = sorted(self.command_names())
+        else:
+            completions = sorted([a for a in self.command_names() if a.startswith(text)])
+        return completions
 
     def do_help(self, arg):
         'List available commands with "!help" or detailed help with "!help cmd".'
