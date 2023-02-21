@@ -196,12 +196,13 @@ class GPTShell(cmd.Cmd):
 
         self.default(prompt)
 
-    def do_write(self, args):
-        "`!write` Open an editor for entering a command (requires `vipe` executable). `!write some default text`"
+    def do_editor(self, args):
+        "`!editor` Open an editor for entering a command (requires `vipe` executable). `!editor some default text`"
         try:
             process = subprocess.Popen(['vipe'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         except FileNotFoundError:
-            self._print_markdown("Failed to execute `vipe`, must be installed and in path")
+            self._print_markdown(
+                "Failed to execute `vipe`, must be installed and in path. Install package `moreutils`. `brew install moreutils` on macOS and `apt install moreutils` on Ubuntu.")
             return
         process.stdin.write(args.encode())
         process.stdin.close()

@@ -15,6 +15,7 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
   - @thehunmonkgroup fixed chat naming.
   - @thehunmonkgroup Added !delete command to remove/hide conversations
   - @thehunmonkgroup Added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
+  - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT
 - 17/02/2023: v0.3.16
   - Ability to open **multiple sessions in parallel**.
   - Code now works with **ChatGPT Plus** subscription.
@@ -40,6 +41,7 @@ See below for details on using ChatGPT as an API from Python.
 ## Requirements
 
 To use this repository, you need  `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
+To use the !write command, you need to install vipe. In ubuntu, you can install it with `sudo apt install moreutils`, in macos with `brew install moreutils`.
 
 ## Installation
 
@@ -81,6 +83,7 @@ In addition to directly prompting ChatGPT, The shell provides the following comm
 * `!context` lets you load old contexts from the log (previous sessions).  It takes one parameter; a context string from logs.
 * `!session` refreshes your session information.  This can resolve errors under certain scenarios.
 * `!delete` deletes the current conversation from the webview
+* `!editor` opens the current prompt in the default editor (as defined by the EDITOR environment variable) and allows you to edit it.  The edited prompt is then sent to ChatGPT.
 
 Command arguments can be passed in the following ways:
 * --debug: enables debug mode (visible browser window)
