@@ -139,6 +139,10 @@ class GPTShell(cmd.Cmd):
         "`!exit` closes the program."
         sys.exit(0)
 
+    def do_quit(self, arg):
+        "`!quit` closes the program."
+        self.do_exit(arg)
+
     def do_ask(self, line):
         "`!ask` asks a question to chatgpt. It is purely optional. Example: `!ask what is 6+6` is the same as `what is 6+6`"
         return self.default(line)
