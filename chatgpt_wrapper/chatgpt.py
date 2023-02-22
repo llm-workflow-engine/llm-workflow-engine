@@ -149,7 +149,6 @@ class ChatGPT:
             raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
 
     def delete_conversation(self):
-        return
         if not self.conversation_id:
             return
         url = f"https://chat.openai.com/backend-api/conversation/{self.conversation_id}"
@@ -161,7 +160,6 @@ class ChatGPT:
             raise Exception(f"Failed to delete conversation: {response.status} {response.status_text} {response.headers}")
 
     def get_history(self, limit=20, offset=0):
-        return
         if self.session is None:
             self.refresh_session()
         url = f"https://chat.openai.com/backend-api/conversations"
