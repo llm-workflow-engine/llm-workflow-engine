@@ -6,7 +6,6 @@ import time
 import uuid
 import os
 import shutil
-import urllib
 from functools import reduce
 from time import sleep
 from typing import Optional
@@ -147,8 +146,7 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            raise urllib.error.HttpError("Set title request failed with status code: %s, status message: %s\n" % (
-                response.status, response.status_text))
+            raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
 
     def delete_conversation(self):
         if not self.conversation_id:
@@ -159,8 +157,7 @@ class ChatGPT:
         }
         response = self._api_patch_request(url, data)
         if not response.ok:
-            raise urllib.error.HttpError("Delete conversation request failed for conversation %s with status code: %s, status message: %s\n" % (
-                self.conversation_id, response.status, response.status_text))
+            raise Exception(f"Failed to delete conversation: {response.status} {response.status_text} {response.headers}")
 
     def get_history(self, limit=20, offset=0):
         if self.session is None:
@@ -174,7 +171,7 @@ class ChatGPT:
         if response.ok:
             return response.json()
         else:
-            raise urllib.error.HttpError("Error retrieving history with status code: %s, status message: %s\n" % (response.status, response.status_text))
+            raise Exception(f"Failed to get history: {response.status} {response.status_text} {response.headers}")
 
     def ask_stream(self, prompt: str):
         if self.session is None:
