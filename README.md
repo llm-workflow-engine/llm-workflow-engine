@@ -13,10 +13,11 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 - 21/02/2023: v0.3.17
   - Added debug mode (visible browser window).
   - @thehunmonkgroup fixed chat naming.
-  - @thehunmonkgroup Added !delete command to remove/hide conversations
-  - @thehunmonkgroup Added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
+  - @thehunmonkgroup added !delete command to remove/hide conversations
+  - @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
   - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT
   - @thehunmonkgroup added !history command to show the list of the last 20 conversations
+  - @NatLee added **docker** support
 - 17/02/2023: v0.3.16
   - Ability to open **multiple sessions in parallel**.
   - Code now works with **ChatGPT Plus** subscription.
@@ -115,6 +116,21 @@ You may also stream the response as it comes in from ChatGPT in chunks using the
   - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
   - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
   - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
+
+## Docker
+
+Build a image for testing `chatgpt-wrapper` with following commands.
+
+```bash
+docker-compose build && docker-compose up -d
+docker exec -it chatgpt-wrapper-container /bin/bash -c "chatgpt install"
+```
+
+Then, visit http://localhost:6901/vnc.html with password `headless` and login ChatGPT.
+
+Then, turn back to terminal and enjoy the chat!
+
+![chat](https://i.imgur.com/nRlzUzm.png)
 
 ## Contributing
 

@@ -146,7 +146,7 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            raise Exception("Set title request failed with status code: %s, status message: %s\n" % (response.status, response.status_text))
+            raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
 
     def delete_conversation(self, uuid=None):
         if self.session is None:
@@ -177,7 +177,7 @@ class ChatGPT:
                 history[item["id"]] = item
             return history
         else:
-            raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
+            raise Exception(f"Failed to get history: {response.status} {response.status_text} {response.headers}")
 
     def ask_stream(self, prompt: str):
         if self.session is None:
