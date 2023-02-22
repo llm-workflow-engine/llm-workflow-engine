@@ -6,8 +6,6 @@ import time
 import uuid
 import os
 import shutil
-import urllib
-import logging
 from functools import reduce
 from time import sleep
 from typing import Optional
@@ -19,8 +17,6 @@ RENDER_MODELS = {
     "legacy-paid": "text-davinci-002-render-paid",
     "legacy-free": "text-davinci-002-render"
 }
-
-logging.basicConfig(level=logging.INFO)
 
 
 class ChatGPT:
@@ -150,7 +146,7 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            logging.debug(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
+            raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
 
     def delete_conversation(self):
         return
@@ -162,7 +158,7 @@ class ChatGPT:
         }
         response = self._api_patch_request(url, data)
         if not response.ok:
-            logging.info(f"Failed to delete conversation: {response.status} {response.status_text} {response.headers}")
+            raise Exception(f"Failed to delete conversation: {response.status} {response.status_text} {response.headers}")
 
     def get_history(self, limit=20, offset=0):
         return
@@ -177,7 +173,7 @@ class ChatGPT:
         if response.ok:
             return response.json()
         else:
-            logging.info(f"Failed to get history: {response.status} {response.status_text} {response.headers}")
+            raise Exception(f"Failed to get history: {response.status} {response.status_text} {response.headers}")
 
     def ask_stream(self, prompt: str):
         if self.session is None:
