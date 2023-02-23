@@ -191,7 +191,7 @@ class GPTShell(cmd.Cmd):
         self._write_log_context()
 
     def do_delete(self, arg):
-        "`!delete` delete a conversation from history by id, or current conversation. Example: `!delete 1,3-5` or `` or !delete`"
+        "`!delete` delete a conversation by conversation or history ID, or current conversation. Example: `!delete 1,3-5` or `!delete`"
         if arg:
             result = self._parse_conversation_ids(arg)
             if isinstance(result, list):
