@@ -66,6 +66,60 @@ class ChatGPT:
         self.timeout = timeout
         atexit.register(self._cleanup)
 
+    def switch_to_conversation(self, conversation_id: str):
+        self.conversation_id = conversation_id
+        conversation_info = self.get_conversation_info(conversation_id)
+        self.parent_message_id = conversation_info["current_node"]
+
+    def get_conversation_info(self, conversation_id: str):
+        if self.session is None:
+            self.refresh_session()
+        if "accessToken" not in self.session:
+            print(
+                "Your ChatGPT session is not usable.\n"
+                "* Run this program with the `install` parameter and log in to ChatGPT.\n"
+                "* If you think you are already logged in, try running the `session` command."
+            )
+            return
+
+        conversation_div_id = "chatgpt-wrapper-conversation-info-data"
+
+        code = (
+            """
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://chat.openai.com/backend-api/conversation/CONVERSATION_ID');
+            xhr.setRequestHeader('Accept', 'text/event-stream');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('Authorization', 'Bearer BEARER_TOKEN');
+            xhr.responseType = 'stream';
+            xhr.onload = function() {
+                console.log('get conversation info status:'+xhr.status);
+                if(xhr.status == 200) {
+                    var conversation_info_div = document.createElement('DIV');
+                    conversation_info_div.id = "CONVERSATION_INFO_DIV_ID";
+                    conversation_info_div.innerHTML = xhr.responseText;
+                    document.body.appendChild(conversation_info_div);
+                }
+            };
+            xhr.send();
+            """.replace("BEARER_TOKEN", self.session["accessToken"])
+            .replace("CONVERSATION_INFO_DIV_ID", conversation_div_id)
+            .replace("CONVERSATION_ID",conversation_id)
+        )
+        self.page.evaluate(code)
+        conversation_info = None
+        while True:
+
+            conversation_info_datas = self.page.query_selector_all(
+                f"div#{conversation_div_id}"
+            )
+            if len(conversation_info_datas) > 0:
+                conversation_info = json.loads(conversation_info_datas[0].inner_text())
+                break
+            sleep(0.2)
+        self.page.evaluate(f"document.getElementById('{conversation_div_id}').remove()")
+        return conversation_info
+
     def _start_browser(self):
         self.page.goto("https://chat.openai.com/")
 
