@@ -19,6 +19,7 @@ RENDER_MODELS = {
     "legacy-free": "text-davinci-002-render"
 }
 
+log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
 class ChatGPT:
     """
@@ -31,10 +32,10 @@ class ChatGPT:
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, proxy: Optional[ProxySettings] = None):
-        logging.getLogger().setLevel(level=logging.CRITICAL)
+    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+        self.log = self._set_logging(debug_log)
+        self.log.debug("ChatGPT initialized")
         self.play = sync_playwright().start()
-
         try:
             playbrowser = getattr(self.play, browser)
         except Exception:
@@ -67,6 +68,19 @@ class ChatGPT:
         self.model = model
         self.timeout = timeout
         atexit.register(self._cleanup)
+
+    def _set_logging(self, debug_log):
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        log_console_handler = logging.StreamHandler()
+        log_console_handler.setFormatter(log_formatter)
+        log_console_handler.setLevel(logging.WARNING)
+        logger.addHandler(log_console_handler)
+        if debug_log:
+            log_file_handler = logging.FileHandler(debug_log)
+            log_file_handler.setFormatter(log_formatter)
+            logger.addHandler(log_file_handler)
+        return logger
 
     def _start_browser(self):
         self.page.goto("https://chat.openai.com/")
@@ -148,8 +162,8 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            logging.warning(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
-            # raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
+            self.log.warning("Failed to set title")
+            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
 
     def delete_conversation(self):
         if not self.conversation_id:
@@ -159,14 +173,16 @@ class ChatGPT:
             "is_visible": False,
         }
         response = self._api_patch_request(url, data)
-        if not response.ok:
-            raise Exception(
-                f"Failed to delete conversation: {response.status} {response.status_text} {response.headers}")
+        if response.ok:
+            return response
+        else:
+            self.log.warning("Failed to delete conversation")
+            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
 
     def get_history(self, limit=20, offset=0):
         if self.session is None:
             self.refresh_session()
-        url = f"https://chat.openai.com/backend-api/conversations"
+        url = "https://chat.openai.com/backend-api/conversations"
         query_params = {
             "offset": offset,
             "limit": limit,
@@ -175,7 +191,8 @@ class ChatGPT:
         if response.ok:
             return response.json()
         else:
-            raise Exception(f"Failed to get history: {response.status} {response.status_text} {response.headers}")
+            self.log.warning("Failed to get history")
+            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
 
     def ask_stream(self, prompt: str):
         if self.session is None:

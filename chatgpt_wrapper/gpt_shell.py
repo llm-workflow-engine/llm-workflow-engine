@@ -97,9 +97,9 @@ class GPTShell(cmd.Cmd):
 
     def do_delete(self, _):
         "`!delete` deletes current conversation from history, and starts a new conversation."
-        self.chatgpt.delete_conversation()
-        self._print_markdown("* Deleted current conversation.")
-        self.do_new(_)
+        if self.chatgpt.delete_conversation():
+            self._print_markdown("* Deleted current conversation.")
+            self.do_new(_)
 
     def do_history(self, _):
         "`!history` show recent conversation history, last 20 conversations."
