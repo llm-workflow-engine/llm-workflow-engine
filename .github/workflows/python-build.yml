@@ -1,0 +1,23 @@
+name: Python Test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+    - name: Install dependencies
+      run: |
+        sudo apt-get install python3-dev
+        python -m pip install --upgrade pip
+        pip install pylint
+        pip install -r requirements.txt
+    - name: Analysing the code with pylint
+      run: |
+        pylint $(git ls-files '*.py') --exit-zero 
+    - name: Build
+      run: |
+        python setup.py install
