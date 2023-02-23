@@ -19,8 +19,6 @@ RENDER_MODELS = {
     "legacy-free": "text-davinci-002-render"
 }
 
-logging.basicConfig(level=logging.INFO)
-
 
 class ChatGPT:
     """
@@ -34,6 +32,7 @@ class ChatGPT:
     session_div_id = "chatgpt-wrapper-session-data"
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, proxy: Optional[ProxySettings] = None):
+        logging.getLogger().setLevel(level=logging.CRITICAL)
         self.play = sync_playwright().start()
 
         try:
