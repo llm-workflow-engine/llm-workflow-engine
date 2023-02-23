@@ -13,11 +13,15 @@ jobs:
       run: |
         sudo apt-get install python3-dev
         python -m pip install --upgrade pip
-        pip install pylint
+        pip install pylint black
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py') --exit-zero 
+    - name: Run python black code formatter
+      uses: DataDog/action-py-black-formatter@v2.5
+      with:
+        fail_on_error: 'false'
     - name: Build
       run: |
         python setup.py install
