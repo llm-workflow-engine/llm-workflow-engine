@@ -76,6 +76,9 @@ chatgpt install
 ### Shell
 
 In addition to directly prompting ChatGPT, The shell provides the following commands:
+* `!help` display help commands, or `!help <command>` to display help for a specific command
+* `!exit` or `!quit` to exit the shell
+* `!ask` to ask a question (default)
 * `!new` allows to start a new conversation
 * `!nav` lets you navigate to a past point in the conversation. Example: `!nav 2`
 * `!stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream).
@@ -84,7 +87,7 @@ In addition to directly prompting ChatGPT, The shell provides the following comm
 * `!log` enables logging to a file.  Example: `!log mylog.txt` to enable, or `!log` to disable.
 * `!context` lets you load old contexts from the log (previous sessions).  It takes one parameter; a context string from logs.
 * `!session` refreshes your session information.  This can resolve errors under certain scenarios.
-* `!delete` deletes the current conversation from the webview
+* `!delete` deletes conversation from the webview, by conversation ID, history ID, or current conversation if no argument provided.
 * `!editor` opens the current prompt in the default editor (as defined by the EDITOR environment variable) and allows you to edit it.  The edited prompt is then sent to ChatGPT.
 * `!history` command shows the list of last 20 conversations
 
@@ -93,6 +96,7 @@ Command arguments can be passed in the following ways:
 * --model: selects model ('default' or 'legacy-paid' or 'legacy-free')
 * --browser: selects browser ('firefox' or 'chromium' or 'webkit')
 * --log: log prompts and responses to the named file
+* --debug-log: debug logging to the named file
 * --no-stream: disables streaming mode (and enables markdown rendering)
 
 ### Python
