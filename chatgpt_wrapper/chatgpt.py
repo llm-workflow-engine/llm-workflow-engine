@@ -5,6 +5,7 @@ import operator
 import time
 import uuid
 import os
+import logging
 import shutil
 from functools import reduce
 from time import sleep
@@ -17,6 +18,8 @@ RENDER_MODELS = {
     "legacy-paid": "text-davinci-002-render-paid",
     "legacy-free": "text-davinci-002-render"
 }
+
+logging.basicConfig(level=logging.INFO)
 
 
 class ChatGPT:
@@ -146,7 +149,8 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
+            logging.warning(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
+            # raise Exception(f"Failed to set title: {response.status} {response.status_text} {response.headers}")
 
     def delete_conversation(self):
         if not self.conversation_id:
@@ -157,7 +161,8 @@ class ChatGPT:
         }
         response = self._api_patch_request(url, data)
         if not response.ok:
-            raise Exception(f"Failed to delete conversation: {response.status} {response.status_text} {response.headers}")
+            raise Exception(
+                f"Failed to delete conversation: {response.status} {response.status_text} {response.headers}")
 
     def get_history(self, limit=20, offset=0):
         if self.session is None:
