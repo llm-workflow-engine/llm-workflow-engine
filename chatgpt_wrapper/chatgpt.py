@@ -165,10 +165,13 @@ class ChatGPT:
             self.log.warning("Failed to set title")
             self.log.debug(f"{response.status} {response.status_text} {response.headers}")
 
-    def delete_conversation(self):
-        if not self.conversation_id:
+    def delete_conversation(self, uuid=None):
+        if self.session is None:
+            self.refresh_session()
+        if not uuid and not self.conversation_id:
             return
-        url = f"https://chat.openai.com/backend-api/conversation/{self.conversation_id}"
+        id = uuid if uuid else self.conversation_id
+        url = f"https://chat.openai.com/backend-api/conversation/{id}"
         data = {
             "is_visible": False,
         }
@@ -189,7 +192,10 @@ class ChatGPT:
         }
         response = self._api_get_request(url, query_params)
         if response.ok:
-            return response.json()
+            history = {}
+            for item in response.json()["items"]:
+                history[item["id"]] = item
+            return history
         else:
             self.log.warning("Failed to get history")
             self.log.debug(f"{response.status} {response.status_text} {response.headers}")
