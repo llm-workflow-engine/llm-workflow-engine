@@ -38,7 +38,7 @@ class ChatGPT:
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
         self.log = self._set_logging(debug_log)
-        self.log.debug("ChatGPT initialized")
+        self.log.info("ChatGPT initialized")
         self.play = sync_playwright().start()
         try:
             playbrowser = getattr(self.play, browser)
@@ -209,7 +209,7 @@ class ChatGPT:
         if ok:
             return json
         else:
-            self.log.warning("Failed to set title")
+            self.log.error("Failed to set title")
 
     def get_history(self, limit=20, offset=0):
         if self.session is None:
