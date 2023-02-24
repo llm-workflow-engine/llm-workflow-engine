@@ -12,8 +12,7 @@ import logging
 from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
-# from . import error
-import error
+from . import error
 
 logging.basicConfig(format='[%(asctime)s] %(message)s', datefmt='%I:%M:%S %p')
 logger=logging.getLogger(__name__)
@@ -32,9 +31,14 @@ class AsyncChatGPT:
     session_div_id = "chatgpt-wrapper-session-data"
     error_div_id = "chatgpt-wrapper-error-data"
     lock=asyncio.Lock()
+    browser=None
+    page=None
+    enabled=True
+    session={}
 
     def __init__(self):
-        """Set some attributes, so that linter doesn't complain about setting attributes outside __init__.
+        """
+        Set some attributes, so that linter doesn't complain about setting attributes outside __init__.
         Should not be called. Use the async create instead.
         For sync methods, use the ChatGPT class.
 
@@ -42,11 +46,8 @@ class AsyncChatGPT:
             None
         """
         self.play = None
-        self.browser=None
-        self.page=None
         self.parent_message_id=None
         self.conversation_id=None
-        self.session=None
         self.timeout=None
         self.user_data_dir=None
 
@@ -80,30 +81,31 @@ class AsyncChatGPT:
             logger.error(f"Browser {browser} is invalid, falling back on firefox")
             playbrowser = self.play.firefox
 
-        try:
-            self.browser = await playbrowser.launch_persistent_context(
-                user_data_dir="/tmp/playwright",
-                headless=headless,
-                proxy=proxy,
-            )
-        except Exception:
-            self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
-            logger.warning(f"Failed to launch browser at /tmp/playwright. Launching at {self.user_data_dir}")
-            shutil.copytree("/tmp/playwright", self.user_data_dir)
-            self.browser = await playbrowser.launch_persistent_context(
-                user_data_dir=self.user_data_dir,
-                headless=headless,
-                proxy=proxy,
-            )
+        if AsyncChatGPT.browser==None:
+            try:
+                AsyncChatGPT.browser = await playbrowser.launch_persistent_context(
+                    user_data_dir="/tmp/playwright",
+                    headless=headless,
+                    proxy=proxy,
+                )
+            except Exception:
+                self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
+                logger.warning(f"Failed to launch browser at /tmp/playwright. Launching at {self.user_data_dir}")
+                shutil.copytree("/tmp/playwright", self.user_data_dir)
+                self.browser = await playbrowser.launch_persistent_context(
+                    user_data_dir=self.user_data_dir,
+                    headless=headless,
+                    proxy=proxy,
+                )
+        if AsyncChatGPT.page==None:
+            AsyncChatGPT.page=await AsyncChatGPT.browser.new_page()
+            await AsyncChatGPT._start_browser()
 
-        if len(self.browser.pages) > 0:
-            self.page = self.browser.pages[0]
-        else:
-            self.page = await self.browser.new_page()
-        await self._start_browser()
         js_logger=logging.getLogger("js console")
         js_logger.setLevel(logging.INFO)
         def js_log(msg):
+            if '[JavaScript Error:' in msg.text: return
+            if '[JavaScript Warning:' in msg.text: return
             if msg.type in ['log','info']: js_logger.info(msg.text)
             elif msg.type=='debug': js_logger.debug(msg.text)
             elif msg.type=='warning': js_logger.warning(msg.text)
@@ -112,14 +114,28 @@ class AsyncChatGPT:
         self.page.on("console", js_log)
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
-        self.session = None
         self.timeout = timeout
         atexit.register(self._cleanup)
 
         return self
 
-    async def _start_browser(self):
-        await self.page.goto("https://chat.openai.com/")
+    @classmethod
+    async def _start_browser(cls):
+        logger.info("Loading ChatGPT webpage...")
+        await cls.page.goto("https://chat.openai.com/")
+        try:
+            await cls.page.wait_for_url("/chat")
+        except Exception:
+            errors=await cls.page.query_selector_all(f"div.cf-error-details")
+            if len(errors)>0 and 'Access denied' in await errors[0].inner_html():
+                logger.error("Got Access denied. Self-disabling for 10 minutes. ")
+                cls.enabled=False
+                await asyncio.sleep(10*60)
+                cls.enabled=True
+                logger.info("10 minutes passed. Re-enabling...")
+                return AsyncChatGPT._start_browser()
+
+        logger.info("ChatGPT webpage loaded")
 
     async def _cleanup(self):
         await self.browser.close()
@@ -127,67 +143,52 @@ class AsyncChatGPT:
         if hasattr(self, "user_data_dir"):
             shutil.rmtree(self.user_data_dir)
         await self.play.stop()
+    async def async_refresh_session(self,timeout=15):
+        """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
 
-    async def async_refresh_session(self,timeout=20,remaining_retry=5):
-        logger.info("Refreshing session")
-        if remaining_retry==0:
-            logger.error("Cannot refresh session. ")
-            raise error.NetworkError("Cannot refresh session. ")
-        await self.page.evaluate(
-            """
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', 'https://chat.openai.com/api/auth/session');
-            xhr.onload = () => {
-                if(xhr.status == 200) {
-                    let mydiv = document.createElement('DIV');
-                    mydiv.id = "SESSION_DIV_ID"
-                    mydiv.innerHTML = xhr.responseText;
-                    document.body.appendChild(mydiv);
-                }else{
-                    let err = document.createElement('div')
-                    err.id="ERROR_DIV_ID"
-                    console.error(xhr)
-                    document.body.appendChild(err)
-                }
-            };
-            xhr.send();
-            """
-            .replace("SESSION_DIV_ID", self.session_div_id)
-            .replace("ERROR_DIV_ID", self.error_div_id)
-        )
-        starttime=datetime.datetime.now()
-        while (datetime.datetime.now()-starttime).total_seconds()<=timeout:
-            session_datas = await self.page.query_selector_all(f"div#{self.session_div_id}")
-            error_datas = await self.page.query_selector_all(f"div#{self.error_div_id}")
-            if len(session_datas) > 0:
-                session_data = json.loads(await session_datas[0].inner_text())
-                self.session = session_data
-                await self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
-                return
+        In this way, we can pass the browser check.
 
-            if len(error_datas) > 0:
-                logger.warning("Refreshing session failed. Retrying...")
-                await self.page.evaluate(f"document.getElementById('{self.error_div_id}').remove()")
-                # break and retry
-                break
-            await asyncio.sleep(0.2)
-        else:
-            logging.warning("Refreshing session timed out. Retrying...")
-
-        # Try again
-        await self.async_refresh_session(remaining_retry=remaining_retry-1)
-        return
-
-
+        Args:
+            timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 10.
+        """
+        logger.info("Refreshing session...")
+        await AsyncChatGPT.page.goto("https://chat.openai.com/api/auth/session")
+        try:
+            await AsyncChatGPT.page.wait_for_url("/api/auth/session",timeout=timeout*1000)
+        except Exception:
+            logger.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
+            AsyncChatGPT._start_browser()
+        try:
+            contents=await AsyncChatGPT.page.content()
+            if "Please stand by, while we are checking your browser..." in contents:
+                await asyncio.sleep(10)
+                contents=await AsyncChatGPT.page.content()
+            start=contents.find("{")
+            if start<0:
+                raise json.JSONDecodeError("A { was not found. ",contents,0)
+            for index in range(len(contents)-1,0-1,-1):
+                if contents[index]=='}':
+                    end=index
+                    break
+            else:
+                logger.error("A } was not found. ")
+                raise json.JSONDecodeError("A } was not found. ",contents,0)
+            contents=contents[start:end+1]
+            logger.debug("Refreshing session received: %s",contents)
+            AsyncChatGPT.session=json.loads(contents)
+            logger.info("Succeessfully refreshed session. ")
+        except json.JSONDecodeError:
+            logger.error("Failed to decode session key. Maybe Access denied? ")
+        await AsyncChatGPT._start_browser()
 
     async def _cleanup_divs(self):
         try:
             await self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
             await self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
         except Exception as err:
-            logger.error("Failed to clean up divs: \n%s", err.with_traceback())
+            logger.error("Failed to clean up divs: \n%s", err)
 
-    async def async_ask_stream(self, prompt: str, remaining_retry=5):
+    async def async_ask_stream(self, prompt: str, remaining_retry=2):
         """Ask ChatGPT something by sending XHR requests. Response is streamed
 
         Example:
@@ -207,152 +208,156 @@ class AsyncChatGPT:
         Yields:
             str: Chunks of response
         """
-        if remaining_retry==0:
-            logger.error("Cannot communicate with ChatGPT. ")
-            raise error.NetworkError("Cannot communicate with ChatGPT.")
-        if self.session is None:
-            await self.async_refresh_session()
+        logger.debug("Acquiring lock...")
+        # TODO: This might not be neccessary with ChatGPT Plus ?
+        async with AsyncChatGPT.lock:
+            logger.debug("Got lock")
+            if remaining_retry==0:
+                logger.error("Cannot communicate with ChatGPT. ")
+                raise error.NetworkError("Cannot communicate with ChatGPT.")
+            if self.session == {}:
+                await self.async_refresh_session()
 
-        new_message_id = str(uuid.uuid4())
+            new_message_id = str(uuid.uuid4())
 
-        if "accessToken" not in self.session:
-            logger.error("Session not usable. You need to log in. ")
-            raise error.NotLoggedInError(
-                "Your ChatGPT session is not usable.\n"
-                "* Run this program with the `install` parameter and log in to ChatGPT.\n"
-                "* If you think you are already logged in, try running the `session` command."
-            )
-
-        request = {
-            "messages": [
-                {
-                    "id": new_message_id,
-                    "role": "user",
-                    "content": {"content_type": "text", "parts": [prompt]},
-                }
-            ],
-            # TODO: why is this model specified? I've seen different ones when using ChatGPT.
-            "model": "text-davinci-002-render-sha",
-            "conversation_id": self.conversation_id,
-            "parent_message_id": self.parent_message_id,
-            "action": "next",
-        }
-
-        code = (
-            """
-            const stream_div = document.createElement('DIV');
-            stream_div.id = "STREAM_DIV_ID";
-            document.body.appendChild(stream_div);
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://chat.openai.com/backend-api/conversation');
-            xhr.setRequestHeader('Accept', 'text/event-stream');
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader('Authorization', 'Bearer BEARER_TOKEN');
-            xhr.responseType = 'stream';
-            xhr.onreadystatechange = function() {
-              var newEvent;
-              if(xhr.readyState == 3 || xhr.readyState == 4) {
-                const newData = xhr.response.substr(xhr.seenBytes);
-                try {
-                  const newEvents = newData.split(/\\n\\n/).reverse();
-                  newEvents.shift();
-                  if(newEvents[0] == "data: [DONE]") {
-                    newEvents.shift();
-                  }
-                  if(newEvents.length > 0) {
-                    newEvent = newEvents[0].substring(6);
-                    // using XHR for eventstream sucks and occasionally ive seen incomplete
-                    // json objects come through  JSON.parse will throw if that happens, and
-                    // that should just skip until we get a full response.
-                    JSON.parse(newEvent);
-                  }
-                } catch (err) {
-                  console.error(err);
-                  newEvent = undefined;
-                }
-                if(newEvent !== undefined) {
-                  stream_div.innerHTML = btoa(newEvent);
-                  xhr.seenBytes = xhr.responseText.length;
-                }
-              }
-              if(xhr.readyState == 4) {
-                const eof_div = document.createElement('DIV');
-                eof_div.id = "EOF_DIV_ID";
-                document.body.appendChild(eof_div);
-              }
-            };
-            xhr.send(JSON.stringify(REQUEST_JSON));
-            """
-            .replace("BEARER_TOKEN", self.session["accessToken"])
-            .replace("REQUEST_JSON", json.dumps(request))
-            .replace("STREAM_DIV_ID", self.stream_div_id)
-            .replace("EOF_DIV_ID", self.eof_div_id)
-        )
-        try:
-            await self.page.evaluate(code)
-        except Exception as err:
-            logger.warning("Error occurred when asking ChatGPT (Retrying...): %s",err.with_traceback())
-            await self.async_refresh_session()
-            async for i in self.async_ask_stream(prompt):
-                yield i
-            return
-
-        last_event_msg = ""
-        start_time = time.time()
-        full_event_message = None
-        while time.time() - start_time <= self.timeout or full_event_message != None:
-            eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
-
-            conversation_datas = await self.page.query_selector_all(
-                f"div#{self.stream_div_id}"
-            )
-            if len(conversation_datas) == 0:
-                continue
-
-            full_event_message = None
-
-            try:
-                event_raw = base64.b64decode(await conversation_datas[0].inner_html())
-                if len(event_raw) > 0:
-                    event = json.loads(event_raw)
-                    if event is not None:
-                        self.parent_message_id = event["message"]["id"]
-                        self.conversation_id = event["conversation_id"]
-                        full_event_message = "\n".join(
-                            event["message"]["content"]["parts"]
-                        )
-            except Exception as err:
-                logging.error("Failed to read response from ChatGPT: %s",err.with_traceback())
-                raise error.ChatGPTResponseError(
-                    "Failed to read response from ChatGPT.  Tips:\n"
-                    " * Try again.  ChatGPT can be flaky.\n"
-                    " * Use the `session` command to refresh your session, and then try again.\n"
-                    " * Restart the program in the `install` mode and make sure you are logged in."
+            if "accessToken" not in self.session:
+                logger.error("Session not usable. You need to log in. ")
+                raise error.NotLoggedInError(
+                    "Your ChatGPT session is not usable.\n"
+                    "* Run this program with the `install` parameter and log in to ChatGPT.\n"
+                    "* If you think you are already logged in, try running the `session` command."
                 )
 
-            if full_event_message is not None:
-                chunk = full_event_message[len(last_event_msg):]
-                last_event_msg = full_event_message
-                logger.info("< (ChatGPT) %s",chunk)
-                yield chunk
+            request = {
+                "messages": [
+                    {
+                        "id": new_message_id,
+                        "role": "user",
+                        "content": {"content_type": "text", "parts": [prompt]},
+                    }
+                ],
+                # TODO: why is this model specified? I've seen different ones when using ChatGPT.
+                "model": "text-davinci-002-render-sha",
+                "conversation_id": self.conversation_id,
+                "parent_message_id": self.parent_message_id,
+                "action": "next",
+            }
 
-            # if we saw the eof signal, this was the last event we
-            # should process and we are done
-            if len(eof_datas)>0:
-                break
+            code = (
+                """
+                const stream_div = document.createElement('DIV');
+                stream_div.id = "STREAM_DIV_ID";
+                document.body.appendChild(stream_div);
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'https://chat.openai.com/backend-api/conversation');
+                xhr.setRequestHeader('Accept', 'text/event-stream');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Authorization', 'Bearer BEARER_TOKEN');
+                xhr.responseType = 'stream';
+                xhr.onreadystatechange = function() {
+                var newEvent;
+                if(xhr.readyState == 3 || xhr.readyState == 4) {
+                    const newData = xhr.response.substr(xhr.seenBytes);
+                    try {
+                    const newEvents = newData.split(/\\n\\n/).reverse();
+                    newEvents.shift();
+                    if(newEvents[0] == "data: [DONE]") {
+                        newEvents.shift();
+                    }
+                    if(newEvents.length > 0) {
+                        newEvent = newEvents[0].substring(6);
+                        // using XHR for eventstream sucks and occasionally ive seen incomplete
+                        // json objects come through  JSON.parse will throw if that happens, and
+                        // that should just skip until we get a full response.
+                        JSON.parse(newEvent);
+                    }
+                    } catch (err) {
+                    console.error(err);
+                    newEvent = undefined;
+                    }
+                    if(newEvent !== undefined) {
+                    stream_div.innerHTML = btoa(newEvent);
+                    xhr.seenBytes = xhr.responseText.length;
+                    }
+                }
+                if(xhr.readyState == 4) {
+                    const eof_div = document.createElement('DIV');
+                    eof_div.id = "EOF_DIV_ID";
+                    document.body.appendChild(eof_div);
+                }
+                };
+                xhr.send(JSON.stringify(REQUEST_JSON));
+                """
+                .replace("BEARER_TOKEN", self.session["accessToken"])
+                .replace("REQUEST_JSON", json.dumps(request))
+                .replace("STREAM_DIV_ID", self.stream_div_id)
+                .replace("EOF_DIV_ID", self.eof_div_id)
+            )
+            try:
+                await self.page.evaluate(code)
+            except Exception as err:
+                logger.warning("Error occurred when asking ChatGPT (Retrying...): %s",err)
+                await self.async_refresh_session()
+                async for i in self.async_ask_stream(prompt):
+                    yield i
+                return
 
-            await asyncio.sleep(0.2)
-        else:
-            # Timeout
-            logger.error("Timeout when asking ChatGPT. Retrying...")
-            await self.async_refresh_session()
-            async for chunk in self.async_ask_stream(prompt=prompt,remaining_retry=remaining_retry-1):
-                yield chunk
-            return
+            last_event_msg = ""
+            start_time = time.time()
+            full_event_message = None
+            while time.time() - start_time <= self.timeout or full_event_message != None:
+                eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
 
-        await self._cleanup_divs()
+                conversation_datas = await self.page.query_selector_all(
+                    f"div#{self.stream_div_id}"
+                )
+                if len(conversation_datas) == 0:
+                    continue
 
-    async def async_ask_stream_clicking(self, prompt: str, remaining_retry=5):
+                full_event_message = None
+
+                try:
+                    event_raw = base64.b64decode(await conversation_datas[0].inner_html())
+                    if len(event_raw) > 0:
+                        event = json.loads(event_raw)
+                        if event is not None:
+                            self.parent_message_id = event["message"]["id"]
+                            self.conversation_id = event["conversation_id"]
+                            full_event_message = "\n".join(
+                                event["message"]["content"]["parts"]
+                            )
+                except Exception as err:
+                    logging.error("Failed to read response from ChatGPT: %s",err)
+                    raise error.ChatGPTResponseError(
+                        "Failed to read response from ChatGPT.  Tips:\n"
+                        " * Try again.  ChatGPT can be flaky.\n"
+                        " * Use the `session` command to refresh your session, and then try again.\n"
+                        " * Restart the program in the `install` mode and make sure you are logged in."
+                    )
+
+                if full_event_message is not None:
+                    chunk = full_event_message[len(last_event_msg):]
+                    last_event_msg = full_event_message
+                    logger.info("< (ChatGPT) %s",chunk)
+                    yield chunk
+
+                # if we saw the eof signal, this was the last event we
+                # should process and we are done
+                if len(eof_datas)>0:
+                    break
+
+                await asyncio.sleep(0.2)
+            else:
+                # Timeout
+                logger.error("Timeout when asking ChatGPT. Retrying...")
+                await self.async_refresh_session()
+                async for chunk in self.async_ask_stream(prompt=prompt,remaining_retry=remaining_retry-1):
+                    yield chunk
+                return
+
+            await self._cleanup_divs()
+
+    async def async_ask_stream_clicking(self, prompt: str, remaining_retry=2):
         """Ask ChatGPT by clicking the buttons on the website. Response is streamed.
 
         Example:
@@ -431,7 +436,7 @@ class AsyncChatGPT:
         try:
             await self.page.evaluate(code)
         except Exception as err:
-            logger.warning("Error occurred when asking ChatGPT (Retrying...): %s",err.with_traceback())
+            logger.warning("Error occurred when asking ChatGPT (Retrying...): %s",err)
             await self.async_refresh_session()
             async for i in self.async_ask_stream_clicking(prompt):
                 yield i
@@ -488,7 +493,7 @@ class AsyncChatGPT:
         await self._cleanup_divs()
 
 
-    async def async_ask(self, message: str, remaining_retry=5) -> str:
+    async def async_ask(self, message: str, remaining_retry=2) -> str:
         """
         Send a message to chatGPT and return the response.
 
@@ -502,10 +507,10 @@ class AsyncChatGPT:
         if remaining_retry==0:
             logger.error("Cannot ask ChatGPT. Repeatedly receiving empty response. ")
             raise error.ChatGPTResponseError("Cannot ask ChatGPT. Repeatedly receiving empty response. ")
-        async with self.lock:
-            response = [i async for i in self.async_ask_stream(message)]
-            if len(response)!=0:
-                return ''.join(response)
+
+        response = [i async for i in self.async_ask_stream(message)]
+        if len(response)!=0:
+            return ''.join(response)
         # Else: retry
         logger.error("Received empty response from ChatGPT. Retrying... ")
         await self.async_refresh_session()
