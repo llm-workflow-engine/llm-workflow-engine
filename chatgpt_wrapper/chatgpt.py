@@ -165,7 +165,7 @@ class ChatGPT:
         response = self.page.request.patch(url, headers=headers, data=data)
         return self._process_api_response(url, response, method="PATCH")
 
-    def _set_title(self):
+    def _gen_title(self):
         if not self.conversation_id or self.conversation_id and self.conversation_title_set:
             return
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
@@ -196,6 +196,20 @@ class ChatGPT:
             return json
         else:
             self.log.error("Failed to delete conversation")
+
+    def set_title(self, title, conversation_id=None):
+        if self.session is None:
+            self.refresh_session()
+        id = conversation_id if conversation_id else self.conversation_id
+        url = f"https://chat.openai.com/backend-api/conversation/{id}"
+        data = {
+            "title": title,
+        }
+        ok, json, response = self._api_patch_request(url, data)
+        if ok:
+            return json
+        else:
+            self.log.warning("Failed to set title")
 
     def get_history(self, limit=20, offset=0):
         if self.session is None:
@@ -341,7 +355,7 @@ class ChatGPT:
             sleep(0.2)
 
         self._cleanup_divs()
-        self._set_title()
+        self._gen_title()
 
     def ask(self, message: str) -> str:
         """
