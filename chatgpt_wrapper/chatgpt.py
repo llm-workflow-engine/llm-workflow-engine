@@ -11,12 +11,24 @@ from time import sleep
 from typing import Optional
 from playwright.sync_api import sync_playwright
 from playwright._impl._api_structures import ProxySettings
+import re
+
 
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
     "legacy-paid": "text-davinci-002-render-paid",
     "legacy-free": "text-davinci-002-render"
 }
+
+def remove_json_invalid_control_chars(s):
+    """
+    Removes invalid control characters from the given string.
+    """
+    # Define a regex pattern that matches invalid control characters
+    pattern = re.compile(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\n]')
+
+    # Use the pattern to remove invalid control characters from the string
+    return pattern.sub('', s)
 
 
 class ChatGPT:
@@ -114,8 +126,11 @@ class ChatGPT:
                 f"div#{conversation_div_id}"
             )
             if len(conversation_info_datas) > 0:
-                conversation_info = json.loads(conversation_info_datas[0].inner_text())
-                break
+                try:
+                    conversation_info = json.loads(remove_json_invalid_control_chars(conversation_info_datas[0].inner_text()))
+                    break
+                except json.JSONDecodeError as e:
+                    print("load conversation info JSONDecodeError:", e)
             sleep(0.2)
         self.page.evaluate(f"document.getElementById('{conversation_div_id}').remove()")
         return conversation_info
