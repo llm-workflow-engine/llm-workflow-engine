@@ -175,7 +175,8 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            self.log.warning("Failed to set title")
+            # self.log.warning("Failed to set title")
+            pass
 
     def delete_conversation(self, uuid=None):
         if self.session is None:
