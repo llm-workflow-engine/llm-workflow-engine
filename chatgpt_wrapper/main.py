@@ -32,6 +32,13 @@ def main():
         help="log prompts and responses to the named file",
     )
     parser.add_argument(
+        "-e",
+        "--debug-log",
+        metavar="FILEPATH",
+        action="store",
+        help="debug logging to FILEPATH",
+    )
+    parser.add_argument(
         "-b",
         "--browser",
         action="store",
@@ -66,6 +73,8 @@ def main():
         extra_kwargs["browser"] = args.browser
     if args.model is not None:
         extra_kwargs["model"] = args.model
+    if args.debug_log is not None:
+        extra_kwargs["debug_log"] = args.debug_log
     chatgpt = ChatGPT(headless=not (install_mode or args.debug), timeout=90, **extra_kwargs)
 
     shell = GPTShell()
