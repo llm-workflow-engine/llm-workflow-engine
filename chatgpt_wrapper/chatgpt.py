@@ -1,6 +1,7 @@
 import atexit
 import base64
 import json
+from json.decoder import JSONDecodeError
 import operator
 import time
 import uuid
@@ -70,7 +71,7 @@ class ChatGPT:
         atexit.register(self._cleanup)
 
     def _set_logging(self, debug_log):
-        logger = logging.getLogger()
+        logger = logging.getLogger(self.__class__.__name__)
         logger.setLevel(logging.DEBUG)
         log_console_handler = logging.StreamHandler()
         log_console_handler.setFormatter(log_formatter)
@@ -133,20 +134,32 @@ class ChatGPT:
         headers.update(custom_headers)
         return headers
 
+    def _process_api_response(self, url, response, method="GET"):
+        self.log.debug(f"{method} {url} response, OK: {response.ok}, TEXT: {response.text()}")
+        json = None
+        if response.ok:
+            try:
+                json = response.json()
+            except JSONDecodeError:
+                pass
+        if not response.ok or not json:
+            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
+        return response.ok, json, response
+
     def _api_get_request(self, url, query_params={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
         response = self.page.request.get(url, headers=headers, params=query_params)
-        return response
+        return self._process_api_response(url, response)
 
     def _api_post_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
         response = self.page.request.post(url, headers=headers, data=data)
-        return response
+        return self._process_api_response(url, response, method="POST")
 
     def _api_patch_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
         response = self.page.request.patch(url, headers=headers, data=data)
-        return response
+        return self._process_api_response(url, response, method="PATCH")
 
     def _set_title(self):
         if not self.conversation_id or self.conversation_id and self.conversation_title_set:
@@ -156,14 +169,14 @@ class ChatGPT:
             "message_id": self.parent_message_id,
             "model": RENDER_MODELS[self.model],
         }
-        response = self._api_post_request(url, data)
-        if response.ok:
+        ok, json, response = self._api_post_request(url, data)
+        if ok:
             # TODO: Do we want to do anything with the title we got back?
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            self.log.warning("Failed to set title")
-            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
+            # self.log.warning("Failed to set title")
+            pass
 
     def delete_conversation(self, uuid=None):
         if self.session is None:
@@ -175,12 +188,11 @@ class ChatGPT:
         data = {
             "is_visible": False,
         }
-        response = self._api_patch_request(url, data)
-        if response.ok:
-            return response
+        ok, json, response = self._api_patch_request(url, data)
+        if ok:
+            return json
         else:
             self.log.warning("Failed to delete conversation")
-            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
 
     def get_history(self, limit=20, offset=0):
         if self.session is None:
@@ -190,15 +202,14 @@ class ChatGPT:
             "offset": offset,
             "limit": limit,
         }
-        response = self._api_get_request(url, query_params)
-        if response.ok:
+        ok, json, response = self._api_get_request(url, query_params)
+        if ok:
             history = {}
-            for item in response.json()["items"]:
+            for item in json["items"]:
                 history[item["id"]] = item
             return history
         else:
             self.log.warning("Failed to get history")
-            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
 
     def ask_stream(self, prompt: str):
         if self.session is None:

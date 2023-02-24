@@ -160,14 +160,14 @@ class GPTShell(cmd.Cmd):
         else:
             label = label or id
             self._print_markdown("* Deleting conversation: %s" % label)
-            self.chatgpt.delete_conversation(id)
-            self._print_markdown("* Deleted conversation: %s" % label)
+            if self.chatgpt.delete_conversation(id):
+                self._print_markdown("* Deleted conversation: %s" % label)
 
     def _delete_current_conversation(self):
         self._print_markdown("* Deleting current conversation")
-        self.chatgpt.delete_conversation()
-        self._print_markdown("* Deleted current conversation")
-        self.do_new(None)
+        if self.chatgpt.delete_conversation():
+            self._print_markdown("* Deleted current conversation")
+            self.do_new(None)
 
     def emptyline(self):
         """
@@ -191,7 +191,7 @@ class GPTShell(cmd.Cmd):
         self._write_log_context()
 
     def do_delete(self, arg):
-        "`!delete` delete a conversation from history by id, or current conversation. Example: `!delete 1,3-5` or `` or !delete`"
+        "`!delete` delete a conversation by conversation or history ID, or current conversation. Example: `!delete 1,3-5` or `!delete`"
         if arg:
             result = self._parse_conversation_ids(arg)
             if isinstance(result, list):
@@ -215,8 +215,9 @@ class GPTShell(cmd.Cmd):
     def do_history(self, _):
         "`!history` show recent conversation history, last 20 conversations."
         history = self.chatgpt.get_history()
-        history_list = [h for h in history.values()]
-        self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
+        if history:
+            history_list = [h for h in history.values()]
+            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
 
     def do_nav(self, arg):
         "`!nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
