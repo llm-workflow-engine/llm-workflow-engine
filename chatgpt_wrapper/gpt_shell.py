@@ -197,16 +197,17 @@ class GPTShell(cmd.Cmd):
             if isinstance(result, list):
                 self._print_markdown("* Fetching conversation history...")
                 history = self.chatgpt.get_history()
-                history_list = [h for h in history.values()]
-                for item in result:
-                    if isinstance(item, str) and len(item) == 36:
-                        self._delete_conversation(item)
-                    else:
-                        if item <= len(history_list):
-                            conversation = history_list[item - 1]
-                            self._delete_conversation(conversation['id'], conversation['title'])
+                if history:
+                    history_list = [h for h in history.values()]
+                    for item in result:
+                        if isinstance(item, str) and len(item) == 36:
+                            self._delete_conversation(item)
                         else:
-                            self._print_markdown("* Cannont delete history item %d, does not exist" % item)
+                            if item <= len(history_list):
+                                conversation = history_list[item - 1]
+                                self._delete_conversation(conversation['id'], conversation['title'])
+                            else:
+                                self._print_markdown("* Cannont delete history item %d, does not exist" % item)
             else:
                 self._print_markdown(result)
         else:

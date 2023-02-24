@@ -20,7 +20,10 @@ RENDER_MODELS = {
     "legacy-free": "text-davinci-002-render"
 }
 
-log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+DEFAULT_CONSOLE_LOG_LEVEL = logging.ERROR
+DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
+DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
+DEFAULT_FILE_LOG_FORMATTER = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
 class ChatGPT:
     """
@@ -74,12 +77,13 @@ class ChatGPT:
         logger = logging.getLogger(self.__class__.__name__)
         logger.setLevel(logging.DEBUG)
         log_console_handler = logging.StreamHandler()
-        log_console_handler.setFormatter(log_formatter)
-        log_console_handler.setLevel(logging.WARNING)
+        log_console_handler.setFormatter(DEFAULT_CONSOLE_LOG_FORMATTER)
+        log_console_handler.setLevel(DEFAULT_CONSOLE_LOG_LEVEL)
         logger.addHandler(log_console_handler)
         if debug_log:
             log_file_handler = logging.FileHandler(debug_log)
-            log_file_handler.setFormatter(log_formatter)
+            log_file_handler.setFormatter(DEFAULT_FILE_LOG_FORMATTER)
+            log_file_handler.setLevel(DEFAULT_FILE_LOG_LEVEL)
             logger.addHandler(log_file_handler)
         return logger
 
@@ -175,8 +179,7 @@ class ChatGPT:
             # response_data = response.json()
             self.conversation_title_set = True
         else:
-            # self.log.warning("Failed to set title")
-            pass
+            self.log.warning("Failed to auto-generate title for new conversation")
 
     def delete_conversation(self, uuid=None):
         if self.session is None:
@@ -192,7 +195,7 @@ class ChatGPT:
         if ok:
             return json
         else:
-            self.log.warning("Failed to delete conversation")
+            self.log.error("Failed to delete conversation")
 
     def get_history(self, limit=20, offset=0):
         if self.session is None:
@@ -209,7 +212,7 @@ class ChatGPT:
                 history[item["id"]] = item
             return history
         else:
-            self.log.warning("Failed to get history")
+            self.log.error("Failed to get history")
 
     def ask_stream(self, prompt: str):
         if self.session is None:
