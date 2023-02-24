@@ -5,7 +5,6 @@ from json.decoder import JSONDecodeError
 import operator
 import time
 import uuid
-import os
 import logging
 import shutil
 from functools import reduce
