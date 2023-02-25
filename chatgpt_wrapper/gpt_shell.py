@@ -155,6 +155,15 @@ class GPTShell(cmd.Cmd):
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
+    def _conversation_from_messages(self, messages):
+        message_parts = []
+        for message in messages:
+            if 'content' in message:
+                message_parts.append("**%s**:" % message['author']['role'].capitalize())
+                message_parts.extend(message['content']['parts'])
+        content = "\n\n".join(message_parts)
+        return content
+
     def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
         history = self.chatgpt.get_history(limit=limit, offset=offset)
@@ -309,6 +318,42 @@ class GPTShell(cmd.Cmd):
                     self._print_markdown("* Cannot load conversation title, not in history.")
             else:
                 self._print_markdown("* Current conversation has no title, you must send information first")
+
+    def do_chat(self, arg):
+        "`!chat` Retrieve chat by ID or history ID. Example: `!chat [id]` or `!chat 2`"
+        conversation_id = None
+        title = None
+        if arg:
+            if len(arg) == 36:
+                conversation_id = arg
+            else:
+                history = self._fetch_history()
+                history_list = [h for h in history.values()]
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
+                    return
+                if id:
+                    if id <= len(history_list):
+                        conversation_id = history_list[id - 1]["id"]
+                        title = history_list[id - 1]["title"]
+                    else:
+                        self._print_markdown("* Cannot retrieve chat on history item %d, does not exist" % id)
+                        return
+        else:
+            if not self.chatgpt.conversation_id:
+                self._print_markdown("* Current conversation is empty, you must send information first")
+                return
+        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        if conversation_data:
+            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
+            if title:
+                self._print_markdown(f"### {title}")
+            self._print_markdown(self._conversation_from_messages(messages))
+        else:
+            self._print_markdown("* Could no load chat")
 
     def do_exit(self, _):
         "`!exit` closes the program."

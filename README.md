@@ -91,6 +91,7 @@ In addition to directly prompting ChatGPT, The shell provides the following comm
 * `!editor` opens the current prompt in the default editor (as defined by the EDITOR environment variable) and allows you to edit it.  The edited prompt is then sent to ChatGPT.
 * `!history` show recent conversation history, default 20 offset 0, Example `!history` or `!history 10` or `!history 10 5`
 * `!title` get/set title of current conversation, or set title by history ID
+* `!chat` retrieve chat by ID or history ID. Example: `!chat [id]` or `!chat 2`
 
 Command arguments can be passed in the following ways:
 * --debug: enables debug mode (visible browser window)

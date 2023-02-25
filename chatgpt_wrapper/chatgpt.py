@@ -181,6 +181,19 @@ class ChatGPT:
         else:
             self.log.warning("Failed to auto-generate title for new conversation")
 
+    def conversation_data_to_messages(self, conversation_data):
+        mapping_dict = conversation_data['mapping']
+        messages = []
+        parent_id = None
+        while True:
+            current_item = next((item for item in mapping_dict.values() if item['parent'] == parent_id), None)
+            if current_item is None:
+                return messages
+            message = current_item['message']
+            if message is not None and 'author' in message and message['author']['role'] != 'system':
+                messages.append(current_item['message'])
+            parent_id = current_item['id']
+
     def delete_conversation(self, uuid=None):
         if self.session is None:
             self.refresh_session()
@@ -227,6 +240,18 @@ class ChatGPT:
             return history
         else:
             self.log.error("Failed to get history")
+
+    def get_conversation(self, id=None):
+        if self.session is None:
+            self.refresh_session()
+        id = id if id else self.conversation_id
+        if id:
+            url = f"https://chat.openai.com/backend-api/conversation/{id}"
+            ok, json, response = self._api_get_request(url)
+            if ok:
+                return json
+            else:
+                self.log.error(f"Failed to get conversation {uuid}")
 
     def ask_stream(self, prompt: str):
         if self.session is None:
