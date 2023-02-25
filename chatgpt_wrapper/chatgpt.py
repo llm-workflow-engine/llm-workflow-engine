@@ -22,17 +22,15 @@ RENDER_MODELS = {
     "legacy-free": "text-davinci-002-render"
 }
 
-log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
-def remove_json_invalid_control_chars(s):
-    """
-    Removes invalid control characters from the given json string.
-    """
+def extract_useful_json_key_from_str_by_regex(s):
     # Define a regex pattern that matches invalid control characters
-    pattern = re.compile(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\n]')
+    match = re.search(r'\s*"current_node"\s*:\s*"([a-zA-Z0-9-]+)"\s*', s)
+    if match:
+        current_node_value = match.group(1)
+        return json.dumps({"current_node": current_node_value})
+    else:
+        return {}
 
-    # Use the pattern to remove invalid control characters from the string
-    return pattern.sub('', s)
 
 
 class ChatGPT:
@@ -131,10 +129,12 @@ class ChatGPT:
                 f"div#{conversation_div_id}"
             )
             if len(conversation_info_datas) > 0:
+                conversation_info_after_extract = extract_useful_json_key_from_str_by_regex(conversation_info_datas[0].inner_text())
                 try:
-                    conversation_info = json.loads(remove_json_invalid_control_chars(conversation_info_datas[0].inner_text()))
+                    conversation_info = json.loads(conversation_info_after_extract)
                     break
                 except json.JSONDecodeError as e:
+                    print("{0}".format(conversation_info_after_extract))
                     print("load conversation info JSONDecodeError:", e)
             sleep(0.2)
         self.page.evaluate(f"document.getElementById('{conversation_div_id}').remove()")
