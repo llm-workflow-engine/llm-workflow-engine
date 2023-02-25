@@ -10,9 +10,21 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
 
 ## Updates
-- 17/02/2023: v0.3.16 - Ability to open **multiple sessions in parallel**. Code now works with **ChatGPT Plus** subscription.
+- 21/02/2023: v0.3.17
+  - Added debug mode (visible browser window).
+  - @thehunmonkgroup fixed chat naming.
+  - @thehunmonkgroup added !delete command to remove/hide conversations
+  - @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
+  - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT
+  - @thehunmonkgroup added !history command to show the list of the last 20 conversations
+  - @NatLee added **docker** support
+- 17/02/2023: v0.3.16
+  - Ability to open **multiple sessions in parallel**.
+  - Code now works with **ChatGPT Plus** subscription.
 - 14/02/2023: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model)
-- 14/02/2023: v0.3.11 - Fixed many bugs with installation. Code is refactored. Now able to use the python wrapper with a proxy.
+- 14/02/2023: v0.3.11
+  - Fixed many bugs with installation. Code is refactored.
+  - Now able to use the python wrapper with a **proxy**.
 - 18/01/2023: v0.3.8 - Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
 - 17/01/2023: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
 
@@ -31,6 +43,7 @@ See below for details on using ChatGPT as an API from Python.
 ## Requirements
 
 To use this repository, you need  `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
+To use the !write command, you need to install vipe. In ubuntu, you can install it with `sudo apt install moreutils`, in macos with `brew install moreutils`.
 
 ## Installation
 
@@ -63,6 +76,9 @@ chatgpt install
 ### Shell
 
 In addition to directly prompting ChatGPT, The shell provides the following commands:
+* `!help` display help commands, or `!help <command>` to display help for a specific command
+* `!exit` or `!quit` to exit the shell
+* `!ask` to ask a question (default)
 * `!new` allows to start a new conversation
 * `!nav` lets you navigate to a past point in the conversation. Example: `!nav 2`
 * `!stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream).
@@ -71,6 +87,17 @@ In addition to directly prompting ChatGPT, The shell provides the following comm
 * `!log` enables logging to a file.  Example: `!log mylog.txt` to enable, or `!log` to disable.
 * `!context` lets you load old contexts from the log (previous sessions).  It takes one parameter; a context string from logs.
 * `!session` refreshes your session information.  This can resolve errors under certain scenarios.
+* `!delete` deletes conversation from the webview, by conversation ID, history ID, or current conversation if no argument provided.
+* `!editor` opens the current prompt in the default editor (as defined by the EDITOR environment variable) and allows you to edit it.  The edited prompt is then sent to ChatGPT.
+* `!history` command shows the list of last 20 conversations
+
+Command arguments can be passed in the following ways:
+* --debug: enables debug mode (visible browser window)
+* --model: selects model ('default' or 'legacy-paid' or 'legacy-free')
+* --browser: selects browser ('firefox' or 'chromium' or 'webkit')
+* --log: log prompts and responses to the named file
+* --debug-log: debug logging to the named file
+* --no-stream: disables streaming mode (and enables markdown rendering)
 
 ### Python
 
@@ -93,6 +120,21 @@ You may also stream the response as it comes in from ChatGPT in chunks using the
   - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
   - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
   - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
+
+## Docker
+
+Build a image for testing `chatgpt-wrapper` with following commands.
+
+```bash
+docker-compose build && docker-compose up -d
+docker exec -it chatgpt-wrapper-container /bin/bash -c "chatgpt install"
+```
+
+Then, visit http://localhost:6901/vnc.html with password `headless` and login ChatGPT.
+
+Then, turn back to terminal and enjoy the chat!
+
+![chat](https://i.imgur.com/nRlzUzm.png)
 
 ## Contributing
 

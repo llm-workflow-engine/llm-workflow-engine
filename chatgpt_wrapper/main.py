@@ -32,10 +32,31 @@ def main():
         help="log prompts and responses to the named file",
     )
     parser.add_argument(
+        "-e",
+        "--debug-log",
+        metavar="FILEPATH",
+        action="store",
+        help="debug logging to FILEPATH",
+    )
+    parser.add_argument(
         "-b",
         "--browser",
         action="store",
         help="set preferred browser; 'firefox' 'chromium' or 'webkit'",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        choices=['default', 'legacy-paid', 'legacy-free'],
+        action="store",
+        help="set preferred model",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="enable debug mode in which the browser window is not hidden",
     )
     args = parser.parse_args()
     install_mode = len(args.params) == 1 and args.params[0] == "install"
@@ -47,8 +68,14 @@ def main():
             "this program without the 'install' parameter.\n"
         )
 
-    extra_kwargs = {} if args.browser is None else {"browser": args.browser}
-    chatgpt = ChatGPT(headless=not install_mode, timeout=90, **extra_kwargs)
+    extra_kwargs = {}
+    if args.browser is not None:
+        extra_kwargs["browser"] = args.browser
+    if args.model is not None:
+        extra_kwargs["model"] = args.model
+    if args.debug_log is not None:
+        extra_kwargs["debug_log"] = args.debug_log
+    chatgpt = ChatGPT(headless=not (install_mode or args.debug), timeout=90, **extra_kwargs)
 
     shell = GPTShell()
     shell._set_chatgpt(chatgpt)
