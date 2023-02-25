@@ -314,12 +314,13 @@ class GPTShell(cmd.Cmd):
                 self._print_markdown("* Current conversation has no title, you must send information first")
 
     def do_chat(self, arg):
-        "`!chat` Retrieve chat by ID or history ID. Example: `!chat [id]` or `!chat 2`"
+        "`!chat` Retrieve chat content by ID or history ID. Example: `!chat [id]` or `!chat 2`"
         conversation_id = None
         title = None
         if arg:
             if len(arg) == 36:
                 conversation_id = arg
+                title = arg
             else:
                 history = self._fetch_history()
                 history_list = [h for h in history.values()]
@@ -334,7 +335,7 @@ class GPTShell(cmd.Cmd):
                         conversation_id = history_list[id - 1]["id"]
                         title = history_list[id - 1]["title"]
                     else:
-                        self._print_markdown("* Cannot retrieve chat on history item %d, does not exist" % id)
+                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
                         return
         else:
             if not self.chatgpt.conversation_id:
@@ -347,7 +348,51 @@ class GPTShell(cmd.Cmd):
                 self._print_markdown(f"### {title}")
             self._print_markdown(self._conversation_from_messages(messages))
         else:
-            self._print_markdown("* Could no load chat")
+            self._print_markdown("* Could not load chat content")
+
+    def do_switch(self, arg):
+        "`!switch` Switch to chat by ID or history ID. Example: `!switch [id]` or `!switch 2`"
+        conversation_id = None
+        title = None
+        if arg:
+            if len(arg) == 36:
+                conversation_id = arg
+                title = arg
+            else:
+                history = self._fetch_history()
+                history_list = [h for h in history.values()]
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
+                    return
+                if id:
+                    if id <= len(history_list):
+                        conversation_id = history_list[id - 1]["id"]
+                        title = history_list[id - 1]["title"]
+                    else:
+                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
+                        return
+        else:
+            self._print_markdown("* Argument required, ID or history ID")
+            return
+        if conversation_id and conversation_id == self.chatgpt.conversation_id:
+            self._print_markdown("* You are already in chat: %s" % title)
+            return
+        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        if conversation_data:
+            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
+            message = messages.pop()
+            self.chatgpt.conversation_id = conversation_id
+            self.chatgpt.parent_message_id = message['id']
+            self._update_message_map()
+            self._write_log_context()
+            if title:
+                self._print_markdown(f"### Switched to: {title}")
+        else:
+            self._print_markdown("* Could not switch to chat")
+
 
     def do_exit(self, _):
         "`!exit` closes the program."
