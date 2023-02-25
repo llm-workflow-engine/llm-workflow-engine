@@ -37,7 +37,7 @@ class ChatGPT:
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
         self.log = self._set_logging(debug_log)
-        self.log.debug("ChatGPT initialized")
+        self.log.info("ChatGPT initialized")
         self.play = sync_playwright().start()
         try:
             playbrowser = getattr(self.play, browser)
@@ -164,7 +164,7 @@ class ChatGPT:
         response = self.page.request.patch(url, headers=headers, data=data)
         return self._process_api_response(url, response, method="PATCH")
 
-    def _set_title(self):
+    def _gen_title(self):
         if not self.conversation_id or self.conversation_id and self.conversation_title_set:
             return
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
@@ -179,6 +179,19 @@ class ChatGPT:
             self.conversation_title_set = True
         else:
             self.log.warning("Failed to auto-generate title for new conversation")
+
+    def conversation_data_to_messages(self, conversation_data):
+        mapping_dict = conversation_data['mapping']
+        messages = []
+        parent_id = None
+        while True:
+            current_item = next((item for item in mapping_dict.values() if item['parent'] == parent_id), None)
+            if current_item is None:
+                return messages
+            message = current_item['message']
+            if message is not None and 'author' in message and message['author']['role'] != 'system':
+                messages.append(current_item['message'])
+            parent_id = current_item['id']
 
     def delete_conversation(self, uuid=None):
         if self.session is None:
@@ -196,6 +209,20 @@ class ChatGPT:
         else:
             self.log.error("Failed to delete conversation")
 
+    def set_title(self, title, conversation_id=None):
+        if self.session is None:
+            self.refresh_session()
+        id = conversation_id if conversation_id else self.conversation_id
+        url = f"https://chat.openai.com/backend-api/conversation/{id}"
+        data = {
+            "title": title,
+        }
+        ok, json, response = self._api_patch_request(url, data)
+        if ok:
+            return json
+        else:
+            self.log.error("Failed to set title")
+
     def get_history(self, limit=20, offset=0):
         if self.session is None:
             self.refresh_session()
@@ -212,6 +239,18 @@ class ChatGPT:
             return history
         else:
             self.log.error("Failed to get history")
+
+    def get_conversation(self, id=None):
+        if self.session is None:
+            self.refresh_session()
+        id = id if id else self.conversation_id
+        if id:
+            url = f"https://chat.openai.com/backend-api/conversation/{id}"
+            ok, json, response = self._api_get_request(url)
+            if ok:
+                return json
+            else:
+                self.log.error(f"Failed to get conversation {uuid}")
 
     def ask_stream(self, prompt: str):
         if self.session is None:
@@ -340,7 +379,7 @@ class ChatGPT:
             sleep(0.2)
 
         self._cleanup_divs()
-        self._set_title()
+        self._gen_title()
 
     def ask(self, message: str) -> str:
         """
