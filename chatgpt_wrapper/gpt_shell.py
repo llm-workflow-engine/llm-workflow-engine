@@ -21,6 +21,7 @@ if is_windows:
 else:
     import readline
 
+DEFAULT_HISTORY_LIMIT = 20
 
 class GPTShell(cmd.Cmd):
     """
@@ -143,7 +144,7 @@ class GPTShell(cmd.Cmd):
             else:
                 sub_items = item.split('-')
                 try:
-                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= 20]
+                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= DEFAULT_HISTORY_LIMIT]
                 except ValueError:
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
                 if len(sub_items) == 1:
@@ -154,9 +155,9 @@ class GPTShell(cmd.Cmd):
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
-    def _fetch_history(self):
+    def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = self.chatgpt.get_history()
+        history = self.chatgpt.get_history(limit=limit, offset=offset)
         return history
 
     def _set_title(self, title, conversation_id=None):
@@ -222,9 +223,28 @@ class GPTShell(cmd.Cmd):
         else:
             self._delete_current_conversation()
 
-    def do_history(self, _):
-        "`!history` show recent conversation history, last 20 conversations."
-        history = self.chatgpt.get_history()
+    def do_history(self, arg):
+        "`!history` show recent conversation history, default 20 offset 0, Example `!history` or `!history 10` or `!history 10 5`"
+        limit = DEFAULT_HISTORY_LIMIT
+        offset = 0
+        if arg:
+            args = arg.split(' ')
+            if len(args) > 2:
+                self._print_markdown("* Invalid number of arguments, must be limit [offest]")
+                return
+            else:
+                try:
+                    limit = int(args[0])
+                except ValueError:
+                    self._print_markdown("* Invalid limit, must be an integer")
+                    return
+                if len(args) == 2:
+                    try:
+                        offset = int(args[1])
+                    except ValueError:
+                        self._print_markdown("* Invalid offset, must be an integer")
+                        return
+        history = self._fetch_history(limit=limit, offset=offset)
         if history:
             history_list = [h for h in history.values()]
             self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
