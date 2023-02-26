@@ -1,4 +1,4 @@
-""" AsyncChatGPT class
+""" ChatGPT class
 """
 import atexit
 import base64
@@ -46,7 +46,7 @@ class ChatGPT:
     session={}
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
-        """Create an AsyncChatGPT asynchronously
+        """Create an ChatGPT asynchronously
 
         Args:
             headless (bool, optional): Start headless (no GUI) browser. Defaults to True.
