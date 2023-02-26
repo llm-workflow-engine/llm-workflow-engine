@@ -10,6 +10,23 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
 
 ## Updates
+- 27/02/2023: v0.4.0
+  - BREAKING CHANGE: command leader is now '/' instead of '!'
+  - /quit command
+  - Added /tmp volume for saving playwright session
+  - Add tab compltion for commands
+  - /delete support for history IDs/UUIDs
+  - improve logging
+  - Added CI and CodeQL workflows
+  - /title command
+  - Initial API implementation in Flask
+  - Limit/offset support for /history
+  - Add simple developer debug module
+  - /chat command
+  - /switch command
+  - Improve session refreshing
+  - Migrate to Prompt Toolkit
+  - Migrate to async playwright
 - 21/02/2023: v0.3.17
   - Added debug mode (visible browser window).
   - @thehunmonkgroup fixed chat naming.
@@ -43,7 +60,7 @@ See below for details on using ChatGPT as an API from Python.
 ## Requirements
 
 To use this repository, you need  `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
-To use the !write command, you need to install vipe. In ubuntu, you can install it with `sudo apt install moreutils`, in macos with `brew install moreutils`.
+To use the /write command, you need to install vipe. In ubuntu, you can install it with `sudo apt install moreutils`, in macos with `brew install moreutils`.
 
 ## Installation
 
@@ -75,42 +92,49 @@ chatgpt install
 
 ### Shell
 
-In addition to directly prompting ChatGPT, The shell provides the following commands:
-* `!help` display help commands, or `!help <command>` to display help for a specific command
-* `!exit` or `!quit` to exit the shell
-* `!ask` to ask a question (default)
-* `!new` allows to start a new conversation
-* `!nav` lets you navigate to a past point in the conversation. Example: `!nav 2`
-* `!stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream).
-* `!read` begins reading multi-line input. Usefull when copy-pasting
-* `!file` sends a prompt read from the named file.  Example: `file myprompt.txt`
-* `!log` enables logging to a file.  Example: `!log mylog.txt` to enable, or `!log` to disable.
-* `!context` lets you load old contexts from the log (previous sessions).  It takes one parameter; a context string from logs.
-* `!session` refreshes your session information.  This can resolve errors under certain scenarios.
-* `!delete` deletes conversation from the webview, by conversation ID, history ID, or current conversation if no argument provided.
-* `!editor` opens the current prompt in the default editor (as defined by the EDITOR environment variable) and allows you to edit it.  The edited prompt is then sent to ChatGPT.
-* `!history` show recent conversation history, default 20 offset 0, Example `!history` or `!history 10` or `!history 10 5`
-* `!title` get/set title of current conversation, or set title by history ID
-* `!chat` retrieve chat by ID or history ID. Example: `!chat [id]` or `!chat 2`
-* `!switch` Switch to chat by ID or history ID. Example: `!switch [id]` or `!switch 2`
+#### Command line arguments
 
-Command arguments can be passed in the following ways:
-* --debug: enables debug mode (visible browser window)
-* --model: selects model ('default' or 'legacy-paid' or 'legacy-free')
-* --browser: selects browser ('firefox' or 'chromium' or 'webkit')
-* --log: log prompts and responses to the named file
-* --debug-log: debug logging to the named file
-* --no-stream: disables streaming mode (and enables markdown rendering)
+Run `chatgpt --help`
+
+#### One-shot mode
+
+To run the CLI in one-shot mode, simply follow the command with the prompt you want to send to ChatGPT:
+
+```
+chatgpt Hello World!
+```
+
+#### Interacive mode
+
+
+To run the CLI in interactive mode, execute it with no additional arguments:
+
+```
+chatgpt
+```
+
+Once the interactive shell is running, you can see a list of all commands with:
+
+```
+/help
+```
+
+...or get help for a specific command with:
+
+```
+/help <command>
+```
 
 ### Python
 
 To use the `ChatGPT` class as an API for talking to ChatGPT, create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
+import asyncio
 from chatgpt_wrapper import ChatGPT
 
 bot = ChatGPT()
-response = bot.ask("Hello, world!")
+response = asyncio.run(bot.ask("Hello, world!"))
 print(response)  # prints the response from chatGPT
 ```
 
