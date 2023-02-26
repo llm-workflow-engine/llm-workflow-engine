@@ -138,43 +138,56 @@ class ChatGPT:
         if hasattr(self, "user_data_dir"):
             shutil.rmtree(self.user_data_dir)
         self.play.stop()
-    def refresh_session(self,timeout=15):
-        """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
+    def refresh_session(self,timeout=20,remaining_retry=5):
+        self.log.info("Refreshing session")
+        if remaining_retry==0:
+            self.log.error("Cannot refresh session. ")
+            raise error.NetworkError("Cannot refresh session. ")
+        self.page.evaluate(
+            """
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://chat.openai.com/api/auth/session');
+            xhr.onload = () => {
+                if(xhr.status == 200) {
+                    let mydiv = document.createElement('DIV');
+                    mydiv.id = "SESSION_DIV_ID"
+                    mydiv.innerHTML = xhr.responseText;
+                    document.body.appendChild(mydiv);
+                }else{
+                    let err = document.createElement('div')
+                    err.id=ERROR_DIV_ID
+                    console.error(xhr)
+                    document.body.appendChild(err)
+                }
+            };
+            xhr.send();
+            """
+            .replace("SESSION_DIV_ID", self.session_div_id)
+            .replace("ERROR_DIV_ID", self.error_div_id)
+        )
+        starttime=datetime.datetime.now()
+        while (datetime.datetime.now()-starttime).total_seconds()<=timeout:
+            session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
+            error_datas = self.page.query_selector_all(f"div#{self.error_div_id}")
+            if len(session_datas) > 0:
+                session_data = json.loads(session_datas[0].inner_text())
+                self.session = session_data
+                self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
+                return
 
-        In this way, we can pass the browser check.
+            elif len(error_datas) > 0:
+                self.log.warning("Refreshing session failed. Retrying...")
+                self.page.evaluate(f"document.getElementById('{self.error_div_id}').remove()")
+                # break and retry
+                break
+            time.sleep(0.2)
+        else:
+            logging.warning("Refreshing session timed out. Retrying...")
 
-        Args:
-            timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 10.
-        """
-        self.log.info("Refreshing session...")
-        ChatGPT.page.goto("https://chat.openai.com/api/auth/session")
-        try:
-            ChatGPT.page.wait_for_url("/api/auth/session",timeout=timeout*1000)
-        except Exception:
-            self.log.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
-            self._start_browser()
-        try:
-            contents=ChatGPT.page.content()
-            if "Please stand by, while we are checking your browser..." in contents:
-                time.sleep(10)
-                contents=ChatGPT.page.content()
-            start=contents.find("{")
-            if start<0:
-                raise json.JSONDecodeError("A { was not found. ",contents,0)
-            for index in range(len(contents)-1,0-1,-1):
-                if contents[index]=='}':
-                    end=index
-                    break
-            else:
-                self.log.error("A } was not found. ")
-                raise json.JSONDecodeError("A } was not found. ",contents,0)
-            contents=contents[start:end+1]
-            self.log.debug("Refreshing session received: %s",contents)
-            ChatGPT.session=json.loads(contents)
-            self.log.info("Succeessfully refreshed session. ")
-        except json.JSONDecodeError:
-            self.log.error("Failed to decode session key. Maybe Access denied? ")
-        self._start_browser()
+        # Try again
+        self.refresh_session(remaining_retry=remaining_retry-1)
+        return
+
 
 
     def _cleanup_divs(self):
