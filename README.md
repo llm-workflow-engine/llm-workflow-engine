@@ -10,6 +10,8 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
 
 ## Updates
+- 27/02/2023: v0.3.18
+  - Added the include addition of !file to any kind of inputs.
 - 21/02/2023: v0.3.17
   - Added debug mode (visible browser window).
   - @thehunmonkgroup fixed chat naming.

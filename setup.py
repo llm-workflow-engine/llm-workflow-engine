@@ -9,12 +9,12 @@ with open('requirements.txt') as f:
 setup(
     name="chatGPT",
     version="0.3.17",
-    author="Mahmoud Mabrouk",
+    author="Mahmoud Mabrouk / extended Christian Schnapka",
     author_email="mahmoudmabrouk.mail@gmail.com",
     description="A simple Python class for interacting with OpenAI's chatGPT using Playwright",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/mmabrouk/chatgpt-wrapper",
+    url="https://github.com/nolem/chatgpt-wrapper-with-inline-code",
     packages=find_packages(),
     install_requires=install_requirement,
     classifiers=[
