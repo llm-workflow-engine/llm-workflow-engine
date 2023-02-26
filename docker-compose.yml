@@ -13,4 +13,5 @@ services:
       - VNC_RESOLUTION=1600x900
     ports:
       - 6901:6901 # Just for logging in with noVNC
-    command: "bash /src/docker-entrypoint.sh" # Run the entrypoint script
+      - 5000:5000 # Flask port
+    command: "python chatgpt_wrapper/gpt_api.py" # Run the entrypoint script
