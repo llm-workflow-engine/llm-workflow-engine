@@ -96,35 +96,46 @@ class ChatGPT:
             shutil.rmtree(self.user_data_dir)
         self.play.stop()
 
-    def refresh_session(self):
-        self.page.evaluate(
-            """
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'https://chat.openai.com/api/auth/session');
-        xhr.onload = () => {
-          if(xhr.status == 200) {
-            var mydiv = document.createElement('DIV');
-            mydiv.id = "SESSION_DIV_ID"
-            mydiv.innerHTML = xhr.responseText;
-            document.body.appendChild(mydiv);
-          }
-        };
-        xhr.send();
-        """.replace(
-                "SESSION_DIV_ID", self.session_div_id
-            )
-        )
+    def refresh_session(self,timeout=15):
+        """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
 
-        while True:
-            session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
-            if len(session_datas) > 0:
-                break
-            sleep(0.2)
+        In this way, we can pass the browser check.
 
-        session_data = json.loads(session_datas[0].inner_text())
-        self.session = session_data
+        Args:
+            timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 10.
+        """
+        self.log.info("Refreshing session...")
+        self.page.goto("https://chat.openai.com/api/auth/session")
+        try:
+            self.page.wait_for_url("/api/auth/session",timeout=timeout*1000)
+        except Exception:
+            self.log.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
+            self._start_browser()
+        try:
+            contents=self.page.content()
+            if "Please stand by, while we are checking your browser..." in contents:
+                time.sleep(10)
+                contents=self.page.content()
+            start=contents.find("{")
+            if start<0:
+                raise json.JSONDecodeError("A { was not found. ",contents,0)
+            for index in range(len(contents)-1,0-1,-1):
+                if contents[index]=='}':
+                    end=index
+                    break
+            else:
+                self.log.error("A } was not found. ")
+                raise json.JSONDecodeError("A } was not found. ",contents,0)
+            contents=contents[start:end+1]
+            self.log.debug("Refreshing session received: %s",contents)
+            self.session=json.loads(contents)
+            self.log.info("Succeessfully refreshed session. ")
+        except json.JSONDecodeError:
+            self.log.error("Failed to decode session key. Maybe Access denied? ")
 
-        self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
+        # Now the browser should be at /api/auth/session
+        # Go back to the chat page.
+        self._start_browser()
 
     def _cleanup_divs(self):
         self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
