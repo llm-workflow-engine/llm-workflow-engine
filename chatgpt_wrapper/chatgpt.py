@@ -34,40 +34,34 @@ class ChatGPT:
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
+    play=None
+    browser=None
+    page=None
+    session={}
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
         self.log = self._set_logging(debug_log)
         self.log.info("ChatGPT initialized")
-        self.play = sync_playwright().start()
+        if ChatGPT.play is None:
+            ChatGPT.play = sync_playwright().start()
         try:
-            playbrowser = getattr(self.play, browser)
+            playbrowser = getattr(ChatGPT.play, browser)
         except Exception:
             print(f"Browser {browser} is invalid, falling back on firefox")
-            playbrowser = self.play.firefox
-        try:
-            self.browser = playbrowser.launch_persistent_context(
+            playbrowser = ChatGPT.play.firefox
+        if ChatGPT.browser is None:
+            ChatGPT.browser = playbrowser.launch_persistent_context(
                 user_data_dir="/tmp/playwright",
                 headless=headless,
                 proxy=proxy,
             )
-        except Exception:
-            self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
-            shutil.copytree("/tmp/playwright", self.user_data_dir)
-            self.browser = playbrowser.launch_persistent_context(
-                user_data_dir=self.user_data_dir,
-                headless=headless,
-                proxy=proxy,
-            )
 
-        if len(self.browser.pages) > 0:
-            self.page = self.browser.pages[0]
-        else:
-            self.page = self.browser.new_page()
+        if ChatGPT.page is None:
+            ChatGPT.page = ChatGPT.browser.new_page()
         self._start_browser()
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.conversation_title_set = None
-        self.session = None
         self.model = model
         self.timeout = timeout
         atexit.register(self._cleanup)
@@ -87,17 +81,15 @@ class ChatGPT:
         return logger
 
     def _start_browser(self):
-        self.page.goto("https://chat.openai.com/")
+        ChatGPT.page.goto("https://chat.openai.com/")
 
     def _cleanup(self):
-        self.browser.close()
         # remove the user data dir in case this is a second instance
         if hasattr(self, "user_data_dir"):
             shutil.rmtree(self.user_data_dir)
-        self.play.stop()
 
     def refresh_session(self):
-        self.page.evaluate(
+        ChatGPT.page.evaluate(
             """
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://chat.openai.com/api/auth/session');
@@ -116,23 +108,23 @@ class ChatGPT:
         )
 
         while True:
-            session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
+            session_datas = ChatGPT.page.query_selector_all(f"div#{self.session_div_id}")
             if len(session_datas) > 0:
                 break
             sleep(0.2)
 
         session_data = json.loads(session_datas[0].inner_text())
-        self.session = session_data
+        ChatGPT.session = session_data
 
-        self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
+        ChatGPT.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
 
     def _cleanup_divs(self):
-        self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
-        self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+        ChatGPT.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
+        ChatGPT.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
-            "Authorization": "Bearer %s" % self.session["accessToken"],
+            "Authorization": "Bearer %s" % ChatGPT.session["accessToken"],
         }
         headers.update(custom_headers)
         return headers
@@ -151,17 +143,17 @@ class ChatGPT:
 
     def _api_get_request(self, url, query_params={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = self.page.request.get(url, headers=headers, params=query_params)
+        response = ChatGPT.page.request.get(url, headers=headers, params=query_params)
         return self._process_api_response(url, response)
 
     def _api_post_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = self.page.request.post(url, headers=headers, data=data)
+        response = ChatGPT.page.request.post(url, headers=headers, data=data)
         return self._process_api_response(url, response, method="POST")
 
     def _api_patch_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = self.page.request.patch(url, headers=headers, data=data)
+        response = ChatGPT.page.request.patch(url, headers=headers, data=data)
         return self._process_api_response(url, response, method="PATCH")
 
     def _gen_title(self):
@@ -194,7 +186,7 @@ class ChatGPT:
             parent_id = current_item['id']
 
     def delete_conversation(self, uuid=None):
-        if self.session is None:
+        if 'accessToken' not in ChatGPT.session:
             self.refresh_session()
         if not uuid and not self.conversation_id:
             return
@@ -210,7 +202,7 @@ class ChatGPT:
             self.log.error("Failed to delete conversation")
 
     def set_title(self, title, conversation_id=None):
-        if self.session is None:
+        if 'accessToken' not in ChatGPT.session:
             self.refresh_session()
         id = conversation_id if conversation_id else self.conversation_id
         url = f"https://chat.openai.com/backend-api/conversation/{id}"
@@ -224,7 +216,7 @@ class ChatGPT:
             self.log.error("Failed to set title")
 
     def get_history(self, limit=20, offset=0):
-        if self.session is None:
+        if 'accessToken' not in ChatGPT.session:
             self.refresh_session()
         url = "https://chat.openai.com/backend-api/conversations"
         query_params = {
@@ -241,7 +233,7 @@ class ChatGPT:
             self.log.error("Failed to get history")
 
     def get_conversation(self, id=None):
-        if self.session is None:
+        if 'accessToken' not in ChatGPT.session:
             self.refresh_session()
         id = id if id else self.conversation_id
         if id:
@@ -253,12 +245,12 @@ class ChatGPT:
                 self.log.error(f"Failed to get conversation {uuid}")
 
     def ask_stream(self, prompt: str):
-        if self.session is None:
+        if 'accessToken' not in ChatGPT.session:
             self.refresh_session()
 
         new_message_id = str(uuid.uuid4())
 
-        if "accessToken" not in self.session:
+        if "accessToken" not in ChatGPT.session:
             yield (
                 "Your ChatGPT session is not usable.\n"
                 "* Run this program with the `install` parameter and log in to ChatGPT.\n"
@@ -325,21 +317,21 @@ class ChatGPT:
             };
             xhr.send(JSON.stringify(REQUEST_JSON));
             """.replace(
-                "BEARER_TOKEN", self.session["accessToken"]
+                "BEARER_TOKEN", ChatGPT.session["accessToken"]
             )
             .replace("REQUEST_JSON", json.dumps(request))
             .replace("STREAM_DIV_ID", self.stream_div_id)
             .replace("EOF_DIV_ID", self.eof_div_id)
         )
 
-        self.page.evaluate(code)
+        ChatGPT.page.evaluate(code)
 
         last_event_msg = ""
         start_time = time.time()
         while True:
-            eof_datas = self.page.query_selector_all(f"div#{self.eof_div_id}")
+            eof_datas = ChatGPT.page.query_selector_all(f"div#{self.eof_div_id}")
 
-            conversation_datas = self.page.query_selector_all(
+            conversation_datas = ChatGPT.page.query_selector_all(
                 f"div#{self.stream_div_id}"
             )
             if len(conversation_datas) == 0:
