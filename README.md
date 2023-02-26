@@ -83,7 +83,7 @@ In addition to directly prompting ChatGPT, The shell provides the following comm
 * `!nav` lets you navigate to a past point in the conversation. Example: `!nav 2`
 * `!stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream).
 * `!read` begins reading multi-line input. Usefull when copy-pasting
-* `!file` sends a prompt read from the named file.  Example: `file myprompt.txt`
+* `!file` sends a prompt read from the named file.  Example: `file myprompt.txt` . This can be used inline. Example: `Please optimize the source of !file main_module.java`
 * `!log` enables logging to a file.  Example: `!log mylog.txt` to enable, or `!log` to disable.
 * `!context` lets you load old contexts from the log (previous sessions).  It takes one parameter; a context string from logs.
 * `!session` refreshes your session information.  This can resolve errors under certain scenarios.

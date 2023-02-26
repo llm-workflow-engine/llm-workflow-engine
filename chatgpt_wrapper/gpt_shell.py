@@ -1,6 +1,7 @@
 import cmd
 import os
 import platform
+import re
 import sys
 import datetime
 import subprocess
@@ -406,9 +407,35 @@ class GPTShell(cmd.Cmd):
         "`!ask` asks a question to chatgpt. It is purely optional. Example: `!ask what is 6+6` is the same as `what is 6+6`"
         return self.default(line)
 
+    def replace_file_strings(self, string):
+        # Regular expression to find all occurrences of !file and their arguments
+        pattern = r"!file\s+(\S+)"
+
+        # Search for all matches of the regular expression in the string
+        matches = re.findall(pattern, string)
+
+        # Loop through each match and replace the corresponding substring
+        for match in matches:
+            print("handle file" + match)
+            filename = match
+            if os.path.isfile(filename):
+                with open(filename, "r") as f:
+                    file_contents = f.read()
+                    # add the file content as seperated segment. Good way to go?
+                    string = "\n\n" + string.replace("!file " + filename, file_contents) + "\n\n"
+            else:
+                print("File not found: " + filename)
+
+        print("returned string: " + string)
+
+        return string
+
     def default(self, line):
         if not line:
             return
+
+        # find in the line all "!file" entries with the following argument and replace the file content
+        line = self.replace_file_strings(line)
 
         if self.stream:
             response = ""
