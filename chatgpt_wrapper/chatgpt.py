@@ -1,3 +1,4 @@
+import os
 import atexit
 import base64
 import json
@@ -34,11 +35,13 @@ class ChatGPT:
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
+    chatgpt_url = "https://chat.openai.com/"
 
-    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, after_browser_launched_cb = None, proxy: Optional[ProxySettings] = None):
         self.log = self._set_logging(debug_log)
         self.log.info("ChatGPT initialized")
         self.play = sync_playwright().start()
+        self.after_browser_launched_cb = after_browser_launched_cb
         try:
             playbrowser = getattr(self.play, browser)
         except Exception:
@@ -87,7 +90,9 @@ class ChatGPT:
         return logger
 
     def _start_browser(self):
-        self.page.goto("https://chat.openai.com/")
+        self.page.goto(self.__class__.chatgpt_url)
+        if self.after_browser_launched_cb:
+            self.after_browser_launched_cb(self.page)
 
     def _cleanup(self):
         self.browser.close()
