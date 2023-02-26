@@ -14,8 +14,7 @@ import threading
 from typing import Optional
 from playwright.sync_api import sync_playwright
 from playwright._impl._api_structures import ProxySettings
-# from . import error
-import error
+from . import error
 
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
