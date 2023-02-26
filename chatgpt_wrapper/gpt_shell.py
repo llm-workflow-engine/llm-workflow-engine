@@ -10,17 +10,12 @@ import readline
 from rich.console import Console
 from rich.markdown import Markdown
 
-from chatgpt_wrapper.chatgpt import ChatGPT
-
 console = Console()
 
 # use pyreadline3 instead of readline on windows
 is_windows = platform.system() == "Windows"
-if is_windows:
-    import pyreadline3  # noqa: F401
-else:
-    import readline
 
+DEFAULT_HISTORY_LIMIT = 20
 
 class GPTShell(cmd.Cmd):
     """
@@ -143,7 +138,7 @@ class GPTShell(cmd.Cmd):
             else:
                 sub_items = item.split('-')
                 try:
-                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= 20]
+                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= DEFAULT_HISTORY_LIMIT]
                 except ValueError:
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
                 if len(sub_items) == 1:
@@ -154,9 +149,18 @@ class GPTShell(cmd.Cmd):
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
-    def _fetch_history(self):
+    def _conversation_from_messages(self, messages):
+        message_parts = []
+        for message in messages:
+            if 'content' in message:
+                message_parts.append("**%s**:" % message['author']['role'].capitalize())
+                message_parts.extend(message['content']['parts'])
+        content = "\n\n".join(message_parts)
+        return content
+
+    def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = self.chatgpt.get_history()
+        history = self.chatgpt.get_history(limit=limit, offset=offset)
         return history
 
     def _set_title(self, title, conversation_id=None):
@@ -222,9 +226,28 @@ class GPTShell(cmd.Cmd):
         else:
             self._delete_current_conversation()
 
-    def do_history(self, _):
-        "`!history` show recent conversation history, last 20 conversations."
-        history = self.chatgpt.get_history()
+    def do_history(self, arg):
+        "`!history` show recent conversation history, default 20 offset 0, Example `!history` or `!history 10` or `!history 10 5`"
+        limit = DEFAULT_HISTORY_LIMIT
+        offset = 0
+        if arg:
+            args = arg.split(' ')
+            if len(args) > 2:
+                self._print_markdown("* Invalid number of arguments, must be limit [offest]")
+                return
+            else:
+                try:
+                    limit = int(args[0])
+                except ValueError:
+                    self._print_markdown("* Invalid limit, must be an integer")
+                    return
+                if len(args) == 2:
+                    try:
+                        offset = int(args[1])
+                    except ValueError:
+                        self._print_markdown("* Invalid offset, must be an integer")
+                        return
+        history = self._fetch_history(limit=limit, offset=offset)
         if history:
             history_list = [h for h in history.values()]
             self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
@@ -289,6 +312,87 @@ class GPTShell(cmd.Cmd):
                     self._print_markdown("* Cannot load conversation title, not in history.")
             else:
                 self._print_markdown("* Current conversation has no title, you must send information first")
+
+    def do_chat(self, arg):
+        "`!chat` Retrieve chat content by ID or history ID. Example: `!chat [id]` or `!chat 2`"
+        conversation_id = None
+        title = None
+        if arg:
+            if len(arg) == 36:
+                conversation_id = arg
+                title = arg
+            else:
+                history = self._fetch_history()
+                history_list = [h for h in history.values()]
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
+                    return
+                if id:
+                    if id <= len(history_list):
+                        conversation_id = history_list[id - 1]["id"]
+                        title = history_list[id - 1]["title"]
+                    else:
+                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
+                        return
+        else:
+            if not self.chatgpt.conversation_id:
+                self._print_markdown("* Current conversation is empty, you must send information first")
+                return
+        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        if conversation_data:
+            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
+            if title:
+                self._print_markdown(f"### {title}")
+            self._print_markdown(self._conversation_from_messages(messages))
+        else:
+            self._print_markdown("* Could not load chat content")
+
+    def do_switch(self, arg):
+        "`!switch` Switch to chat by ID or history ID. Example: `!switch [id]` or `!switch 2`"
+        conversation_id = None
+        title = None
+        if arg:
+            if len(arg) == 36:
+                conversation_id = arg
+                title = arg
+            else:
+                history = self._fetch_history()
+                history_list = [h for h in history.values()]
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
+                    return
+                if id:
+                    if id <= len(history_list):
+                        conversation_id = history_list[id - 1]["id"]
+                        title = history_list[id - 1]["title"]
+                    else:
+                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
+                        return
+        else:
+            self._print_markdown("* Argument required, ID or history ID")
+            return
+        if conversation_id and conversation_id == self.chatgpt.conversation_id:
+            self._print_markdown("* You are already in chat: %s" % title)
+            return
+        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        if conversation_data:
+            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
+            message = messages.pop()
+            self.chatgpt.conversation_id = conversation_id
+            self.chatgpt.parent_message_id = message['id']
+            self._update_message_map()
+            self._write_log_context()
+            if title:
+                self._print_markdown(f"### Switched to: {title}")
+        else:
+            self._print_markdown("* Could not switch to chat")
+
 
     def do_exit(self, _):
         "`!exit` closes the program."
