@@ -23,7 +23,7 @@ RENDER_MODELS = {
     "legacy-free": "text-davinci-002-render"
 }
 
-DEFAULT_CONSOLE_LOG_LEVEL = logging.DEBUG
+DEFAULT_CONSOLE_LOG_LEVEL = logging.ERROR
 DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
 DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
 DEFAULT_FILE_LOG_FORMATTER = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
