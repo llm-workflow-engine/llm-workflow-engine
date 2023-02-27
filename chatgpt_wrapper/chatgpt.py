@@ -113,6 +113,8 @@ class ChatGPT:
             self.log.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
             self._start_browser()
         try:
+            while "Please stand by, while we are checking your browser..." in self.page.content():
+                time.sleep(1)
             contents=self.page.content()
             """
             By GETting /api/auth/session, the server would ultimately return a raw json file.
