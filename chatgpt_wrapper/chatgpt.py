@@ -508,25 +508,3 @@ class ChatGPT:
         self.conversation_title_set = None
 
 
-
-def main():
-    gpt=ChatGPT(headless=False)
-    # loop=asyncio.get_event_loop()
-    # prompt=input("> ")
-    prompt="Good night!"
-    while prompt!='exit':
-        prompt=input("> ")
-        if prompt=='delete':
-            gpt.delete_conversation()
-        elif prompt=='title':
-            gpt._gen_title()
-        elif prompt=='history':
-            print(gpt.get_history())
-        else:
-            print('< ',end='',flush=True)
-            print(gpt.ask(prompt))
-            print('')
-
-if __name__=='__main__':
-    main()
-
