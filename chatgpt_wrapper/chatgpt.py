@@ -6,6 +6,7 @@ import operator
 import time
 import uuid
 import logging
+import re
 import shutil
 from functools import reduce
 from time import sleep
@@ -96,35 +97,47 @@ class ChatGPT:
             shutil.rmtree(self.user_data_dir)
         self.play.stop()
 
-    def refresh_session(self):
-        self.page.evaluate(
+    def refresh_session(self,timeout=15):
+        """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
+
+        In this way, we can pass the browser check.
+
+        Args:
+            timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 10.
+        """
+        self.log.info("Refreshing session...")
+        self.page.goto("https://chat.openai.com/api/auth/session")
+        try:
+            self.page.wait_for_url("/api/auth/session",timeout=timeout*1000)
+        except Exception:
+            self.log.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
+            self._start_browser()
+        try:
+            while "Please stand by, while we are checking your browser..." in self.page.content():
+                time.sleep(1)
+            contents=self.page.content()
             """
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'https://chat.openai.com/api/auth/session');
-        xhr.onload = () => {
-          if(xhr.status == 200) {
-            var mydiv = document.createElement('DIV');
-            mydiv.id = "SESSION_DIV_ID"
-            mydiv.innerHTML = xhr.responseText;
-            document.body.appendChild(mydiv);
-          }
-        };
-        xhr.send();
-        """.replace(
-                "SESSION_DIV_ID", self.session_div_id
-            )
-        )
+            By GETting /api/auth/session, the server would ultimately return a raw json file.
+            However, as this is a browser, it will add something to it, like <body> or so, like this:
 
-        while True:
-            session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
-            if len(session_datas) > 0:
-                break
-            sleep(0.2)
+            <html><head><link rel="stylesheet" href="resource://content-accessible/plaintext.css"></head><body><pre>{xxx:"xxx",{},accessToken="sdjlsfdkjnsldkjfslawefkwnlsdw"}
+            </pre></body></html>
 
-        session_data = json.loads(session_datas[0].inner_text())
-        self.session = session_data
+            The following code tries to extract the json part from the page, by simply finding the first `{` and the last `}`.
+            """
+            found_json=re.search('{.*}',contents)
+            if found_json==None:
+                raise JSONDecodeError("Cannot find JSON in /api/auth/session 's response")
+            contents=contents[found_json.start():found_json.end()]
+            self.log.debug("Refreshing session received: %s",contents)
+            self.session=json.loads(contents)
+            self.log.info("Succeessfully refreshed session. ")
+        except json.JSONDecodeError:
+            self.log.error("Failed to decode session key. Maybe Access denied? ")
 
-        self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
+        # Now the browser should be at /api/auth/session
+        # Go back to the chat page.
+        self._start_browser()
 
     def _cleanup_divs(self):
         self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
