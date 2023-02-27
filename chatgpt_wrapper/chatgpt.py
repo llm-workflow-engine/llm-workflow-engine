@@ -6,6 +6,7 @@ import operator
 import time
 import uuid
 import logging
+import re
 import shutil
 from functools import reduce
 from time import sleep
@@ -113,20 +114,19 @@ class ChatGPT:
             self._start_browser()
         try:
             contents=self.page.content()
-            if "Please stand by, while we are checking your browser..." in contents:
-                time.sleep(10)
-                contents=self.page.content()
-            start=contents.find("{")
-            if start<0:
-                raise json.JSONDecodeError("A { was not found. ",contents,0)
-            for index in range(len(contents)-1,0-1,-1):
-                if contents[index]=='}':
-                    end=index
-                    break
-            else:
-                self.log.error("A } was not found. ")
-                raise json.JSONDecodeError("A } was not found. ",contents,0)
-            contents=contents[start:end+1]
+            """
+            By GETting /api/auth/session, the server would ultimately return a raw json file.
+            However, as this is a browser, it will add something to it, like <body> or so, like this:
+
+            <html><head><link rel="stylesheet" href="resource://content-accessible/plaintext.css"></head><body><pre>{xxx:"xxx",{},accessToken="sdjlsfdkjnsldkjfslawefkwnlsdw"}
+            </pre></body></html>
+
+            The following code tries to extract the json part from the page, by simply finding the first `{` and the last `}`.
+            """
+            found_json=re.search('{.*}',contents)
+            if found_json==None:
+                raise JSONDecodeError("Cannot find JSON in /api/auth/session 's response")
+            contents=contents[found_json.start():found_json.end()]
             self.log.debug("Refreshing session received: %s",contents)
             self.session=json.loads(contents)
             self.log.info("Succeessfully refreshed session. ")
