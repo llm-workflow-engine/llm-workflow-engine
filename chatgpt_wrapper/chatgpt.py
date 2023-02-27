@@ -12,6 +12,7 @@ from time import sleep
 from typing import Optional
 from playwright.sync_api import sync_playwright
 from playwright._impl._api_structures import ProxySettings
+from playwright.sync_api._generated import BrowserContext
 
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
@@ -34,30 +35,17 @@ class ChatGPT:
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     session_div_id = "chatgpt-wrapper-session-data"
-    play=None
-    browser=None
-    page=None
     session={}
+    # A single play can launch many browsers
+    play=sync_playwright().start()
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
         self.log = self._set_logging(debug_log)
         self.log.info("ChatGPT initialized")
-        if ChatGPT.play is None:
-            ChatGPT.play = sync_playwright().start()
-        try:
-            playbrowser = getattr(ChatGPT.play, browser)
-        except Exception:
-            print(f"Browser {browser} is invalid, falling back on firefox")
-            playbrowser = ChatGPT.play.firefox
-        if ChatGPT.browser is None:
-            ChatGPT.browser = playbrowser.launch_persistent_context(
-                user_data_dir="/tmp/playwright",
-                headless=headless,
-                proxy=proxy,
-            )
 
-        if ChatGPT.page is None:
-            ChatGPT.page = ChatGPT.browser.new_page()
+        self.browser=self.page=None # Without this the linter would complain about defining attributes outside init
+        self._setup_browser(headless=headless,browser=browser,proxy=proxy)
+
         self._start_browser()
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
@@ -65,6 +53,47 @@ class ChatGPT:
         self.model = model
         self.timeout = timeout
         atexit.register(self._cleanup)
+
+    def _setup_browser(self,headless: bool, browser, proxy: ProxySettings):
+        """Setup the browser
+
+        Args:
+            headless (bool)
+            browser (str | BrowserContext):
+                If it is str, it should be one of 'firefox', 'chromium' and 'webkit'.
+                If it is a BrowserContext(playwright.sync_api._generated.BrowserContext), it will be directly used as the browser and no new browser context is created.
+            proxy (ProxySettings): _description_
+        """
+        if isinstance(browser,str):
+            if not hasattr(self.play,browser):
+                self.log.error("Browser %s is invalid, falling back on firefox. ",browser)
+                browser='firefox'
+            playbrowser=getattr(self.play,browser)
+
+            try:
+                self.browser=playbrowser.launch_persistent_context(
+                    user_data_dir="/tmp/playwright",
+                    headless=headless,
+                    proxy=proxy,
+                )
+            except Exception:
+                self.user_data_dir=f"/tmp/{str(uuid.uuid4())}"
+                shutil.copytree("/tmp/playwright", self.user_data_dir)
+                self.browser = playbrowser.launch_persistent_context(
+                    user_data_dir=self.user_data_dir,
+                    headless=headless,
+                    proxy=proxy,
+                )
+        elif isinstance(browser,BrowserContext):
+            self.browser=browser
+        else:
+            raise TypeError("Argument `browser` is neither str nor playwright.sync_api._generated.BrowserType")
+
+        if len(self.browser.pages)>0:
+            self.page=self.browser.pages[0]
+        else:
+            self.page=self.browser.new_page()
+        self._start_browser()
 
     def _set_logging(self, debug_log):
         logger = logging.getLogger(self.__class__.__name__)
@@ -81,7 +110,7 @@ class ChatGPT:
         return logger
 
     def _start_browser(self):
-        ChatGPT.page.goto("https://chat.openai.com/")
+        self.page.goto("https://chat.openai.com/")
 
     def _cleanup(self):
         # remove the user data dir in case this is a second instance
@@ -89,7 +118,7 @@ class ChatGPT:
             shutil.rmtree(self.user_data_dir)
 
     def refresh_session(self):
-        ChatGPT.page.evaluate(
+        self.page.evaluate(
             """
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://chat.openai.com/api/auth/session');
@@ -108,7 +137,7 @@ class ChatGPT:
         )
 
         while True:
-            session_datas = ChatGPT.page.query_selector_all(f"div#{self.session_div_id}")
+            session_datas = self.page.query_selector_all(f"div#{self.session_div_id}")
             if len(session_datas) > 0:
                 break
             sleep(0.2)
@@ -116,11 +145,11 @@ class ChatGPT:
         session_data = json.loads(session_datas[0].inner_text())
         ChatGPT.session = session_data
 
-        ChatGPT.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
+        self.page.evaluate(f"document.getElementById('{self.session_div_id}').remove()")
 
     def _cleanup_divs(self):
-        ChatGPT.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
-        ChatGPT.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+        self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
+        self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
@@ -143,17 +172,17 @@ class ChatGPT:
 
     def _api_get_request(self, url, query_params={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = ChatGPT.page.request.get(url, headers=headers, params=query_params)
+        response = self.page.request.get(url, headers=headers, params=query_params)
         return self._process_api_response(url, response)
 
     def _api_post_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = ChatGPT.page.request.post(url, headers=headers, data=data)
+        response = self.page.request.post(url, headers=headers, data=data)
         return self._process_api_response(url, response, method="POST")
 
     def _api_patch_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = ChatGPT.page.request.patch(url, headers=headers, data=data)
+        response = self.page.request.patch(url, headers=headers, data=data)
         return self._process_api_response(url, response, method="PATCH")
 
     def _gen_title(self):
@@ -324,14 +353,14 @@ class ChatGPT:
             .replace("EOF_DIV_ID", self.eof_div_id)
         )
 
-        ChatGPT.page.evaluate(code)
+        self.page.evaluate(code)
 
         last_event_msg = ""
         start_time = time.time()
         while True:
-            eof_datas = ChatGPT.page.query_selector_all(f"div#{self.eof_div_id}")
+            eof_datas = self.page.query_selector_all(f"div#{self.eof_div_id}")
 
-            conversation_datas = ChatGPT.page.query_selector_all(
+            conversation_datas = self.page.query_selector_all(
                 f"div#{self.stream_div_id}"
             )
             if len(conversation_datas) == 0:
