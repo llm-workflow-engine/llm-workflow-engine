@@ -1,13 +1,12 @@
-
 <h1><p align="center">:candy:ChatGPT Wrapper:candy:</p></h1>
 
 <p align="center">ChatGPT Wrapper is an open-source unofficial <b>Power CLI</b>, <b>Python API</b> and <b>Flask API</b> that lets you interact programmatically with ChatGPT.</p>
 
 ## Highlights
 
-🤖 **Programmable ChatGPT**. The ChatGPT Wrapper lets you use the powerful ChatGPT bot in your *Python scripts* or on the *command line*, making it easy to leverage its functionality into your projects.
+🤖 **Programmable ChatGPT**. The ChatGPT Wrapper lets you use the powerful ChatGPT bot in your _Python scripts_ or on the _command line_, making it easy to leverage its functionality into your projects.
 
-💬 **Runs in Shell**. You can call and interact with ChatGPT in the terminal
+💬 **Runs in Shell**. You can call and interact with ChatGPT in the terminal.
 
 🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT in your Python scripts.
 
@@ -17,7 +16,7 @@
 
 ## Release Notes - v0.4.1 - 28/02/2023
 
- - REVERT BREAKING CHANGE: Asyncio module requirement *removed* from usage of ChatGPT class, it is now a sync wrapper around the async class
+- REVERT BREAKING CHANGE: Asyncio module requirement _removed_ from usage of ChatGPT class, it is now a sync wrapper around the async class
 
 ## Release Notes - v0.4.0 - 27/02/2023
 
@@ -27,21 +26,25 @@
 - Asyncio module is now required to use ChatGPT class directly (refer to [Python usage](#python))
 
 ### What is new?
+
 #### New commands
+
 - Added '/quit' command
 - Added '/delete' support for history IDs/UUIDs
 - Added '/chat' command
 - Added '/switch' command
 - Added '/title' command
 - Added limit/offset support for '/history'
+
 #### New features
-- ***Migrated to async Playwright***
-- ***Initial API in Flask*** (see [How to use the API](#flask-api))
+
+- **_Migrated to async Playwright_**
+- **_Initial API in Flask_** (see [How to use the API](#flask-api))
 - Added tab completion for commands
 - Added '/tmp' volume for saving Playwright session
 - Added CI and CodeQL workflows
 - Added simple developer debug module
-- Improved session refreshing (***/session now works!***)
+- Improved session refreshing (**_/session now works!_**)
 - Migrated to Prompt Toolkit
 
 [See commit log for previous updates](#commit-log)
@@ -60,23 +63,24 @@ See below for details on using ChatGPT as an API from Python.
 
 ## Requirements
 
-To use this repository, you need  `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
-To use the /write command, you need to install vipe. In ubuntu, you can install it with `sudo apt install moreutils`, in macos with `brew install moreutils`.
+To use this repository, you need `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
+To use the /write command, you need to install vipe. In ubuntu, you can install it with `sudo apt install moreutils`, in macos with `brew install moreutils`
 
 ## Installation
 
 1. Install the latest version of this software directly from github with pip:
+
 ```bash
 pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 ```
 
-2. Install a browser in playwright (if you haven't already).  The program will use firefox by default.
+2. Install a browser in playwright (if you haven't already). The program will use firefox by default.
 
 ```
 playwright install firefox
 ```
 
-3. Start up the program in `install` mode. This opens up a browser window. Log in to ChatGPT in the browser window, then stop the program. 
+3. Start up the program in `install` mode. This opens up a browser window. Log in to ChatGPT in the browser window, then stop the program.
 
 ```bash
 chatgpt install
@@ -106,7 +110,6 @@ chatgpt Hello World!
 ```
 
 #### Interacive mode
-
 
 To run the CLI in interactive mode, execute it with no additional arguments:
 
@@ -148,7 +151,6 @@ You may also stream the response as it comes in from ChatGPT in chunks using the
 - Test whether it is working using `python -m unittest test/api_test.py`
 - See an example of interaction with api in `tests/example_api_call.py`
 
-
 ## Docker (experimental)
 
 Build a image for testing `chatgpt-wrapper` with following commands.
@@ -166,23 +168,24 @@ Then, turn back to terminal and enjoy the chat!
 
 ## Projects built with chatgpt-wrapper
 
-  - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
-  - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
-  - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
+- [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
+- [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
+- [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
 
 ## Commit log
+
 - 21/02/2023: v0.3.17
   - Added debug mode (visible browser window).
   - @thehunmonkgroup fixed chat naming.
-  - @thehunmonkgroup added !delete command to remove/hide conversations
-  - @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
-  - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT
-  - @thehunmonkgroup added !history command to show the list of the last 20 conversations
-  - @NatLee added **docker** support
+  - @thehunmonkgroup added !delete command to remove/hide conversations.
+  - @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free').
+  - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT.
+  - @thehunmonkgroup added !history command to show the list of the last 20 conversations.
+  - @NatLee added **docker** support.
 - 17/02/2023: v0.3.16
   - Ability to open **multiple sessions in parallel**.
   - Code now works with **ChatGPT Plus** subscription.
-- 14/02/2023: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model)
+- 14/02/2023: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model).
 - 14/02/2023: v0.3.11
   - Fixed many bugs with installation. Code is refactored.
   - Now able to use the python wrapper with a **proxy**.
@@ -196,7 +199,6 @@ We welcome contributions to ChatGPT Wrapper! If you have an idea for a new featu
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
 
 ## Acknowledgments
 
