@@ -15,6 +15,10 @@
 
 :test_tube: **Flask API**. You can use the ChatGPT Wrapper as an API. (experimental)
 
+## Release Notes - v0.4.1 - 28/02/2023
+
+ - REVERT BREAKING CHANGE: Asyncio module requirement *removed* from usage of ChatGPT class, it is now a sync wrapper around the async class
+
 ## Release Notes - v0.4.0 - 27/02/2023
 
 ### **:fire_engine:Breaking Changes:fire_engine:**
@@ -127,11 +131,10 @@ Once the interactive shell is running, you can see a list of all commands with:
 To use the `ChatGPT` class as an API for talking to ChatGPT, create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
-import asyncio
 from chatgpt_wrapper import ChatGPT
 
 bot = ChatGPT()
-response = asyncio.run(bot.ask("Hello, world!"))
+response = bot.ask("Hello, world!")
 print(response)  # prints the response from chatGPT
 ```
 

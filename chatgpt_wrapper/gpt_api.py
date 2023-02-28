@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 
 from flask import Flask, jsonify, request
 
@@ -30,7 +29,7 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
                 Some response.
         """
         prompt = request.get_data().decode("utf-8")
-        result = asyncio.run(chatgpt.ask(prompt))
+        result = chatgpt.ask(prompt)
         return result
 
     @app.route("/conversations/new", methods=["POST"])
@@ -116,7 +115,7 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
         """
         json = request.get_json()
         title = json["title"]
-        result = asyncio.run(chatgpt.set_title(title, conversation_id=conversation_id))
+        result = chatgpt.set_title(title, conversation_id=conversation_id)
         if result:
             return jsonify(result)
         else:
@@ -152,7 +151,7 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
         """
         limit = request.args.get("limit", 20)
         offset = request.args.get("offset", 0)
-        result = asyncio.run(chatgpt.get_history(limit=limit, offset=offset))
+        result = chatgpt.get_history(limit=limit, offset=offset)
         if result:
             return jsonify(result)
         else:
