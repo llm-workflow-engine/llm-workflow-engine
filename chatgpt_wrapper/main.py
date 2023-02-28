@@ -1,5 +1,7 @@
 import argparse
 import sys
+import threading
+import asyncio
 
 from chatgpt_wrapper.chatgpt import ChatGPT
 from chatgpt_wrapper.gpt_shell import GPTShell
@@ -82,11 +84,10 @@ def main():
     shell._set_args(args)
 
     if len(args.params) > 0 and not install_mode:
-        shell.default(" ".join(args.params))
+        asyncio.run(shell.default(" ".join(args.params)))
         return
 
-    shell.cmdloop()
-
+    asyncio.run(shell.cmdloop())
 
 if __name__ == "__main__":
     main()

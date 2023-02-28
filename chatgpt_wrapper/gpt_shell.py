@@ -1,32 +1,52 @@
-import cmd
+import re
+import textwrap
+import asyncio
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import FileHistory
+# from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.completion import NestedCompleter
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.styles import Style
+import prompt_toolkit.document as document
+
 import os
 import platform
 import sys
 import datetime
 import subprocess
-import string
-import readline
 
 from rich.console import Console
 from rich.markdown import Markdown
 
 console = Console()
 
-# use pyreadline3 instead of readline on windows
 is_windows = platform.system() == "Windows"
+
+COMMAND_LEADER = '/'
+LEGACY_COMMAND_LEADER = '!'
+DEFAULT_COMMAND = 'ask'
+COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
+
+# Monkey patch _FIND_WORD_RE in the document module.
+# This is needed because the current version of _FIND_WORD_RE
+# doesn't allow any special characters in the first word, and we need
+# to start commands with a special character.
+# It would also be possible to subclass NesteredCompleter and override
+# the get_completions() method, but that feels more brittle.
+document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
+# I think this 'better' regex should work, but it's not.
+# document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
 DEFAULT_HISTORY_LIMIT = 20
 
-class GPTShell(cmd.Cmd):
+class GPTShell():
     """
-    A `cmd` interpreter that serves as a front end to the ChatGPT class
+    A shell interpreter that serves as a front end to the ChatGPT class
     """
 
-    # overrides
-    intro = "Provide a prompt for ChatGPT, or type !help or ? to list commands."
+    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % COMMAND_LEADER
     prompt = "> "
-    doc_header = "Documented commands (type !help <topic>):"
-    identchars = string.ascii_letters + string.digits + '_' + '!'
+    doc_header = "Documented commands (type %shelp [command without leading %s]):" % (COMMAND_LEADER, COMMAND_LEADER)
 
     # our stuff
     prompt_number = 0
@@ -35,62 +55,84 @@ class GPTShell(cmd.Cmd):
     stream = False
     logfile = None
 
-    def parseline(self, line):
-        """Parse the line into a command name and a string containing
-        the arguments.  Returns a tuple containing (command, args, line).
-        'command' and 'args' may be None if the line couldn't be parsed.
-        """
-        line = line.strip()
-        if not line:
-            return None, None, line
-        elif line[0] == '?':
-            line = 'help ' + line[1:]
-        i, n = 0, len(line)
-        while i < n and line[i] in self.identchars: i = i+1
-        cmd, arg = line[:i], line[i:].strip()
-        return cmd, arg, line
+    def __init__(self):
+        self.commands = self.configure_commands()
+        self.command_completer = self.get_command_completer()
+        self.history = self.get_history()
+        self.key_bindings = self.get_key_bindings()
+        self.style = self.get_styles()
+        self.prompt_session = PromptSession(
+            history=self.history,
+            #auto_suggest=AutoSuggestFromHistory(),
+            completer=self.command_completer,
+            key_bindings=self.key_bindings,
+            style=self.style
+        )
 
-    def complete(self, text, state):
-        """Return the next possible completion for 'text'.
-        If a command has not been entered, then complete against command list.
-        Otherwise try to call complete_<command> to get list of completions.
-        """
-        origline = readline.get_line_buffer()
-        line = origline.lstrip()
-        if line[0] == '!':
-            text = "!" + text
-        if state == 0:
-            stripped = len(origline) - len(line)
-            begidx = readline.get_begidx() - stripped
-            endidx = readline.get_endidx() - stripped
-            if begidx>0:
-                cmd, args, line = self.parseline(line)
-                if cmd == '':
-                    compfunc = self.command_names
-                else:
-                    if cmd in self.command_names():
-                        try:
-                            compfunc = getattr(self, 'complete_' + cmd[1:])
-                        except AttributeError:
-                            compfunc = self.completedefault
-                    else:
-                        compfunc = self.command_names_filtered
+    def configure_commands(self):
+        commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
+        return commands
+
+    def get_command_completer(self):
+        commands_with_leader = {"%s%s" % (COMMAND_LEADER, key): None for key in self.commands}
+        commands_with_leader["%shelp" % COMMAND_LEADER] = {key: None for key in self.commands}
+        completer = NestedCompleter.from_nested_dict(commands_with_leader)
+        return completer
+
+    def get_history(self):
+        return FileHistory(COMMAND_HISTORY_FILE)
+
+    def get_key_bindings(self):
+        key_bindings = KeyBindings()
+        @key_bindings.add('c-x')
+        def _(event):
+            event.cli.current_buffer.insert_text('!command1')
+        return key_bindings
+
+    def get_styles(self):
+        style = Style.from_dict({
+            'completion-menu.completion': 'bg:#008888 #ffffff',
+            'completion-menu.completion.current': 'bg:#00aaaa #000000',
+            'scrollbar.background': 'bg:#88aaaa',
+            'scrollbar.button': 'bg:#222222',
+        })
+        return style
+
+    def legacy_command_leader_warning(self, command):
+        print("\nWarning: The legacy command leader '%s' has been removed.\n"
+              "Use the new command leader '%s' instead, e.g. %s%s\n" % (
+                  LEGACY_COMMAND_LEADER, COMMAND_LEADER, COMMAND_LEADER, command))
+
+    def get_command_help_brief(self, command):
+        help_doc = self.get_command_help(command)
+        if help_doc:
+            first_line = next(filter(lambda x: x.strip(), help_doc.splitlines()), "")
+            help_brief = "    %s%s: %s" % (COMMAND_LEADER, command, first_line)
+            return help_brief
+
+    def get_command_help(self, command):
+        if command in self.commands:
+            method = getattr(__class__, f"do_{command}")
+            help_text = method.__doc__.replace("{leader}", COMMAND_LEADER)
+            return textwrap.dedent(help_text)
+
+    def help_commands(self):
+        print("")
+        self._print_markdown(f"#### {self.doc_header}")
+        print("")
+        for command in self.commands:
+            print(self.get_command_help_brief(command))
+        print("")
+
+    def help(self, command=''):
+        if command:
+            help_doc = self.get_command_help(command)
+            if help_doc:
+                print(help_doc)
             else:
-                compfunc = self.command_names
-            self.completion_matches = compfunc(text, line, begidx, endidx)
-        try:
-            if line[0] == '!':
-                return self.completion_matches[state][1:] + ' '
-            else:
-                return self.completion_matches[state]
-        except IndexError:
-            return None
-
-    def command_names(self, *ignored):
-        return [('!%s' % a[3:]) for a in self.get_names() if a.startswith("do_")]
-
-    def command_names_filtered(self, text, *ignored):
-        return [a for a in self.command_names() if a.startswith(text)]
+                print("\nNo help for '%s'\n\nAvailable commands: %s" % (command, ", ".join(self.commands)))
+        else:
+            self.help_commands()
 
     def _set_args(self, args):
         self.stream = args.stream
@@ -129,8 +171,8 @@ class GPTShell(cmd.Cmd):
             )
             self.logfile.flush()
 
-    def _parse_conversation_ids(self, string):
-        items = [item.strip() for item in string.split(',')]
+    def _parse_conversation_ids(self, id_string):
+        items = [item.strip() for item in id_string.split(',')]
         final_list = []
         for item in items:
             if len(item) == 36:
@@ -158,76 +200,111 @@ class GPTShell(cmd.Cmd):
         content = "\n\n".join(message_parts)
         return content
 
-    def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
+    async def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = self.chatgpt.get_history(limit=limit, offset=offset)
+        history = await self.chatgpt.get_history(limit=limit, offset=offset)
         return history
 
-    def _set_title(self, title, conversation_id=None):
+    async def _set_title(self, title, conversation_id=None):
         self._print_markdown("* Setting title...")
-        if self.chatgpt.set_title(title, conversation_id):
+        if await self.chatgpt.set_title(title, conversation_id):
             self._print_markdown("* Title set to: %s" % title)
 
-    def _delete_conversation(self, id, label=None):
+    async def _delete_conversation(self, id, label=None):
         if id == self.chatgpt.conversation_id:
-            self._delete_current_conversation()
+            await self._delete_current_conversation()
         else:
             label = label or id
             self._print_markdown("* Deleting conversation: %s" % label)
-            if self.chatgpt.delete_conversation(id):
+            if await self.chatgpt.delete_conversation(id):
                 self._print_markdown("* Deleted conversation: %s" % label)
 
-    def _delete_current_conversation(self):
+    async def _delete_current_conversation(self):
         self._print_markdown("* Deleting current conversation")
-        if self.chatgpt.delete_conversation():
+        if await self.chatgpt.delete_conversation():
             self._print_markdown("* Deleted current conversation")
             self.do_new(None)
 
-    def emptyline(self):
-        """
-        override cmd.Cmd.emptyline so it does not repeat
-        the last command when you hit enter
-        """
-        return
-
     def do_stream(self, _):
-        "`!stream` toggles between streaming mode (streams the raw response from ChatGPT) and markdown rendering (which cannot stream)."
+        """
+        Toggle streaming mode
+
+        Streaming mode: streams the raw response from ChatGPT (no markdown rendering)
+        Non-streaming mode: Returns full response at completion (markdown rendering supported).
+
+        Examples:
+            {leader}stream
+        """
         self.stream = not self.stream
         self._print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
 
     def do_new(self, _):
-        "`!new` starts a new conversation."
+        """
+        Start a new conversation
+
+        Examples:
+            {leader}new
+        """
         self.chatgpt.new_conversation()
         self._print_markdown("* New conversation started.")
         self._update_message_map()
         self._write_log_context()
 
-    def do_delete(self, arg):
-        "`!delete` delete a conversation by conversation or history ID, or current conversation. Example: `!delete 1,3-5` or `!delete`"
+    async def do_delete(self, arg):
+        """
+        Delete one or more conversations
+
+        Can delete by conversation ID, history ID, or current conversation.
+
+        Arguments:
+            conversation_id: The ID of the conversation
+            history_id : The history ID
+
+        Arguments can be mixed and matched as in the examples below.
+
+        Examples:
+            Current conversation: {leader}delete
+            By conversation ID: {leader}delete 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {leader}delete 3
+            Multiple IDs: {leader}delete 1,5
+            Ranges: {leader}delete 1-5
+            Complex: {leader}delete 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
+        """
         if arg:
             result = self._parse_conversation_ids(arg)
             if isinstance(result, list):
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 if history:
                     history_list = [h for h in history.values()]
                     for item in result:
                         if isinstance(item, str) and len(item) == 36:
-                            self._delete_conversation(item)
+                            await self._delete_conversation(item)
                         else:
                             if item <= len(history_list):
                                 conversation = history_list[item - 1]
-                                self._delete_conversation(conversation['id'], conversation['title'])
+                                await self._delete_conversation(conversation['id'], conversation['title'])
                             else:
                                 self._print_markdown("* Cannont delete history item %d, does not exist" % item)
             else:
                 self._print_markdown(result)
         else:
-            self._delete_current_conversation()
+            await self._delete_current_conversation()
 
-    def do_history(self, arg):
-        "`!history` show recent conversation history, default 20 offset 0, Example `!history` or `!history 10` or `!history 10 5`"
+    async def do_history(self, arg):
+        """
+        Show recent conversation history
+
+        Arguments;
+            limit: limit the number of messages to show (default 20)
+            offset: offset the list of messages by this number
+
+        Examples:
+            {leader}history
+            {leader}history 10
+            {leader}history 10 5
+        """
         limit = DEFAULT_HISTORY_LIMIT
         offset = 0
         if arg:
@@ -247,13 +324,21 @@ class GPTShell(cmd.Cmd):
                     except ValueError:
                         self._print_markdown("* Invalid offset, must be an integer")
                         return
-        history = self._fetch_history(limit=limit, offset=offset)
+        history = await self._fetch_history(limit=limit, offset=offset)
         if history:
             history_list = [h for h in history.values()]
             self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
 
     def do_nav(self, arg):
-        "`!nav` lets you navigate to a past point in the conversation. Example: `nav 2`"
+        """
+        Navigate to a past point in the conversation
+
+        Arguments:
+            id: prompt ID
+
+        Examples:
+            {leader}nav 2
+        """
 
         try:
             msg_id = int(arg)
@@ -281,10 +366,22 @@ class GPTShell(cmd.Cmd):
             f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
         )
 
-    def do_title(self, arg):
-        "`!title` Show title of current conversation, or set a new title. Example: `!title` or `!title new title`"
+    async def do_title(self, arg):
+        """
+        Show or set title
+
+        Arguments:
+            title: title of the current conversation
+            ...or...
+            history_id: history ID of conversation
+
+        Examples:
+            Get current conversation title: {leader}title
+            Set current conversation title: {leader}title new title
+            Set conversation title using history ID: {leader}title 1
+        """
         if arg:
-            history = self._fetch_history()
+            history = await self._fetch_history()
             history_list = [h for h in history.values()]
             conversation_id = None
             id = None
@@ -302,10 +399,10 @@ class GPTShell(cmd.Cmd):
                 new_title = input("Enter new title for '%s': " % history[conversation_id]["title"])
             else:
                 new_title = arg
-            self._set_title(new_title, conversation_id)
+            await self._set_title(new_title, conversation_id)
         else:
             if self.chatgpt.conversation_id:
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 if self.chatgpt.conversation_id in history:
                     self._print_markdown("* Title: %s" % history[self.chatgpt.conversation_id]['title'])
                 else:
@@ -313,8 +410,19 @@ class GPTShell(cmd.Cmd):
             else:
                 self._print_markdown("* Current conversation has no title, you must send information first")
 
-    def do_chat(self, arg):
-        "`!chat` Retrieve chat content by ID or history ID. Example: `!chat [id]` or `!chat 2`"
+    async def do_chat(self, arg):
+        """
+        Retrieve chat content
+
+        Arguments:
+            conversation_id: The ID of the conversation
+            ...or...
+            history_id: The history ID
+
+        Examples:
+            By conversation ID: {leader}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {leader}chat 2
+        """
         conversation_id = None
         title = None
         if arg:
@@ -322,7 +430,7 @@ class GPTShell(cmd.Cmd):
                 conversation_id = arg
                 title = arg
             else:
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 history_list = [h for h in history.values()]
                 id = None
                 try:
@@ -341,7 +449,7 @@ class GPTShell(cmd.Cmd):
             if not self.chatgpt.conversation_id:
                 self._print_markdown("* Current conversation is empty, you must send information first")
                 return
-        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        conversation_data = await self.chatgpt.get_conversation(conversation_id)
         if conversation_data:
             messages = self.chatgpt.conversation_data_to_messages(conversation_data)
             if title:
@@ -350,8 +458,19 @@ class GPTShell(cmd.Cmd):
         else:
             self._print_markdown("* Could not load chat content")
 
-    def do_switch(self, arg):
-        "`!switch` Switch to chat by ID or history ID. Example: `!switch [id]` or `!switch 2`"
+    async def do_switch(self, arg):
+        """
+        Switch to chat
+
+        Arguments:
+            conversation_id: The ID of the conversation
+            ...or...
+            history_id: The history ID
+
+        Examples:
+            By conversation ID: {leader}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {leader}switch 2
+        """
         conversation_id = None
         title = None
         if arg:
@@ -359,7 +478,7 @@ class GPTShell(cmd.Cmd):
                 conversation_id = arg
                 title = arg
             else:
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 history_list = [h for h in history.values()]
                 id = None
                 try:
@@ -380,7 +499,7 @@ class GPTShell(cmd.Cmd):
         if conversation_id and conversation_id == self.chatgpt.conversation_id:
             self._print_markdown("* You are already in chat: %s" % title)
             return
-        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        conversation_data = await self.chatgpt.get_conversation(conversation_id)
         if conversation_data:
             messages = self.chatgpt.conversation_data_to_messages(conversation_data)
             message = messages.pop()
@@ -393,27 +512,25 @@ class GPTShell(cmd.Cmd):
         else:
             self._print_markdown("* Could not switch to chat")
 
+    async def do_ask(self, line):
+        """
+        Ask a question to ChatGPT
 
-    def do_exit(self, _):
-        "`!exit` closes the program."
-        sys.exit(0)
+        It is purely optional.
 
-    def do_quit(self, arg):
-        "`!quit` closes the program."
-        self.do_exit(arg)
+        Examples:
+            {leader}ask what is 6+6 (is the same as 'what is 6+6')
+        """
+        return await self.default(line)
 
-    def do_ask(self, line):
-        "`!ask` asks a question to chatgpt. It is purely optional. Example: `!ask what is 6+6` is the same as `what is 6+6`"
-        return self.default(line)
-
-    def default(self, line):
+    async def default(self, line):
         if not line:
             return
 
         if self.stream:
             response = ""
             first = True
-            for chunk in self.chatgpt.ask_stream(line):
+            async for chunk in self.chatgpt.ask_stream(line):
                 if first:
                     print("")
                     first = False
@@ -422,16 +539,23 @@ class GPTShell(cmd.Cmd):
                 response += chunk
             print("\n")
         else:
-            response = self.chatgpt.ask(line)
+            response = await self.chatgpt.ask(line)
             print("")
             self._print_markdown(response)
 
         self._write_log(line, response)
         self._update_message_map()
 
-    def do_session(self, _):
-        "`!session` refreshes your session information.  This can resolve errors under certain scenarios."
-        self.chatgpt.refresh_session()
+    async def do_session(self, _):
+        """
+        Refresh session information
+
+        This can resolve errors under certain scenarios.
+
+        Examples:
+            {leader}session
+        """
+        await self.chatgpt.refresh_session()
         usable = (
             "The session appears to be usable."
             if "accessToken" in self.chatgpt.session
@@ -439,13 +563,17 @@ class GPTShell(cmd.Cmd):
         )
         self._print_markdown(f"* Session information refreshed.  {usable}")
 
-    def do_read(self, _):
-        "`!read` begins reading multi-line input."
+    async def do_read(self, _):
+        """
+        Begin reading multi-line input
+
+        Allows for entering more complex multi-line input prior to sending it to ChatGPT.
+
+        Examples:
+            {leader}read
+        """
         ctrl_sequence = "^z" if is_windows else "^d"
         self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
-
-        if not is_windows:
-            readline.set_auto_history(False)
 
         prompt = ""
         while True:
@@ -459,14 +587,23 @@ class GPTShell(cmd.Cmd):
                 break
             prompt += line + "\n"
 
-        if not is_windows:
-            readline.set_auto_history(True)
-            readline.add_history(prompt)
+        await self.default(prompt)
 
-        self.default(prompt)
+    async def do_editor(self, args):
+        """
+        Open an editor for entering a command
 
-    def do_editor(self, args):
-        "`!editor` Open an editor for entering a command (requires `vipe` executable). `!editor some default text`"
+        When the editor is closed, the content is sent to ChatGPT.
+
+        Requires 'vipe' executable in your path.
+
+        Arguments:
+            default_text: The default text to open the editor with
+
+        Examples:
+            {leader}editor
+            {leader}editor some text to start with
+        """
         try:
             process = subprocess.Popen(['vipe'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         except FileNotFoundError:
@@ -478,16 +615,24 @@ class GPTShell(cmd.Cmd):
         process.wait()
         output = process.stdout.read().decode()
         print(output)
-        self.default(output)
+        await self.default(output)
 
-    def do_file(self, arg):
-        "`!file` sends a prompt read from the named file.  Example: `file myprompt.txt`"
+    async def do_file(self, arg):
+        """
+        Send a prompt read from the named file
+
+        Arguments:
+            file_name: The name of the file to read from
+
+        Examples:
+            {leader}file myprompt.txt
+        """
         try:
             fileprompt = open(arg, encoding="utf-8").read()
         except Exception:
             self._print_markdown(f"Failed to read file '{arg}'")
             return
-        self.default(fileprompt)
+        await self.default(fileprompt)
 
     def _open_log(self, filename) -> bool:
         try:
@@ -501,7 +646,16 @@ class GPTShell(cmd.Cmd):
         return True
 
     def do_log(self, arg):
-        "`!log` enables logging to a file.  Example: `log mylog.txt` to enable, or `log` to disable."
+        """
+        Enable/disable logging to a file
+
+        Arguments:
+            file_name: The name of the file to write to
+
+        Examples:
+            Log to file: {leader}log mylog.txt
+            Disable logging: {leader}log
+        """
         if arg:
             if self._open_log(arg):
                 self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
@@ -510,7 +664,15 @@ class GPTShell(cmd.Cmd):
             self._print_markdown("* Logging is now disabled.")
 
     def do_context(self, arg):
-        "`!context` lets you load old contexts from the log.  It takes one parameter; a context string from logs."
+        """
+        Load an old context from the log
+
+        Arguments:
+            context_string: a context string from logs
+
+        Examples:
+            {leader}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+        """
         try:
             (conversation_id, parent_message_id) = arg.split(":")
             assert conversation_id == "None" or len(conversation_id) == 36
@@ -526,66 +688,71 @@ class GPTShell(cmd.Cmd):
         self._update_message_map()
         self._write_log_context()
 
-    def precmd(self, line):
-        if len(line) > 0 and line[0] == "!":
-            line = line[1:]
-        elif len(line) > 0 and line[0] == "?":
-            pass
-        else:
-            line = "ask " + line
-        return line
+    def do_exit(self, _):
+        """
+        Exit the ChatGPT shell
 
-    def complete_help(self, text, line, begidx, endidx):
-        if not text:
-            completions = sorted(self.command_names())
-        else:
-            completions = sorted([a for a in self.command_names() if a.startswith(text)])
-        return completions
+        Examples:
+            {leader}exit
+        """
+        pass
 
-    def do_help(self, arg):
-        'List available commands with "!help" or detailed help with "!help cmd".'
-        if arg:
-            # XXX check arg syntax
-            if arg[0] == "!":
-                arg = arg[1:]
+    def do_quit(self, _):
+        """
+        Exit the ChatGPT shell
+
+        Examples:
+            {leader}quit
+        """
+        pass
+
+    async def cmdloop(self):
+        print("")
+        self._print_markdown("### %s" % self.intro)
+        while True:
             try:
-                func = getattr(self, 'help_' + arg)
-            except AttributeError:
-                try:
-                    doc = getattr(self, 'do_' + arg).__doc__
-                    if doc:
-                        self.stdout.write("%s\n" % str(doc))
-                        return
-                except AttributeError:
-                    pass
-                self.stdout.write("%s\n" % str(self.nohelp % (arg,)))
-                return
-            func()
-        else:
-            names = self.get_names()
-            cmds_doc = []
-            cmds_undoc = []
-            help = {}
-            for name in names:
-                if name[:5] == 'help_':
-                    help[name[5:]] = 1
-            names.sort()
-            # There can be duplicates if routines overridden
-            prevname = ''
-            for name in names:
-                if name[:3] == 'do_':
-                    if name == prevname:
-                        continue
-                    prevname = name
-                    cmd = name[3:]
-                    if cmd in help:
-                        cmds_doc.append("!"+cmd)
-                        del help[cmd]
-                    elif getattr(self, name).__doc__:
-                        cmds_doc.append("!"+cmd)
+                user_input = self.prompt_session.prompt(self.prompt)
+            except KeyboardInterrupt:
+                continue  # Control-C pressed. Try again.
+            except EOFError:
+                break  # Control-D pressed.
+
+            text = user_input.strip()
+            leader = text[0]
+            if leader == COMMAND_LEADER or leader == LEGACY_COMMAND_LEADER:
+                text = text[1:]
+                parts = [arg.strip() for arg in text.split(maxsplit=1)]
+                command = parts[0]
+                argument = parts[1] if len(parts) > 1 else ''
+                if leader == LEGACY_COMMAND_LEADER:
+                    self.legacy_command_leader_warning(command)
+                    continue
+                if command == "exit" or command == "quit":
+                    break
+            else:
+                if text == '?':
+                    command = 'help'
+                    argument = ''
+                else:
+                    command = DEFAULT_COMMAND
+                    argument = text
+
+            if command == 'help':
+                self.help(argument)
+            else:
+                if command in self.commands:
+                    method = getattr(__class__, f"do_{command}")
+                    try:
+                        if asyncio.iscoroutinefunction(method):
+                            response = await method(self, argument)
+                        else:
+                            response = method(self, argument)
+                    except Exception as e:
+                        print(repr(e))
                     else:
-                        cmds_undoc.append("!"+cmd)
-            self.stdout.write("%s\n" % str(self.doc_leader))
-            self.print_topics(self.doc_header,   cmds_doc,   15, 80)
-            self.print_topics(self.misc_header,  list(help.keys()), 15, 80)
-            self.print_topics(self.undoc_header, cmds_undoc, 15, 80)
+                        if response:
+                            print(response)
+                else:
+                    print(f'Unknown command: {command}')
+
+        print('GoodBye!')

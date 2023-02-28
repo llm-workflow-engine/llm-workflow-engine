@@ -1,3 +1,5 @@
+import sys
+import asyncio
 import atexit
 import base64
 import json
@@ -11,8 +13,11 @@ import shutil
 from functools import reduce
 from time import sleep
 from typing import Optional
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
+
+import nest_asyncio
+nest_asyncio.apply()
 
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
@@ -37,16 +42,20 @@ class ChatGPT:
     session_div_id = "chatgpt-wrapper-session-data"
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+        self.model = model
         self.log = self._set_logging(debug_log)
         self.log.info("ChatGPT initialized")
-        self.play = sync_playwright().start()
+        asyncio.run(self.create(headless, browser, timeout, proxy))
+
+    async def create(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
+        self.play = await async_playwright().start()
         try:
             playbrowser = getattr(self.play, browser)
         except Exception:
             print(f"Browser {browser} is invalid, falling back on firefox")
             playbrowser = self.play.firefox
         try:
-            self.browser = playbrowser.launch_persistent_context(
+            self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir="/tmp/playwright",
                 headless=headless,
                 proxy=proxy,
@@ -54,7 +63,7 @@ class ChatGPT:
         except Exception:
             self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
             shutil.copytree("/tmp/playwright", self.user_data_dir)
-            self.browser = playbrowser.launch_persistent_context(
+            self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir=self.user_data_dir,
                 headless=headless,
                 proxy=proxy,
@@ -63,15 +72,18 @@ class ChatGPT:
         if len(self.browser.pages) > 0:
             self.page = self.browser.pages[0]
         else:
-            self.page = self.browser.new_page()
-        self._start_browser()
+            self.page = await self.browser.new_page()
+        await self._start_browser()
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.conversation_title_set = None
         self.session = None
-        self.model = model
         self.timeout = timeout
-        atexit.register(self._cleanup)
+        atexit.register(self._shutdown)
+
+    def _shutdown(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.gather(self._cleanup()))
 
     def _set_logging(self, debug_log):
         logger = logging.getLogger(self.__class__.__name__)
@@ -87,17 +99,17 @@ class ChatGPT:
             logger.addHandler(log_file_handler)
         return logger
 
-    def _start_browser(self):
-        self.page.goto("https://chat.openai.com/")
+    async def _start_browser(self):
+        await self.page.goto("https://chat.openai.com/")
 
-    def _cleanup(self):
-        self.browser.close()
+    async def _cleanup(self):
+        await self.browser.close()
         # remove the user data dir in case this is a second instance
         if hasattr(self, "user_data_dir"):
             shutil.rmtree(self.user_data_dir)
-        self.play.stop()
+        await self.play.stop()
 
-    def refresh_session(self,timeout=15):
+    async def refresh_session(self,timeout=15):
         """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
 
         In this way, we can pass the browser check.
@@ -106,16 +118,16 @@ class ChatGPT:
             timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 10.
         """
         self.log.info("Refreshing session...")
-        self.page.goto("https://chat.openai.com/api/auth/session")
+        await self.page.goto("https://chat.openai.com/api/auth/session")
         try:
-            self.page.wait_for_url("/api/auth/session",timeout=timeout*1000)
+            await self.page.wait_for_url("/api/auth/session",timeout=timeout*1000)
         except Exception:
             self.log.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
-            self._start_browser()
+            await self._start_browser()
         try:
-            while "Please stand by, while we are checking your browser..." in self.page.content():
+            while "Please stand by, while we are checking your browser..." in await self.page.content():
                 time.sleep(1)
-            contents=self.page.content()
+            contents = await self.page.content()
             """
             By GETting /api/auth/session, the server would ultimately return a raw json file.
             However, as this is a browser, it will add something to it, like <body> or so, like this:
@@ -137,11 +149,11 @@ class ChatGPT:
 
         # Now the browser should be at /api/auth/session
         # Go back to the chat page.
-        self._start_browser()
+        await self._start_browser()
 
-    def _cleanup_divs(self):
-        self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
-        self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+    async def _cleanup_divs(self):
+        await self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
+        await self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
 
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
@@ -150,34 +162,34 @@ class ChatGPT:
         headers.update(custom_headers)
         return headers
 
-    def _process_api_response(self, url, response, method="GET"):
-        self.log.debug(f"{method} {url} response, OK: {response.ok}, TEXT: {response.text()}")
+    async def _process_api_response(self, url, response, method="GET"):
+        self.log.debug(f"{method} {url} response, OK: {response.ok}, TEXT: {await response.text()}")
         json = None
         if response.ok:
             try:
-                json = response.json()
+                json = await response.json()
             except JSONDecodeError:
                 pass
         if not response.ok or not json:
             self.log.debug(f"{response.status} {response.status_text} {response.headers}")
         return response.ok, json, response
 
-    def _api_get_request(self, url, query_params={}, custom_headers={}):
+    async def _api_get_request(self, url, query_params={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = self.page.request.get(url, headers=headers, params=query_params)
-        return self._process_api_response(url, response)
+        response = await self.page.request.get(url, headers=headers, params=query_params)
+        return await self._process_api_response(url, response)
 
-    def _api_post_request(self, url, data={}, custom_headers={}):
+    async def _api_post_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = self.page.request.post(url, headers=headers, data=data)
-        return self._process_api_response(url, response, method="POST")
+        response = await self.page.request.post(url, headers=headers, data=data)
+        return await self._process_api_response(url, response, method="POST")
 
-    def _api_patch_request(self, url, data={}, custom_headers={}):
+    async def _api_patch_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = self.page.request.patch(url, headers=headers, data=data)
-        return self._process_api_response(url, response, method="PATCH")
+        response = await self.page.request.patch(url, headers=headers, data=data)
+        return await self._process_api_response(url, response, method="PATCH")
 
-    def _gen_title(self):
+    async def _gen_title(self):
         if not self.conversation_id or self.conversation_id and self.conversation_title_set:
             return
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
@@ -185,7 +197,7 @@ class ChatGPT:
             "message_id": self.parent_message_id,
             "model": RENDER_MODELS[self.model],
         }
-        ok, json, response = self._api_post_request(url, data)
+        ok, json, response = await self._api_post_request(url, data)
         if ok:
             # TODO: Do we want to do anything with the title we got back?
             # response_data = response.json()
@@ -206,9 +218,9 @@ class ChatGPT:
                 messages.append(current_item['message'])
             parent_id = current_item['id']
 
-    def delete_conversation(self, uuid=None):
+    async def delete_conversation(self, uuid=None):
         if self.session is None:
-            self.refresh_session()
+            await self.refresh_session()
         if not uuid and not self.conversation_id:
             return
         id = uuid if uuid else self.conversation_id
@@ -216,35 +228,35 @@ class ChatGPT:
         data = {
             "is_visible": False,
         }
-        ok, json, response = self._api_patch_request(url, data)
+        ok, json, response = await self._api_patch_request(url, data)
         if ok:
             return json
         else:
             self.log.error("Failed to delete conversation")
 
-    def set_title(self, title, conversation_id=None):
+    async def set_title(self, title, conversation_id=None):
         if self.session is None:
-            self.refresh_session()
+            await self.refresh_session()
         id = conversation_id if conversation_id else self.conversation_id
         url = f"https://chat.openai.com/backend-api/conversation/{id}"
         data = {
             "title": title,
         }
-        ok, json, response = self._api_patch_request(url, data)
+        ok, json, response = await self._api_patch_request(url, data)
         if ok:
             return json
         else:
             self.log.error("Failed to set title")
 
-    def get_history(self, limit=20, offset=0):
+    async def get_history(self, limit=20, offset=0):
         if self.session is None:
-            self.refresh_session()
+            await self.refresh_session()
         url = "https://chat.openai.com/backend-api/conversations"
         query_params = {
             "offset": offset,
             "limit": limit,
         }
-        ok, json, response = self._api_get_request(url, query_params)
+        ok, json, response = await self._api_get_request(url, query_params)
         if ok:
             history = {}
             for item in json["items"]:
@@ -253,21 +265,21 @@ class ChatGPT:
         else:
             self.log.error("Failed to get history")
 
-    def get_conversation(self, id=None):
+    async def get_conversation(self, id=None):
         if self.session is None:
-            self.refresh_session()
+            await self.refresh_session()
         id = id if id else self.conversation_id
         if id:
             url = f"https://chat.openai.com/backend-api/conversation/{id}"
-            ok, json, response = self._api_get_request(url)
+            ok, json, response = await self._api_get_request(url)
             if ok:
                 return json
             else:
                 self.log.error(f"Failed to get conversation {uuid}")
 
-    def ask_stream(self, prompt: str):
+    async def ask_stream(self, prompt: str):
         if self.session is None:
-            self.refresh_session()
+            await self.refresh_session()
 
         new_message_id = str(uuid.uuid4())
 
@@ -345,14 +357,14 @@ class ChatGPT:
             .replace("EOF_DIV_ID", self.eof_div_id)
         )
 
-        self.page.evaluate(code)
+        await self.page.evaluate(code)
 
         last_event_msg = ""
         start_time = time.time()
         while True:
-            eof_datas = self.page.query_selector_all(f"div#{self.eof_div_id}")
+            eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
 
-            conversation_datas = self.page.query_selector_all(
+            conversation_datas = await self.page.query_selector_all(
                 f"div#{self.stream_div_id}"
             )
             if len(conversation_datas) == 0:
@@ -361,7 +373,7 @@ class ChatGPT:
             full_event_message = None
 
             try:
-                event_raw = base64.b64decode(conversation_datas[0].inner_html())
+                event_raw = base64.b64decode(await conversation_datas[0].inner_html())
                 if len(event_raw) > 0:
                     event = json.loads(event_raw)
                     if event is not None:
@@ -389,12 +401,12 @@ class ChatGPT:
             if len(eof_datas) > 0 or (((time.time() - start_time) > self.timeout) and full_event_message is None):
                 break
 
-            sleep(0.2)
+            await asyncio.sleep(0.2)
 
-        self._cleanup_divs()
-        self._gen_title()
+        await self._cleanup_divs()
+        await self._gen_title()
 
-    def ask(self, message: str) -> str:
+    async def ask(self, message: str) -> str:
         """
         Send a message to chatGPT and return the response.
 
@@ -404,7 +416,10 @@ class ChatGPT:
         Returns:
             str: The response received from OpenAI.
         """
-        response = list(self.ask_stream(message))
+        response = ""
+        async for chunk in self.ask_stream(message):
+            sys.stdout.flush()
+            response += chunk
         return (
             reduce(operator.add, response)
             if len(response) > 0

@@ -8,7 +8,7 @@ with open('requirements.txt') as f:
 
 setup(
     name="chatGPT",
-    version="0.3.17",
+    version="0.4.0",
     author="Mahmoud Mabrouk",
     author_email="mahmoudmabrouk.mail@gmail.com",
     description="A simple Python class for interacting with OpenAI's chatGPT using Playwright",
