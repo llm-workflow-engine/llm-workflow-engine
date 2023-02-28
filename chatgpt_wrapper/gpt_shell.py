@@ -62,7 +62,9 @@ class GPTShell():
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
             history=self.history,
-            #auto_suggest=AutoSuggestFromHistory(),
+            # NOTE: Suggestions from history don't seem like a good fit for this REPL,
+            # so we don't use it. Leaving it here for reference.
+            # auto_suggest=AutoSuggestFromHistory(),
             completer=self.command_completer,
             key_bindings=self.key_bindings,
             style=self.style
