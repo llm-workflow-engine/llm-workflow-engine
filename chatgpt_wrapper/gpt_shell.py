@@ -44,7 +44,7 @@ class GPTShell():
 
     intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % COMMAND_LEADER
     prompt = "> "
-    doc_header = "Documented commands (type %shelp [command without leading %s]):" % (COMMAND_LEADER, COMMAND_LEADER)
+    doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (COMMAND_LEADER, COMMAND_LEADER)
 
     # our stuff
     prompt_number = 0

@@ -1,4 +1,5 @@
 import asyncio
+import signal
 import atexit
 import base64
 import json
@@ -34,11 +35,14 @@ class AsyncChatGPT:
 
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
+    interrupt_div_id = "chatgpt-wrapper-conversation-stream-data-interrupt"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    lock = asyncio.Lock()
 
     async def create(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
+        self.streaming = False
+        self._setup_signal_handlers()
+        self.lock = asyncio.Lock()
         self.play = await async_playwright().start()
         try:
             playbrowser = getattr(self.play, browser)
@@ -71,6 +75,9 @@ class AsyncChatGPT:
         self.session = None
         self.timeout = timeout
         atexit.register(self._shutdown)
+
+    def _setup_signal_handlers(self):
+        signal.signal(signal.SIGUSR1, self.terminate_stream)
 
     def _shutdown(self):
         loop = asyncio.get_event_loop()
@@ -144,7 +151,15 @@ class AsyncChatGPT:
 
     async def _cleanup_divs(self):
         await self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
-        await self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+        code = (
+            """
+            const eof_div = document.getElementById('EOF_DIV_ID');
+            if(typeof eof_div !== 'undefined' && eof_div !== null) {
+              eof_div.remove();
+            }
+            """
+        ).replace("EOF_DIV_ID", self.eof_div_id)
+        await self.page.evaluate(code)
 
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
@@ -309,6 +324,7 @@ class AsyncChatGPT:
             xhr.responseType = 'stream';
             xhr.onreadystatechange = function() {
               var newEvent;
+              const interrupt_div = document.getElementById('INTERRUPT_DIV_ID');
               if(xhr.readyState == 3 || xhr.readyState == 4) {
                 const newData = xhr.response.substr(xhr.seenBytes);
                 try {
@@ -333,10 +349,15 @@ class AsyncChatGPT:
                   xhr.seenBytes = xhr.responseText.length;
                 }
               }
-              if(xhr.readyState == 4) {
+              if(xhr.readyState == 4 && (typeof interrupt_div === 'undefined' || interrupt_div === null)) {
                 const eof_div = document.createElement('DIV');
                 eof_div.id = "EOF_DIV_ID";
                 document.body.appendChild(eof_div);
+              }
+              if(typeof interrupt_div !== 'undefined' && interrupt_div !== null) {
+                console.warning('Interrupting stream');
+                xhr.abort();
+                interrupt_div.remove();
               }
             };
             xhr.send(JSON.stringify(REQUEST_JSON));
@@ -346,13 +367,19 @@ class AsyncChatGPT:
             .replace("REQUEST_JSON", json.dumps(request))
             .replace("STREAM_DIV_ID", self.stream_div_id)
             .replace("EOF_DIV_ID", self.eof_div_id)
+            .replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         )
 
+        self.streaming = True
         await self.page.evaluate(code)
 
         last_event_msg = ""
         start_time = time.time()
         while True:
+            if not self.streaming:
+                self.log.info("Request to interrupt streaming")
+                await self.interrupt_stream()
+                break
             eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
 
             conversation_datas = await self.page.query_selector_all(
@@ -394,8 +421,29 @@ class AsyncChatGPT:
 
             await asyncio.sleep(0.2)
 
+        if not self.streaming:
+            yield (
+                "\nGeneration stopped\n"
+            )
+        self.streaming = False
         await self._cleanup_divs()
         await self._gen_title()
+
+    async def interrupt_stream(self):
+        self.log.info("Interrupting stream")
+        code = (
+            """
+            const interrupt_div = document.createElement('DIV');
+            interrupt_div.id = "INTERRUPT_DIV_ID";
+            document.body.appendChild(interrupt_div);
+            """
+        ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
+        await self.page.evaluate(code)
+
+    def terminate_stream(self, _signal, _frame):
+        self.log.info("Received signal to terminate stream")
+        if self.streaming:
+            self.streaming = False
 
     async def ask(self, message: str) -> str:
         """
