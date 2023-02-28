@@ -1,6 +1,6 @@
-# ChatGPT CLI and Python Wrapper
+# :candy:ChatGPT Wrapper:candy:
 
-ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you interact with ChatGPT.
+ChatGPT Wrapper is an open-source unofficial ***Power CLI***, ***Python API*** and ***Flask API*** that lets you interact programmatically with ChatGPT.
 
 
 ## Highlights
