@@ -4,7 +4,6 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import NestedCompleter
-from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
 
@@ -58,7 +57,6 @@ class GPTShell():
         self.commands = self.configure_commands()
         self.command_completer = self.get_command_completer()
         self.history = self.get_history()
-        self.key_bindings = self.get_key_bindings()
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
             history=self.history,
@@ -66,7 +64,6 @@ class GPTShell():
             # so we don't use it. Leaving it here for reference.
             # auto_suggest=AutoSuggestFromHistory(),
             completer=self.command_completer,
-            key_bindings=self.key_bindings,
             style=self.style
         )
 
@@ -82,13 +79,6 @@ class GPTShell():
 
     def get_history(self):
         return FileHistory(COMMAND_HISTORY_FILE)
-
-    def get_key_bindings(self):
-        key_bindings = KeyBindings()
-        @key_bindings.add('c-x')
-        def _(event):
-            event.cli.current_buffer.insert_text('!command1')
-        return key_bindings
 
     def get_styles(self):
         style = Style.from_dict({
