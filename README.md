@@ -9,43 +9,32 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 
 💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
 
-## Updates
-- 27/02/2023: v0.4.0
-  - BREAKING CHANGE: command leader is now '/' instead of '!'
-  - BREAKING CHANGE: asyncio module is now required to use the ChatGPT class
-directly
-  - /quit command
-  - Added /tmp volume for saving playwright session
-  - Add tab compltion for commands
-  - /delete support for history IDs/UUIDs
-  - improve logging
-  - Added CI and CodeQL workflows
-  - /title command
-  - Initial API implementation in Flask
-  - Limit/offset support for /history
-  - Add simple developer debug module
-  - /chat command
-  - /switch command
-  - Improve session refreshing
-  - Migrate to Prompt Toolkit
-  - Migrate to async playwright
-- 21/02/2023: v0.3.17
-  - Added debug mode (visible browser window).
-  - @thehunmonkgroup fixed chat naming.
-  - @thehunmonkgroup added !delete command to remove/hide conversations
-  - @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
-  - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT
-  - @thehunmonkgroup added !history command to show the list of the last 20 conversations
-  - @NatLee added **docker** support
-- 17/02/2023: v0.3.16
-  - Ability to open **multiple sessions in parallel**.
-  - Code now works with **ChatGPT Plus** subscription.
-- 14/02/2023: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model)
-- 14/02/2023: v0.3.11
-  - Fixed many bugs with installation. Code is refactored.
-  - Now able to use the python wrapper with a **proxy**.
-- 18/01/2023: v0.3.8 - Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
-- 17/01/2023: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
+## Release Notes - v0.4.0 - 27/02/2023
+
+### **:fire_engine:Breaking Changes:fire_engine:**
+
+- Command leader changed from '!' to '/'
+- Asyncio module is now required to use ChatGPT class directly (refer to [Python usage](#python))
+
+### What is new?
+#### New commands
+- Added '/quit' command
+- Added '/delete' support for history IDs/UUIDs
+- Added '/chat' command
+- Added '/switch' command
+- Added '/title' command
+- Added limit/offset support for '/history'
+#### New features
+- ***Migrated to async Playwright***
+- ***Initial API in Flask***
+- Added tab completion for commands
+- Added '/tmp' volume for saving Playwright session
+- Added CI and CodeQL workflows
+- Added simple developer debug module
+- Improved session refreshing (***/session now works!***)
+- Migrated to Prompt Toolkit
+
+[See commit log for previous updates](#commit-log)
 
 ## How it works
 
@@ -164,6 +153,25 @@ Then, visit http://localhost:6901/vnc.html with password `headless` and login Ch
 Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
+
+## Commit log
+- 21/02/2023: v0.3.17
+  - Added debug mode (visible browser window).
+  - @thehunmonkgroup fixed chat naming.
+  - @thehunmonkgroup added !delete command to remove/hide conversations
+  - @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free')
+  - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT
+  - @thehunmonkgroup added !history command to show the list of the last 20 conversations
+  - @NatLee added **docker** support
+- 17/02/2023: v0.3.16
+  - Ability to open **multiple sessions in parallel**.
+  - Code now works with **ChatGPT Plus** subscription.
+- 14/02/2023: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model)
+- 14/02/2023: v0.3.11
+  - Fixed many bugs with installation. Code is refactored.
+  - Now able to use the python wrapper with a **proxy**.
+- 18/01/2023: v0.3.8 - Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
+- 17/01/2023: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
 
 ## Contributing
 
