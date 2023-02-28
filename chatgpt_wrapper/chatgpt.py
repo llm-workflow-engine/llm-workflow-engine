@@ -3,7 +3,6 @@ import asyncio
 import atexit
 import base64
 import json
-from json.decoder import JSONDecodeError
 import operator
 import time
 import uuid
@@ -139,7 +138,7 @@ class ChatGPT:
             """
             found_json=re.search('{.*}',contents)
             if found_json==None:
-                raise JSONDecodeError("Cannot find JSON in /api/auth/session 's response")
+                raise json.JSONDecodeError("Cannot find JSON in /api/auth/session 's response",contents,0)
             contents=contents[found_json.start():found_json.end()]
             self.log.debug("Refreshing session received: %s",contents)
             self.session=json.loads(contents)
