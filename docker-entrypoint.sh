@@ -5,4 +5,5 @@ echo '2) Visit http://localhost:6901/vnc.html with password `headless`'
 echo '3) Login ChatGPT'
 echo '4) Back to terminal here and have a nice chat'
 
-python # just holding
+# python # just holding
+python chatgpt_wrapper/gpt_api.py

@@ -1,5 +1,10 @@
-from flask import Flask, request, jsonify
+import argparse
+import asyncio
+
+from flask import Flask, jsonify, request
+
 from chatgpt_wrapper.chatgpt import ChatGPT
+
 
 def create_application(name, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy=None):
     app = Flask(name)
@@ -25,7 +30,7 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
                 Some response.
         """
         prompt = request.get_data().decode("utf-8")
-        result = chatgpt.ask(prompt)
+        result = asyncio.run(chatgpt.ask(prompt))
         return result
 
     @app.route("/conversations/new", methods=["POST"])
@@ -82,7 +87,6 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
 
     @app.route("/conversations/<string:conversation_id>/set-title", methods=["PATCH"])
     def set_title(conversation_id):
-
         """
         Set the title of a conversation.
 
@@ -112,7 +116,7 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
         """
         json = request.get_json()
         title = json["title"]
-        result = chatgpt.set_title(title, conversation_id=conversation_id)
+        result = asyncio.run(chatgpt.set_title(title, conversation_id=conversation_id))
         if result:
             return jsonify(result)
         else:
@@ -120,7 +124,6 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
 
     @app.route("/history", methods=["GET"])
     def get_history():
-
         """
         Retrieve conversation history.
 
@@ -149,7 +152,7 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
         """
         limit = request.args.get("limit", 20)
         offset = request.args.get("offset", 0)
-        result = chatgpt.get_history(limit=limit, offset=offset)
+        result = asyncio.run(chatgpt.get_history(limit=limit, offset=offset))
         if result:
             return jsonify(result)
         else:
@@ -157,6 +160,10 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
 
     return app
 
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5000)
+    args = parser.parse_args()
     app = create_application("chatgpt")
-    app.run(host="0.0.0.0", port=5000, threaded=False)
+    app.run(host="0.0.0.0", port=args.port, threaded=False)
