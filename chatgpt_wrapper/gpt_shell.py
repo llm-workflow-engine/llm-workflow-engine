@@ -354,6 +354,11 @@ class GPTShell():
                 "The argument to `nav` contained an unknown prompt number."
             )
             return
+        elif self.message_map[msg_id][0] is None:
+            self._print_markdown(
+                f"Cannot navigate to prompt number {msg_id}, no conversation present, try next prompt."
+            )
+            return
 
         (
             self.chatgpt.conversation_id,
