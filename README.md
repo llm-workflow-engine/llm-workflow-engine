@@ -12,6 +12,8 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 ## Updates
 - 27/02/2023: v0.4.0
   - BREAKING CHANGE: command leader is now '/' instead of '!'
+  - BREAKING CHANGE: asyncio module is now required to use the ChatGPT class
+directly
   - /quit command
   - Added /tmp volume for saving playwright session
   - Add tab compltion for commands
