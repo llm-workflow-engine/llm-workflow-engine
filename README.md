@@ -5,15 +5,15 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 
 ## Highlights
 
-🤖 Programmable ChatGPT. The ChatGPT Wrapper lets you use the powerful ChatGPT bot in your *Python scripts* or on the *command line*, making it easy to leverage its functionality into your projects.
+🤖 **Programmable ChatGPT**. The ChatGPT Wrapper lets you use the powerful ChatGPT bot in your *Python scripts* or on the *command line*, making it easy to leverage its functionality into your projects.
 
-💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
+💬 **Runs in Shell**. You can call and interact with ChatGPT in the terminal
 
-🐍 Python API. The ChatGPT Wrapper is a Python library that lets you use ChatGPT in your Python scripts.
+🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT in your Python scripts.
 
-🐳 Docker image. The ChatGPT Wrapper is also available as a docker image. (experimental)
+🐳 **Docker image**. The ChatGPT Wrapper is also available as a docker image. (experimental)
 
-:test_tube: Flask API. You can use the ChatGPT Wrapper as an API. (experimental)
+:test_tube: **Flask API**. You can use the ChatGPT Wrapper as an API. (experimental)
 
 ## Release Notes - v0.4.0 - 27/02/2023
 
