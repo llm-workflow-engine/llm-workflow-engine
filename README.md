@@ -9,6 +9,12 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 
 💬 Runs in Shell. You can call and interact with ChatGPT in the terminal
 
+🐍 Python API. The ChatGPT Wrapper is a Python library that lets you use ChatGPT in your Python scripts.
+
+🐳 Docker image. The ChatGPT Wrapper is also available as a docker image. (experimental)
+
+:test_tube: Flask API. You can use the ChatGPT Wrapper as an API. (experimental)
+
 ## Release Notes - v0.4.0 - 27/02/2023
 
 ### **:fire_engine:Breaking Changes:fire_engine:**
@@ -26,7 +32,7 @@ ChatGPT Wrapper is an open-source unofficial Python API and CLI that lets you in
 - Added limit/offset support for '/history'
 #### New features
 - ***Migrated to async Playwright***
-- ***Initial API in Flask***
+- ***Initial API in Flask*** (see [How to use the API](#flask-api))
 - Added tab completion for commands
 - Added '/tmp' volume for saving Playwright session
 - Added CI and CodeQL workflows
@@ -133,13 +139,14 @@ The say method takes a string argument representing the message to send to ChatG
 
 You may also stream the response as it comes in from ChatGPT in chunks using the `ask_stream` generator.
 
-## Projects built with chatgpt-wrapper
+### Flask API (experimental)
 
-  - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
-  - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
-  - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
+- Run `python chatgpt_wrapper/gpt_api.py --port 5000` (default port is 5000) to start the server
+- Test whether it is working using `python -m unittest test/api_test.py`
+- See an example of interaction with api in `tests/example_api_call.py`
 
-## Docker
+
+## Docker (experimental)
 
 Build a image for testing `chatgpt-wrapper` with following commands.
 
@@ -153,6 +160,12 @@ Then, visit http://localhost:6901/vnc.html with password `headless` and login Ch
 Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
+
+## Projects built with chatgpt-wrapper
+
+  - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
+  - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
+  - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
 
 ## Commit log
 - 21/02/2023: v0.3.17
