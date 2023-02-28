@@ -718,6 +718,8 @@ class GPTShell():
                 break  # Control-D pressed.
 
             text = user_input.strip()
+            if not text:
+                continue
             leader = text[0]
             if leader == COMMAND_LEADER or leader == LEGACY_COMMAND_LEADER:
                 text = text[1:]
