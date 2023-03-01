@@ -174,7 +174,7 @@ class AsyncChatGPT:
         if response.ok:
             try:
                 json = await response.json()
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 pass
         if not response.ok or not json:
             self.log.debug(f"{response.status} {response.status_text} {response.headers}")
