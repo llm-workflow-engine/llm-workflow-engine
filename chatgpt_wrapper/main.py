@@ -1,12 +1,15 @@
 import argparse
 import sys
+import asyncio
 
-from chatgpt_wrapper.chatgpt import ChatGPT
+from chatgpt_wrapper.chatgpt import AsyncChatGPT
 from chatgpt_wrapper.gpt_shell import GPTShell
 from chatgpt_wrapper.version import __version__
 
-
 def main():
+    asyncio.run(async_main())
+
+async def async_main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -75,17 +78,18 @@ def main():
         extra_kwargs["model"] = args.model
     if args.debug_log is not None:
         extra_kwargs["debug_log"] = args.debug_log
-    chatgpt = ChatGPT(headless=not (install_mode or args.debug), timeout=90, **extra_kwargs)
+    chatgpt = await AsyncChatGPT().create(headless=not (install_mode or args.debug), timeout=90, **extra_kwargs)
 
     shell = GPTShell()
     shell._set_chatgpt(chatgpt)
-    shell._set_args(args)
+    await shell._set_args(args)
 
     if len(args.params) > 0 and not install_mode:
         shell.default(" ".join(args.params))
         return
 
-    shell.cmdloop()
+    await shell.cmdloop()
+    await chatgpt.cleanup()
 
 if __name__ == "__main__":
     main()
