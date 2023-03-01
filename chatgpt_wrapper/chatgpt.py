@@ -1,3 +1,4 @@
+import platform
 import asyncio
 import signal
 import atexit
@@ -14,6 +15,8 @@ from playwright._impl._api_structures import ProxySettings
 
 import nest_asyncio
 nest_asyncio.apply()
+
+is_windows = platform.system() == "Windows"
 
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
@@ -77,7 +80,8 @@ class AsyncChatGPT:
         atexit.register(self._shutdown)
 
     def _setup_signal_handlers(self):
-        signal.signal(signal.SIGUSR1, self.terminate_stream)
+        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
+        signal.signal(sig, self.terminate_stream)
 
     def _shutdown(self):
         loop = asyncio.get_event_loop()
@@ -355,7 +359,7 @@ class AsyncChatGPT:
                 document.body.appendChild(eof_div);
               }
               if(typeof interrupt_div !== 'undefined' && interrupt_div !== null) {
-                console.warning('Interrupting stream');
+                console.warn('Interrupting stream');
                 xhr.abort();
                 interrupt_div.remove();
               }
