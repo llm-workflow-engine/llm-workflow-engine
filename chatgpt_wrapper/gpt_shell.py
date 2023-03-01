@@ -238,7 +238,7 @@ class GPTShell():
         Examples:
             {leader}new
         """
-        await self.chatgpt.new_conversation()
+        self.chatgpt.new_conversation()
         self._print_markdown("* New conversation started.")
         self._update_message_map()
         self._write_log_context()
@@ -495,7 +495,7 @@ class GPTShell():
         if conversation_id and conversation_id == self.chatgpt.conversation_id:
             self._print_markdown("* You are already in chat: %s" % title)
             return
-        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        conversation_data = await self.chatgpt.get_conversation(conversation_id)
         if conversation_data:
             messages = self.chatgpt.conversation_data_to_messages(conversation_data)
             message = messages.pop()
