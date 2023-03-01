@@ -118,6 +118,7 @@ class AsyncChatGPT:
         await self.page.goto("https://chat.openai.com/")
 
     async def cleanup(self):
+        self.log.info("Cleaning up")
         await self.browser.close()
         # remove the user data dir in case this is a second instance
         if self.user_data_dir:
