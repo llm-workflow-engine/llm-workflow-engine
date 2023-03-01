@@ -141,7 +141,7 @@ class AsyncChatGPT:
             await self._start_browser()
         try:
             while "Please stand by, while we are checking your browser..." in await self.page.content():
-                time.sleep(1)
+                asyncio.sleep(1)
             contents = await self.page.content()
             """
             By GETting /api/auth/session, the server would ultimately return a raw json file.
@@ -180,7 +180,7 @@ class AsyncChatGPT:
 
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
-            "Authorization": "Bearer %s" % self.session["accessToken"],
+            "Authorization": f"Bearer {self.session['accessToken']}",
         }
         headers.update(custom_headers)
         return headers
@@ -488,7 +488,7 @@ class ChatGPT:
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
         self.agpt = AsyncChatGPT()
-        asyncio.run(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
+        asyncio.get_event_loop().run_until_complete(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
 
     def __getattr__(self, __name: str):
         if hasattr(self.agpt, __name):
@@ -497,7 +497,7 @@ class ChatGPT:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{__name}'")
 
     def refresh_session(self):
-        return asyncio.run(self.agpt.refresh_session())
+        return asyncio.get_event_loop().run_until_complete(self.agpt.refresh_session())
 
     def ask_stream(self, prompt: str):
         def iter_over_async(ait):
@@ -517,19 +517,19 @@ class ChatGPT:
         yield from iter_over_async(self.agpt.ask_stream(prompt))
 
     def ask(self, message: str) -> str:
-        return asyncio.run(self.agpt.ask(message))
+        return asyncio.get_event_loop().run_until_complete(self.agpt.ask(message))
 
     def get_conversation(self, uuid=None):
-        return asyncio.run(self.agpt.get_conversation(uuid))
+        return asyncio.get_event_loop().run_until_complete(self.agpt.get_conversation(uuid))
 
     def delete_conversation(self, uuid=None):
-        return asyncio.run(self.agpt.delete_conversation(uuid))
+        return asyncio.get_event_loop().run_until_complete(self.agpt.delete_conversation(uuid))
 
     def set_title(self, title, conversation_id=None):
-        return asyncio.run(self.agpt.set_title(title, conversation_id))
+        return asyncio.get_event_loop().run_until_complete(self.agpt.set_title(title, conversation_id))
 
     def get_history(self, limit=20, offset=0):
-        return asyncio.run(self.agpt.get_history(limit, offset))
+        return asyncio.get_event_loop().run_until_complete(self.agpt.get_history(limit, offset))
 
     def __del__(self):
-        asyncio.run(self.agpt.cleanup())
+        asyncio.get_event_loop().run_until_complete(self.agpt.cleanup())
