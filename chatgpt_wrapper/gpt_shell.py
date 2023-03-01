@@ -125,10 +125,10 @@ class GPTShell():
         else:
             self.help_commands()
 
-    def _set_args(self, args):
+    async def _set_args(self, args):
         self.stream = args.stream
         if args.log is not None:
-            if not self._open_log(args.log):
+            if not await self._open_log(args.log):
                 sys.exit(0)
 
     def _set_chatgpt(self, chatgpt):
@@ -191,32 +191,32 @@ class GPTShell():
         content = "\n\n".join(message_parts)
         return content
 
-    def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
+    async def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = self.chatgpt.get_history(limit=limit, offset=offset)
+        history = await self.chatgpt.get_history(limit=limit, offset=offset)
         return history
 
-    def _set_title(self, title, conversation_id=None):
+    async def _set_title(self, title, conversation_id=None):
         self._print_markdown("* Setting title...")
-        if self.chatgpt.set_title(title, conversation_id):
+        if await self.chatgpt.set_title(title, conversation_id):
             self._print_markdown("* Title set to: %s" % title)
 
-    def _delete_conversation(self, id, label=None):
+    async def _delete_conversation(self, id, label=None):
         if id == self.chatgpt.conversation_id:
-            self._delete_current_conversation()
+            await self._delete_current_conversation()
         else:
             label = label or id
             self._print_markdown("* Deleting conversation: %s" % label)
-            if self.chatgpt.delete_conversation(id):
+            if await self.chatgpt.delete_conversation(id):
                 self._print_markdown("* Deleted conversation: %s" % label)
 
-    def _delete_current_conversation(self):
+    async def _delete_current_conversation(self):
         self._print_markdown("* Deleting current conversation")
-        if self.chatgpt.delete_conversation():
+        if await self.chatgpt.delete_conversation():
             self._print_markdown("* Deleted current conversation")
-            self.do_new(None)
+            await self.do_new(None)
 
-    def do_stream(self, _):
+    async def do_stream(self, _):
         """
         Toggle streaming mode
 
@@ -231,19 +231,19 @@ class GPTShell():
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
 
-    def do_new(self, _):
+    async def do_new(self, _):
         """
         Start a new conversation
 
         Examples:
             {leader}new
         """
-        self.chatgpt.new_conversation()
+        await self.chatgpt.new_conversation()
         self._print_markdown("* New conversation started.")
         self._update_message_map()
         self._write_log_context()
 
-    def do_delete(self, arg):
+    async def do_delete(self, arg):
         """
         Delete one or more conversations
 
@@ -266,24 +266,24 @@ class GPTShell():
         if arg:
             result = self._parse_conversation_ids(arg)
             if isinstance(result, list):
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 if history:
                     history_list = [h for h in history.values()]
                     for item in result:
                         if isinstance(item, str) and len(item) == 36:
-                            self._delete_conversation(item)
+                            await self._delete_conversation(item)
                         else:
                             if item <= len(history_list):
                                 conversation = history_list[item - 1]
-                                self._delete_conversation(conversation['id'], conversation['title'])
+                                await self._delete_conversation(conversation['id'], conversation['title'])
                             else:
                                 self._print_markdown("* Cannont delete history item %d, does not exist" % item)
             else:
                 self._print_markdown(result)
         else:
-            self._delete_current_conversation()
+            await self._delete_current_conversation()
 
-    def do_history(self, arg):
+    async def do_history(self, arg):
         """
         Show recent conversation history
 
@@ -315,12 +315,12 @@ class GPTShell():
                     except ValueError:
                         self._print_markdown("* Invalid offset, must be an integer")
                         return
-        history = self._fetch_history(limit=limit, offset=offset)
+        history = await self._fetch_history(limit=limit, offset=offset)
         if history:
             history_list = [h for h in history.values()]
             self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
 
-    def do_nav(self, arg):
+    async def do_nav(self, arg):
         """
         Navigate to a past point in the conversation
 
@@ -362,7 +362,7 @@ class GPTShell():
             f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
         )
 
-    def do_title(self, arg):
+    async def do_title(self, arg):
         """
         Show or set title
 
@@ -377,7 +377,7 @@ class GPTShell():
             Set conversation title using history ID: {leader}title 1
         """
         if arg:
-            history = self._fetch_history()
+            history = await self._fetch_history()
             history_list = [h for h in history.values()]
             conversation_id = None
             id = None
@@ -395,10 +395,10 @@ class GPTShell():
                 new_title = input("Enter new title for '%s': " % history[conversation_id]["title"])
             else:
                 new_title = arg
-            self._set_title(new_title, conversation_id)
+            await self._set_title(new_title, conversation_id)
         else:
             if self.chatgpt.conversation_id:
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 if self.chatgpt.conversation_id in history:
                     self._print_markdown("* Title: %s" % history[self.chatgpt.conversation_id]['title'])
                 else:
@@ -406,7 +406,7 @@ class GPTShell():
             else:
                 self._print_markdown("* Current conversation has no title, you must send information first")
 
-    def do_chat(self, arg):
+    async def do_chat(self, arg):
         """
         Retrieve chat content
 
@@ -426,7 +426,7 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 history_list = [h for h in history.values()]
                 id = None
                 try:
@@ -445,7 +445,7 @@ class GPTShell():
             if not self.chatgpt.conversation_id:
                 self._print_markdown("* Current conversation is empty, you must send information first")
                 return
-        conversation_data = self.chatgpt.get_conversation(conversation_id)
+        conversation_data = await self.chatgpt.get_conversation(conversation_id)
         if conversation_data:
             messages = self.chatgpt.conversation_data_to_messages(conversation_data)
             if title:
@@ -454,7 +454,7 @@ class GPTShell():
         else:
             self._print_markdown("* Could not load chat content")
 
-    def do_switch(self, arg):
+    async def do_switch(self, arg):
         """
         Switch to chat
 
@@ -474,13 +474,13 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = self._fetch_history()
+                history = await self._fetch_history()
                 history_list = [h for h in history.values()]
                 id = None
                 try:
                     id = int(arg)
                 except Exception:
-                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
+                    self._print_markdown(f"* Invalid chat history item {id}, must be in integer")
                     return
                 if id:
                     if id <= len(history_list):
@@ -508,7 +508,7 @@ class GPTShell():
         else:
             self._print_markdown("* Could not switch to chat")
 
-    def do_ask(self, line):
+    async def do_ask(self, line):
         """
         Ask a question to ChatGPT
 
@@ -517,16 +517,16 @@ class GPTShell():
         Examples:
             {leader}ask what is 6+6 (is the same as 'what is 6+6')
         """
-        return self.default(line)
+        return await self.default(line)
 
-    def default(self, line):
+    async def default(self, line):
         if not line:
             return
 
         if self.stream:
             response = ""
             first = True
-            for chunk in self.chatgpt.ask_stream(line):
+            async for chunk in self.chatgpt.ask_stream(line):
                 if first:
                     print("")
                     first = False
@@ -535,14 +535,14 @@ class GPTShell():
                 response += chunk
             print("\n")
         else:
-            response = self.chatgpt.ask(line)
+            response = await self.chatgpt.ask(line)
             print("")
             self._print_markdown(response)
 
         self._write_log(line, response)
         self._update_message_map()
 
-    def do_session(self, _):
+    async def do_session(self, _):
         """
         Refresh session information
 
@@ -551,7 +551,7 @@ class GPTShell():
         Examples:
             {leader}session
         """
-        self.chatgpt.refresh_session()
+        await self.chatgpt.refresh_session()
         usable = (
             "The session appears to be usable."
             if "accessToken" in self.chatgpt.session
@@ -559,7 +559,7 @@ class GPTShell():
         )
         self._print_markdown(f"* Session information refreshed.  {usable}")
 
-    def do_read(self, _):
+    async def do_read(self, _):
         """
         Begin reading multi-line input
 
@@ -583,9 +583,9 @@ class GPTShell():
                 break
             prompt += line + "\n"
 
-        self.default(prompt)
+        await self.default(prompt)
 
-    def do_editor(self, args):
+    async def do_editor(self, args):
         """
         Open an editor for entering a command
 
@@ -611,9 +611,9 @@ class GPTShell():
         process.wait()
         output = process.stdout.read().decode()
         print(output)
-        self.default(output)
+        await self.default(output)
 
-    def do_file(self, arg):
+    async def do_file(self, arg):
         """
         Send a prompt read from the named file
 
@@ -628,9 +628,9 @@ class GPTShell():
         except Exception:
             self._print_markdown(f"Failed to read file '{arg}'")
             return
-        self.default(fileprompt)
+        await self.default(fileprompt)
 
-    def _open_log(self, filename) -> bool:
+    async def _open_log(self, filename) -> bool:
         try:
             if os.path.isabs(filename):
                 self.logfile = open(filename, "a", encoding="utf-8")
@@ -641,7 +641,7 @@ class GPTShell():
             return False
         return True
 
-    def do_log(self, arg):
+    async def do_log(self, arg):
         """
         Enable/disable logging to a file
 
@@ -653,13 +653,13 @@ class GPTShell():
             Disable logging: {leader}log
         """
         if arg:
-            if self._open_log(arg):
+            if await self._open_log(arg):
                 self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
         else:
             self.logfile = None
             self._print_markdown("* Logging is now disabled.")
 
-    def do_context(self, arg):
+    async def do_context(self, arg):
         """
         Load an old context from the log
 
@@ -684,7 +684,7 @@ class GPTShell():
         self._update_message_map()
         self._write_log_context()
 
-    def do_exit(self, _):
+    async def do_exit(self, _):
         """
         Exit the ChatGPT shell
 
@@ -693,7 +693,7 @@ class GPTShell():
         """
         pass
 
-    def do_quit(self, _):
+    async def do_quit(self, _):
         """
         Exit the ChatGPT shell
 
@@ -702,12 +702,12 @@ class GPTShell():
         """
         pass
 
-    def cmdloop(self):
+    async def cmdloop(self):
         print("")
         self._print_markdown("### %s" % self.intro)
         while True:
             try:
-                user_input = self.prompt_session.prompt(self.prompt)
+                user_input = await self.prompt_session.prompt_async(self.prompt)
             except KeyboardInterrupt:
                 continue  # Control-C pressed. Try again.
             except EOFError:
@@ -741,7 +741,7 @@ class GPTShell():
                 if command in self.commands:
                     method = getattr(__class__, f"do_{command}")
                     try:
-                        response = method(self, argument)
+                        response = await method(self, argument)
                     except Exception as e:
                         print(repr(e))
                     else:
