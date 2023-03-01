@@ -1,7 +1,6 @@
 import platform
 import asyncio
 import signal
-import atexit
 import base64
 import json
 import time
@@ -40,24 +39,24 @@ class AsyncChatGPT:
 
 
     def __init__(self):
-        self.log=None
-        self.play=None
-        self.user_data_dir=None
-        self.page=None
-        self.browser=None
-        self.parent_message_id=None
-        self.conversation_id=None
-        self.conversation_title_set=None
-        self.model=None
-        self.session=None
-        self.streaming=None
-        self.timeout=None
+        self.log = None
+        self.play = None
+        self.user_data_dir = None
+        self.page = None
+        self.browser = None
+        self.parent_message_id = None
+        self.conversation_id = None
+        self.conversation_title_set = None
+        self.model = None
+        self.session = None
+        self.streaming = None
+        self.timeout = None
 
-    async def create(self, headless: bool = True, browser="firefox",model="default", timeout=60,debug_log=None, proxy: Optional[ProxySettings] = None):
+    async def create(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
         self.streaming = False
         self._setup_signal_handlers()
         self.lock = asyncio.Lock()
-        self.log=self._set_logging(debug_log)
+        self.log = self._set_logging(debug_log)
         self.play = await async_playwright().start()
         try:
             playbrowser = getattr(self.play, browser)
@@ -87,7 +86,7 @@ class AsyncChatGPT:
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.conversation_title_set = None
-        self.model=model
+        self.model = model
         self.session = None
         self.timeout = timeout
         self.log.info("ChatGPT initialized")
@@ -99,7 +98,7 @@ class AsyncChatGPT:
 
     def _shutdown(self):
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(asyncio.gather(self._cleanup()))
+        loop.run_until_complete(asyncio.gather(self.cleanup()))
 
     def _set_logging(self, debug_log):
         logger = logging.getLogger(self.__class__.__name__)
@@ -303,7 +302,7 @@ class AsyncChatGPT:
 
     async def ask_stream(self, prompt: str):
         if self.session is None:
-            await self.refresh_session() if asyncio.iscoroutinefunction(self.refresh_session) else self.refresh_session()
+            await self.refresh_session()
 
         new_message_id = str(uuid.uuid4())
 
@@ -488,12 +487,12 @@ class AsyncChatGPT:
 class ChatGPT:
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
-        self.agpt=AsyncChatGPT()
+        self.agpt = AsyncChatGPT()
         asyncio.run(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
 
     def __getattr__(self, __name: str):
-        if hasattr(self.agpt,__name):
-            return getattr(self.agpt,__name)
+        if hasattr(self.agpt, __name):
+            return getattr(self.agpt, __name)
         else:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{__name}'")
 
