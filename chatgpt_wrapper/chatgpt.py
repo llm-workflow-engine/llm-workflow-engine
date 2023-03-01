@@ -142,7 +142,7 @@ class AsyncChatGPT:
             await self._start_browser()
         try:
             while "Please stand by, while we are checking your browser..." in await self.page.content():
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
             contents = await self.page.content()
             """
             By GETting /api/auth/session, the server would ultimately return a raw json file.
