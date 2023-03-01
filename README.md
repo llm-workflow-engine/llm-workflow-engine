@@ -14,7 +14,7 @@
 
 :test_tube: **Flask API**. You can use the ChatGPT Wrapper as an API. (experimental)
 
-## Release Notes - v0.4.2 - 01/03/2023
+## Release Notes
 
 ### v0.4.2 - 01/03/2023
 
