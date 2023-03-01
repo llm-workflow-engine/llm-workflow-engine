@@ -489,7 +489,7 @@ class ChatGPT:
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
         self.agpt = AsyncChatGPT()
-        asyncio.get_event_loop().run_until_complete(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
+        self.async_run(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
 
     def __getattr__(self, __name: str):
         if hasattr(self.agpt, __name):
@@ -497,8 +497,11 @@ class ChatGPT:
         else:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{__name}'")
 
+    def async_run(self, awaitable):
+        return asyncio.get_event_loop().run_until_complete(awaitable)
+
     def refresh_session(self):
-        return asyncio.get_event_loop().run_until_complete(self.agpt.refresh_session())
+        return self.async_run(self.agpt.refresh_session())
 
     def ask_stream(self, prompt: str):
         def iter_over_async(ait):
@@ -518,19 +521,19 @@ class ChatGPT:
         yield from iter_over_async(self.agpt.ask_stream(prompt))
 
     def ask(self, message: str) -> str:
-        return asyncio.get_event_loop().run_until_complete(self.agpt.ask(message))
+        return self.async_run(self.agpt.ask(message))
 
     def get_conversation(self, uuid=None):
-        return asyncio.get_event_loop().run_until_complete(self.agpt.get_conversation(uuid))
+        return self.async_run(self.agpt.get_conversation(uuid))
 
     def delete_conversation(self, uuid=None):
-        return asyncio.get_event_loop().run_until_complete(self.agpt.delete_conversation(uuid))
+        return self.async_run(self.agpt.delete_conversation(uuid))
 
     def set_title(self, title, conversation_id=None):
-        return asyncio.get_event_loop().run_until_complete(self.agpt.set_title(title, conversation_id))
+        return self.async_run(self.agpt.set_title(title, conversation_id))
 
     def get_history(self, limit=20, offset=0):
-        return asyncio.get_event_loop().run_until_complete(self.agpt.get_history(limit, offset))
+        return self.async_run(self.agpt.get_history(limit, offset))
 
     def __del__(self):
-        asyncio.get_event_loop().run_until_complete(self.agpt.cleanup())
+        self.async_run(self.agpt.cleanup())
