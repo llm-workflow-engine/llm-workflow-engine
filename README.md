@@ -14,13 +14,22 @@
 
 :test_tube: **Flask API**. You can use the ChatGPT Wrapper as an API. (experimental)
 
-## Release Notes - v0.4.1 - 28/02/2023
+## Release Notes - v0.4.2 - 01/03/2023
+
+### v0.4.2 - 01/03/2023
+
+ - Fix broken `ChatGPT` sync class
+ - Removed nest_asyncio dependency
+ - Convert CLI to use `AsyncChatGPT` class
+ - Initial implementation of stop generating text response
+
+### v0.4.1 - 28/02/2023
 
 - REVERT BREAKING CHANGE: Asyncio module requirement _removed_ from usage of ChatGPT class, it is now a sync wrapper around the async class
 
-## Release Notes - v0.4.0 - 27/02/2023
+### v0.4.0 - 27/02/2023
 
-### **:fire_engine:Breaking Changes:fire_engine:**
+#### **:fire_engine:Breaking Changes:fire_engine:**
 
 - Command leader changed from '!' to '/'
 - Asyncio module is now required to use ChatGPT class directly (refer to [Python usage](#python))
