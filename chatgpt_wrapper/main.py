@@ -85,7 +85,7 @@ async def async_main():
     await shell._set_args(args)
 
     if len(args.params) > 0 and not install_mode:
-        shell.default(" ".join(args.params))
+        await shell.default(" ".join(args.params))
         return
 
     await shell.cmdloop()
