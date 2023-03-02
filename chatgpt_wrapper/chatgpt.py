@@ -11,6 +11,8 @@ import shutil
 from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
+from .log import LogCapable
+from .browser import AsyncBrowser
 
 is_windows = platform.system() == "Windows"
 
@@ -20,12 +22,7 @@ RENDER_MODELS = {
     "legacy-free": "text-davinci-002-render"
 }
 
-DEFAULT_CONSOLE_LOG_LEVEL = logging.ERROR
-DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
-DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
-DEFAULT_FILE_LOG_FORMATTER = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
-class AsyncChatGPT:
+class AsyncChatGPT(LogCapable):
     """
     A ChatGPT interface that uses Playwright to run a browser,
     and interacts with that browser to communicate with ChatGPT in
@@ -39,136 +36,42 @@ class AsyncChatGPT:
 
 
     def __init__(self):
-        self.log = None
-        self.play = None
-        self.user_data_dir = None
-        self.page = None
-        self.browser = None
         self.parent_message_id = None
         self.conversation_id = None
         self.conversation_title_set = None
+        self.lock=None
+        self.browser=None
         self.model = None
-        self.session = None
         self.streaming = None
         self.timeout = None
 
-    async def create(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+    async def create(self, headless: bool = True, browser=None, model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+        super().__init__(debug_log=debug_log)
         self.streaming = False
         self._setup_signal_handlers()
         self.lock = asyncio.Lock()
-        self.log = self._set_logging(debug_log)
-        self.play = await async_playwright().start()
-        try:
-            playbrowser = getattr(self.play, browser)
-        except Exception:
-            print(f"Browser {browser} is invalid, falling back on firefox")
-            playbrowser = self.play.firefox
-        try:
-            self.browser = await playbrowser.launch_persistent_context(
-                user_data_dir="/tmp/playwright",
-                headless=headless,
-                proxy=proxy,
-            )
-        except Exception:
-            self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
-            shutil.copytree("/tmp/playwright", self.user_data_dir)
-            self.browser = await playbrowser.launch_persistent_context(
-                user_data_dir=self.user_data_dir,
-                headless=headless,
-                proxy=proxy,
-            )
-
-        if len(self.browser.pages) > 0:
-            self.page = self.browser.pages[0]
-        else:
-            self.page = await self.browser.new_page()
-        await self._start_browser()
+        self.browser=browser if browser else await AsyncBrowser().create(headless=headless,proxy=proxy,debug_log=debug_log)
+        self.model=model
         self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
-        self.model = model
-        self.session = None
         self.timeout = timeout
         self.log.info("ChatGPT initialized")
         return self
 
     def _setup_signal_handlers(self):
-        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
+        sig = signal.SIGBREAK if is_windows else signal.SIGUSR1
         signal.signal(sig, self.terminate_stream)
 
     def _shutdown(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(self.cleanup()))
 
-    def _set_logging(self, debug_log):
-        logger = logging.getLogger(self.__class__.__name__)
-        logger.setLevel(logging.DEBUG)
-        log_console_handler = logging.StreamHandler()
-        log_console_handler.setFormatter(DEFAULT_CONSOLE_LOG_FORMATTER)
-        log_console_handler.setLevel(DEFAULT_CONSOLE_LOG_LEVEL)
-        logger.addHandler(log_console_handler)
-        if debug_log:
-            log_file_handler = logging.FileHandler(debug_log)
-            log_file_handler.setFormatter(DEFAULT_FILE_LOG_FORMATTER)
-            log_file_handler.setLevel(DEFAULT_FILE_LOG_LEVEL)
-            logger.addHandler(log_file_handler)
-        return logger
-
-    async def _start_browser(self):
-        await self.page.goto("https://chat.openai.com/")
-
     async def cleanup(self):
-        self.log.info("Cleaning up")
-        await self.browser.close()
-        # remove the user data dir in case this is a second instance
-        if self.user_data_dir:
-            shutil.rmtree(self.user_data_dir)
-        await self.play.stop()
-
-    async def refresh_session(self, timeout=15):
-        """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
-
-        In this way, we can pass the browser check.
-
-        Args:
-            timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 10.
-        """
-        self.log.info("Refreshing session...")
-        await self.page.goto("https://chat.openai.com/api/auth/session")
-        try:
-            await self.page.wait_for_url("/api/auth/session", timeout=timeout * 1000)
-        except Exception:
-            self.log.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
-            await self._start_browser()
-        try:
-            while "Please stand by, while we are checking your browser..." in await self.page.content():
-                await asyncio.sleep(1)
-            contents = await self.page.content()
-            """
-            By GETting /api/auth/session, the server would ultimately return a raw json file.
-            However, as this is a browser, it will add something to it, like <body> or so, like this:
-
-            <html><head><link rel="stylesheet" href="resource://content-accessible/plaintext.css"></head><body><pre>{xxx:"xxx",{},accessToken="sdjlsfdkjnsldkjfslawefkwnlsdw"}
-            </pre></body></html>
-
-            The following code tries to extract the json part from the page, by simply finding the first `{` and the last `}`.
-            """
-            found_json = re.search('{.*}', contents)
-            if found_json is None:
-                raise json.JSONDecodeError("Cannot find JSON in /api/auth/session 's response", contents, 0)
-            contents = contents[found_json.start():found_json.end()]
-            self.log.debug("Refreshing session received: %s", contents)
-            self.session = json.loads(contents)
-            self.log.info("Succeessfully refreshed session. ")
-        except json.JSONDecodeError:
-            self.log.error("Failed to decode session key. Maybe Access denied? ")
-
-        # Now the browser should be at /api/auth/session
-        # Go back to the chat page.
-        await self._start_browser()
+        self.log.info("Cleaning up...")
+        await self.browser.cleanup()
+        self.log.info("Cleaned up. ")
 
     async def _cleanup_divs(self):
-        await self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
+        await self.browser.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
         code = (
             """
             const eof_div = document.getElementById('EOF_DIV_ID');
@@ -177,11 +80,11 @@ class AsyncChatGPT:
             }
             """
         ).replace("EOF_DIV_ID", self.eof_div_id)
-        await self.page.evaluate(code)
+        await self.browser.page.evaluate(code)
 
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
-            "Authorization": f"Bearer {self.session['accessToken']}",
+            "Authorization": f"Bearer {self.browser.session['accessToken']}",
         }
         headers.update(custom_headers)
         return headers
@@ -200,17 +103,17 @@ class AsyncChatGPT:
 
     async def _api_get_request(self, url, query_params={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = await self.page.request.get(url, headers=headers, params=query_params)
+        response = await self.browser.page.request.get(url, headers=headers, params=query_params)
         return await self._process_api_response(url, response)
 
     async def _api_post_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = await self.page.request.post(url, headers=headers, data=data)
+        response = await self.browser.page.request.post(url, headers=headers, data=data)
         return await self._process_api_response(url, response, method="POST")
 
     async def _api_patch_request(self, url, data={}, custom_headers={}):
         headers = self._api_request_build_headers(custom_headers)
-        response = await self.page.request.patch(url, headers=headers, data=data)
+        response = await self.browser.page.request.patch(url, headers=headers, data=data)
         return await self._process_api_response(url, response, method="PATCH")
 
     async def _gen_title(self):
@@ -243,8 +146,8 @@ class AsyncChatGPT:
             parent_id = current_item['id']
 
     async def delete_conversation(self, uuid=None):
-        if self.session is None:
-            await self.refresh_session()
+        if 'accessToken' not in self.browser.session:
+            await self.browser.refresh_session()
         if not uuid and not self.conversation_id:
             return
         id = uuid if uuid else self.conversation_id
@@ -259,8 +162,8 @@ class AsyncChatGPT:
             self.log.error("Failed to delete conversation")
 
     async def set_title(self, title, conversation_id=None):
-        if self.session is None:
-            await self.refresh_session()
+        if 'accessToken' not in self.browser.session:
+            await self.browser.refresh_session()
         id = conversation_id if conversation_id else self.conversation_id
         url = f"https://chat.openai.com/backend-api/conversation/{id}"
         data = {
@@ -273,8 +176,8 @@ class AsyncChatGPT:
             self.log.error("Failed to set title")
 
     async def get_history(self, limit=20, offset=0):
-        if self.session is None:
-            await self.refresh_session()
+        if 'accessToken' not in self.browser.session:
+            await self.browser.refresh_session()
         url = "https://chat.openai.com/backend-api/conversations"
         query_params = {
             "offset": offset,
@@ -290,8 +193,8 @@ class AsyncChatGPT:
             self.log.error("Failed to get history")
 
     async def get_conversation(self, uuid=None):
-        if self.session is None:
-            await self.refresh_session()
+        if 'accessToken' not in self.browser.session:
+            await self.browser.refresh_session()
         uuid = uuid if uuid else self.conversation_id
         if uuid:
             url = f"https://chat.openai.com/backend-api/conversation/{uuid}"
@@ -302,12 +205,12 @@ class AsyncChatGPT:
                 self.log.error(f"Failed to get conversation {uuid}")
 
     async def ask_stream(self, prompt: str):
-        if self.session is None:
-            await self.refresh_session()
+        if 'accessToken' not in self.browser.session:
+            await self.browser.refresh_session()
 
         new_message_id = str(uuid.uuid4())
 
-        if "accessToken" not in self.session:
+        if "accessToken" not in self.browser.session:
             yield (
                 "Your ChatGPT session is not usable.\n"
                 "* Run this program with the `install` parameter and log in to ChatGPT.\n"
@@ -380,7 +283,7 @@ class AsyncChatGPT:
             };
             xhr.send(JSON.stringify(REQUEST_JSON));
             """.replace(
-                "BEARER_TOKEN", self.session["accessToken"]
+                "BEARER_TOKEN", self.browser.session["accessToken"]
             )
             .replace("REQUEST_JSON", json.dumps(request))
             .replace("STREAM_DIV_ID", self.stream_div_id)
@@ -389,7 +292,7 @@ class AsyncChatGPT:
         )
 
         self.streaming = True
-        await self.page.evaluate(code)
+        await self.browser.page.evaluate(code)
 
         last_event_msg = ""
         start_time = time.time()
@@ -398,9 +301,9 @@ class AsyncChatGPT:
                 self.log.info("Request to interrupt streaming")
                 await self.interrupt_stream()
                 break
-            eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
+            eof_datas = await self.browser.page.query_selector_all(f"div#{self.eof_div_id}")
 
-            conversation_datas = await self.page.query_selector_all(
+            conversation_datas = await self.browser.page.query_selector_all(
                 f"div#{self.stream_div_id}"
             )
             if len(conversation_datas) == 0:
@@ -435,6 +338,7 @@ class AsyncChatGPT:
             # if we saw the eof signal, this was the last event we
             # should process and we are done
             if len(eof_datas) > 0 or (((time.time() - start_time) > self.timeout) and full_event_message is None):
+                self.log.info("Done asking ChatGPT")
                 break
 
             await asyncio.sleep(0.2)
@@ -456,7 +360,7 @@ class AsyncChatGPT:
             document.body.appendChild(interrupt_div);
             """
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
-        await self.page.evaluate(code)
+        await self.browser.page.evaluate(code)
 
     def terminate_stream(self, _signal, _frame):
         self.log.info("Received signal to terminate stream")
@@ -488,6 +392,17 @@ class AsyncChatGPT:
 class ChatGPT:
 
     def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+        """Create ChatGPT
+
+        Args:
+            headless (bool, optional): _description_. Defaults to True.
+            browser (str, optional): The firefox to use. Only support creating new browser. To use existing browser, use `AsyncChatGPT` instead. Defaults to "firefox".
+            model (str, optional): The model to use. Defaults to "default".
+            timeout (int, optional): Timeout to use when asking ChatGPT. Defaults to 60.
+            debug_log (str|NoneType, optional): The file to write log to. Defaults to None.
+            proxy (Optional[ProxySettings], optional): Proxy to use for network requests. Defaults to None.
+        """
+        assert isinstance(browser,str),"browser is not str. To use an existing browser, use AsyncChatGPT. "
         self.agpt = AsyncChatGPT()
         self.async_run(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
 
@@ -501,7 +416,7 @@ class ChatGPT:
         return asyncio.get_event_loop().run_until_complete(awaitable)
 
     def refresh_session(self):
-        return self.async_run(self.agpt.refresh_session())
+        return self.async_run(self.agpt.browser.refresh_session())
 
     def ask_stream(self, prompt: str):
         def iter_over_async(ait):
