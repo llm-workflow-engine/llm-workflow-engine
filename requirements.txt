@@ -1,6 +1,8 @@
 Flask
+names
 nest-asyncio
 openai>=0.27.0
 playwright
 prompt-toolkit
 rich
+sqlalchemy

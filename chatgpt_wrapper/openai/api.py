@@ -8,6 +8,16 @@ import openai
 import chatgpt_wrapper.debug as debug
 
 
+
+orm = ORM('sqlite:///example.db')
+users = orm.get_users()
+for user in users:
+    conversations = orm.get_conversations(user)
+    for conversation in conversations:
+        messages = orm.get_messages(conversation)
+        for message in messages:
+            print(message.message)
+
 DEFAULT_CONSOLE_LOG_LEVEL = logging.DEBUG
 DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
 DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
