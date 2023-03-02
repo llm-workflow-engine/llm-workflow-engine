@@ -157,7 +157,7 @@ You may also stream the response as it comes in from ChatGPT in chunks using the
 ### Flask API (experimental)
 
 - Run `python chatgpt_wrapper/gpt_api.py --port 5000` (default port is 5000) to start the server
-- Test whether it is working using `python -m unittest test/api_test.py`
+- Test whether it is working using `python -m unittest tests/api_test.py`
 - See an example of interaction with api in `tests/example_api_call.py`
 
 ## Docker (experimental)
