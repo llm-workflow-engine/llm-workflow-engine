@@ -1,7 +1,7 @@
 import logging
 import datetime
 
-from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, JSON, Boolean, Enum
+from sqlalchemy import ForeignKey, Index, Column, Integer, String, DateTime, JSON, Boolean, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine
@@ -13,15 +13,20 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String, nullable=False)
+    username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    email = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
     default_model = Column(Enum('default', 'gpt-3.5-turbo', 'gpt-3.5-turbo-0301'))
     created_time = Column(DateTime, nullable=False)
     last_login_time = Column(DateTime, nullable=True)
     preferences = Column(JSON, nullable=False)
 
     conversations = relationship('Conversation', back_populates='user')
+
+Index('user_username_idx', User.username)
+Index('user_email_idx', User.email)
+Index('user_created_time_idx', User.created_time)
+Index('user_last_login_time', User.last_login_time)
 
 class Conversation(Base):
     __tablename__ = 'conversation'
@@ -37,6 +42,11 @@ class Conversation(Base):
     user = relationship('User', back_populates='conversations')
     messages = relationship('Message', back_populates='conversation')
 
+Index('conversation_user_id_idx', Conversation.user_id)
+Index('conversation_created_time_idx', Conversation.created_time)
+Index('conversation_updated_time_idx', Conversation.updated_time)
+Index('conversation_hidden_idx', Conversation.hidden)
+
 class Message(Base):
     __tablename__ = 'message'
 
@@ -50,13 +60,16 @@ class Message(Base):
 
     conversation = relationship('Conversation', back_populates='messages')
 
+Index('message_conversation_id_idx', Message.conversation_id)
+Index('message_created_time_idx', Message.created_time)
+
 class Orm:
-    def __init__(self, database_uri):
+    def __init__(self, database_uri, log_level=logging.INFO):
         self.engine = create_engine(database_uri)
         session = sessionmaker(bind=self.engine)
         self.session = session()
 
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+        logging.basicConfig(level=log_level, format='%(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
     def add_user(self, username, password, email, default_model="default", preferences={}):
