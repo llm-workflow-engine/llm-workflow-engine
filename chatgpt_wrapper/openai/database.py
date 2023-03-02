@@ -19,10 +19,14 @@ DEFAULT_NUM_MESSAGES = 10
 
 console = Console()
 
-def create_db(database=DEFAULT_DATABASE, num_users=DEFAULT_NUM_USERS, num_conversations=DEFAULT_NUM_CONVERSATIONS, num_messages=DEFAULT_NUM_MESSAGES):
+def create_db(database=DEFAULT_DATABASE):
     console.print(f"Creating database: {database}", style="bold green")
     orm = Orm('sqlite:///%s' % database, logging.WARNING)
     Base.metadata.create_all(orm.engine)
+    console.print("Database created", style="bold green")
+
+def create_test_data(database=DEFAULT_DATABASE, num_users=DEFAULT_NUM_USERS, num_conversations=DEFAULT_NUM_CONVERSATIONS, num_messages=DEFAULT_NUM_MESSAGES):
+    orm = Orm('sqlite:///%s' % database, logging.WARNING)
     console.print("Creating users...", style="bold green")
     # Create Users
     for i in range(num_users):
@@ -69,6 +73,12 @@ def main():
         help="create the database and tables",
     )
     parser.add_argument(
+        "-t",
+        "--test-data",
+        action="store_true",
+        help="populate the database tables with test data",
+    )
+    parser.add_argument(
         "-p",
         "--print",
         action="store_true",
@@ -95,7 +105,7 @@ def main():
         help="number of users to create, default: %s" % DEFAULT_NUM_USERS,
     )
     parser.add_argument(
-        "-o",
+        "-n",
         "--conversations",
         default=DEFAULT_NUM_CONVERSATIONS,
         action="store",
@@ -112,8 +122,8 @@ def main():
 
     db_exists = os.path.exists(args.database)
 
-    if not (args.print or args.create):
-        parser.error("At least one of --print or --create must be set")
+    if not (args.create or args.test_data or args.print):
+        parser.error("At least one of --create, --test-data, --print must be set")
 
     if args.create:
         if db_exists:
@@ -121,9 +131,15 @@ def main():
                 console.print("Force specified", style="bold red")
                 remove_db(args.database)
                 time.sleep(1)
-                create_db(args.database, args.users, args.conversations, args.messages)
+                create_db(args.database)
         else:
-            create_db(args.database, args.users, args.conversations, args.messages)
+            create_db(args.database)
+
+    if args.test_data:
+        if db_exists:
+            create_test_data(args.database, args.users, args.conversations, args.messages)
+        else:
+            console.print("Cannot create test data, database not created, use --create to create it", style="bold red")
 
     if args.print:
         print_data(args.database)
