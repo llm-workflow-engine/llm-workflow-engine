@@ -22,7 +22,7 @@ def test_ask_message(host, port):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5000)
+    parser.add_argument("--port", type=int, default=5001)
     parser.add_argument("--host", type=str, default="localhost")
     args = parser.parse_args()
     test_ask_message(args.host, args.port)
