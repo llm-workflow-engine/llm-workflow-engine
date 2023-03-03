@@ -3,9 +3,9 @@ import yaml
 import platform
 import logging
 
+DEFAULT_PROFILE = 'default'
 DEFAULT_CONFIG_DIR = 'chatgpt-wrapper'
 DEFAULT_CONFIG = {
-    'profile': 'default',
     'database': '/tmp/chatgpt-test.db',
     'model': 'default',
     'browser': {
@@ -29,7 +29,7 @@ DEFAULT_CONFIG = {
 }
 
 class Config:
-    def __init__(self, profile=DEFAULT_CONFIG['profile'], config_dir=None, data_dir=None):
+    def __init__(self, config_dir=None, data_dir=None, profile=DEFAULT_PROFILE, config={}):
         self.system = platform.system()
         if config_dir:
             self.config_dir = config_dir
@@ -39,7 +39,8 @@ class Config:
             self.data_dir = data_dir
         else:
             self.data_dir = self._default_data_dir()
-        self.config = self._load_config()
+        self.profile = profile
+        self.config = self._merge_configs(DEFAULT_CONFIG, config)
 
     def _default_config_dir(self):
         if self.system == "Windows":
@@ -59,7 +60,8 @@ class Config:
 
         return data_dir
 
-    def _load_config(self, profile):
+    def load_from_file(self, profile=None):
+        profile = profile or self.profile
         config_file = os.path.join(self.config_dir, profile + ".yaml")
         try:
             with open(config_file, "r") as f:
@@ -83,13 +85,21 @@ class Config:
                     config[key] = self._merge_configs(value, config[key])
         return config
 
-    def get(self, *keys, default=None):
+    def get(self, keys, default=None):
+        if isinstance(keys, str):
+            keys = keys.split(".")
         config = self.config
         for key in keys:
-            if not isinstance(config, dict):
-                raise TypeError(f"Key '{key}' not found or value is not a dictionary")
             if key in config:
                 config = config[key]
             else:
                 return default
         return config
+
+    def set(self, keys, value):
+        if isinstance(keys, str):
+            keys = keys.split(".")
+        config = self.config
+        for key in keys[:-1]:
+            config = config.setdefault(key, {})
+        config[keys[-1]] = value
