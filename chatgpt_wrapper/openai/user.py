@@ -8,11 +8,22 @@ from chatgpt_wrapper.openai.orm import Orm, User
 import chatgpt_wrapper.debug as debug
 
 class UserManagement:
-    def __init__(self, database):
+    def __init__(self, database_uri):
         self.engine = create_engine(database_uri)
         session = sessionmaker(bind=self.engine)
         self.session = session()
-        self.orm = Orm('sqlite:///%s' % database, logging.WARNING)
+        self.orm = Orm(database_uri, logging.WARNING)
+
+    def find_user_by_id(self, user_id):
+        user = self.session.get(User, user_id)
+        return user
+
+    def find_user_by_username_or_email(self, username_or_email):
+        identifier = username_or_email.lower()
+        user = self.session.query(User).filter(
+            (User.username == identifier) | (User.email == identifier)
+        ).first()
+        return user
 
     def hash_password(self, password):
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
@@ -21,8 +32,10 @@ class UserManagement:
     def register(self, username, email, password, default_model='default', preferences={}):
         # Lowercase username and email
         username = username.lower()
-        email = email.lower()
-
+        if email:
+            email = email.lower()
+        if password:
+            self.hash_password(password)
         # Check if the username or email is equal to the email of an existing user.
         existing_user = self.session.query(User).filter(
             (User.username == username) | (User.email == email)
@@ -30,7 +43,7 @@ class UserManagement:
         if existing_user:
             return False, "Username or email is already in use."
 
-        self.orm.add_user(username, self.hash_password(password), email, default_model, preferences)
+        self.orm.add_user(username, password, email, default_model, preferences)
 
         return True, "User successfully registered."
 
@@ -39,9 +52,7 @@ class UserManagement:
         identifier = identifier.lower()
 
         # Get the user with the specified identifier (username or email)
-        user = self.session.query(User).filter(
-            (User.username == identifier) | (User.email == identifier)
-        ).first()
+        user = self.find_user_by_username_or_email(identifier)
         if not user:
             return False, "Username or email not found."
 
@@ -52,6 +63,7 @@ class UserManagement:
         # Update the last login time
         user.last_login_time = datetime.datetime.utcnow()
         self.session.commit()
+        self.session.refresh(user)
         self.session.close()
 
         return True, "Login successful."
@@ -63,7 +75,7 @@ class UserManagement:
     def edit(self, user_id, username=None, email=None, password=None, default_model=None):
 
         # Get the user with the specified user_id
-        user = self.session.query(User).filter(User.id == user_id).first()
+        user = self.find_user_by_id(user_id)
         if not user:
             return False, "User not found."
 
@@ -95,16 +107,14 @@ class UserManagement:
         return True, "User successfully edited."
 
     def delete(self, user_id):
-        session = self.Session()
-
         # Get the user with the specified user_id
-        user = session.query(User).filter(User.id == user_id).first()
+        user = self.find_user_by_id(user_id)
         if not user:
             return False, "User not found."
 
         # Delete the user
-        session.delete(user)
-        session.commit()
-        session.close()
+        self.session.delete(user)
+        self.session.commit()
+        self.session.close()
 
         return True, "User successfully deleted."

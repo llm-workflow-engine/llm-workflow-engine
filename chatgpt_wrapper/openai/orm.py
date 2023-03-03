@@ -14,8 +14,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=True)
+    email = Column(String, unique=True, nullable=True)
     default_model = Column(Enum('default', 'gpt-3.5-turbo', 'gpt-3.5-turbo-0301'))
     created_time = Column(DateTime, nullable=False)
     last_login_time = Column(DateTime, nullable=True)
@@ -97,7 +97,7 @@ class Orm:
         return message
 
     def get_users(self):
-        self.logger.info(f'Retrieving all Users')
+        self.logger.info('Retrieving all Users')
         users = self.session.query(User).all()
         return users
 
@@ -115,4 +115,3 @@ class Orm:
         self.logger.info(f'Retrieving Messages for Conversation with id {conversation.id}')
         messages = conversation.messages
         return messages
-
