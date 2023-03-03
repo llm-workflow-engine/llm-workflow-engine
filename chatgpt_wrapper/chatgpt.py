@@ -396,15 +396,16 @@ class ChatGPT:
 
         Args:
             headless (bool, optional): _description_. Defaults to True.
-            browser (str, optional): The firefox to use. Only support creating new browser. To use existing browser, use `AsyncChatGPT` instead. Defaults to "firefox".
+            browser (str, optional): The browser to use. Only support creating new browser. To use existing browser, use `AsyncChatGPT` instead. Defaults to "firefox".
             model (str, optional): The model to use. Defaults to "default".
             timeout (int, optional): Timeout to use when asking ChatGPT. Defaults to 60.
             debug_log (str|NoneType, optional): The file to write log to. Defaults to None.
             proxy (Optional[ProxySettings], optional): Proxy to use for network requests. Defaults to None.
         """
         assert isinstance(browser,str),"browser is not str. To use an existing browser, use AsyncChatGPT. "
+        self.browser=self.async_run(AsyncBrowser().create(browser=browser,headless=headless,proxy=proxy,debug_log=debug_log))
         self.agpt = AsyncChatGPT()
-        self.async_run(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
+        self.async_run(self.agpt.create(headless, self.browser, model, timeout, debug_log, proxy))
 
     def __getattr__(self, __name: str):
         if hasattr(self.agpt, __name):
@@ -452,3 +453,4 @@ class ChatGPT:
 
     def __del__(self):
         self.async_run(self.agpt.cleanup())
+        self.async_run(self.browser.cleanup())
