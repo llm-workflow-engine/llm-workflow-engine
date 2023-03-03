@@ -1,5 +1,6 @@
 import re
 import textwrap
+import yaml
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -125,11 +126,14 @@ class GPTShell():
         else:
             self.help_commands()
 
-    async def _set_args(self, args):
-        self.stream = args.stream
-        if args.log is not None:
-            if not await self._open_log(args.log):
-                sys.exit(0)
+    async def _set_args(self, config):
+        self.config = config
+        self.stream = self.config.get('chat.streaming')
+        if self.config.get('chat.log.enabled'):
+            log_file = self.config.get('chat.log.filepath')
+            if log_file:
+                if not await self._open_log(log_file):
+                    sys.exit(0)
 
     def _set_chatgpt(self, chatgpt):
         self.chatgpt = chatgpt
@@ -683,6 +687,26 @@ class GPTShell():
         self.chatgpt.parent_message_id = parent_message_id
         self._update_message_map()
         self._write_log_context()
+
+    async def do_config(self, _):
+        """
+        Show the current configuration
+
+        Examples:
+            {leader}config
+        """
+        output = """
+## Configuration
+
+* Config dir: %s
+* Profile: %s (as %s.yaml)
+* Data dir: %s
+
+```
+%s
+```
+        """ % (self.config.config_dir, self.config.profile, self.config.profile, self.config.data_dir, yaml.dump(self.config.get(), default_flow_style=False))
+        self._print_markdown(output)
 
     async def do_exit(self, _):
         """

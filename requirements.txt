@@ -1,5 +1,5 @@
 Flask
-nest-asyncio
 playwright
 prompt-toolkit
+PyYAML
 rich

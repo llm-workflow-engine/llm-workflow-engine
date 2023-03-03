@@ -12,6 +12,8 @@ from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
+from chatgpt_wrapper.config import Config
+
 is_windows = platform.system() == "Windows"
 
 RENDER_MODELS = {
@@ -19,11 +21,6 @@ RENDER_MODELS = {
     "legacy-paid": "text-davinci-002-render-paid",
     "legacy-free": "text-davinci-002-render"
 }
-
-DEFAULT_CONSOLE_LOG_LEVEL = logging.ERROR
-DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
-DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
-DEFAULT_FILE_LOG_FORMATTER = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
 class AsyncChatGPT:
     """
@@ -38,7 +35,8 @@ class AsyncChatGPT:
     session_div_id = "chatgpt-wrapper-session-data"
 
 
-    def __init__(self):
+    def __init__(self, config=None):
+        self.config = config or Config()
         self.log = None
         self.play = None
         self.user_data_dir = None
@@ -52,12 +50,14 @@ class AsyncChatGPT:
         self.streaming = None
         self.timeout = None
 
-    async def create(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+    async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
         self.streaming = False
         self._setup_signal_handlers()
         self.lock = asyncio.Lock()
-        self.log = self._set_logging(debug_log)
+        self.log = self._set_logging(self.config)
         self.play = await async_playwright().start()
+        browser = self.config.get('browser.provider')
+        headless = not self.config.get('browser.debug')
         try:
             playbrowser = getattr(self.play, browser)
         except Exception:
@@ -86,7 +86,7 @@ class AsyncChatGPT:
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.conversation_title_set = None
-        self.model = model
+        self.model = self.config.get('chat.model')
         self.session = None
         self.timeout = timeout
         self.log.info("ChatGPT initialized")
@@ -100,17 +100,17 @@ class AsyncChatGPT:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(self.cleanup()))
 
-    def _set_logging(self, debug_log):
+    def _set_logging(self, config):
         logger = logging.getLogger(self.__class__.__name__)
         logger.setLevel(logging.DEBUG)
         log_console_handler = logging.StreamHandler()
-        log_console_handler.setFormatter(DEFAULT_CONSOLE_LOG_FORMATTER)
-        log_console_handler.setLevel(DEFAULT_CONSOLE_LOG_LEVEL)
+        log_console_handler.setFormatter(logging.Formatter(config.get('log.console.format')))
+        log_console_handler.setLevel(config.get('log.console.level'))
         logger.addHandler(log_console_handler)
-        if debug_log:
-            log_file_handler = logging.FileHandler(debug_log)
-            log_file_handler.setFormatter(DEFAULT_FILE_LOG_FORMATTER)
-            log_file_handler.setLevel(DEFAULT_FILE_LOG_LEVEL)
+        if config.get('debug.log.enabled'):
+            log_file_handler = logging.FileHandler(config.get('debug.log.filepath'))
+            log_file_handler.setFormatter(logging.Formatter(config.get('debug.log.format')))
+            log_file_handler.setLevel(config.get('debug.log.level'))
             logger.addHandler(log_file_handler)
         return logger
 
@@ -487,9 +487,9 @@ class AsyncChatGPT:
 
 class ChatGPT:
 
-    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
-        self.agpt = AsyncChatGPT()
-        self.async_run(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
+    def __init__(self, config=None, timeout=60, proxy: Optional[ProxySettings] = None):
+        self.agpt = AsyncChatGPT(config)
+        self.async_run(self.agpt.create(timeout, proxy))
 
     def __getattr__(self, __name: str):
         if hasattr(self.agpt, __name):
