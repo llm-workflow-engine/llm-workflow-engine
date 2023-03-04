@@ -60,7 +60,7 @@ class GPTShell():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.commands = self.configure_commands()
+        self.configure_commands()
         self.command_completer = self.get_command_completer()
         self.history = self.get_history()
         self.style = self.get_styles()
@@ -76,8 +76,7 @@ class GPTShell():
         self._set_logging()
 
     def configure_commands(self):
-        commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
-        return commands
+        self.commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
 
     def get_command_completer(self):
         commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
@@ -736,12 +735,20 @@ class GPTShell():
                 argument = text
         return command, argument
 
+    def get_command_method(self, command):
+        do_command = f"do_{command}"
+        for klass in self.__class__.__mro__:
+            method = getattr(klass, do_command, None)
+            if method:
+                return method
+        raise AttributeError(f"{do_command} method not found in any shell class")
+
     async def run_command(self, command, argument):
         if command == 'help':
             self.help(argument)
         else:
             if command in self.commands:
-                method = getattr(__class__, f"do_{command}")
+                method = self.get_command_method(command)
                 try:
                     response = await method(self, argument)
                 except Exception as e:
