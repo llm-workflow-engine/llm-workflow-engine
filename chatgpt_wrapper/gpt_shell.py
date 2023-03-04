@@ -57,7 +57,7 @@ class GPTShell():
     stream = False
     logfile = None
 
-    def __init__(self, config=None, chatgpt=None):
+    def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.commands = self.configure_commands()
@@ -73,8 +73,6 @@ class GPTShell():
             style=self.style
         )
         self.stream = self.config.get('chat.streaming')
-        self.chatgpt = chatgpt
-        self._update_message_map()
         self._set_logging()
 
     def configure_commands(self):
@@ -149,8 +147,8 @@ class GPTShell():
     def _update_message_map(self):
         self.prompt_number += 1
         self.message_map[self.prompt_number] = (
-            self.chatgpt.conversation_id,
-            self.chatgpt.parent_message_id,
+            self.backend.conversation_id,
+            self.backend.parent_message_id,
         )
         self._set_prompt()
 
@@ -166,7 +164,7 @@ class GPTShell():
     def _write_log_context(self):
         if self.logfile is not None:
             self.logfile.write(
-                f"## context {self.chatgpt.conversation_id}:{self.chatgpt.parent_message_id}\n"
+                f"## context {self.backend.conversation_id}:{self.backend.parent_message_id}\n"
             )
             self.logfile.flush()
 
@@ -190,28 +188,38 @@ class GPTShell():
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
+    async def configure_backend():
+        raise NotImplementedError
+
+    async def setup(self):
+        await self.configure_backend()
+        self._update_message_map()
+
+    async def cleanup():
+        pass
+
     async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = await self.chatgpt.get_history(limit=limit, offset=offset)
+        history = await self.backend.get_history(limit=limit, offset=offset)
         return history
 
     async def _set_title(self, title, conversation_id=None):
         self._print_markdown("* Setting title...")
-        if await self.chatgpt.set_title(title, conversation_id):
+        if await self.backend.set_title(title, conversation_id):
             self._print_markdown("* Title set to: %s" % title)
 
     async def _delete_conversation(self, id, label=None):
-        if id == self.chatgpt.conversation_id:
+        if id == self.backend.conversation_id:
             await self._delete_current_conversation()
         else:
             label = label or id
             self._print_markdown("* Deleting conversation: %s" % label)
-            if await self.chatgpt.delete_conversation(id):
+            if await self.backend.delete_conversation(id):
                 self._print_markdown("* Deleted conversation: %s" % label)
 
     async def _delete_current_conversation(self):
         self._print_markdown("* Deleting current conversation")
-        if await self.chatgpt.delete_conversation():
+        if await self.backend.delete_conversation():
             self._print_markdown("* Deleted current conversation")
             await self.do_new(None)
 
@@ -237,7 +245,7 @@ class GPTShell():
         Examples:
             {leader}new
         """
-        self.chatgpt.new_conversation()
+        self.backend.new_conversation()
         self._print_markdown("* New conversation started.")
         self._update_message_map()
         self._write_log_context()
@@ -352,8 +360,8 @@ class GPTShell():
             return
 
         (
-            self.chatgpt.conversation_id,
-            self.chatgpt.parent_message_id,
+            self.backend.conversation_id,
+            self.backend.parent_message_id,
         ) = self.message_map[msg_id]
         self._update_message_map()
         self._write_log_context()
@@ -396,10 +404,10 @@ class GPTShell():
                 new_title = arg
             await self._set_title(new_title, conversation_id)
         else:
-            if self.chatgpt.conversation_id:
+            if self.backend.conversation_id:
                 history = await self._fetch_history()
-                if self.chatgpt.conversation_id in history:
-                    self._print_markdown("* Title: %s" % history[self.chatgpt.conversation_id]['title'])
+                if self.backend.conversation_id in history:
+                    self._print_markdown("* Title: %s" % history[self.backend.conversation_id]['title'])
                 else:
                     self._print_markdown("* Cannot load conversation title, not in history.")
             else:
@@ -441,12 +449,12 @@ class GPTShell():
                         self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
                         return
         else:
-            if not self.chatgpt.conversation_id:
+            if not self.backend.conversation_id:
                 self._print_markdown("* Current conversation is empty, you must send information first")
                 return
-        conversation_data = await self.chatgpt.get_conversation(conversation_id)
+        conversation_data = await self.backend.get_conversation(conversation_id)
         if conversation_data:
-            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
+            messages = self.backend.conversation_data_to_messages(conversation_data)
             if title:
                 self._print_markdown(f"### {title}")
             self._print_markdown(self._conversation_from_messages(messages))
@@ -491,15 +499,15 @@ class GPTShell():
         else:
             self._print_markdown("* Argument required, ID or history ID")
             return
-        if conversation_id and conversation_id == self.chatgpt.conversation_id:
+        if conversation_id and conversation_id == self.backend.conversation_id:
             self._print_markdown("* You are already in chat: %s" % title)
             return
-        conversation_data = await self.chatgpt.get_conversation(conversation_id)
+        conversation_data = await self.backend.get_conversation(conversation_id)
         if conversation_data:
-            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
+            messages = self.backend.conversation_data_to_messages(conversation_data)
             message = messages.pop()
-            self.chatgpt.conversation_id = conversation_id
-            self.chatgpt.parent_message_id = message['id']
+            self.backend.conversation_id = conversation_id
+            self.backend.parent_message_id = message['id']
             self._update_message_map()
             self._write_log_context()
             if title:
@@ -525,7 +533,7 @@ class GPTShell():
         if self.stream:
             response = ""
             first = True
-            async for chunk in self.chatgpt.ask_stream(line):
+            async for chunk in self.backend.ask_stream(line):
                 if first:
                     print("")
                     first = False
@@ -534,7 +542,7 @@ class GPTShell():
                 response += chunk
             print("\n")
         else:
-            response = await self.chatgpt.ask(line)
+            response = await self.backend.ask(line)
             print("")
             self._print_markdown(response)
 
@@ -659,10 +667,10 @@ class GPTShell():
             self._print_markdown("Invalid parameter to `context`.")
             return
         self._print_markdown("* Loaded specified context.")
-        self.chatgpt.conversation_id = (
+        self.backend.conversation_id = (
             conversation_id if conversation_id != "None" else None
         )
-        self.chatgpt.parent_message_id = parent_message_id
+        self.backend.parent_message_id = parent_message_id
         self._update_message_map()
         self._write_log_context()
 
