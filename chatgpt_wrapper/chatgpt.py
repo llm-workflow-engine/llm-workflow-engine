@@ -13,6 +13,7 @@ from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
 from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
 
 is_windows = platform.system() == "Windows"
 
@@ -37,7 +38,7 @@ class AsyncChatGPT:
 
     def __init__(self, config=None):
         self.config = config or Config()
-        self.log = None
+        self.log = Logger(self.__class__.__name__, self.config)
         self.play = None
         self.user_data_dir = None
         self.page = None
@@ -54,7 +55,6 @@ class AsyncChatGPT:
         self.streaming = False
         self._setup_signal_handlers()
         self.lock = asyncio.Lock()
-        self.log = self._set_logging(self.config)
         self.play = await async_playwright().start()
         browser = self.config.get('browser.provider')
         headless = not self.config.get('browser.debug')
@@ -99,20 +99,6 @@ class AsyncChatGPT:
     def _shutdown(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(self.cleanup()))
-
-    def _set_logging(self, config):
-        logger = logging.getLogger(self.__class__.__name__)
-        logger.setLevel(logging.DEBUG)
-        log_console_handler = logging.StreamHandler()
-        log_console_handler.setFormatter(logging.Formatter(config.get('log.console.format')))
-        log_console_handler.setLevel(config.get('log.console.level'))
-        logger.addHandler(log_console_handler)
-        if config.get('debug.log.enabled'):
-            log_file_handler = logging.FileHandler(config.get('debug.log.filepath'))
-            log_file_handler.setFormatter(logging.Formatter(config.get('debug.log.format')))
-            log_file_handler.setLevel(config.get('debug.log.level'))
-            logger.addHandler(log_file_handler)
-        return logger
 
     async def _start_browser(self):
         await self.page.goto("https://chat.openai.com/")
@@ -488,6 +474,8 @@ class AsyncChatGPT:
 class ChatGPT:
 
     def __init__(self, config=None, timeout=60, proxy: Optional[ProxySettings] = None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
         self.agpt = AsyncChatGPT(config)
         self.async_run(self.agpt.create(timeout, proxy))
 

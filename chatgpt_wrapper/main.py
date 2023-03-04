@@ -117,9 +117,9 @@ async def async_main():
 
     chatgpt = await AsyncChatGPT(config).create(timeout=90)
 
-    shell = GPTShell()
+    shell = GPTShell(config)
     shell._set_chatgpt(chatgpt)
-    await shell._set_args(config)
+    await shell._set_args()
 
     if len(args.params) > 0 and not install_mode:
         await shell.default(" ".join(args.params))

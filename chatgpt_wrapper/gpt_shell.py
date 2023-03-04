@@ -17,6 +17,9 @@ import subprocess
 from rich.console import Console
 from rich.markdown import Markdown
 
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
+
 console = Console()
 
 is_windows = platform.system() == "Windows"
@@ -54,7 +57,9 @@ class GPTShell():
     stream = False
     logfile = None
 
-    def __init__(self):
+    def __init__(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
         self.commands = self.configure_commands()
         self.command_completer = self.get_command_completer()
         self.history = self.get_history()
@@ -126,8 +131,7 @@ class GPTShell():
         else:
             self.help_commands()
 
-    async def _set_args(self, config):
-        self.config = config
+    async def _set_args(self):
         self.stream = self.config.get('chat.streaming')
         if self.config.get('chat.log.enabled'):
             log_file = self.config.get('chat.log.filepath')
