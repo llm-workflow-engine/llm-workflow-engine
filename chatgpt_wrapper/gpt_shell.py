@@ -1,18 +1,18 @@
 import re
 import textwrap
 import yaml
+import os
+import platform
+import sys
+import datetime
+import subprocess
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import NestedCompleter
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
-
-import os
-import platform
-import sys
-import datetime
-import subprocess
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -51,7 +51,7 @@ class GPTShell():
     stream = False
     logfile = None
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, chatgpt=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.commands = self.configure_commands()
@@ -66,6 +66,10 @@ class GPTShell():
             completer=self.command_completer,
             style=self.style
         )
+        self.stream = self.config.get('chat.streaming')
+        self.chatgpt = chatgpt
+        self._update_message_map()
+        self._set_logging()
 
     def configure_commands(self):
         commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
@@ -125,17 +129,13 @@ class GPTShell():
         else:
             self.help_commands()
 
-    async def _set_args(self):
-        self.stream = self.config.get('chat.streaming')
+    def _set_logging(self):
         if self.config.get('chat.log.enabled'):
             log_file = self.config.get('chat.log.filepath')
             if log_file:
-                if not await self._open_log(log_file):
+                if not self._open_log(log_file):
+                    print("\nERROR: could not open log file: %s" % log_file)
                     sys.exit(0)
-
-    def _set_chatgpt(self, chatgpt):
-        self.chatgpt = chatgpt
-        self._update_message_map()
 
     def _set_prompt(self):
         self.prompt = f"{self.prompt_number}> "
@@ -183,15 +183,6 @@ class GPTShell():
                 else:
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
-
-    def _conversation_from_messages(self, messages):
-        message_parts = []
-        for message in messages:
-            if 'content' in message:
-                message_parts.append("**%s**:" % message['author']['role'].capitalize())
-                message_parts.extend(message['content']['parts'])
-        content = "\n\n".join(message_parts)
-        return content
 
     async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
@@ -544,23 +535,6 @@ class GPTShell():
         self._write_log(line, response)
         self._update_message_map()
 
-    async def do_session(self, _):
-        """
-        Refresh session information
-
-        This can resolve errors under certain scenarios.
-
-        Examples:
-            {leader}session
-        """
-        await self.chatgpt.refresh_session()
-        usable = (
-            "The session appears to be usable."
-            if "accessToken" in self.chatgpt.session
-            else "The session is not usable.  Try `install` mode."
-        )
-        self._print_markdown(f"* Session information refreshed.  {usable}")
-
     async def do_read(self, _):
         """
         Begin reading multi-line input
@@ -632,7 +606,7 @@ class GPTShell():
             return
         await self.default(fileprompt)
 
-    async def _open_log(self, filename) -> bool:
+    def _open_log(self, filename) -> bool:
         try:
             if os.path.isabs(filename):
                 self.logfile = open(filename, "a", encoding="utf-8")
@@ -655,7 +629,7 @@ class GPTShell():
             Disable logging: {leader}log
         """
         if arg:
-            if await self._open_log(arg):
+            if self._open_log(arg):
                 self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
         else:
             self.logfile = None

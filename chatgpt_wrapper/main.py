@@ -3,7 +3,7 @@ import sys
 import asyncio
 
 from chatgpt_wrapper.chatgpt import AsyncChatGPT
-from chatgpt_wrapper.gpt_shell import GPTShell
+from chatgpt_wrapper.browser_shell import BrowserShell
 from chatgpt_wrapper.version import __version__
 from chatgpt_wrapper.config import Config
 
@@ -117,9 +117,7 @@ async def async_main():
 
     chatgpt = await AsyncChatGPT(config).create(timeout=90)
 
-    shell = GPTShell(config)
-    shell._set_chatgpt(chatgpt)
-    await shell._set_args()
+    shell = BrowserShell(config, chatgpt)
 
     if len(args.params) > 0 and not install_mode:
         await shell.default(" ".join(args.params))
