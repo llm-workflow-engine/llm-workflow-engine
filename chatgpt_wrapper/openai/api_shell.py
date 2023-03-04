@@ -69,6 +69,23 @@ class ApiShell(GPTShell):
         return True, default_model
 
     def do_user_register(self, username: str = None) -> Tuple[bool, str]:
+        """
+        Register a new user
+
+        If the 'username' argument is not provided, you will be prompted for it.
+
+        You will also be prompted for:
+            email: Optional, valid email
+            password: Optional, if given will be required for login
+            default_model: Required, the default AI model to use for this user
+
+        Arguments:
+            username: The username of the new user
+
+        Examples:
+            {leader}user_register
+            {leader}user_register myusername
+        """
         if not username:
             username = input("Enter username: ").strip() or None
             if not username:
@@ -84,7 +101,37 @@ class ApiShell(GPTShell):
             return False, "Invalid default model."
         return self.user_management.register(username, email, password, default_model)
 
+    def do_register(self, identifier: str = None) -> Tuple[bool, str]:
+        """
+        Alias of '{leader}user_register'
+
+        Register a new user.
+
+        Arguments:
+            username: The username of the new user
+
+        Examples:
+            {leader}register
+            {leader}register myusername
+            {leader}register email@example.com
+        """
+        self.do_user_login(identifier)
+
     def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
+        """
+        Login in as a user
+
+        If the 'identifier' argument is not provided, you will be prompted for either a username or email.
+        You will be prompted for a password if one is set for the user.
+
+        Arguments:
+            identifier: The username or email
+
+        Examples:
+            {leader}user_login
+            {leader}user_login myusername
+            {leader}user_login email@example.com
+        """
         if not identifier:
             identifier = input("Enter username or email: ")
         user = self.user_management.session.query(User).filter(
@@ -103,18 +150,55 @@ class ApiShell(GPTShell):
             return result, message
 
     def do_login(self, identifier: str = None) -> Tuple[bool, str]:
+        """
+        Alias of '{leader}user_login'
+
+        Login in as a user.
+
+        Arguments:
+            identifier: The username or email
+
+        Examples:
+            {leader}login
+            {leader}login myusername
+            {leader}login email@example.com
+        """
         self.do_user_login(identifier)
 
     def do_user_logout(self, _) -> Tuple[bool, str]:
+        """
+        Logout the current user.
+
+        Examples:
+            {leader}user_logout
+        """
         if not self._is_logged_in():
             return False, "Not logged in."
         self.logged_in_user_id = None
         return True, "Logout successful."
 
     def do_logout(self, _) -> Tuple[bool, str]:
+        """
+        Alias of '{leader}user_logout'
+
+        Logout the current user.
+
+        Examples:
+            {leader}logout
+        """
         self.do_user_logout(None)
 
-    def do_user_edit(self, username: str = None) -> Tuple[bool, str]:
+    def do_user_edit(self, _) -> Tuple[bool, str]:
+        """
+        Edit the current user's information
+
+        You will be prompted to enter new values for the username, email, password, and default model.
+        You can skip any prompt by pressing enter.
+
+        Examples:
+            {leader}user_edit
+        """
+
         if not self._is_logged_in():
             return False, "Not logged in."
         user = self.get_logged_in_user()
@@ -141,6 +225,19 @@ class ApiShell(GPTShell):
         return self.user_management.edit(user.id, **kwargs)
 
     def do_user_delete(self, username: str = None) -> Tuple[bool, str]:
+        """
+        Delete a user
+
+        If the 'username' argument is not provided, you will be prompted for it.
+        The currently logged in user cannot be deleted.
+
+        Arguments:
+            username: The username of the user to be deleted
+
+        Examples:
+            {leader}user_delete
+            {leader}user_delete myusername
+        """
         if not self._is_logged_in():
             return False, "Not logged in."
         if not username:
