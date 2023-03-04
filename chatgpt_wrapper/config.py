@@ -1,42 +1,11 @@
 import os
 import yaml
 import platform
-import tempfile
 
-
-DEFAULT_PROFILE = 'default'
-DEFAULT_CONFIG_DIR = 'chatgpt-wrapper'
-DEFAULT_CONFIG = {
-    'browser': {
-        'provider': 'firefox',
-        'debug': False,
-    },
-    'chat': {
-        'model': 'default',
-        'streaming': True,
-        'log': {
-            'enabled': False,
-            'filepath': 'chatgpt.log',
-        },
-    },
-    'log': {
-        'console': {
-            'level': 'error',
-            'format': '%(name)s - %(levelname)s - %(message)s',
-        },
-    },
-    'debug': {
-        'log': {
-            'enabled': False,
-            'filepath': '%s%schatgpt-debug.log' % (os.path.sep, tempfile.gettempdir()),
-            'level': 'debug',
-            'format': '%(name)s - %(asctime)s - %(levelname)s - %(message)s',
-        },
-    },
-}
+import chatgpt_wrapper.constants as constants
 
 class Config:
-    def __init__(self, config_dir=None, data_dir=None, profile=DEFAULT_PROFILE, config={}):
+    def __init__(self, config_dir=None, data_dir=None, profile=constants.DEFAULT_PROFILE, config={}):
         self.system = platform.system()
         if config_dir:
             if not os.path.exists(config_dir):
@@ -51,22 +20,22 @@ class Config:
         else:
             self.data_dir = self._default_data_dir()
         self.profile = profile
-        self.config = self._merge_configs(DEFAULT_CONFIG, config)
+        self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)
         self._transform_config()
 
     def _default_config_dir(self):
         if self.system == "Windows":
-            return os.path.join(os.environ["APPDATA"], DEFAULT_CONFIG_DIR)
+            return os.path.join(os.environ["APPDATA"], constants.DEFAULT_CONFIG_DIR)
         elif self.system == "Darwin":
-            return os.path.join(os.path.expanduser("~"), "Library", "Application Support", DEFAULT_CONFIG_DIR)
+            return os.path.join(os.path.expanduser("~"), "Library", "Application Support", constants.DEFAULT_CONFIG_DIR)
         else:
-            return os.path.join(os.path.expanduser("~"), ".config", DEFAULT_CONFIG_DIR)
+            return os.path.join(os.path.expanduser("~"), ".config", constants.DEFAULT_CONFIG_DIR)
 
     def _default_data_dir(self):
         if self.system == "Windows":
-            data_dir = os.path.join(os.environ["LOCALAPPDATA"], DEFAULT_CONFIG_DIR)
+            data_dir = os.path.join(os.environ["LOCALAPPDATA"], constants.DEFAULT_CONFIG_DIR)
         else:
-            data_dir = os.path.join(os.path.expanduser("~"), ".local", "share", DEFAULT_CONFIG_DIR)
+            data_dir = os.path.join(os.path.expanduser("~"), ".local", "share", constants.DEFAULT_CONFIG_DIR)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
@@ -78,9 +47,9 @@ class Config:
         try:
             with open(config_file, "r") as f:
                 config = yaml.safe_load(f)
-            self.config = self._merge_configs(DEFAULT_CONFIG, config)
+            self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)
         except FileNotFoundError:
-            self.config = DEFAULT_CONFIG
+            self.config = constants.DEFAULT_CONFIG
         self._transform_config()
 
     def _transform_config(self):
@@ -105,7 +74,7 @@ class Config:
                 if key in config:
                     config = config[key]
                 else:
-                    return self.get(keys, DEFAULT_CONFIG)
+                    return self.get(keys, constants.DEFAULT_CONFIG)
         return config
 
     def set(self, keys, value, transform=True):

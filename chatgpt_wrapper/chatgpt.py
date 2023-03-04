@@ -13,14 +13,9 @@ from playwright._impl._api_structures import ProxySettings
 
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
+import chatgpt_wrapper.constants as constants
 
 is_windows = platform.system() == "Windows"
-
-RENDER_MODELS = {
-    "default": "text-davinci-002-render-sha",
-    "legacy-paid": "text-davinci-002-render-paid",
-    "legacy-free": "text-davinci-002-render"
-}
 
 class AsyncChatGPT:
     """
@@ -204,7 +199,7 @@ class AsyncChatGPT:
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": RENDER_MODELS[self.model],
+            "model": constants.RENDER_MODELS[self.model],
         }
         ok, json, response = await self._api_post_request(url, data)
         if ok:
@@ -308,7 +303,7 @@ class AsyncChatGPT:
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": RENDER_MODELS[self.model],
+            "model": constants.RENDER_MODELS[self.model],
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",

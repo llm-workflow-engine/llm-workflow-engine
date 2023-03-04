@@ -19,15 +19,11 @@ from rich.markdown import Markdown
 
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
+import chatgpt_wrapper.constants as constants
 
 console = Console()
 
 is_windows = platform.system() == "Windows"
-
-COMMAND_LEADER = '/'
-LEGACY_COMMAND_LEADER = '!'
-DEFAULT_COMMAND = 'ask'
-COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -35,20 +31,18 @@ COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
 # to start commands with a special character.
 # It would also be possible to subclass NesteredCompleter and override
 # the get_completions() method, but that feels more brittle.
-document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
+document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
-
-DEFAULT_HISTORY_LIMIT = 20
 
 class GPTShell():
     """
     A shell interpreter that serves as a front end to the ChatGPT class
     """
 
-    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % COMMAND_LEADER
+    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
     prompt = "> "
-    doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (COMMAND_LEADER, COMMAND_LEADER)
+    doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
 
     # our stuff
     prompt_number = 0
@@ -78,13 +72,13 @@ class GPTShell():
         return commands
 
     def get_command_completer(self):
-        commands_with_leader = {"%s%s" % (COMMAND_LEADER, key): None for key in self.commands}
-        commands_with_leader["%shelp" % COMMAND_LEADER] = {key: None for key in self.commands}
+        commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
+        commands_with_leader["%shelp" % constants.COMMAND_LEADER] = {key: None for key in self.commands}
         completer = NestedCompleter.from_nested_dict(commands_with_leader)
         return completer
 
     def get_history(self):
-        return FileHistory(COMMAND_HISTORY_FILE)
+        return FileHistory(constants.COMMAND_HISTORY_FILE)
 
     def get_styles(self):
         style = Style.from_dict({
@@ -98,19 +92,19 @@ class GPTShell():
     def legacy_command_leader_warning(self, command):
         print("\nWarning: The legacy command leader '%s' has been removed.\n"
               "Use the new command leader '%s' instead, e.g. %s%s\n" % (
-                  LEGACY_COMMAND_LEADER, COMMAND_LEADER, COMMAND_LEADER, command))
+                  constants.LEGACY_COMMAND_LEADER, constants.COMMAND_LEADER, constants.COMMAND_LEADER, command))
 
     def get_command_help_brief(self, command):
         help_doc = self.get_command_help(command)
         if help_doc:
             first_line = next(filter(lambda x: x.strip(), help_doc.splitlines()), "")
-            help_brief = "    %s%s: %s" % (COMMAND_LEADER, command, first_line)
+            help_brief = "    %s%s: %s" % (constants.COMMAND_LEADER, command, first_line)
             return help_brief
 
     def get_command_help(self, command):
         if command in self.commands:
             method = getattr(__class__, f"do_{command}")
-            help_text = method.__doc__.replace("{leader}", COMMAND_LEADER)
+            help_text = method.__doc__.replace("{leader}", constants.COMMAND_LEADER)
             return textwrap.dedent(help_text)
 
     def help_commands(self):
@@ -179,7 +173,7 @@ class GPTShell():
             else:
                 sub_items = item.split('-')
                 try:
-                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= DEFAULT_HISTORY_LIMIT]
+                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= constants.DEFAULT_HISTORY_LIMIT]
                 except ValueError:
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
                 if len(sub_items) == 1:
@@ -199,7 +193,7 @@ class GPTShell():
         content = "\n\n".join(message_parts)
         return content
 
-    async def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
+    async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
         history = await self.chatgpt.get_history(limit=limit, offset=offset)
         return history
@@ -304,7 +298,7 @@ class GPTShell():
             {leader}history 10
             {leader}history 10 5
         """
-        limit = DEFAULT_HISTORY_LIMIT
+        limit = constants.DEFAULT_HISTORY_LIMIT
         offset = 0
         if arg:
             args = arg.split(' ')
@@ -745,12 +739,12 @@ class GPTShell():
             if not text:
                 continue
             leader = text[0]
-            if leader == COMMAND_LEADER or leader == LEGACY_COMMAND_LEADER:
+            if leader == constants.COMMAND_LEADER or leader == constants.LEGACY_COMMAND_LEADER:
                 text = text[1:]
                 parts = [arg.strip() for arg in text.split(maxsplit=1)]
                 command = parts[0]
                 argument = parts[1] if len(parts) > 1 else ''
-                if leader == LEGACY_COMMAND_LEADER:
+                if leader == constants.LEGACY_COMMAND_LEADER:
                     self.legacy_command_leader_warning(command)
                     continue
                 if command == "exit" or command == "quit":
@@ -760,7 +754,7 @@ class GPTShell():
                     command = 'help'
                     argument = ''
                 else:
-                    command = DEFAULT_COMMAND
+                    command = constants.DEFAULT_COMMAND
                     argument = text
 
             if command == 'help':
