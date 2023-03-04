@@ -1,9 +1,13 @@
+from chatgpt_wrapper.chatgpt import AsyncChatGPT
 from chatgpt_wrapper.gpt_shell import GPTShell
 
 class BrowserShell(GPTShell):
     """
     A shell interpreter that serves as a front end to the ChatGPT class
     """
+
+    async def configure_backend(self):
+        self.backend = await AsyncChatGPT(self.config).create(timeout=90)
 
     def _conversation_from_messages(self, messages):
         message_parts = []
@@ -23,10 +27,13 @@ class BrowserShell(GPTShell):
         Examples:
             {leader}session
         """
-        await self.chatgpt.refresh_session()
+        await self.backend.refresh_session()
         usable = (
             "The session appears to be usable."
-            if "accessToken" in self.chatgpt.session
+            if "accessToken" in self.backend.session
             else "The session is not usable.  Try `install` mode."
         )
         self._print_markdown(f"* Session information refreshed.  {usable}")
+
+    async def cleanup(self):
+        await self.backend.cleanup()

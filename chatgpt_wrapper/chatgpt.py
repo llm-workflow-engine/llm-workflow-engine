@@ -37,13 +37,12 @@ class AsyncChatGPT:
         self.user_data_dir = None
         self.page = None
         self.browser = None
-        self.parent_message_id = None
+        self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.conversation_title_set = None
-        self.model = None
+        self.model = self.config.get('chat.model')
         self.session = None
         self.streaming = None
-        self.timeout = None
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
         self.streaming = False
@@ -77,11 +76,6 @@ class AsyncChatGPT:
         else:
             self.page = await self.browser.new_page()
         await self._start_browser()
-        self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
-        self.model = self.config.get('chat.model')
-        self.session = None
         self.timeout = timeout
         self.log.info("ChatGPT initialized")
         return self
