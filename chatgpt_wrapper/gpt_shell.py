@@ -102,17 +102,20 @@ class GPTShell():
                   constants.LEGACY_COMMAND_LEADER, constants.COMMAND_LEADER, constants.COMMAND_LEADER, command))
 
     def get_command_help_brief(self, command):
+        help_brief = "    %s%s" % (constants.COMMAND_LEADER, command)
         help_doc = self.get_command_help(command)
         if help_doc:
             first_line = next(filter(lambda x: x.strip(), help_doc.splitlines()), "")
-            help_brief = "    %s%s: %s" % (constants.COMMAND_LEADER, command, first_line)
-            return help_brief
+            help_brief += ": %s" % first_line
+        return help_brief
 
     def get_command_help(self, command):
         if command in self.commands:
-            method = getattr(__class__, f"do_{command}")
-            help_text = method.__doc__.replace("{leader}", constants.COMMAND_LEADER)
-            return textwrap.dedent(help_text)
+            method = self.get_command_method(command)
+            doc = method.__doc__
+            if doc:
+                help_text = doc.replace("{leader}", constants.COMMAND_LEADER)
+                return textwrap.dedent(help_text)
 
     def help_commands(self):
         print("")
@@ -194,7 +197,7 @@ class GPTShell():
         await self.configure_backend()
         self._update_message_map()
 
-    async def cleanup():
+    async def cleanup(self):
         pass
 
     async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
