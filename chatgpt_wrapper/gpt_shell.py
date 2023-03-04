@@ -35,6 +35,12 @@ document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + constants.COMMAND_LEADER +
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
+class LegacyCommandLeaderError(Exception):
+    pass
+
+class NoInputError(Exception):
+    pass
+
 class GPTShell():
     """
     A shell interpreter that serves as a front end to the ChatGPT class
@@ -698,6 +704,46 @@ class GPTShell():
         """
         pass
 
+    def parse_shell_input(self, user_input):
+        text = user_input.strip()
+        if not text:
+            raise NoInputError
+        leader = text[0]
+        if leader == constants.COMMAND_LEADER or leader == constants.LEGACY_COMMAND_LEADER:
+            text = text[1:]
+            parts = [arg.strip() for arg in text.split(maxsplit=1)]
+            command = parts[0]
+            argument = parts[1] if len(parts) > 1 else ''
+            if leader == constants.LEGACY_COMMAND_LEADER:
+                self.legacy_command_leader_warning(command)
+                raise LegacyCommandLeaderError
+            if command == "exit" or command == "quit":
+                raise EOFError
+        else:
+            if text == '?':
+                command = 'help'
+                argument = ''
+            else:
+                command = constants.DEFAULT_COMMAND
+                argument = text
+        return command, argument
+
+    async def run_command(self, command, argument):
+        if command == 'help':
+            self.help(argument)
+        else:
+            if command in self.commands:
+                method = getattr(__class__, f"do_{command}")
+                try:
+                    response = await method(self, argument)
+                except Exception as e:
+                    print(repr(e))
+                else:
+                    if response:
+                        print(response)
+            else:
+                print(f'Unknown command: {command}')
+
     async def cmdloop(self):
         print("")
         self._print_markdown("### %s" % self.intro)
@@ -708,42 +754,11 @@ class GPTShell():
                 continue  # Control-C pressed. Try again.
             except EOFError:
                 break  # Control-D pressed.
-
-            text = user_input.strip()
-            if not text:
+            try:
+                command, argument = self.parse_shell_input(user_input)
+            except (NoInputError, LegacyCommandLeaderError):
                 continue
-            leader = text[0]
-            if leader == constants.COMMAND_LEADER or leader == constants.LEGACY_COMMAND_LEADER:
-                text = text[1:]
-                parts = [arg.strip() for arg in text.split(maxsplit=1)]
-                command = parts[0]
-                argument = parts[1] if len(parts) > 1 else ''
-                if leader == constants.LEGACY_COMMAND_LEADER:
-                    self.legacy_command_leader_warning(command)
-                    continue
-                if command == "exit" or command == "quit":
-                    break
-            else:
-                if text == '?':
-                    command = 'help'
-                    argument = ''
-                else:
-                    command = constants.DEFAULT_COMMAND
-                    argument = text
-
-            if command == 'help':
-                self.help(argument)
-            else:
-                if command in self.commands:
-                    method = getattr(__class__, f"do_{command}")
-                    try:
-                        response = await method(self, argument)
-                    except Exception as e:
-                        print(repr(e))
-                    else:
-                        if response:
-                            print(response)
-                else:
-                    print(f'Unknown command: {command}')
-
+            except EOFError:
+                break
+            await self.run_command(command, argument)
         print('GoodBye!')
