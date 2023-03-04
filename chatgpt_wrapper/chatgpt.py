@@ -5,25 +5,17 @@ import base64
 import json
 import time
 import uuid
-import logging
 import re
 import shutil
 from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
+import chatgpt_wrapper.constants as constants
+
 is_windows = platform.system() == "Windows"
-
-RENDER_MODELS = {
-    "default": "text-davinci-002-render-sha",
-    "legacy-paid": "text-davinci-002-render-paid",
-    "legacy-free": "text-davinci-002-render"
-}
-
-DEFAULT_CONSOLE_LOG_LEVEL = logging.ERROR
-DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
-DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
-DEFAULT_FILE_LOG_FORMATTER = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
 class AsyncChatGPT:
     """
@@ -38,8 +30,9 @@ class AsyncChatGPT:
     session_div_id = "chatgpt-wrapper-session-data"
 
 
-    def __init__(self):
-        self.log = None
+    def __init__(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
         self.play = None
         self.user_data_dir = None
         self.page = None
@@ -52,12 +45,13 @@ class AsyncChatGPT:
         self.streaming = None
         self.timeout = None
 
-    async def create(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
+    async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
         self.streaming = False
         self._setup_signal_handlers()
         self.lock = asyncio.Lock()
-        self.log = self._set_logging(debug_log)
         self.play = await async_playwright().start()
+        browser = self.config.get('browser.provider')
+        headless = not self.config.get('browser.debug')
         try:
             playbrowser = getattr(self.play, browser)
         except Exception:
@@ -86,7 +80,7 @@ class AsyncChatGPT:
         self.parent_message_id = str(uuid.uuid4())
         self.conversation_id = None
         self.conversation_title_set = None
-        self.model = model
+        self.model = self.config.get('chat.model')
         self.session = None
         self.timeout = timeout
         self.log.info("ChatGPT initialized")
@@ -99,20 +93,6 @@ class AsyncChatGPT:
     def _shutdown(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(self.cleanup()))
-
-    def _set_logging(self, debug_log):
-        logger = logging.getLogger(self.__class__.__name__)
-        logger.setLevel(logging.DEBUG)
-        log_console_handler = logging.StreamHandler()
-        log_console_handler.setFormatter(DEFAULT_CONSOLE_LOG_FORMATTER)
-        log_console_handler.setLevel(DEFAULT_CONSOLE_LOG_LEVEL)
-        logger.addHandler(log_console_handler)
-        if debug_log:
-            log_file_handler = logging.FileHandler(debug_log)
-            log_file_handler.setFormatter(DEFAULT_FILE_LOG_FORMATTER)
-            log_file_handler.setLevel(DEFAULT_FILE_LOG_LEVEL)
-            logger.addHandler(log_file_handler)
-        return logger
 
     async def _start_browser(self):
         await self.page.goto("https://chat.openai.com/")
@@ -219,7 +199,7 @@ class AsyncChatGPT:
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": RENDER_MODELS[self.model],
+            "model": constants.RENDER_MODELS[self.model],
         }
         ok, json, response = await self._api_post_request(url, data)
         if ok:
@@ -323,7 +303,7 @@ class AsyncChatGPT:
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": RENDER_MODELS[self.model],
+            "model": constants.RENDER_MODELS[self.model],
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",
@@ -487,9 +467,11 @@ class AsyncChatGPT:
 
 class ChatGPT:
 
-    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
-        self.agpt = AsyncChatGPT()
-        self.async_run(self.agpt.create(headless, browser, model, timeout, debug_log, proxy))
+    def __init__(self, config=None, timeout=60, proxy: Optional[ProxySettings] = None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.agpt = AsyncChatGPT(config)
+        self.async_run(self.agpt.create(timeout, proxy))
 
     def __getattr__(self, __name: str):
         if hasattr(self.agpt, __name):

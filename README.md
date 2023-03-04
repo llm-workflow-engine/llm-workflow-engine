@@ -16,6 +16,17 @@
 
 ## Release Notes
 
+### v0.4.3 - 03/03/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+ - ChatGPT/AsyncChatGPT classes have changed how they receive configuration values, be sure to investiate the new function signatues for their __init__() and create() methods.
+
+### What is new?
+
+ - [New configuration system](/config.sample.yaml)
+ - Added '/config' command
+
 ### v0.4.2 - 01/03/2023
 
  - Fix broken `ChatGPT` sync class
@@ -97,6 +108,21 @@ chatgpt install
 
 4. Restart the program without the `install` parameter to begin using it.
 
+## Configuration
+
+From a running `chatgpt` instance, execute `/config` to view the current configuration.
+
+The output will show the location of the configuration directory, the name of
+the configuration file (called a 'profile'), and the current configuration.
+
+Configuration is optional, default values will be used if no configuration profile is
+provided. The default configuation settings can be seen in
+[config.sample.yaml](/config.sample.yaml) -- the file is commented with descriptions 
+of the settings.
+
+Command line arguments overrride custom configuration settings, which override default
+configuration settings.
+
 ## Tutorials:
 
 - Youtube Tutorial: [How To Use ChatGPT With Unity: Python And API Setup #2](https://www.youtube.com/watch?v=CthF8c8qk4c) includes a step by step guide to installing this repository on a windows machine
@@ -154,10 +180,23 @@ The say method takes a string argument representing the message to send to ChatG
 
 You may also stream the response as it comes in from ChatGPT in chunks using the `ask_stream` generator.
 
+To pass custom configuration to ChatGPT, use the Config class:
+
+```python
+from chatgpt_wrapper import ChatGPT
+from chatgpt_wrapper.config import Config
+
+config = Config()
+config.set('browser.debug', True)
+bot = ChatGPT(config)
+response = bot.ask("Hello, world!")
+print(response)
+```
+
 ### Flask API (experimental)
 
 - Run `python chatgpt_wrapper/gpt_api.py --port 5000` (default port is 5000) to start the server
-- Test whether it is working using `python -m unittest test/api_test.py`
+- Test whether it is working using `python -m unittest tests/api_test.py`
 - See an example of interaction with api in `tests/example_api_call.py`
 
 ## Docker (experimental)

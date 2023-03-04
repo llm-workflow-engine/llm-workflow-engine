@@ -1,5 +1,12 @@
 import re
 import textwrap
+import yaml
+import os
+import platform
+import sys
+import datetime
+import subprocess
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -7,23 +14,16 @@ from prompt_toolkit.completion import NestedCompleter
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
 
-import os
-import platform
-import sys
-import datetime
-import subprocess
-
 from rich.console import Console
 from rich.markdown import Markdown
+
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
+import chatgpt_wrapper.constants as constants
 
 console = Console()
 
 is_windows = platform.system() == "Windows"
-
-COMMAND_LEADER = '/'
-LEGACY_COMMAND_LEADER = '!'
-DEFAULT_COMMAND = 'ask'
-COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -31,20 +31,24 @@ COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
 # to start commands with a special character.
 # It would also be possible to subclass NesteredCompleter and override
 # the get_completions() method, but that feels more brittle.
-document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
+document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
-DEFAULT_HISTORY_LIMIT = 20
+class LegacyCommandLeaderError(Exception):
+    pass
+
+class NoInputError(Exception):
+    pass
 
 class GPTShell():
     """
     A shell interpreter that serves as a front end to the ChatGPT class
     """
 
-    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % COMMAND_LEADER
+    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
     prompt = "> "
-    doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (COMMAND_LEADER, COMMAND_LEADER)
+    doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
 
     # our stuff
     prompt_number = 0
@@ -53,7 +57,9 @@ class GPTShell():
     stream = False
     logfile = None
 
-    def __init__(self):
+    def __init__(self, config=None, chatgpt=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
         self.commands = self.configure_commands()
         self.command_completer = self.get_command_completer()
         self.history = self.get_history()
@@ -66,19 +72,23 @@ class GPTShell():
             completer=self.command_completer,
             style=self.style
         )
+        self.stream = self.config.get('chat.streaming')
+        self.chatgpt = chatgpt
+        self._update_message_map()
+        self._set_logging()
 
     def configure_commands(self):
         commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
         return commands
 
     def get_command_completer(self):
-        commands_with_leader = {"%s%s" % (COMMAND_LEADER, key): None for key in self.commands}
-        commands_with_leader["%shelp" % COMMAND_LEADER] = {key: None for key in self.commands}
+        commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
+        commands_with_leader["%shelp" % constants.COMMAND_LEADER] = {key: None for key in self.commands}
         completer = NestedCompleter.from_nested_dict(commands_with_leader)
         return completer
 
     def get_history(self):
-        return FileHistory(COMMAND_HISTORY_FILE)
+        return FileHistory(constants.COMMAND_HISTORY_FILE)
 
     def get_styles(self):
         style = Style.from_dict({
@@ -92,19 +102,19 @@ class GPTShell():
     def legacy_command_leader_warning(self, command):
         print("\nWarning: The legacy command leader '%s' has been removed.\n"
               "Use the new command leader '%s' instead, e.g. %s%s\n" % (
-                  LEGACY_COMMAND_LEADER, COMMAND_LEADER, COMMAND_LEADER, command))
+                  constants.LEGACY_COMMAND_LEADER, constants.COMMAND_LEADER, constants.COMMAND_LEADER, command))
 
     def get_command_help_brief(self, command):
         help_doc = self.get_command_help(command)
         if help_doc:
             first_line = next(filter(lambda x: x.strip(), help_doc.splitlines()), "")
-            help_brief = "    %s%s: %s" % (COMMAND_LEADER, command, first_line)
+            help_brief = "    %s%s: %s" % (constants.COMMAND_LEADER, command, first_line)
             return help_brief
 
     def get_command_help(self, command):
         if command in self.commands:
             method = getattr(__class__, f"do_{command}")
-            help_text = method.__doc__.replace("{leader}", COMMAND_LEADER)
+            help_text = method.__doc__.replace("{leader}", constants.COMMAND_LEADER)
             return textwrap.dedent(help_text)
 
     def help_commands(self):
@@ -125,15 +135,13 @@ class GPTShell():
         else:
             self.help_commands()
 
-    async def _set_args(self, args):
-        self.stream = args.stream
-        if args.log is not None:
-            if not await self._open_log(args.log):
-                sys.exit(0)
-
-    def _set_chatgpt(self, chatgpt):
-        self.chatgpt = chatgpt
-        self._update_message_map()
+    def _set_logging(self):
+        if self.config.get('chat.log.enabled'):
+            log_file = self.config.get('chat.log.filepath')
+            if log_file:
+                if not self._open_log(log_file):
+                    print("\nERROR: could not open log file: %s" % log_file)
+                    sys.exit(0)
 
     def _set_prompt(self):
         self.prompt = f"{self.prompt_number}> "
@@ -171,7 +179,7 @@ class GPTShell():
             else:
                 sub_items = item.split('-')
                 try:
-                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= DEFAULT_HISTORY_LIMIT]
+                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= constants.DEFAULT_HISTORY_LIMIT]
                 except ValueError:
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
                 if len(sub_items) == 1:
@@ -182,16 +190,7 @@ class GPTShell():
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
-    def _conversation_from_messages(self, messages):
-        message_parts = []
-        for message in messages:
-            if 'content' in message:
-                message_parts.append("**%s**:" % message['author']['role'].capitalize())
-                message_parts.extend(message['content']['parts'])
-        content = "\n\n".join(message_parts)
-        return content
-
-    async def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
+    async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
         history = await self.chatgpt.get_history(limit=limit, offset=offset)
         return history
@@ -296,7 +295,7 @@ class GPTShell():
             {leader}history 10
             {leader}history 10 5
         """
-        limit = DEFAULT_HISTORY_LIMIT
+        limit = constants.DEFAULT_HISTORY_LIMIT
         offset = 0
         if arg:
             args = arg.split(' ')
@@ -542,23 +541,6 @@ class GPTShell():
         self._write_log(line, response)
         self._update_message_map()
 
-    async def do_session(self, _):
-        """
-        Refresh session information
-
-        This can resolve errors under certain scenarios.
-
-        Examples:
-            {leader}session
-        """
-        await self.chatgpt.refresh_session()
-        usable = (
-            "The session appears to be usable."
-            if "accessToken" in self.chatgpt.session
-            else "The session is not usable.  Try `install` mode."
-        )
-        self._print_markdown(f"* Session information refreshed.  {usable}")
-
     async def do_read(self, _):
         """
         Begin reading multi-line input
@@ -630,7 +612,7 @@ class GPTShell():
             return
         await self.default(fileprompt)
 
-    async def _open_log(self, filename) -> bool:
+    def _open_log(self, filename) -> bool:
         try:
             if os.path.isabs(filename):
                 self.logfile = open(filename, "a", encoding="utf-8")
@@ -653,7 +635,7 @@ class GPTShell():
             Disable logging: {leader}log
         """
         if arg:
-            if await self._open_log(arg):
+            if self._open_log(arg):
                 self._print_markdown(f"* Logging enabled, appending to '{arg}'.")
         else:
             self.logfile = None
@@ -684,6 +666,26 @@ class GPTShell():
         self._update_message_map()
         self._write_log_context()
 
+    async def do_config(self, _):
+        """
+        Show the current configuration
+
+        Examples:
+            {leader}config
+        """
+        output = """
+## Configuration
+
+* Config dir: %s
+* Profile: %s (as %s.yaml)
+* Data dir: %s
+
+```
+%s
+```
+        """ % (self.config.config_dir, self.config.profile, self.config.profile, self.config.data_dir, yaml.dump(self.config.get(), default_flow_style=False))
+        self._print_markdown(output)
+
     async def do_exit(self, _):
         """
         Exit the ChatGPT shell
@@ -702,6 +704,46 @@ class GPTShell():
         """
         pass
 
+    def parse_shell_input(self, user_input):
+        text = user_input.strip()
+        if not text:
+            raise NoInputError
+        leader = text[0]
+        if leader == constants.COMMAND_LEADER or leader == constants.LEGACY_COMMAND_LEADER:
+            text = text[1:]
+            parts = [arg.strip() for arg in text.split(maxsplit=1)]
+            command = parts[0]
+            argument = parts[1] if len(parts) > 1 else ''
+            if leader == constants.LEGACY_COMMAND_LEADER:
+                self.legacy_command_leader_warning(command)
+                raise LegacyCommandLeaderError
+            if command == "exit" or command == "quit":
+                raise EOFError
+        else:
+            if text == '?':
+                command = 'help'
+                argument = ''
+            else:
+                command = constants.DEFAULT_COMMAND
+                argument = text
+        return command, argument
+
+    async def run_command(self, command, argument):
+        if command == 'help':
+            self.help(argument)
+        else:
+            if command in self.commands:
+                method = getattr(__class__, f"do_{command}")
+                try:
+                    response = await method(self, argument)
+                except Exception as e:
+                    print(repr(e))
+                else:
+                    if response:
+                        print(response)
+            else:
+                print(f'Unknown command: {command}')
+
     async def cmdloop(self):
         print("")
         self._print_markdown("### %s" % self.intro)
@@ -712,42 +754,11 @@ class GPTShell():
                 continue  # Control-C pressed. Try again.
             except EOFError:
                 break  # Control-D pressed.
-
-            text = user_input.strip()
-            if not text:
+            try:
+                command, argument = self.parse_shell_input(user_input)
+            except (NoInputError, LegacyCommandLeaderError):
                 continue
-            leader = text[0]
-            if leader == COMMAND_LEADER or leader == LEGACY_COMMAND_LEADER:
-                text = text[1:]
-                parts = [arg.strip() for arg in text.split(maxsplit=1)]
-                command = parts[0]
-                argument = parts[1] if len(parts) > 1 else ''
-                if leader == LEGACY_COMMAND_LEADER:
-                    self.legacy_command_leader_warning(command)
-                    continue
-                if command == "exit" or command == "quit":
-                    break
-            else:
-                if text == '?':
-                    command = 'help'
-                    argument = ''
-                else:
-                    command = DEFAULT_COMMAND
-                    argument = text
-
-            if command == 'help':
-                self.help(argument)
-            else:
-                if command in self.commands:
-                    method = getattr(__class__, f"do_{command}")
-                    try:
-                        response = await method(self, argument)
-                    except Exception as e:
-                        print(repr(e))
-                    else:
-                        if response:
-                            print(response)
-                else:
-                    print(f'Unknown command: {command}')
-
+            except EOFError:
+                break
+            await self.run_command(command, argument)
         print('GoodBye!')

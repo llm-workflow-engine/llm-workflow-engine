@@ -1,0 +1,55 @@
+# The values in this sample configuration are the default values.
+# Configuration syntax is YAML, learn more at: https://yaml.org
+
+##########################################################
+# Browser settings.
+##########################################################
+browser:
+  # Enable debug mode (shows browser window if true, headless if false)
+  debug: false
+  # The browser to use, one of: firefox, chromium, webkit
+  provider: firefox
+
+
+##########################################################
+# Chat settings.
+##########################################################
+chat:
+  # The model to use when communicating with the server.
+  model: default
+  # If true, responses will be streamed in real time (no markdown formatting).
+  streaming: true
+  # Chat logs.
+  log:
+    # Enable logging to a file.
+    enabled: false
+    # Full path to the log file.
+    filepath: chatgpt.log
+
+
+##########################################################
+# Log settings.
+##########################################################
+log:
+  # Console logging.
+  console:
+    # Message format.
+    format: '%(name)s - %(levelname)s - %(message)s'
+    # Message level (must be valid Python logging module level).
+    level: ERROR
+
+
+##########################################################
+# Debug settings.
+##########################################################
+debug:
+  # Debug logging.
+  log:
+    # Enable to log debug messages.
+    enabled: false
+    # Full path to the log file.
+    filepath: //tmpchatgpt-debug.log
+    # Message format.
+    format: '%(name)s - %(asctime)s - %(levelname)s - %(message)s'
+    # Message level (must be valid Python logging module level).
+    level: DEBUG
