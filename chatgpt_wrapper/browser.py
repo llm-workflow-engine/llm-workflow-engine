@@ -51,7 +51,8 @@ class AsyncBrowser(LogCapable):
     async def goto_chat(self,timeout=15):
         self.log.info("Going to ChatGPT website...")
         try:
-            await self.page.goto("https://chat.openai.com",timeout=timeout)
+            await self.page.goto("https://chat.openai.com")
+            await self.page.wait_for_url("/chat",timeout=timeout*1000)
             self.log.info("ChatGPT website loaded. ")
         except Exception as err:
             self.log.error("Cannot load ChatGPT website. Currently at %s",self.page.url)
