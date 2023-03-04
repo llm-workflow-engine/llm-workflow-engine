@@ -3,6 +3,7 @@
 import os
 import tempfile
 
+# Backend speciifc constants
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
     "legacy-paid": "text-davinci-002-render-paid",
@@ -13,6 +14,8 @@ RENDER_MODELS = {
 DEFAULT_PROFILE = 'default'
 DEFAULT_CONFIG_DIR = 'chatgpt-wrapper'
 DEFAULT_CONFIG = {
+    'backend': 'browser',
+    'database': 'sqlite:///:memory:',
     'browser': {
         'provider': 'firefox',
         'debug': False,

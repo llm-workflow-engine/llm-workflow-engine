@@ -24,6 +24,10 @@ class OpenAIAPI:
         self.openai = openai
         self.openai.organization = os.getenv("OPENAI_ORG_ID")
         self.openai.api_key = os.getenv("OPENAI_API_KEY")
+        # TODO: These two attributes need to be integrated into the backend
+        # for shell compat.
+        self.parent_message_id = None
+        self.conversation_id = None
         try:
             self.model = RENDER_MODELS[model]
         except KeyError:

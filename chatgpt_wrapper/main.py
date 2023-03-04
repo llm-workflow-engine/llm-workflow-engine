@@ -3,6 +3,7 @@ import sys
 import asyncio
 
 from chatgpt_wrapper.browser_shell import BrowserShell
+from chatgpt_wrapper.openai.api_shell import ApiShell
 from chatgpt_wrapper.version import __version__
 from chatgpt_wrapper.config import Config
 
@@ -114,7 +115,13 @@ async def async_main():
     if args.model is not None:
         config.set('chat.model', args.model)
 
-    shell = BrowserShell(config)
+    backend = config.get('backend')
+    if backend == 'browser':
+        shell = BrowserShell(config)
+    elif backend == 'api':
+        shell = ApiShell(config)
+    else:
+        raise RuntimeError(f"Unknown backend: {backend}")
     await shell.setup()
 
     if len(args.params) > 0 and not install_mode:
