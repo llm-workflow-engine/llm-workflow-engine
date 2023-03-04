@@ -8,22 +8,25 @@ from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 from playwright.async_api._generated import BrowserType,BrowserContext
 from .log import LogCapable
+from .config import Config
 
 class AsyncBrowser(LogCapable):
     # A single play can launch many browsers
     play=None
-    def __init__(self):
+    def __init__(self,config=None):
         self.browser:BrowserType=None
         self.browser_context:BrowserContext=None
+        self.config=config or Config()
         self.user_data_dir=None
         self.page=None
         self.session={}
 
-    async def create(self,browser:str='firefox', headless:bool=True, proxy: Optional[ProxySettings] = None, debug_log=None):
+    async def create(self, proxy: Optional[ProxySettings] = None, debug_log=None):
         super().__init__(debug_log=debug_log)
         if AsyncBrowser.play is None:
             AsyncBrowser.play=await async_playwright().start()
-
+        browser=self.config.get("browser.provider")
+        headless=self.config.get("browser.debug")
         if not hasattr(self.play,browser):
             self.log.error("Browser %s is invalid, falling back on firefox. ",browser)
             browser='firefox'

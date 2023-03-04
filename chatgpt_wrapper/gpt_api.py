@@ -3,11 +3,13 @@ import argparse
 from flask import Flask, jsonify, request
 
 from chatgpt_wrapper.chatgpt import ChatGPT
+from chatgpt_wrapper.config import Config
 
 
-def create_application(name, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy=None):
+def create_application(name, config=None, timeout=60, proxy=None):
+    config = config or Config()
     app = Flask(name)
-    chatgpt = ChatGPT(headless, browser, model, timeout, debug_log, proxy)
+    chatgpt = ChatGPT(config, timeout, proxy)
 
     def _error_handler(message):
         return jsonify({"success": False, "error": str(message)}), 500

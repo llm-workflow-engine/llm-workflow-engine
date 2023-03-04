@@ -14,6 +14,8 @@ from playwright._impl._api_structures import ProxySettings
 from .log import LogCapable
 from .browser import AsyncBrowser
 
+from chatgpt_wrapper.config import Config
+
 is_windows = platform.system() == "Windows"
 
 RENDER_MODELS = {
@@ -35,7 +37,8 @@ class AsyncChatGPT(LogCapable):
     session_div_id = "chatgpt-wrapper-session-data"
 
 
-    def __init__(self):
+    def __init__(self,config=None):
+        self.config = config or Config()
         self.parent_message_id = None
         self.conversation_id = None
         self.conversation_title_set = None
@@ -45,13 +48,13 @@ class AsyncChatGPT(LogCapable):
         self.streaming = None
         self.timeout = None
 
-    async def create(self, headless: bool = True, browser=None, model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
-        super().__init__(debug_log=debug_log)
+    async def create(self, browser=None, timeout=60, proxy: Optional[ProxySettings] = None):
+        super().__init__()
         self.streaming = False
         self._setup_signal_handlers()
         self.lock = asyncio.Lock()
-        self.browser=browser if browser else await AsyncBrowser().create(headless=headless,proxy=proxy,debug_log=debug_log)
-        self.model=model
+        self.browser=browser if browser else await AsyncBrowser().create(proxy=proxy)
+        self.model = self.config.get('chat.model')
         self.parent_message_id = str(uuid.uuid4())
         self.timeout = timeout
         self.log.info("ChatGPT initialized")

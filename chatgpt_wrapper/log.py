@@ -1,13 +1,20 @@
 import logging
+from .config import Config
 
+c=Config()
+console_level=c.get("log.console.level")
+console_format=c.get("log.console.format")
+file_level=c.get("debug.log.level")
+file_format=c.get("debug.log.format")
+debug_log_enabled=c.get("debug.log.enabled")
 class LogCapable:
     def __init__(
         self,
-        console_level=logging.ERROR,
-        console_format=logging.Formatter("%(levelname)s - %(message)s"),
-        file_level=logging.DEBUG,
-        file_format=logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"),
-        debug_log=None
+        console_level=console_level,
+        console_format=console_format,
+        file_level=file_level,
+        file_format=file_format,
+        debug_log=debug_log_enabled
     ):
         self.console_level=console_level
         self.console_format=console_format
@@ -23,7 +30,8 @@ class LogCapable:
         self.log.addHandler(console_handler)
 
         if debug_log:
-            file_handler=logging.FileHandler(debug_log)
+            debug_file_path=c.get("debug.log.filepath")
+            file_handler=logging.FileHandler(debug_file_path)
             file_handler.setFormatter(file_format)
             file_handler.setLevel(file_level)
             self.log.addHandler(file_handler)
