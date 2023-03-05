@@ -101,22 +101,6 @@ class ApiShell(GPTShell):
             return False, "Invalid default model."
         return self.user_management.register(username, email, password, default_model)
 
-    def do_register(self, identifier: str = None) -> Tuple[bool, str]:
-        """
-        Alias of '{leader}user_register'
-
-        Register a new user.
-
-        Arguments:
-            username: The username of the new user
-
-        Examples:
-            {leader}register
-            {leader}register myusername
-            {leader}register email@example.com
-        """
-        self.do_user_login(identifier)
-
     def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
         Login in as a user
