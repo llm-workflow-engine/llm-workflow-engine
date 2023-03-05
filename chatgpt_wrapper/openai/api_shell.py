@@ -169,6 +169,7 @@ Before you can start using the shell, you must create a new user.
                 self.logged_in_user_id = user.id
         else:
             self.logged_in_user_id = user.id
+            self.backend.set_current_user(user)
             success, user, message = True, user, "Login successful."
         self.set_user_prompt(user)
         return success, user, message
@@ -193,7 +194,7 @@ Before you can start using the shell, you must create a new user.
         user = self.user_management.find_user_by_username_or_email(identifier)
         if user:
             return self.login(user)
-        return False, f"User {identifier} not found."
+        return False, None, f"User {identifier} not found."
 
     async def do_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
@@ -221,6 +222,7 @@ Before you can start using the shell, you must create a new user.
         if not self._is_logged_in():
             return False, "Not logged in."
         self.logged_in_user_id = None
+        self.backend.set_current_user()
         self.set_user_prompt()
         return True, None, "Logout successful."
 
