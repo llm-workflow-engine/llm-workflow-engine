@@ -1,6 +1,7 @@
 import datetime
 
 from sqlalchemy import MetaData, ForeignKey, Index, Column, Integer, String, DateTime, JSON, Boolean, Enum
+from sqlalchemy import desc
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine
@@ -8,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
+import chatgpt_wrapper.constants as constants
 
 Base = declarative_base()
 
@@ -74,6 +76,13 @@ class Orm:
         session = sessionmaker(bind=self.engine)
         self.session = session()
 
+    def _apply_limit_offset(self, query, limit, offset):
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
+        return query
+
     def create_engine_and_metadata(self):
         engine = create_engine(self.database)
         metadata = MetaData()
@@ -104,27 +113,31 @@ class Orm:
         self.log.info(f"Added Message with role '{role}' for Conversation with id {conversation.id}")
         return message
 
-    def get_users(self, limit=None, offset=None):
-        self.log.info('Retrieving all Users')
-        query = self.session.query(User).order_by(User.username)
-        if limit is not None:
-            query = query.limit(limit)
-        if offset is not None:
-            query = query.offset(offset)
-        users = query.all()
-        return users
-
     def get_user(self, user_id):
         self.log.info(f'Retrieving User with id {user_id}')
         user = self.session.query(User).get(user_id)
         return user
 
-    def get_conversations(self, user):
+    def get_users(self, limit=None, offset=None):
+        self.log.info('Retrieving all Users')
+        query = self.session.query(User).order_by(User.username)
+        query = self._apply_limit_offset(query, limit, offset)
+        users = query.all()
+        return users
+
+    def get_conversations(self, user, limit=constants.DEFAULT_HISTORY_LIMIT, offset=None, order_desc=True):
         self.log.info(f'Retrieving Conversations for User with id {user.id}')
-        conversations = user.conversations
+        if order_desc:
+            query = self.session.query(Conversation).order_by(desc(Conversation.id))
+        else:
+            query = self.session.query(Conversation).order_by(Conversation.id)
+        query = self._apply_limit_offset(query, limit, offset)
+        conversations = query.all()
         return conversations
 
-    def get_messages(self, conversation):
+    def get_messages(self, conversation, limit=None, offset=None):
         self.log.info(f'Retrieving Messages for Conversation with id {conversation.id}')
-        messages = conversation.messages
+        query = self.session.query(Message).order_by(Message.id)
+        query = self._apply_limit_offset(query, limit, offset)
+        messages = query.all()
         return messages
