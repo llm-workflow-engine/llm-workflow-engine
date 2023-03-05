@@ -16,19 +16,19 @@ class UserManagement:
         self.orm = Orm(self.config)
 
     def find_user_by_id(self, user_id):
-        user = self.session.get(User, user_id)
+        user = self.orm.session.get(User, user_id)
         return user
 
     def find_user_by_username(self, username):
         username = username.lower()
-        user = self.session.query(User).filter(
+        user = self.orm.session.query(User).filter(
             (User.username == username)
         ).first()
         return user
 
     def find_user_by_username_or_email(self, username_or_email):
         identifier = username_or_email.lower()
-        user = self.session.query(User).filter(
+        user = self.orm.session.query(User).filter(
             (User.username == identifier) | (User.email == identifier)
         ).first()
         return user
@@ -46,35 +46,35 @@ class UserManagement:
             self.hash_password(password)
         # Check if the username or email is equal to the email of an existing user.
         if email:
-            existing_user = self.session.query(User).filter(
+            existing_user = self.orm.session.query(User).filter(
                 (User.username == username) | (User.username == email) | (User.email == email) | (User.email == username)
             ).first()
         else:
             existing_user = self.find_user_by_username_or_email(username)
         if existing_user:
-            return False, "Username or email is already in use."
+            return False, None, "Username or email is already in use."
 
-        self.orm.add_user(username, password, email, default_model, preferences)
+        user = self.orm.add_user(username, password, email, default_model, preferences)
 
-        return True, "User successfully registered."
+        return True, user, "User successfully registered."
 
     def login(self, identifier, password):
         # Get the user with the specified identifier (username or email)
         user = self.find_user_by_username_or_email(identifier)
         if not user:
-            return False, "Username or email not found."
+            return False, None, "Username or email not found."
 
         # Hash the password and compare it to the hashed password in the database
         if self.hash_password(password) != user.password:
-            return False, "Incorrect password."
+            return False, user, "Incorrect password."
 
         # Update the last login time
         user.last_login_time = datetime.datetime.utcnow()
-        self.session.commit()
-        self.session.refresh(user)
-        self.session.close()
+        self.orm.session.commit()
+        self.orm.session.refresh(user)
+        self.orm.session.close()
 
-        return True, "Login successful."
+        return True, user, "Login successful."
 
     def logout(self, user_id):
         # Logout functionality is usually implemented on the frontend, so this method can be left blank
@@ -84,30 +84,31 @@ class UserManagement:
         # Get the user with the specified username
         user = self.find_user_by_username(username)
         if not user:
-            return False, "User not found."
-        return True, user
+            return False, None, "User not found."
+        return True, user, "User found."
 
     def list(self, limit=None, offset=None):
-        return self.orm.get_users(limit, offset)
+        users = self.orm.get_users(limit, offset)
+        return True, users, "Users retrieved."
 
     def edit(self, user_id, username=None, email=None, password=None, default_model=None):
 
         # Get the user with the specified user_id
         user = self.find_user_by_id(user_id)
         if not user:
-            return False, "User not found."
+            return False, None, "User not found."
 
         # Check if the new username or email is equal to the email of an existing user
         if username:
             existing_user = self.find_user_by_username_or_email(username)
             if existing_user and existing_user.id != user.id:
-                return False, "Username cannot be the same as an existing user's email."
+                return False, user, "Username cannot be the same as an existing user's email."
             user.username = username
 
         if email:
             existing_user = self.find_user_by_username_or_email(email)
             if existing_user and existing_user.id != user.id:
-                return False, "Email cannot be the same as an existing user's username."
+                return False, user, "Email cannot be the same as an existing user's username."
             user.email = email
 
         if password:
@@ -117,20 +118,20 @@ class UserManagement:
         if default_model:
             user.default_model = default_model
 
-        self.session.commit()
-        self.session.close()
+        self.orm.session.commit()
+        self.orm.session.close()
 
-        return True, "User successfully edited."
+        return True, user, "User successfully edited."
 
     def delete(self, user_id):
         # Get the user with the specified user_id
         user = self.find_user_by_id(user_id)
         if not user:
-            return False, "User not found."
+            return False, None, "User not found."
 
         # Delete the user
-        self.session.delete(user)
-        self.session.commit()
-        self.session.close()
+        self.orm.session.delete(user)
+        self.orm.session.commit()
+        self.orm.session.close()
 
-        return True, "User successfully deleted."
+        return True, user, "User successfully deleted."
