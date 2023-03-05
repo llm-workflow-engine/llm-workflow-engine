@@ -9,10 +9,10 @@ import argparse
 from rich.console import Console
 from rich.markdown import Markdown
 
-from chatgpt_wrapper.openai.orm import Base, Orm, User, Conversation, Message
+from chatgpt_wrapper.openai.orm import Base, Orm
 import chatgpt_wrapper.debug as debug
 
-DEFAULT_DATABASE = "/tmp/chatgpt-test.db"
+DEFAULT_DATABASE = "sqlite:///:memory:"
 DEFAULT_NUM_USERS = 5
 DEFAULT_NUM_CONVERSATIONS = 5
 DEFAULT_NUM_MESSAGES = 10
@@ -21,12 +21,12 @@ console = Console()
 
 def create_db(database=DEFAULT_DATABASE):
     console.print(f"Creating database: {database}", style="bold green")
-    orm = Orm('sqlite:///%s' % database, logging.WARNING)
+    orm = Orm(database, logging.WARNING)
     Base.metadata.create_all(orm.engine)
     console.print("Database created", style="bold green")
 
 def create_test_data(database=DEFAULT_DATABASE, num_users=DEFAULT_NUM_USERS, num_conversations=DEFAULT_NUM_CONVERSATIONS, num_messages=DEFAULT_NUM_MESSAGES):
-    orm = Orm('sqlite:///%s' % database, logging.WARNING)
+    orm = Orm(database, logging.WARNING)
     console.print("Creating users...", style="bold green")
     # Create Users
     for i in range(num_users):
@@ -47,11 +47,12 @@ def create_test_data(database=DEFAULT_DATABASE, num_users=DEFAULT_NUM_USERS, num
                 message = orm.add_message(conversation, role, message)
 
 def remove_db(database=DEFAULT_DATABASE):
-    console.print(f"Removing old database: {database}", style="bold red")
-    os.remove(database)
+    db_path = args.database[10:]
+    console.print(f"Removing old database: {db_path}", style="bold red")
+    os.remove(db_path)
 
 def print_data(database=DEFAULT_DATABASE):
-    orm = Orm('sqlite:///%s' % database, logging.WARNING)
+    orm = Orm(database, logging.WARNING)
     output = ['# Users']
     users = orm.get_users()
     for user in users:
@@ -120,7 +121,8 @@ def main():
     )
     args = parser.parse_args()
 
-    db_exists = os.path.exists(args.database)
+    db_path = args.database[10:]
+    db_exists = os.path.exists(db_path) or db_path == ':memory:'
 
     if not (args.create or args.test_data or args.print):
         parser.error("At least one of --create, --test-data, --print must be set")
