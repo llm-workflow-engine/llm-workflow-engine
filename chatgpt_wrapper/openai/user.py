@@ -4,15 +4,16 @@ import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
 from chatgpt_wrapper.openai.orm import Orm, User
 import chatgpt_wrapper.debug as debug
 
 class UserManagement:
-    def __init__(self, database_uri):
-        self.engine = create_engine(database_uri)
-        session = sessionmaker(bind=self.engine)
-        self.session = session()
-        self.orm = Orm(database_uri, logging.WARNING)
+    def __init__(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.orm = Orm(self.config)
 
     def find_user_by_id(self, user_id):
         user = self.session.get(User, user_id)
@@ -86,11 +87,8 @@ class UserManagement:
             return False, "User not found."
         return True, user
 
-    def list(self, limit=None):
-        query = self.session.query(User).order_by(User.username)
-        if limit is not None:
-            query = query.limit(limit)
-        return query.all()
+    def list(self, limit=None, offset=None):
+        return self.orm.get_users(limit, offset)
 
     def edit(self, user_id, username=None, email=None, password=None, default_model=None):
 

@@ -3,6 +3,7 @@ import email_validator
 from typing import Tuple
 
 import chatgpt_wrapper.openai.api as Api
+from chatgpt_wrapper.openai.database import Database
 from chatgpt_wrapper.openai.orm import User
 from chatgpt_wrapper.openai.user import UserManagement
 from chatgpt_wrapper.openai.api import OpenAIAPI
@@ -15,8 +16,6 @@ class ApiShell(GPTShell):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.database = self.config.get('database')
-        self.user_management = UserManagement(self.database)
         self.logged_in_user_id = None
 
     def configure_commands(self):
@@ -25,6 +24,10 @@ class ApiShell(GPTShell):
 
     async def configure_backend(self):
         self.backend = OpenAIAPI(self.config)
+        database = Database(self.config)
+        database.create_schema()
+        self.user_management = UserManagement(self.config)
+        self.session = self.user_management.orm.session
         self.check_autologin()
 
     # TODO: Implement this
@@ -42,7 +45,7 @@ class ApiShell(GPTShell):
             return self.get_user(self.logged_in_user_id)
 
     def get_user(self, user_id) -> User:
-        user = self.user_management.session.get(User, user_id)
+        user = self.session.get(User, user_id)
         return user
 
     def _is_logged_in(self) -> bool:
@@ -104,8 +107,8 @@ class ApiShell(GPTShell):
 
     def check_autologin(self):
         # Special case check: if there's only one user in the database, just load it.
-        if self.user_management.session.query(User).count() == 1:
-            user = self.user_management.session.query(User).first()
+        if self.session.query(User).count() == 1:
+            user = self.session.query(User).first()
             return self.login(user)
 
     def set_user_prompt(self, user=None):
