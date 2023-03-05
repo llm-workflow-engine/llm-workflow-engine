@@ -116,9 +116,9 @@ async def async_main():
         config.set('chat.model', args.model)
 
     backend = config.get('backend')
-    if backend == 'browser':
+    if backend == 'chatgpt-browser':
         shell = BrowserShell(config)
-    elif backend == 'api':
+    elif backend == 'chatgpt-api':
         shell = ApiShell(config)
     else:
         raise RuntimeError(f"Unknown backend: {backend}")

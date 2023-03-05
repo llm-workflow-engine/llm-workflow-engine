@@ -7,6 +7,9 @@ import chatgpt_wrapper.constants as constants
 class Config:
     def __init__(self, config_dir=None, data_dir=None, profile=constants.DEFAULT_PROFILE, config={}):
         self.system = platform.system()
+        self.profile = profile
+        self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)
+        self.config_file = None
         if config_dir:
             if not os.path.exists(config_dir):
                 raise FileNotFoundError(f"The config directory '{config_dir}' does not exist.")
@@ -19,32 +22,35 @@ class Config:
             self.data_dir = data_dir
         else:
             self.data_dir = self._default_data_dir()
-        self.profile = profile
-        self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)
         self._transform_config()
 
     def _default_config_dir(self):
         if self.system == "Windows":
-            return os.path.join(os.environ["APPDATA"], constants.DEFAULT_CONFIG_DIR)
+            base_path = os.environ["APPDATA"]
         elif self.system == "Darwin":
-            return os.path.join(os.path.expanduser("~"), "Library", "Application Support", constants.DEFAULT_CONFIG_DIR)
+            base_path = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
         else:
-            return os.path.join(os.path.expanduser("~"), ".config", constants.DEFAULT_CONFIG_DIR)
+            base_path = os.path.join(os.path.expanduser("~"), ".config")
+        config_dir = os.path.join(base_path, constants.DEFAULT_CONFIG_DIR, constants.CONFIG_PROFILES_DIR, self.profile)
+        if not os.path.exists(config_dir):
+            os.makedirs(config_dir)
+        return config_dir
 
     def _default_data_dir(self):
         if self.system == "Windows":
-            data_dir = os.path.join(os.environ["LOCALAPPDATA"], constants.DEFAULT_CONFIG_DIR)
+            base_path = os.environ["LOCALAPPDATA"]
         else:
-            data_dir = os.path.join(os.path.expanduser("~"), ".local", "share", constants.DEFAULT_CONFIG_DIR)
+            base_path = os.path.join(os.path.expanduser("~"), ".local", "share")
+        data_dir = os.path.join(base_path, constants.DEFAULT_CONFIG_DIR, constants.CONFIG_PROFILES_DIR, self.profile)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         return data_dir
 
     def load_from_file(self, profile=None):
         profile = profile or self.profile
-        config_file = os.path.join(self.config_dir, profile + ".yaml")
+        self.config_file = os.path.join(self.config_dir, "config.yaml")
         try:
-            with open(config_file, "r") as f:
+            with open(self.config_file, "r") as f:
                 config = yaml.safe_load(f)
             self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)
         except FileNotFoundError:
@@ -55,7 +61,7 @@ class Config:
         self.set('log.console.level', self.get('log.console.level').upper(), False)
         self.set('debug.log.level', self.get('debug.log.level').upper(), False)
         if not self.get('database'):
-            self.set('database', "sqlite:///%s/%s.db" % (self.data_dir, self.profile), False)
+            self.set('database', "sqlite:///%s/%s.db" % (self.data_dir, constants.DEFAULT_DATABASE_BASENAME), False)
 
     def _merge_configs(self, default, config):
         if isinstance(default, dict) and isinstance(config, dict):

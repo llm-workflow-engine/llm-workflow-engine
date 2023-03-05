@@ -13,8 +13,10 @@ RENDER_MODELS = {
 # Config specific constants.
 DEFAULT_PROFILE = 'default'
 DEFAULT_CONFIG_DIR = 'chatgpt-wrapper'
+DEFAULT_DATABASE_BASENAME = 'storage'
+CONFIG_PROFILES_DIR = 'profiles'
 DEFAULT_CONFIG = {
-    'backend': 'browser',
+    'backend': 'chatgpt-browser',
     'database': None,
     'browser': {
         'provider': 'firefox',

@@ -700,13 +700,14 @@ class GPTShell():
 ## Configuration
 
 * Config dir: %s
-* Profile: %s (as %s.yaml)
+* Profile: %s
+* Config file: %s
 * Data dir: %s
 
 ```
 %s
 ```
-        """ % (self.config.config_dir, self.config.profile, self.config.profile, self.config.data_dir, yaml.dump(self.config.get(), default_flow_style=False))
+        """ % (self.config.config_dir, self.config.profile, self.config.config_file or "None", self.config.data_dir, yaml.dump(self.config.get(), default_flow_style=False))
         self._print_markdown(output)
 
     async def do_exit(self, _):
