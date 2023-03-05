@@ -19,6 +19,11 @@ DEFAULT_NUM_MESSAGES = 10
 
 console = Console()
 
+def db_exists(database):
+    db_path = database[10:]
+    exists = os.path.exists(db_path) or db_path == ':memory:'
+    return exists
+
 def create_db(database=DEFAULT_DATABASE):
     console.print(f"Creating database: {database}", style="bold green")
     orm = Orm(database, logging.WARNING)
@@ -36,7 +41,7 @@ def create_test_data(database=DEFAULT_DATABASE, num_users=DEFAULT_NUM_USERS, num
         user = orm.add_user(username, password, email)
         console.print(f"Created user: {user.username}", style="blue")
         # Create Conversations for each User
-        console.print(f"Creating {num_conversations} conversations and {num_conversations * num_messages} messages for: {user.username}...", style="white")
+        console.print(f"Creating {num_conversations} conversations and {num_messages} messages for: {user.username}...", style="white")
         for j in range(num_conversations):
             title = f'Conversation {j+1} for User {i+1}'
             conversation = orm.add_conversation(user, title)
@@ -47,7 +52,7 @@ def create_test_data(database=DEFAULT_DATABASE, num_users=DEFAULT_NUM_USERS, num
                 message = orm.add_message(conversation, role, message)
 
 def remove_db(database=DEFAULT_DATABASE):
-    db_path = args.database[10:]
+    db_path = database[10:]
     console.print(f"Removing old database: {db_path}", style="bold red")
     os.remove(db_path)
 
@@ -60,7 +65,7 @@ def print_data(database=DEFAULT_DATABASE):
         output.append(f'## User {user.id}: {user.username}, conversations: {len(conversations)}')
         for conversation in conversations:
             messages = orm.get_messages(conversation)
-            output.append(f'### Conversation {conversation.id}: {conversation.title}, messages: {len(messages)}')
+            output.append(f'### {conversation.title}, messages: {len(messages)}')
             for message in messages:
                 output.append(f'* {message.role}: {message.message}')
     console.print(Markdown("\n".join(output)))
@@ -121,14 +126,11 @@ def main():
     )
     args = parser.parse_args()
 
-    db_path = args.database[10:]
-    db_exists = os.path.exists(db_path) or db_path == ':memory:'
-
     if not (args.create or args.test_data or args.print):
         parser.error("At least one of --create, --test-data, --print must be set")
 
     if args.create:
-        if db_exists:
+        if db_exists(args.database):
             if args.force:
                 console.print("Force specified", style="bold red")
                 remove_db(args.database)
@@ -138,7 +140,7 @@ def main():
             create_db(args.database)
 
     if args.test_data:
-        if db_exists:
+        if db_exists(args.database):
             create_test_data(args.database, args.users, args.conversations, args.messages)
         else:
             console.print("Cannot create test data, database not created, use --create to create it", style="bold red")
