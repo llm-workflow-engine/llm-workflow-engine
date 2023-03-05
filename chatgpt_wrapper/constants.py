@@ -9,6 +9,11 @@ RENDER_MODELS = {
     "legacy-paid": "text-davinci-002-render-paid",
     "legacy-free": "text-davinci-002-render"
 }
+API_RENDER_MODELS = {
+    "default": "gpt-3.5-turbo",
+    "turbo": "gpt-3.5-turbo",
+    "turbo-0301": "gpt-3.5-turbo-0301",
+}
 
 # Config specific constants.
 DEFAULT_PROFILE = 'default'

@@ -3,12 +3,14 @@ import email_validator
 from typing import Tuple
 
 import chatgpt_wrapper.constants as constants
-import chatgpt_wrapper.openai.api as Api
 from chatgpt_wrapper.openai.database import Database
 from chatgpt_wrapper.openai.orm import User
 from chatgpt_wrapper.openai.user import UserManagement
 from chatgpt_wrapper.openai.api import OpenAIAPI
 from chatgpt_wrapper.gpt_shell import GPTShell
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'config',
@@ -74,17 +76,18 @@ class ApiShell(GPTShell):
             return False, f"Invalid email: {e}"
 
     def validate_model(model: str) -> bool:
-        return model in Api.RENDER_MODELS.keys()
+        return model in constants.API_RENDER_MODELS.keys()
 
     def select_model(self, allow_empty: bool = False) -> Tuple[bool, str]:
-        for i, model in enumerate(Api.RENDER_MODELS.keys()):
+        models = list(constants.API_RENDER_MODELS.keys())
+        for i, model in enumerate(models):
             print(f"{i + 1}. {model}")
         selected_model = input("Choose a default model: ").strip() or None
         if not selected_model and allow_empty:
             return True, None
-        if not selected_model or not selected_model.isdigit() or not (1 <= int(selected_model) <= len(Api.RENDER_MODELS)):
+        if not selected_model or not selected_model.isdigit() or not (1 <= int(selected_model) <= len(models)):
             return False, "Invalid default model."
-        default_model = list(Api.RENDER_MODELS.values())[int(selected_model) - 1]
+        default_model = models[int(selected_model) - 1]
         return True, default_model
 
     async def do_user_register(self, username: str = None) -> Tuple[bool, str]:
@@ -220,7 +223,7 @@ Before you can start using the shell, you must create a new user.
             {leader}user_logout
         """
         if not self._is_logged_in():
-            return False, "Not logged in."
+            return False, None, "Not logged in."
         self.logged_in_user_id = None
         self.backend.set_current_user()
         self.set_user_prompt()
@@ -259,7 +262,7 @@ Before you can start using the shell, you must create a new user.
             {leader}user ausername
         """
         if not self._is_logged_in():
-            return False, "Not logged in."
+            return False, None, "Not logged in."
         if username:
             success, user = self.user_management.get_by_username(username)
             if success:
@@ -315,7 +318,7 @@ Before you can start using the shell, you must create a new user.
             {leader}user_edit
         """
         if not self._is_logged_in():
-            return False, "Not logged in."
+            return False, None, "Not logged in."
         if username:
             user = self.user_management.find_user_by_username(username)
             if user:
@@ -341,7 +344,7 @@ Before you can start using the shell, you must create a new user.
             {leader}user_delete myusername
         """
         if not self._is_logged_in():
-            return False, "Not logged in."
+            return False, None, "Not logged in."
         if not username:
             username = input("Enter username: ")
         user = self.user_management.find_user_by_username(username)

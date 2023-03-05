@@ -2,25 +2,15 @@
 
 import os
 import sys
-import logging
 import openai
 
+import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 from chatgpt_wrapper.openai.orm import Orm
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
-
-DEFAULT_CONSOLE_LOG_LEVEL = logging.DEBUG
-DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
-DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
-DEFAULT_FILE_LOG_FORMATTER = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
-RENDER_MODELS = {
-    "default": "gpt-3.5-turbo",
-    "turbo-0301": "gpt-3.5-turbo-0301",
-}
 
 class OpenAIAPI:
     def __init__(self, config=None):
@@ -47,20 +37,6 @@ class OpenAIAPI:
         if not self.openai.api_key:
             raise ValueError(f"{profile_prefix}_OPENAI_API_KEY or OPENAI_API_KEY environment variable must be set")
 
-    def _set_logging(self, debug_log):
-        logger = logging.getLogger(self.__class__.__name__)
-        logger.setLevel(logging.DEBUG)
-        log_console_handler = logging.StreamHandler()
-        log_console_handler.setFormatter(DEFAULT_CONSOLE_LOG_FORMATTER)
-        log_console_handler.setLevel(DEFAULT_CONSOLE_LOG_LEVEL)
-        logger.addHandler(log_console_handler)
-        if debug_log:
-            log_file_handler = logging.FileHandler(debug_log)
-            log_file_handler.setFormatter(DEFAULT_FILE_LOG_FORMATTER)
-            log_file_handler.setLevel(DEFAULT_FILE_LOG_LEVEL)
-            logger.addHandler(log_file_handler)
-        return logger
-
     async def _gen_title(self):
         raise NotImplementedError()
         if not self.conversation_id or self.conversation_id and self.conversation_title_set:
@@ -68,7 +44,7 @@ class OpenAIAPI:
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": constants.RENDER_MODELS[self.model],
+            "model": constants.API_RENDER_MODELS[self.model],
         }
         ok, json, response = await self._api_post_request(url, data)
         if ok:
@@ -80,6 +56,7 @@ class OpenAIAPI:
 
     def set_current_user(self, user=None):
         self.current_user = user
+        self.model = constants.API_RENDER_MODELS[self.current_user.default_model]
 
     async def delete_conversation(self, uuid=None):
         raise NotImplementedError()
@@ -149,7 +126,7 @@ class OpenAIAPI:
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": constants.RENDER_MODELS[self.model],
+            "model": constants.API_RENDER_MODELS[self.model],
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",
