@@ -37,7 +37,7 @@ DEFAULT_CONFIG = {
     'debug': {
         'log': {
             'enabled': False,
-            'filepath': '%s%schatgpt-debug.log' % (os.path.sep, tempfile.gettempdir()),
+            'filepath': '%s%schatgpt-debug.log' % (tempfile.gettempdir(), os.path.sep),
             'level': 'debug',
             'format': '%(name)s - %(asctime)s - %(levelname)s - %(message)s',
         },
