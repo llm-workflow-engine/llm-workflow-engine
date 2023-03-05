@@ -38,7 +38,6 @@ class Config:
             data_dir = os.path.join(os.path.expanduser("~"), ".local", "share", constants.DEFAULT_CONFIG_DIR)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
-
         return data_dir
 
     def load_from_file(self, profile=None):
@@ -55,6 +54,8 @@ class Config:
     def _transform_config(self):
         self.set('log.console.level', self.get('log.console.level').upper(), False)
         self.set('debug.log.level', self.get('debug.log.level').upper(), False)
+        if not self.get('database'):
+            self.set('database', "sqlite:///%s/%s.db" % (self.data_dir, self.profile), False)
 
     def _merge_configs(self, default, config):
         if isinstance(default, dict) and isinstance(config, dict):

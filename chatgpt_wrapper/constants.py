@@ -15,7 +15,7 @@ DEFAULT_PROFILE = 'default'
 DEFAULT_CONFIG_DIR = 'chatgpt-wrapper'
 DEFAULT_CONFIG = {
     'backend': 'browser',
-    'database': 'sqlite:///:memory:',
+    'database': None,
     'browser': {
         'provider': 'firefox',
         'debug': False,
