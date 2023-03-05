@@ -108,16 +108,24 @@ class ApiShell(GPTShell):
             user = self.user_management.session.query(User).first()
             return self.login(user)
 
-    def login(self, user):
-        if not user.password:
-            self.logged_in_user_id = user.id
-            return True, "Login successful."
+    def set_user_prompt(self, user=None):
+        if self.logged_in_user_id and user:
+            prefix = f"{user.username} "
         else:
+            prefix = ''
+        self._set_prompt(prefix)
+
+    def login(self, user):
+        if user.password:
             password = getpass.getpass(prompt='Enter password: ')
             result, message = self.user_management.login(user.username, password)
             if result:
                 self.logged_in_user_id = user.id
-            return result, message
+        else:
+            self.logged_in_user_id = user.id
+            result, message = True, "Login successful."
+        self.set_user_prompt(user)
+        return result, message
 
     async def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
@@ -167,6 +175,7 @@ class ApiShell(GPTShell):
         if not self._is_logged_in():
             return False, "Not logged in."
         self.logged_in_user_id = None
+        self.set_user_prompt()
         return True, "Logout successful."
 
     async def do_logout(self, _) -> Tuple[bool, str]:
@@ -212,6 +221,18 @@ class ApiShell(GPTShell):
             if user:
                 return self.display_user(user)
         return False, "User not found."
+
+    async def do_users(self, _) -> Tuple[bool, str]:
+        """
+        Show information for all users
+
+        Examples:
+            {leader}users
+        """
+        users = self.user_management.list()
+        user_list = ["* %s (%s)" % (user.username, user.default_model) for user in users]
+        user_list.insert(0, "# Users")
+        self._print_markdown("\n".join(user_list))
 
     def edit_user(self, user):
         self._print_markdown(f"## Editing user: {user.username}")

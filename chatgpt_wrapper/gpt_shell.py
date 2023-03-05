@@ -143,8 +143,8 @@ class GPTShell():
                     print("\nERROR: could not open log file: %s" % log_file)
                     sys.exit(0)
 
-    def _set_prompt(self):
-        self.prompt = f"{self.prompt_number}> "
+    def _set_prompt(self, prefix=''):
+        self.prompt = f"{prefix}{self.prompt_number}> "
 
     def _update_message_map(self):
         self.prompt_number += 1

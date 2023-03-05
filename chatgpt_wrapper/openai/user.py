@@ -86,6 +86,12 @@ class UserManagement:
             return False, "User not found."
         return True, user
 
+    def list(self, limit=None):
+        query = self.session.query(User).order_by(User.username)
+        if limit is not None:
+            query = query.limit(limit)
+        return query.all()
+
     def edit(self, user_id, username=None, email=None, password=None, default_model=None):
 
         # Get the user with the specified user_id
