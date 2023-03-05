@@ -94,7 +94,6 @@ class OpenAIAPI:
         # TODO: Logic for failed get?
         ok = True
         conversations = self.orm.get_conversations(self.current_user, limit=limit, offset=offset)
-        debug.console(conversations[0].created_time)
         if ok:
             history = {m.id: vars(m) for m in conversations}
             return history

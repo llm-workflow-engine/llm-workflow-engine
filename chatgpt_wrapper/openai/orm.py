@@ -128,7 +128,7 @@ class Orm:
     def get_conversations(self, user, limit=constants.DEFAULT_HISTORY_LIMIT, offset=None, order_desc=True):
         self.log.info(f'Retrieving Conversations for User with id {user.id}')
         if order_desc:
-            query = self.session.query(Conversation).order_by(desc(Conversation.id))
+            query = self.session.query(Conversation).filter(Conversation.user_id == user.id).order_by(desc(Conversation.id))
         else:
             query = self.session.query(Conversation).order_by(Conversation.id)
         query = self._apply_limit_offset(query, limit, offset)
@@ -137,7 +137,7 @@ class Orm:
 
     def get_messages(self, conversation, limit=None, offset=None):
         self.log.info(f'Retrieving Messages for Conversation with id {conversation.id}')
-        query = self.session.query(Message).order_by(Message.id)
+        query = self.session.query(Message).filter(Message.conversation_id == conversation.id).order_by(Message.id)
         query = self._apply_limit_offset(query, limit, offset)
         messages = query.all()
         return messages
