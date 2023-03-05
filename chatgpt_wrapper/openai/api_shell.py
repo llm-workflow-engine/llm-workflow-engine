@@ -25,6 +25,7 @@ class ApiShell(GPTShell):
 
     async def configure_backend(self):
         self.backend = OpenAIAPI(self.config)
+        self.check_autologin()
 
     # TODO: Implement this
     def _conversation_from_messages(self, messages):
@@ -101,6 +102,23 @@ class ApiShell(GPTShell):
             return False, "Invalid default model."
         return self.user_management.register(username, email, password, default_model)
 
+    def check_autologin(self):
+        # Special case check: if there's only one user in the database, just load it.
+        if self.user_management.session.query(User).count() == 1:
+            user = self.user_management.session.query(User).first()
+            return self.login(user)
+
+    def login(self, user):
+        if not user.password:
+            self.logged_in_user_id = user.id
+            return True, "Login successful."
+        else:
+            password = getpass.getpass(prompt='Enter password: ')
+            result, message = self.user_management.login(user.username, password)
+            if result:
+                self.logged_in_user_id = user.id
+            return result, message
+
     async def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
         Login in as a user
@@ -119,17 +137,9 @@ class ApiShell(GPTShell):
         if not identifier:
             identifier = input("Enter username or email: ")
         user = self.user_management.find_user_by_username_or_email(identifier)
-        if not user:
-            return False, f"User {identifier} not found."
-        if not user.password:
-            self.logged_in_user_id = user.id
-            return True, "Login successful."
-        else:
-            password = getpass.getpass(prompt='Enter password: ')
-            result, message = self.user_management.login(identifier, password)
-            if result:
-                self.logged_in_user_id = user.id
-            return result, message
+        if user:
+            return self.login(user)
+        return False, f"User {identifier} not found."
 
     async def do_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
