@@ -99,7 +99,7 @@ class ApiShell(GPTShell):
             success, message = self.validate_email(email)
             if not success:
                 return False, None, message
-        password = input("Enter password (leave blank for passwordless login): ").strip() or None
+        password = getpass.getpass(prompt='Enter password (leave blank for passwordless login): ') or None
         success, default_model = self.select_model()
         if not success:
             return False, None, "Invalid default model."

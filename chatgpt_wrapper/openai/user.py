@@ -43,7 +43,7 @@ class UserManagement:
         if email:
             email = email.lower()
         if password:
-            self.hash_password(password)
+            password = self.hash_password(password)
         # Check if the username or email is equal to the email of an existing user.
         if email:
             existing_user = self.orm.session.query(User).filter(
