@@ -28,7 +28,7 @@ class ApiShell(GPTShell):
         database.create_schema()
         self.user_management = UserManagement(self.config)
         self.session = self.user_management.orm.session
-        self.check_autologin()
+        await self.check_login()
 
     # TODO: Implement this
     def _conversation_from_messages(self, messages):
@@ -91,44 +91,71 @@ class ApiShell(GPTShell):
             {leader}user_register myusername
         """
         if not username:
-            username = input("Enter username: ").strip() or None
+            username = input("Enter username (no spaces): ").strip() or None
             if not username:
-                return False, "Username cannot be empty."
+                return False, None, "Username cannot be empty."
         email = input("Enter email: ").strip() or None
         if email:
             success, message = self.validate_email(email)
             if not success:
-                return False, message
-        password = input("Enter password: ").strip() or None
+                return False, None, message
+        password = input("Enter password (leave blank for passwordless login): ").strip() or None
         success, default_model = self.select_model()
         if not success:
-            return False, "Invalid default model."
+            return False, None, "Invalid default model."
         return self.user_management.register(username, email, password, default_model)
 
-    def check_autologin(self):
-        # Special case check: if there's only one user in the database, just load it.
-        if self.session.query(User).count() == 1:
+    async def check_login(self):
+        user_count = self.session.query(User).count()
+        if user_count == 0:
+            self.console.print("No users in database. Creating one...", style="bold red")
+            self.welcome_message()
+            await self.create_first_user()
+        # Special case check: if there's only one user in the database, and
+        # they have no password, log them in.
+        elif user_count == 1:
             user = self.session.query(User).first()
-            return self.login(user)
+            if not user.password:
+                return self.login(user)
+
+    def welcome_message(self):
+        self._print_markdown(
+"""
+# Welcome to the ChatGPT API shell!
+
+This shell interacts directly with the ChatGPT API, and stores conversations and messages in the configured database.
+
+Before you can start using the shell, you must create a new user.
+"""
+        )
+
+    async def create_first_user(self):
+        success, user, message = await self.do_user_register()
+        self._print_status_message(success, message)
+        if success:
+            success, _user, message = self.login(user)
+            self._print_status_message(success, message)
+        else:
+            await self.create_first_user()
 
     def set_user_prompt(self, user=None):
         if self.logged_in_user_id and user:
             prefix = f"{user.username} "
         else:
             prefix = ''
-        self._set_prompt(prefix)
+        self._set_prompt_prefix(prefix)
 
     def login(self, user):
         if user.password:
             password = getpass.getpass(prompt='Enter password: ')
-            result, message = self.user_management.login(user.username, password)
-            if result:
+            success, user, message = self.user_management.login(user.username, password)
+            if success:
                 self.logged_in_user_id = user.id
         else:
             self.logged_in_user_id = user.id
-            result, message = True, "Login successful."
+            success, user, message = True, user, "Login successful."
         self.set_user_prompt(user)
-        return result, message
+        return success, user, message
 
     async def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
@@ -232,7 +259,7 @@ class ApiShell(GPTShell):
         Examples:
             {leader}users
         """
-        users = self.user_management.list()
+        _success, users, _message = self.user_management.list()
         user_list = ["* %s (%s)" % (user.username, user.default_model) for user in users]
         user_list.insert(0, "# Users")
         self._print_markdown("\n".join(user_list))

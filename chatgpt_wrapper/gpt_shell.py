@@ -46,6 +46,7 @@ class GPTShell():
 
     intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
     prompt = "> "
+    prompt_prefix = ""
     doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
 
     # our stuff
@@ -143,7 +144,10 @@ class GPTShell():
                     sys.exit(0)
 
     def _set_prompt(self, prefix=''):
-        self.prompt = f"{prefix}{self.prompt_number}> "
+        self.prompt = f"{self.prompt_prefix}{self.prompt_number}> "
+
+    def _set_prompt_prefix(self, prefix=''):
+        self.prompt_prefix = prefix
 
     def _update_message_map(self):
         self.prompt_number += 1
@@ -762,7 +766,7 @@ class GPTShell():
                 else:
                     if response:
                         if isinstance(response, tuple):
-                            success, message = response
+                            success, _obj, message = response
                             self._print_status_message(success, message)
                         else:
                             print(response)
