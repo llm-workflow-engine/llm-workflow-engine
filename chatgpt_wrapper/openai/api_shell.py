@@ -14,7 +14,7 @@ class ApiShell(GPTShell):
     """
 
     def __init__(self, config=None):
-        super().__init__()
+        super().__init__(config)
         self.database = self.config.get('database')
         self.user_management = UserManagement(self.database)
         self.logged_in_user_id = None
@@ -68,7 +68,7 @@ class ApiShell(GPTShell):
         default_model = list(Api.RENDER_MODELS.values())[int(selected_model) - 1]
         return True, default_model
 
-    def do_user_register(self, username: str = None) -> Tuple[bool, str]:
+    async def do_user_register(self, username: str = None) -> Tuple[bool, str]:
         """
         Register a new user
 
@@ -101,7 +101,7 @@ class ApiShell(GPTShell):
             return False, "Invalid default model."
         return self.user_management.register(username, email, password, default_model)
 
-    def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
+    async def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
         Login in as a user
 
@@ -118,9 +118,7 @@ class ApiShell(GPTShell):
         """
         if not identifier:
             identifier = input("Enter username or email: ")
-        user = self.user_management.session.query(User).filter(
-            (User.username == identifier.lower()) | (User.email == identifier.lower())
-        ).first()
+        user = self.user_management.find_user_by_username_or_email(identifier)
         if not user:
             return False, f"User {identifier} not found."
         if not user.password:
@@ -133,7 +131,7 @@ class ApiShell(GPTShell):
                 self.logged_in_user_id = user.id
             return result, message
 
-    def do_login(self, identifier: str = None) -> Tuple[bool, str]:
+    async def do_login(self, identifier: str = None) -> Tuple[bool, str]:
         """
         Alias of '{leader}user_login'
 
@@ -147,9 +145,9 @@ class ApiShell(GPTShell):
             {leader}login myusername
             {leader}login email@example.com
         """
-        self.do_user_login(identifier)
+        return await self.do_user_login(identifier)
 
-    def do_user_logout(self, _) -> Tuple[bool, str]:
+    async def do_user_logout(self, _) -> Tuple[bool, str]:
         """
         Logout the current user.
 
@@ -161,7 +159,7 @@ class ApiShell(GPTShell):
         self.logged_in_user_id = None
         return True, "Logout successful."
 
-    def do_logout(self, _) -> Tuple[bool, str]:
+    async def do_logout(self, _) -> Tuple[bool, str]:
         """
         Alias of '{leader}user_logout'
 
@@ -170,24 +168,43 @@ class ApiShell(GPTShell):
         Examples:
             {leader}logout
         """
-        self.do_user_logout(None)
+        return await self.do_user_logout(None)
 
-    def do_user_edit(self, _) -> Tuple[bool, str]:
+    def display_user(self, user):
+        output = f"""
+## Username: %s
+
+* Email: %s
+* Password: %s
+* Default model: %s
+        """ % (user.username, user.email, "set" if user.password else "not set", user.default_model)
+        self._print_markdown(output)
+
+    async def do_user(self, username: str = None) -> Tuple[bool, str]:
         """
-        Edit the current user's information
+        Show user information
 
-        You will be prompted to enter new values for the username, email, password, and default model.
-        You can skip any prompt by pressing enter.
+        Arguments:
+            username: The username of the user to show, if not provided, the logged in user will be used.
 
         Examples:
-            {leader}user_edit
+            {leader}user
+            {leader}user ausername
         """
-
         if not self._is_logged_in():
             return False, "Not logged in."
-        user = self.get_logged_in_user()
-        if not user:
-            return False, "User not found."
+        if username:
+            success, user = self.user_management.get_by_username(username)
+            if success:
+                return self.display_user(user)
+        else:
+            user = self.get_logged_in_user()
+            if user:
+                return self.display_user(user)
+        return False, "User not found."
+
+    def edit_user(self, user):
+        self._print_markdown(f"## Editing user: {user.username}")
         username = input("New username (Press enter to skip): ").strip() or None
         email = input("New email (Press enter to skip): ").strip() or None
         if email:
@@ -208,7 +225,29 @@ class ApiShell(GPTShell):
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return self.user_management.edit(user.id, **kwargs)
 
-    def do_user_delete(self, username: str = None) -> Tuple[bool, str]:
+    async def do_user_edit(self, username: str = None) -> Tuple[bool, str]:
+        """
+        Edit the current user's information
+
+        You will be prompted to enter new values for the username, email, password, and default model.
+        You can skip any prompt by pressing enter.
+
+        Examples:
+            {leader}user_edit
+        """
+        if not self._is_logged_in():
+            return False, "Not logged in."
+        if username:
+            user = self.user_management.find_user_by_username(username)
+            if user:
+                return self.edit_user(user)
+        else:
+            user = self.get_logged_in_user()
+            if user:
+                return self.edit_user(user)
+        return False, "User not found."
+
+    async def do_user_delete(self, username: str = None) -> Tuple[bool, str]:
         """
         Delete a user
 
@@ -226,7 +265,7 @@ class ApiShell(GPTShell):
             return False, "Not logged in."
         if not username:
             username = input("Enter username: ")
-        user = self.user_management.session.query(User).filter(User.username == username.lower()).first()
+        user = self.user_management.find_user_by_username(username)
         if user:
             if user.id == self.logged_in_user_id:
                 return False, "Cannot delete currently logged in user."
