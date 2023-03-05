@@ -21,8 +21,6 @@ from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
 
-console = Console()
-
 is_windows = platform.system() == "Windows"
 
 # Monkey patch _FIND_WORD_RE in the document module.
@@ -60,6 +58,7 @@ class GPTShell():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
+        self.console = Console()
         self.configure_commands()
         self.command_completer = self.get_command_completer()
         self.history = self.get_history()
@@ -155,11 +154,11 @@ class GPTShell():
         self._set_prompt()
 
     def _print_status_message(self, success, message):
-        console.print(message, style="bold green" if success else "bold red")
+        self.console.print(message, style="bold green" if success else "bold red")
         print("")
 
     def _print_markdown(self, output):
-        console.print(Markdown(output))
+        self.console.print(Markdown(output))
         print("")
 
     def _write_log(self, prompt, response):
