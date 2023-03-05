@@ -75,6 +75,9 @@ class GPTShell():
         self.stream = self.config.get('chat.streaming')
         self._set_logging()
 
+    def exec_prompt_pre(self, _command, _arg):
+        pass
+
     def _introspect_commands(self, klass):
         return [method[3:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("do_")]
 
@@ -756,6 +759,14 @@ class GPTShell():
                 return method
         raise AttributeError(f"{do_command} method not found in any shell class")
 
+    def output_response(self, response):
+        if response:
+            if isinstance(response, tuple):
+                success, _obj, message = response
+                self._print_status_message(success, message)
+            else:
+                print(response)
+
     async def run_command(self, command, argument):
         if command == 'help':
             self.help(argument)
@@ -767,12 +778,7 @@ class GPTShell():
                 except Exception as e:
                     print(repr(e))
                 else:
-                    if response:
-                        if isinstance(response, tuple):
-                            success, _obj, message = response
-                            self._print_status_message(success, message)
-                        else:
-                            print(response)
+                    self.output_response(response)
             else:
                 print(f'Unknown command: {command}')
 
@@ -792,5 +798,9 @@ class GPTShell():
                 continue
             except EOFError:
                 break
-            await self.run_command(command, argument)
+            exec_prompt_pre_result = self.exec_prompt_pre(command, argument)
+            if exec_prompt_pre_result:
+                self.output_response(exec_prompt_pre_result)
+            else:
+                await self.run_command(command, argument)
         print('GoodBye!')

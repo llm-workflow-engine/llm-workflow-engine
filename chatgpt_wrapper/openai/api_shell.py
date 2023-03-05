@@ -2,12 +2,19 @@ import getpass
 import email_validator
 from typing import Tuple
 
+import chatgpt_wrapper.constants as constants
 import chatgpt_wrapper.openai.api as Api
 from chatgpt_wrapper.openai.database import Database
 from chatgpt_wrapper.openai.orm import User
 from chatgpt_wrapper.openai.user import UserManagement
 from chatgpt_wrapper.openai.api import OpenAIAPI
 from chatgpt_wrapper.gpt_shell import GPTShell
+
+ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
+    'config',
+    'exit',
+    'quit',
+]
 
 class ApiShell(GPTShell):
     """
@@ -17,6 +24,15 @@ class ApiShell(GPTShell):
     def __init__(self, config=None):
         super().__init__(config)
         self.logged_in_user_id = None
+
+    def not_logged_in_disallowed_commands(self):
+        base_shell_commands = self._introspect_commands(GPTShell)
+        disallowed_commands = [c for c in base_shell_commands if c not in ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS]
+        return disallowed_commands
+
+    def exec_prompt_pre(self, command, arg):
+        if not self.logged_in_user_id and command in self.not_logged_in_disallowed_commands():
+            return False, None, "Must be logged in to execute %s%s" % (constants.COMMAND_LEADER, command)
 
     def configure_commands(self):
         self.commands = self._introspect_commands(__class__)
@@ -143,6 +159,7 @@ Before you can start using the shell, you must create a new user.
         else:
             prefix = ''
         self._set_prompt_prefix(prefix)
+        self._set_prompt()
 
     def login(self, user):
         if user.password:
@@ -205,7 +222,7 @@ Before you can start using the shell, you must create a new user.
             return False, "Not logged in."
         self.logged_in_user_id = None
         self.set_user_prompt()
-        return True, "Logout successful."
+        return True, None, "Logout successful."
 
     async def do_logout(self, _) -> Tuple[bool, str]:
         """
