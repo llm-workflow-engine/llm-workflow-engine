@@ -4,6 +4,7 @@ import signal
 import base64
 import json
 import time
+import datetime
 import uuid
 import re
 import shutil
@@ -258,6 +259,8 @@ class AsyncChatGPT:
         if ok:
             history = {}
             for item in json["items"]:
+                item['created_time'] = datetime.datetime.strptime(item['create_time'], "%Y-%m-%dT%H:%M:%S.%f")
+                del item['create_time']
                 history[item["id"]] = item
             return history
         else:

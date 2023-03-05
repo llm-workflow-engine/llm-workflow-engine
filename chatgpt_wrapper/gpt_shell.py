@@ -340,7 +340,7 @@ class GPTShell():
         history = await self._fetch_history(limit=limit, offset=offset)
         if history:
             history_list = [h for h in history.values()]
-            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
+            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
 
     async def do_nav(self, arg):
         """
