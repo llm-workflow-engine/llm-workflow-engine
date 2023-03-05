@@ -154,6 +154,10 @@ class GPTShell():
         )
         self._set_prompt()
 
+    def _print_status_message(self, success, message):
+        console.print(message, style="bold green" if success else "bold red")
+        print("")
+
     def _print_markdown(self, output):
         console.print(Markdown(output))
         print("")
@@ -758,7 +762,11 @@ class GPTShell():
                     print(repr(e))
                 else:
                     if response:
-                        print(response)
+                        if isinstance(response, tuple):
+                            success, message = response
+                            self._print_status_message(success, message)
+                        else:
+                            print(response)
             else:
                 print(f'Unknown command: {command}')
 
