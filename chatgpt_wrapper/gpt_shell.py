@@ -75,8 +75,11 @@ class GPTShell():
         self.stream = self.config.get('chat.streaming')
         self._set_logging()
 
+    def _introspect_commands(self, klass):
+        return [method[3:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("do_")]
+
     def configure_commands(self):
-        self.commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
+        self.commands = self._introspect_commands(__class__)
 
     def get_command_completer(self):
         commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
