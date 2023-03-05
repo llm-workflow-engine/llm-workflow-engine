@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import MetaData, ForeignKey, Index, Column, Integer, String, DateTime, JSON, Boolean, Enum
+from sqlalchemy import MetaData, ForeignKey, Index, Column, Integer, String, DateTime, JSON, Boolean
 from sqlalchemy import desc
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
@@ -20,7 +20,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=True)
     email = Column(String, unique=True, nullable=True)
-    default_model = Column(Enum('default', 'gpt-3.5-turbo', 'gpt-3.5-turbo-0301'))
+    default_model = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
     last_login_time = Column(DateTime, nullable=True)
     preferences = Column(JSON, nullable=False)
@@ -38,7 +38,7 @@ class Conversation(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     title = Column(String, nullable=False)
-    model = Column(Enum('default', 'gpt-3.5-turbo', 'gpt-3.5-turbo-0301'))
+    model = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
     updated_time = Column(DateTime, nullable=False)
     hidden = Column(Boolean, nullable=False)
@@ -56,7 +56,7 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation_id = Column(Integer, ForeignKey('conversation.id'))
-    role = Column(Enum('system', 'user', 'assistant'))
+    role = Column(String, nullable=False)
     message = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
     prompt_tokens = Column(Integer, nullable=False)
