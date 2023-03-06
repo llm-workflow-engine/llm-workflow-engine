@@ -262,9 +262,9 @@ class AsyncChatGPT:
                 item['created_time'] = datetime.datetime.strptime(item['create_time'], "%Y-%m-%dT%H:%M:%S.%f")
                 del item['create_time']
                 history[item["id"]] = item
-            return history
+            return ok, history, "Retrieved history"
         else:
-            self.log.error("Failed to get history")
+            return ok, json, "Failed to get history"
 
     async def get_conversation(self, uuid=None):
         if self.session is None:

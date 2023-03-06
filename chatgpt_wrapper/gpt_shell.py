@@ -215,8 +215,8 @@ class GPTShell():
 
     async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = await self.backend.get_history(limit=limit, offset=offset)
-        return history
+        success, history, message = await self.backend.get_history(limit=limit, offset=offset)
+        return success, history, message
 
     async def _set_title(self, title, conversation_id=None):
         self._print_markdown("* Setting title...")
@@ -337,10 +337,12 @@ class GPTShell():
                     except ValueError:
                         self._print_markdown("* Invalid offset, must be an integer")
                         return
-        history = await self._fetch_history(limit=limit, offset=offset)
-        if history:
+        success, history, message = await self._fetch_history(limit=limit, offset=offset)
+        if success:
             history_list = [h for h in history.values()]
             self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
+        else:
+            return success, history, message
 
     async def do_nav(self, arg):
         """

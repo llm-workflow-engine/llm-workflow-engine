@@ -7,7 +7,7 @@ import openai
 import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
-from chatgpt_wrapper.openai.orm import Orm
+from chatgpt_wrapper.openai.conversation import ConversationManagement
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -18,7 +18,7 @@ class OpenAIAPI:
         self.log = Logger(self.__class__.__name__, self.config)
         self._configure_access_info()
         self.model = config.get('chat.model')
-        self.orm = Orm(self.config)
+        self.conversation = ConversationManagement(self.config)
         self.current_user = None
         # TODO: These two attributes need to be integrated into the backend
         # for shell compat.
@@ -91,14 +91,12 @@ class OpenAIAPI:
             self.log.error("Failed to set title")
 
     async def get_history(self, limit=20, offset=0):
-        # TODO: Logic for failed get?
-        ok = True
-        conversations = self.orm.get_conversations(self.current_user, limit=limit, offset=offset)
-        if ok:
+        success, conversations, message = self.conversation.get_conversations(self.current_user, limit=limit, offset=offset)
+        if success:
             history = {m.id: vars(m) for m in conversations}
-            return history
+            return success, history, message
         else:
-            self.log.error("Failed to get history")
+            return success, conversations, message
 
     async def get_conversation(self, uuid=None):
         raise NotImplementedError()
