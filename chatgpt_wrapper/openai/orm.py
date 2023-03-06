@@ -1,5 +1,8 @@
 import datetime
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+from sqlite3 import Connection as SQLite3Connection
 from sqlalchemy import MetaData, ForeignKey, Index, Column, Integer, String, DateTime, JSON, Boolean
 from sqlalchemy import desc
 from sqlalchemy.orm import relationship
@@ -12,6 +15,12 @@ from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
 
 Base = declarative_base()
+def _set_sqlite_pragma(conn, _record):
+    if isinstance(conn, SQLite3Connection):
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
+event.listen(Engine, "connect", _set_sqlite_pragma)
 
 class User(Base):
     __tablename__ = 'user'
@@ -25,7 +34,7 @@ class User(Base):
     last_login_time = Column(DateTime, nullable=True)
     preferences = Column(JSON, nullable=False)
 
-    conversations = relationship('Conversation', back_populates='user')
+    conversations = relationship('Conversation', back_populates='user', passive_deletes=True)
 
 Index('user_username_idx', User.username)
 Index('user_email_idx', User.email)
@@ -36,7 +45,7 @@ class Conversation(Base):
     __tablename__ = 'conversation'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('user.id'))
+    user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     title = Column(String, nullable=False)
     model = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
@@ -44,7 +53,7 @@ class Conversation(Base):
     hidden = Column(Boolean, nullable=False)
 
     user = relationship('User', back_populates='conversations')
-    messages = relationship('Message', back_populates='conversation')
+    messages = relationship('Message', back_populates='conversation', passive_deletes=True)
 
 Index('conversation_user_id_idx', Conversation.user_id)
 Index('conversation_created_time_idx', Conversation.created_time)
@@ -55,7 +64,7 @@ class Message(Base):
     __tablename__ = 'message'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    conversation_id = Column(Integer, ForeignKey('conversation.id'))
+    conversation_id = Column(Integer, ForeignKey('conversation.id', ondelete='CASCADE'), nullable=False)
     role = Column(String, nullable=False)
     message = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
