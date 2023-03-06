@@ -89,6 +89,30 @@ class Orm:
         metadata.reflect(bind=engine)
         return engine, metadata
 
+    def get_users(self, limit=None, offset=None):
+        self.log.debug('Retrieving all Users')
+        query = self.session.query(User).order_by(User.username)
+        query = self._apply_limit_offset(query, limit, offset)
+        users = query.all()
+        return users
+
+    def get_conversations(self, user, limit=constants.DEFAULT_HISTORY_LIMIT, offset=None, order_desc=True):
+        self.log.debug(f'Retrieving Conversations for User with id {user.id}')
+        if order_desc:
+            query = self.session.query(Conversation).filter(Conversation.user_id == user.id).order_by(desc(Conversation.id))
+        else:
+            query = self.session.query(Conversation).order_by(Conversation.id)
+        query = self._apply_limit_offset(query, limit, offset)
+        conversations = query.all()
+        return conversations
+
+    def get_messages(self, conversation, limit=None, offset=None):
+        self.log.debug(f'Retrieving Messages for Conversation with id {conversation.id}')
+        query = self.session.query(Message).filter(Message.conversation_id == conversation.id).order_by(Message.id)
+        query = self._apply_limit_offset(query, limit, offset)
+        messages = query.all()
+        return messages
+
     def add_user(self, username, password, email, default_model="default", preferences={}):
         now = datetime.datetime.now()
         user = User(username=username, password=password, email=email, default_model=default_model, created_time=now, last_login_time=now, preferences=preferences)
@@ -114,30 +138,52 @@ class Orm:
         return message
 
     def get_user(self, user_id):
-        self.log.info(f'Retrieving User with id {user_id}')
+        self.log.debug(f'Retrieving User with id {user_id}')
         user = self.session.query(User).get(user_id)
         return user
 
-    def get_users(self, limit=None, offset=None):
-        self.log.info('Retrieving all Users')
-        query = self.session.query(User).order_by(User.username)
-        query = self._apply_limit_offset(query, limit, offset)
-        users = query.all()
-        return users
+    def get_conversation(self, conversation_id):
+        self.log.debug(f'Retrieving Conversation with id {conversation_id}')
+        conversation = self.session.query(Conversation).get(conversation_id)
+        return conversation
 
-    def get_conversations(self, user, limit=constants.DEFAULT_HISTORY_LIMIT, offset=None, order_desc=True):
-        self.log.info(f'Retrieving Conversations for User with id {user.id}')
-        if order_desc:
-            query = self.session.query(Conversation).filter(Conversation.user_id == user.id).order_by(desc(Conversation.id))
-        else:
-            query = self.session.query(Conversation).order_by(Conversation.id)
-        query = self._apply_limit_offset(query, limit, offset)
-        conversations = query.all()
-        return conversations
+    def get_message(self, message_id):
+        self.log.debug(f'Retrieving Message with id {message_id}')
+        message = self.session.query(Message).get(message_id)
+        return message
 
-    def get_messages(self, conversation, limit=None, offset=None):
-        self.log.info(f'Retrieving Messages for Conversation with id {conversation.id}')
-        query = self.session.query(Message).filter(Message.conversation_id == conversation.id).order_by(Message.id)
-        query = self._apply_limit_offset(query, limit, offset)
-        messages = query.all()
-        return messages
+    def edit_user(self, user, **kwargs):
+        for key, value in kwargs.items():
+            setattr(user, key, value)
+        self.session.commit()
+        self.log.info(f'Edited User with id {user.id}')
+        return user
+
+    def edit_conversation(self, conversation, **kwargs):
+        for key, value in kwargs.items():
+            setattr(conversation, key, value)
+        self.session.commit()
+        self.log.info(f'Edited Conversation with id {conversation.id}')
+        return conversation
+
+    def edit_message(self, message, **kwargs):
+        for key, value in kwargs.items():
+            setattr(message, key, value)
+        self.session.commit()
+        self.log.info(f'Edited Message with id {message.id}')
+        return message
+
+    def delete_user(self, user):
+        self.session.delete(user)
+        self.session.commit()
+        self.log.info(f'Deleted User with id {user.id}')
+
+    def delete_conversation(self, conversation):
+        self.session.delete(conversation)
+        self.session.commit()
+        self.log.info(f'Deleted Conversation with id {conversation.id}')
+
+    def delete_message(self, message):
+        self.session.delete(message)
+        self.session.commit()
+        self.log.info(f'Deleted Message with id {message.id}')
