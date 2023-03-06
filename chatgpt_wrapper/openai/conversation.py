@@ -40,29 +40,33 @@ class ConversationManagement:
         except SQLAlchemyError as e:
             return False, None, f"Failed to retrieve conversation: {str(e)}"
 
-    def update_conversation_title(self, conversation, new_title):
+    def update_conversation_title(self, conversation_id, new_title):
         try:
+            success, conversation, message = self.get_conversation(conversation_id)
             updated_conversation = self.orm.edit_conversation(conversation, title=new_title)
             return True, updated_conversation, "Conversation title updated successfully."
         except SQLAlchemyError as e:
             return False, None, f"Failed to update conversation title: {str(e)}"
 
-    def hide_conversation(self, conversation):
+    def hide_conversation(self, conversation_id):
         try:
+            success, conversation, message = self.get_conversation(conversation_id)
             updated_conversation = self.orm.edit_conversation(conversation, hidden=True)
             return True, updated_conversation, "Conversation hidden successfully."
         except SQLAlchemyError as e:
             return False, None, f"Failed to hide conversation: {str(e)}"
 
-    def unhide_conversation(self, conversation):
+    def unhide_conversation(self, conversation_id):
         try:
+            success, conversation, message = self.get_conversation(conversation_id)
             updated_conversation = self.orm.edit_conversation(conversation, hidden=False)
             return True, updated_conversation, "Conversation unhidden successfully."
         except SQLAlchemyError as e:
             return False, None, f"Failed to unhide conversation: {str(e)}"
 
-    def delete_conversation(self, conversation):
+    def delete_conversation(self, conversation_id):
         try:
+            success, conversation, message = self.get_conversation(conversation_id)
             self.orm.delete_conversation(conversation)
             return True, None, "Conversation deleted successfully."
         except SQLAlchemyError as e:

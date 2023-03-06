@@ -4,7 +4,6 @@ import yaml
 import os
 import platform
 import sys
-import datetime
 import subprocess
 
 from prompt_toolkit import PromptSession
@@ -20,6 +19,9 @@ from rich.markdown import Markdown
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 is_windows = platform.system() == "Windows"
 
@@ -213,15 +215,26 @@ class GPTShell():
     async def cleanup(self):
         pass
 
+    def _conversation_from_messages(self, messages):
+        message_parts = []
+        for message in messages:
+            message_parts.append("**%s**:" % message['role'].capitalize())
+            message_parts.append(message['message'])
+        content = "\n\n".join(message_parts)
+        return content
+
     async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
         success, history, message = await self.backend.get_history(limit=limit, offset=offset)
         return success, history, message
 
-    async def _set_title(self, title, conversation_id=None):
+    async def _set_title(self, title, conversation=None):
         self._print_markdown("* Setting title...")
-        if await self.backend.set_title(title, conversation_id):
-            self._print_markdown("* Title set to: %s" % title)
+        success, _, message = await self.backend.set_title(title, conversation['id'])
+        if success:
+            return success, conversation, "Title set to: %s" % conversation["title"]
+        else:
+            return success, conversation, message
 
     async def _delete_conversation(self, id, label=None):
         if id == self.backend.conversation_id:
@@ -229,14 +242,21 @@ class GPTShell():
         else:
             label = label or id
             self._print_markdown("* Deleting conversation: %s" % label)
-            if await self.backend.delete_conversation(id):
-                self._print_markdown("* Deleted conversation: %s" % label)
+            success, conversation, message = await self.backend.delete_conversation(id)
+            if success:
+                self._print_status_message(True, f"Deleted conversation: {label}")
+            else:
+                self._print_status_message(False, f"Failed to deleted conversation: {label}, {message}")
 
     async def _delete_current_conversation(self):
         self._print_markdown("* Deleting current conversation")
-        if await self.backend.delete_conversation():
-            self._print_markdown("* Deleted current conversation")
+        success, conversation, message = await self.backend.delete_conversation()
+        if success:
+            self._print_status_message(True, "Deleted current conversation")
             await self.do_new(None)
+        else:
+            self._print_status_message(False, "Failed to delete current conversation")
+
 
     async def do_stream(self, _):
         """
@@ -288,9 +308,9 @@ class GPTShell():
         if arg:
             result = self._parse_conversation_ids(arg)
             if isinstance(result, list):
-                history = await self._fetch_history()
-                if history:
-                    history_list = [h for h in history.values()]
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [c for c in conversations.values()]
                     for item in result:
                         if isinstance(item, str) and len(item) == 36:
                             await self._delete_conversation(item)
@@ -299,9 +319,11 @@ class GPTShell():
                                 conversation = history_list[item - 1]
                                 await self._delete_conversation(conversation['id'], conversation['title'])
                             else:
-                                self._print_markdown("* Cannont delete history item %d, does not exist" % item)
+                                self._print_status_message(False, f"Cannont delete history item {item}, does not exist")
+                else:
+                    return success, conversations, message
             else:
-                self._print_markdown(result)
+                return False, None, result
         else:
             await self._delete_current_conversation()
 
@@ -401,34 +423,42 @@ class GPTShell():
             Set conversation title using history ID: {leader}title 1
         """
         if arg:
-            history = await self._fetch_history()
-            history_list = [h for h in history.values()]
-            conversation_id = None
-            id = None
-            try:
-                id = int(arg)
-            except Exception:
-                pass
-            if id:
-                if id <= len(history_list):
-                    conversation_id = history_list[id - 1]["id"]
+            success, conversations, message = await self._fetch_history()
+            if success:
+                history_list = [c for c in conversations.values()]
+                conversation = None
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    pass
+                if id:
+                    if id <= len(history_list):
+                        conversation = history_list[id - 1]
+                    else:
+                        return False, conversations, "Cannot set title on history item %d, does not exist" % id
+                if conversation:
+                    new_title = input("Enter new title for '%s': " % conversation["title"])
                 else:
-                    self._print_markdown("* Cannot set title on history item %d, does not exist" % id)
-                    return
-            if conversation_id:
-                new_title = input("Enter new title for '%s': " % history[conversation_id]["title"])
+                    new_title = arg
+                # Browser backend doesn't return a full conversation object,
+                # so adjust and re-use the current one.
+                conversation['title'] = new_title
+                return await self._set_title(new_title, conversation)
             else:
-                new_title = arg
-            await self._set_title(new_title, conversation_id)
+                return success, conversations, message
         else:
             if self.backend.conversation_id:
-                history = await self._fetch_history()
-                if self.backend.conversation_id in history:
-                    self._print_markdown("* Title: %s" % history[self.backend.conversation_id]['title'])
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    if self.backend.conversation_id in conversations:
+                        self._print_markdown("* Title: %s" % conversations[self.backend.conversation_id]['title'])
+                    else:
+                        return False, conversations, "Cannot load conversation title, not in history"
                 else:
-                    self._print_markdown("* Cannot load conversation title, not in history.")
+                    return success, conversations, message
             else:
-                self._print_markdown("* Current conversation has no title, you must send information first")
+                return False, None, "Current conversation has no title, you must send information first"
 
     async def do_chat(self, arg):
         """
@@ -443,6 +473,7 @@ class GPTShell():
             By conversation ID: {leader}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
             By history ID: {leader}chat 2
         """
+        conversation = None
         conversation_id = None
         title = None
         if arg:
@@ -450,33 +481,39 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = await self._fetch_history()
-                history_list = [h for h in history.values()]
-                id = None
-                try:
-                    id = int(arg)
-                except Exception:
-                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
-                    return
-                if id:
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [h for h in conversations.values()]
+                    id = None
+                    try:
+                        id = int(arg)
+                    except Exception:
+                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
-                        conversation_id = history_list[id - 1]["id"]
-                        title = history_list[id - 1]["title"]
+                        conversation = history_list[id - 1]
+                        title = conversation["title"]
                     else:
-                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
-                        return
+                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                else:
+                    return success, conversations, message
         else:
-            if not self.backend.conversation_id:
-                self._print_markdown("* Current conversation is empty, you must send information first")
-                return
-        conversation_data = await self.backend.get_conversation(conversation_id)
-        if conversation_data:
-            messages = self.backend.conversation_data_to_messages(conversation_data)
-            if title:
-                self._print_markdown(f"### {title}")
-            self._print_markdown(self._conversation_from_messages(messages))
+            if self.backend.conversation_id:
+                conversation_id = self.backend.conversation_id
+            else:
+                return False, None, "Current conversation is empty, you must send information first"
+        if conversation:
+            conversation_id = conversation["id"]
+        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        if success:
+            if conversation_data:
+                messages = self.backend.conversation_data_to_messages(conversation_data)
+                if title:
+                    self._print_markdown(f"### {title}")
+                self._print_markdown(self._conversation_from_messages(messages))
+            else:
+                return False, conversation_data, "Could not load chat content"
         else:
-            self._print_markdown("* Could not load chat content")
+            return success, conversation_data, message
 
     async def do_switch(self, arg):
         """
@@ -491,6 +528,7 @@ class GPTShell():
             By conversation ID: {leader}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
             By history ID: {leader}switch 2
         """
+        conversation = None
         conversation_id = None
         title = None
         if arg:
@@ -498,39 +536,42 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = await self._fetch_history()
-                history_list = [h for h in history.values()]
-                id = None
-                try:
-                    id = int(arg)
-                except Exception:
-                    self._print_markdown(f"* Invalid chat history item {id}, must be in integer")
-                    return
-                if id:
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [c for c in conversations.values()]
+                    id = None
+                    try:
+                        id = int(arg)
+                    except Exception:
+                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
-                        conversation_id = history_list[id - 1]["id"]
-                        title = history_list[id - 1]["title"]
+                        conversation = history_list[id - 1]
+                        title = conversation["title"]
                     else:
-                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
-                        return
+                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                else:
+                    return success, conversations, message
         else:
-            self._print_markdown("* Argument required, ID or history ID")
-            return
-        if conversation_id and conversation_id == self.backend.conversation_id:
-            self._print_markdown("* You are already in chat: %s" % title)
-            return
-        conversation_data = await self.backend.get_conversation(conversation_id)
-        if conversation_data:
-            messages = self.backend.conversation_data_to_messages(conversation_data)
-            message = messages.pop()
-            self.backend.conversation_id = conversation_id
-            self.backend.parent_message_id = message['id']
-            self._update_message_map()
-            self._write_log_context()
-            if title:
-                self._print_markdown(f"### Switched to: {title}")
+            return False, None, "Argument required, ID or history ID"
+        if conversation:
+            conversation_id = conversation["id"]
+        if conversation_id == self.backend.conversation_id:
+            return True, conversation, f"You are already in chat: {title}"
+        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        if success:
+            if conversation_data:
+                messages = self.backend.conversation_data_to_messages(conversation_data)
+                message = messages.pop()
+                self.backend.conversation_id = conversation_id
+                self.backend.parent_message_id = message['id']
+                self._update_message_map()
+                self._write_log_context()
+                if title:
+                    self._print_markdown(f"### Switched to: {title}")
+            else:
+                return False, conversation_data, "Could not switch to chat"
         else:
-            self._print_markdown("* Could not switch to chat")
+            return success, conversation_data, message
 
     async def do_ask(self, line):
         """

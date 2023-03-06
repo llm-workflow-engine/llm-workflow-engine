@@ -8,6 +8,7 @@ import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 from chatgpt_wrapper.openai.conversation import ConversationManagement
+from chatgpt_wrapper.openai.message import MessageManagement
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -19,6 +20,7 @@ class OpenAIAPI:
         self._configure_access_info()
         self.model = config.get('chat.model')
         self.conversation = ConversationManagement(self.config)
+        self.message = MessageManagement(self.config)
         self.current_user = None
         # TODO: These two attributes need to be integrated into the backend
         # for shell compat.
@@ -58,37 +60,18 @@ class OpenAIAPI:
         self.current_user = user
         self.model = constants.API_RENDER_MODELS[self.current_user.default_model]
 
-    async def delete_conversation(self, uuid=None):
-        raise NotImplementedError()
-        if self.session is None:
-            await self.refresh_session()
-        if not uuid and not self.conversation_id:
-            return
-        id = uuid if uuid else self.conversation_id
-        url = f"https://chat.openai.com/backend-api/conversation/{id}"
-        data = {
-            "is_visible": False,
-        }
-        ok, json, response = await self._api_patch_request(url, data)
-        if ok:
-            return json
-        else:
-            self.log.error("Failed to delete conversation")
+    def conversation_data_to_messages(self, conversation_data):
+        return conversation_data['messages']
 
-    async def set_title(self, title, conversation_id=None):
-        raise NotImplementedError()
-        if self.session is None:
-            await self.refresh_session()
-        id = conversation_id if conversation_id else self.conversation_id
-        url = f"https://chat.openai.com/backend-api/conversation/{id}"
-        data = {
-            "title": title,
-        }
-        ok, json, response = await self._api_patch_request(url, data)
-        if ok:
-            return json
-        else:
-            self.log.error("Failed to set title")
+    async def delete_conversation(self, conversation_id=None):
+        conversation_id = conversation_id if conversation_id else self.conversation_id
+        success, conversation, message = self.conversation.delete_conversation(conversation_id)
+        return success, conversation, message
+
+    async def set_title(self, title, conversation=None):
+        conversation = conversation if conversation else self.conversation.get_conversation(self.conversation_id)
+        success, conversation, message = self.conversation.update_conversation_title(conversation, title)
+        return success, conversation, message
 
     async def get_history(self, limit=20, offset=0):
         success, conversations, message = self.conversation.get_conversations(self.current_user, limit=limit, offset=offset)
@@ -98,18 +81,21 @@ class OpenAIAPI:
         else:
             return success, conversations, message
 
-    async def get_conversation(self, uuid=None):
-        raise NotImplementedError()
-        if self.session is None:
-            await self.refresh_session()
-        uuid = uuid if uuid else self.conversation_id
-        if uuid:
-            url = f"https://chat.openai.com/backend-api/conversation/{uuid}"
-            ok, json, response = await self._api_get_request(url)
-            if ok:
-                return json
+    async def get_conversation(self, id=None):
+        id = id if id else self.conversation_id
+        success, conversation, message = self.conversation.get_conversation(id)
+        if success:
+            success, messages, message = self.message.get_messages(id)
+            if success:
+                conversation_data = {
+                    "conversation": vars(conversation),
+                    "messages": [vars(m) for m in messages],
+                }
+                return success, conversation_data, message
             else:
-                self.log.error(f"Failed to get conversation {uuid}")
+                return success, conversation, message
+        else:
+            return success, conversation, message
 
     async def ask_stream(self, prompt: str):
         raise NotImplementedError()
@@ -162,18 +148,7 @@ class OpenAIAPI:
         return response
         raise NotImplementedError()
 
-    def new_conversation(self):
+    async def new_conversation(self):
         self.parent_message_id = None  # TODO: this needs to be fixed
         self.conversation_id = None
         self.conversation_title_set = None
-
-
-def collect_args():
-    args = " ".join(sys.argv[1:])
-    return args
-
-if __name__ == "__main__":
-    collected_args = collect_args()
-    api = OpenAIAPI()
-    response = api.chat(collected_args)
-    api.log.info(response.strip())

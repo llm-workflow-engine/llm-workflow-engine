@@ -15,6 +15,9 @@ from playwright._impl._api_structures import ProxySettings
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 is_windows = platform.system() == "Windows"
 
@@ -91,6 +94,11 @@ class AsyncChatGPT:
 
     async def _start_browser(self):
         await self.page.goto("https://chat.openai.com/")
+
+    def _handle_error(self, obj, response, message):
+        full_message = f"{message}: {response.status} {response.status_text}"
+        self.log.error(full_message)
+        return False, obj, full_message
 
     async def cleanup(self):
         self.log.info("Cleaning up")
@@ -213,8 +221,13 @@ class AsyncChatGPT:
             if current_item is None:
                 return messages
             message = current_item['message']
-            if message is not None and 'author' in message and message['author']['role'] != 'system':
-                messages.append(current_item['message'])
+            if message is not None and 'content' in message and 'author' in message and message['author']['role'] != 'system':
+                messages.append({
+                    'id': message['id'],
+                    'role': message['author']['role'],
+                    'message': "".join(message['content']['parts']),
+                    'created_time': datetime.datetime.fromtimestamp(int(message['create_time'])),
+                })
             parent_id = current_item['id']
 
     async def delete_conversation(self, uuid=None):
@@ -229,9 +242,9 @@ class AsyncChatGPT:
         }
         ok, json, response = await self._api_patch_request(url, data)
         if ok:
-            return json
+            return ok, json, response
         else:
-            self.log.error("Failed to delete conversation")
+            return self._handle_error(json, response, "Failed to delete conversation")
 
     async def set_title(self, title, conversation_id=None):
         if self.session is None:
@@ -243,9 +256,9 @@ class AsyncChatGPT:
         }
         ok, json, response = await self._api_patch_request(url, data)
         if ok:
-            return json
+            return ok, json, "Title set"
         else:
-            self.log.error("Failed to set title")
+            return self._handle_error(json, response, "Failed to set title")
 
     async def get_history(self, limit=20, offset=0):
         if self.session is None:
@@ -264,7 +277,7 @@ class AsyncChatGPT:
                 history[item["id"]] = item
             return ok, history, "Retrieved history"
         else:
-            return ok, json, "Failed to get history"
+            return self._handle_error(json, response, "Failed to get history")
 
     async def get_conversation(self, uuid=None):
         if self.session is None:
@@ -274,9 +287,9 @@ class AsyncChatGPT:
             url = f"https://chat.openai.com/backend-api/conversation/{uuid}"
             ok, json, response = await self._api_get_request(url)
             if ok:
-                return json
+                return ok, json, response
             else:
-                self.log.error(f"Failed to get conversation {uuid}")
+                return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
     async def ask_stream(self, prompt: str):
         if self.session is None:

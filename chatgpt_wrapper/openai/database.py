@@ -12,6 +12,8 @@ from chatgpt_wrapper.openai.orm import Base, Orm
 from chatgpt_wrapper.logger import Logger
 from chatgpt_wrapper.config import Config
 import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 DEFAULT_NUM_USERS = 5
 DEFAULT_NUM_CONVERSATIONS = 5
