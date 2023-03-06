@@ -47,16 +47,6 @@ class ApiShell(GPTShell):
         self.session = self.user_management.orm.session
         await self.check_login()
 
-    # TODO: Implement this
-    def _conversation_from_messages(self, messages):
-        message_parts = []
-        for message in messages:
-            if 'content' in message:
-                message_parts.append("**%s**:" % message['author']['role'].capitalize())
-                message_parts.extend(message['content']['parts'])
-        content = "\n\n".join(message_parts)
-        return content
-
     def get_logged_in_user(self) -> User:
         if self.logged_in_user_id:
             return self.get_user(self.logged_in_user_id)

@@ -13,15 +13,6 @@ class BrowserShell(GPTShell):
     async def configure_backend(self):
         self.backend = await AsyncChatGPT(self.config).create(timeout=90)
 
-    def _conversation_from_messages(self, messages):
-        message_parts = []
-        for message in messages:
-            if 'content' in message:
-                message_parts.append("**%s**:" % message['author']['role'].capitalize())
-                message_parts.extend(message['content']['parts'])
-        content = "\n\n".join(message_parts)
-        return content
-
     async def do_session(self, _):
         """
         Refresh session information
