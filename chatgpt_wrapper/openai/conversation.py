@@ -13,15 +13,17 @@ class ConversationManagement:
         self.log = Logger(self.__class__.__name__, self.config)
         self.orm = Orm(self.config)
 
-    def get_conversations(self, user, limit=None, offset=None, order_desc=True):
+    def get_conversations(self, user_id, limit=None, offset=None, order_desc=True):
         try:
+            user = self.orm.get_user(user_id)
             conversations = self.orm.get_conversations(user, limit, offset, order_desc)
             return True, conversations, "Conversations retrieved successfully."
         except SQLAlchemyError as e:
             return False, None, f"Failed to retrieve conversations: {str(e)}"
 
-    def create_conversation(self, user, title, model="default", hidden=False):
+    def create_conversation(self, user_id, title=None, model="default", hidden=False):
         try:
+            user = self.orm.get_user(user_id)
             conversation = self.orm.add_conversation(user, title, model, hidden)
             return True, conversation, "Conversation created successfully."
         except SQLAlchemyError as e:
