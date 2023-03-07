@@ -1,31 +1,21 @@
-#!/usr/bin/env python
-
 import os
-import sys
 import openai
 
+from chatgpt_wrapper.backend import Backend
 import chatgpt_wrapper.constants as constants
-from chatgpt_wrapper.config import Config
-from chatgpt_wrapper.logger import Logger
 from chatgpt_wrapper.openai.conversation import ConversationManagement
 from chatgpt_wrapper.openai.message import MessageManagement
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
 
-class OpenAIAPI:
+class OpenAIAPI(Backend):
     def __init__(self, config=None):
-        self.config = config or Config()
-        self.log = Logger(self.__class__.__name__, self.config)
+        super().__init__(config)
         self._configure_access_info()
-        self.model = config.get('chat.model')
         self.conversation = ConversationManagement(self.config)
         self.message = MessageManagement(self.config)
         self.current_user = None
-        # TODO: These two attributes need to be integrated into the backend
-        # for shell compat.
-        self.parent_message_id = None
-        self.conversation_id = None
 
     def _configure_access_info(self):
         self.openai = openai
@@ -39,7 +29,12 @@ class OpenAIAPI:
         if not self.openai.api_key:
             raise ValueError(f"{profile_prefix}_OPENAI_API_KEY or OPENAI_API_KEY environment variable must be set")
 
-    async def _gen_title(self):
+    def _handle_response(self, success, obj, message):
+        if not success:
+            self.log.error(message)
+        return success, obj, message
+
+    async def _gen_title(self, prompt):
         raise NotImplementedError()
         if not self.conversation_id or self.conversation_id and self.conversation_title_set:
             return
@@ -56,6 +51,38 @@ class OpenAIAPI:
         else:
             self.log.warning("Failed to auto-generate title for new conversation")
 
+    def _build_openai_message_list(self, prompt, conversation_id=None):
+        # TODO: Include sytem prompt and older messages, token counting, etc.
+        messages = [
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ]
+        return messages
+
+    def _build_openai_chat_request(self, messages, temperature=0, stream=False):
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            stream=stream,
+        )
+        return response
+
+    async def _call_openai_streaming(self, messages, temperature=0):
+        response = self._build_openai_chat_request(messages, temperature, stream=True)
+        for chunk in response:
+            if not self.streaming:
+                self.log.info("Request to interrupt streaming")
+                return
+            yield chunk
+
+    async def _call_openai_non_streaming(self, messages, temperature=0):
+        completion = self._build_openai_chat_request(messages, temperature)
+        response = completion.choices[0].message.content
+        return True, response, "Retrieved stuff"
+
     def set_current_user(self, user=None):
         self.current_user = user
         self.model = constants.API_RENDER_MODELS[self.current_user.default_model]
@@ -66,20 +93,19 @@ class OpenAIAPI:
     async def delete_conversation(self, conversation_id=None):
         conversation_id = conversation_id if conversation_id else self.conversation_id
         success, conversation, message = self.conversation.delete_conversation(conversation_id)
-        return success, conversation, message
+        return self._handle_response(success, conversation, message)
 
     async def set_title(self, title, conversation=None):
         conversation = conversation if conversation else self.conversation.get_conversation(self.conversation_id)
         success, conversation, message = self.conversation.update_conversation_title(conversation, title)
-        return success, conversation, message
+        return self._handle_response(success, conversation, message)
 
     async def get_history(self, limit=20, offset=0):
         success, conversations, message = self.conversation.get_conversations(self.current_user, limit=limit, offset=offset)
         if success:
             history = {m.id: vars(m) for m in conversations}
             return success, history, message
-        else:
-            return success, conversations, message
+        return self._handle_response(success, conversations, message)
 
     async def get_conversation(self, id=None):
         id = id if id else self.conversation_id
@@ -92,42 +118,42 @@ class OpenAIAPI:
                     "messages": [vars(m) for m in messages],
                 }
                 return success, conversation_data, message
-            else:
-                return success, conversation, message
-        else:
-            return success, conversation, message
+        return self._handle_response(success, conversation, message)
 
     async def ask_stream(self, prompt: str):
-        raise NotImplementedError()
-        new_message_id = str(uuid.uuid4())
-
-        request = {
-            "messages": [
-                {
-                    "id": new_message_id,
-                    "role": "user",
-                    "content": {"content_type": "text", "parts": [prompt]},
-                }
-            ],
-            "model": constants.API_RENDER_MODELS[self.model],
-            "conversation_id": self.conversation_id,
-            "parent_message_id": self.parent_message_id,
-            "action": "next",
-        }
+        # TODO: For prompt:
+        # If not self.conversation_id
+        #   - Insert conversation into database
+        #   - Update self.conversation_id
+        # - Insert message into database
+        # - Update self.parent_message_id
         self.streaming = True
+        # Streaming loop.
+        messages = self._build_openai_message_list(prompt)
+        async for response in self._call_openai_streaming(messages):
+            if 'choices' in response:
+                for choice in response['choices']:
+                    delta = choice['delta']
+                    if 'role' in delta and delta['role'] == 'assistant':
+                        self.log.debug(f"Started streaming response at {response['created']}")
+                    elif len(delta) == 0:
+                        self.log.debug(f"Stopped streaming response at {response['created']}, cause: {response['choices'][0]['finish_reason']}")
+                    elif 'content' in delta:
+                        yield delta['content']
+        # TODO: For response:
+        # If success
+        # - Insert message into database
+        # - Update self.parent_message_id
         if not self.streaming:
             yield (
                 "\nGeneration stopped\n"
             )
+        # Streaming loop.
         self.streaming = False
-        await self._gen_title()
+        # TODO: Implement.
+        # await self._gen_title(prompt)
 
-    def terminate_stream(self, _signal, _frame):
-        self.log.info("Received signal to terminate stream")
-        if self.streaming:
-            self.streaming = False
-
-    async def ask(self, message: str) -> str:
+    async def ask(self, prompt: str) -> str:
         """
         Send a message to chatGPT and return the response.
 
@@ -137,18 +163,6 @@ class OpenAIAPI:
         Returns:
             str: The response received from OpenAI.
         """
-        messages = [
-            {
-                "role": "user",
-                "content": message,
-            },
-        ]
-        completion = self.openai.ChatCompletion.create(model=self.model, messages=messages)
-        response = completion.choices[0].message.content
-        return response
-        raise NotImplementedError()
-
-    async def new_conversation(self):
-        self.parent_message_id = None  # TODO: this needs to be fixed
-        self.conversation_id = None
-        self.conversation_title_set = None
+        messages = self._build_openai_message_list(prompt)
+        success, response, message = await self._call_openai_non_streaming(messages)
+        return self._handle_response(success, response, message)

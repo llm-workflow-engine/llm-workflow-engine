@@ -600,9 +600,12 @@ class GPTShell():
                 response += chunk
             print("\n")
         else:
-            response = await self.backend.ask(line)
-            print("")
-            self._print_markdown(response)
+            success, response, message = await self.backend.ask(line)
+            if success:
+                print("")
+                self._print_markdown(response)
+            else:
+                return success, response, message
 
         self._write_log(line, response)
         self._update_message_map()

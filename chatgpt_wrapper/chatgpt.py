@@ -1,6 +1,4 @@
-import platform
 import asyncio
-import signal
 import base64
 import json
 import time
@@ -12,6 +10,7 @@ from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
+from chatgpt_wrapper.backend import Backend
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
@@ -19,9 +18,7 @@ import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
 
-is_windows = platform.system() == "Windows"
-
-class AsyncChatGPT:
+class AsyncChatGPT(Backend):
     """
     A ChatGPT interface that uses Playwright to run a browser,
     and interacts with that browser to communicate with ChatGPT in
@@ -35,18 +32,13 @@ class AsyncChatGPT:
 
 
     def __init__(self, config=None):
-        self.config = config or Config()
-        self.log = Logger(self.__class__.__name__, self.config)
+        super().__init__(config)
         self.play = None
         self.user_data_dir = None
         self.page = None
         self.browser = None
-        self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
-        self.model = self.config.get('chat.model')
         self.session = None
-        self.streaming = None
+        self.new_conversation()
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
         self.streaming = False
@@ -83,10 +75,6 @@ class AsyncChatGPT:
         self.timeout = timeout
         self.log.info("ChatGPT initialized")
         return self
-
-    def _setup_signal_handlers(self):
-        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
-        signal.signal(sig, self.terminate_stream)
 
     def _shutdown(self):
         loop = asyncio.get_event_loop()
@@ -448,11 +436,6 @@ class AsyncChatGPT:
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         await self.page.evaluate(code)
 
-    def terminate_stream(self, _signal, _frame):
-        self.log.info("Received signal to terminate stream")
-        if self.streaming:
-            self.streaming = False
-
     async def ask(self, message: str) -> str:
         """
         Send a message to chatGPT and return the response.
@@ -466,14 +449,13 @@ class AsyncChatGPT:
         async with self.lock:
             response = list([i async for i in self.ask_stream(message)])
             if len(response) == 0:
-                return "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
+                return False, response, "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
             else:
-                return ''.join(response)
+                return True, ''.join(response), "Response received"
 
     def new_conversation(self):
+        super().new_conversation()
         self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
 
 class ChatGPT:
 

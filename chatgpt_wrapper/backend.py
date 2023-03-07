@@ -1,0 +1,65 @@
+from abc import ABC, abstractmethod
+
+import platform
+import signal
+
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
+
+is_windows = platform.system() == "Windows"
+
+class Backend(ABC):
+    """
+    Base class/interface for all backends.
+    """
+
+    def __init__(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.parent_message_id = None
+        self.conversation_id = None
+        self.conversation_title_set = None
+        self.model = self.config.get('chat.model')
+        self.streaming = None
+
+    def _setup_signal_handlers(self):
+        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
+        signal.signal(sig, self.terminate_stream)
+
+    def new_conversation(self):
+        self.parent_message_id = None
+        self.conversation_id = None
+        self.conversation_title_set = None
+
+    def terminate_stream(self, _signal, _frame):
+        self.log.info("Received signal to terminate stream")
+        if self.streaming:
+            self.streaming = False
+
+    @abstractmethod
+    def conversation_data_to_messages(self, conversation_data):
+        pass
+
+    @abstractmethod
+    async def delete_conversation(self, uuid=None):
+        pass
+
+    @abstractmethod
+    async def set_title(self, title, conversation_id=None):
+        pass
+
+    @abstractmethod
+    async def get_history(self, limit=20, offset=0):
+        pass
+
+    @abstractmethod
+    async def get_conversation(self, uuid=None):
+        pass
+
+    @abstractmethod
+    async def ask_stream(self, prompt: str):
+        pass
+
+    @abstractmethod
+    async def ask(self, message: str) -> str:
+        pass
