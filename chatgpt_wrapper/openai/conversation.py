@@ -16,10 +16,7 @@ class ConversationManagement:
     def get_conversations(self, user, limit=None, offset=None, order_desc=True):
         try:
             conversations = self.orm.get_conversations(user, limit, offset, order_desc)
-            if conversations:
-                return True, conversations, "Conversations retrieved successfully."
-            else:
-                return False, None, "No conversations found."
+            return True, conversations, "Conversations retrieved successfully."
         except SQLAlchemyError as e:
             return False, None, f"Failed to retrieve conversations: {str(e)}"
 
