@@ -75,6 +75,9 @@ class OpenAIAPI(Backend):
         async for chunk in response:
             if not self.streaming:
                 self.log.info("Request to interrupt streaming")
+                yield (
+                    "\nGeneration stopped\n"
+                )
                 return
             yield chunk
 
@@ -101,7 +104,7 @@ class OpenAIAPI(Backend):
         return self._handle_response(success, conversation, message)
 
     async def get_history(self, limit=20, offset=0):
-        success, conversations, message = self.conversation.get_conversations(self.current_user, limit=limit, offset=offset)
+        success, conversations, message = self.conversation.get_conversations(self.current_user.id, limit=limit, offset=offset)
         if success:
             history = {m.id: vars(m) for m in conversations}
             return success, history, message
@@ -121,6 +124,17 @@ class OpenAIAPI(Backend):
         return self._handle_response(success, conversation, message)
 
     async def ask_stream(self, prompt: str):
+        if not self.conversation_id:
+            success, conversation, message = self.conversation.create_conversation(self.current_user.id, model=self.model)
+            if success:
+                self.conversation_id = conversation.id
+            else:
+                raise Exception(message)
+        success, message, user_message = self.message.add_message(self.conversation_id, 'user', prompt)
+        if success:
+            self.parent_message_id = message.id
+        else:
+            raise Exception(message)
         # TODO: For prompt:
         # If not self.conversation_id
         #   - Insert conversation into database
@@ -130,6 +144,7 @@ class OpenAIAPI(Backend):
         self.streaming = True
         # Streaming loop.
         messages = self._build_openai_message_list(prompt)
+        response_message = ""
         async for response in self._call_openai_streaming(messages):
             if 'choices' in response:
                 for choice in response['choices']:
@@ -139,7 +154,14 @@ class OpenAIAPI(Backend):
                     elif len(delta) == 0:
                         self.log.debug(f"Stopped streaming response at {response['created']}, cause: {response['choices'][0]['finish_reason']}")
                     elif 'content' in delta:
+                        response_message += delta['content']
                         yield delta['content']
+        if response_message and self.current_user:
+            success, message, user_message = self.message.add_message(self.conversation_id, 'assistant', response_message)
+            if success:
+                self.parent_message_id = message.id
+            else:
+                raise Exception(message)
         # TODO: For response:
         # If success
         # - Insert message into database
