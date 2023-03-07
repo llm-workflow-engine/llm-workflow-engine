@@ -362,7 +362,7 @@ class GPTShell():
         success, history, message = await self._fetch_history(limit=limit, offset=offset)
         if success:
             history_list = [h for h in history.values()]
-            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
+            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'] or constants.NO_TITLE_TEXT, h['id']) for h in history_list]))
         else:
             return success, history, message
 
@@ -438,7 +438,7 @@ class GPTShell():
                     else:
                         return False, conversations, "Cannot set title on history item %d, does not exist" % id
                 if conversation:
-                    new_title = input("Enter new title for '%s': " % conversation["title"])
+                    new_title = input("Enter new title for '%s': " % conversation["title"] or constants.NO_TITLE_TEXT)
                 else:
                     new_title = arg
                 # Browser backend doesn't return a full conversation object,
@@ -452,7 +452,7 @@ class GPTShell():
                 success, conversations, message = await self._fetch_history()
                 if success:
                     if self.backend.conversation_id in conversations:
-                        self._print_markdown("* Title: %s" % conversations[self.backend.conversation_id]['title'])
+                        self._print_markdown("* Title: %s" % conversations[self.backend.conversation_id]['title'] or constants.NO_TITLE_TEXT)
                     else:
                         return False, conversations, "Cannot load conversation title, not in history"
                 else:
@@ -491,7 +491,7 @@ class GPTShell():
                         return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
-                        title = conversation["title"]
+                        title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
                         return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
                 else:
@@ -546,7 +546,7 @@ class GPTShell():
                         return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
-                        title = conversation["title"]
+                        title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
                         return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
                 else:
