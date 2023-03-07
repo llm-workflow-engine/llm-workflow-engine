@@ -60,3 +60,4 @@ DEFAULT_HISTORY_LIMIT = 20
 
 # Interface-specific constants.
 NO_TITLE_TEXT = "No title"
+SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."

@@ -16,6 +16,7 @@ class OpenAIAPI(Backend):
         self.conversation = ConversationManagement(self.config)
         self.message = MessageManagement(self.config)
         self.current_user = None
+        self.set_system_message()
 
     def _configure_access_info(self):
         self.openai = openai
@@ -51,15 +52,61 @@ class OpenAIAPI(Backend):
         else:
             self.log.warning("Failed to auto-generate title for new conversation")
 
-    def _build_openai_message_list(self, prompt, conversation_id=None):
-        # TODO: Include sytem prompt and older messages, token counting, etc.
-        messages = [
-            {
-                "role": "user",
-                "content": prompt,
-            },
-        ]
+    def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
+        self.system_message = message
+
+    def build_openai_message(self, role, content):
+        message = {
+            "role": role,
+            "content": content,
+        }
+        return message
+
+    def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None):
+        old_messages = []
+        new_messages = []
+        if conversation_id:
+            success, old_messages, message = self.message.get_messages(conversation_id, target_id=target_id)
+            if not success:
+                raise Exception(message)
+        if len(old_messages) == 0:
+            new_messages.append(self.build_openai_message('system', self.system_message))
+        new_messages.append(self.build_openai_message('user', prompt))
+        return old_messages, new_messages
+
+    def prepare_prompt_messsage_context(self, old_messages=[], new_messages=[]):
+        self.create_new_converation_if_needed()
+        messages = [self.build_openai_message(m.role, m.message) for m in old_messages]
+        messages.extend(new_messages)
         return messages
+
+    def create_new_converation_if_needed(self):
+        if not self.conversation_id:
+            success, conversation, message = self.conversation.create_conversation(self.current_user.id, model=self.model)
+            if success:
+                self.conversation_id = conversation.id
+                return conversation
+            else:
+                raise Exception(message)
+
+    def add_new_messages_to_conversation(self, conversation_id, new_messages, response_message):
+        for m in new_messages:
+            success, message, user_message = self.message.add_message(conversation_id, m['role'], m['content'])
+            if not success:
+                raise Exception(user_message)
+        success, last_message, user_message = self.message.add_message(conversation_id, 'assistant', response_message)
+        if success:
+            return last_message
+        else:
+            raise Exception(user_message)
+
+    def add_message(self, role, message, conversation_id=None):
+        conversation_id = conversation_id or self.conversation_id
+        success, message, user_message = self.message.add_message(conversation_id, role, message)
+        if success:
+            return message
+        else:
+            raise Exception(user_message)
 
     async def _build_openai_chat_request(self, messages, temperature=0, stream=False):
         response = await openai.ChatCompletion.acreate(
@@ -118,21 +165,14 @@ class OpenAIAPI(Backend):
         return self._handle_response(success, conversation, message)
 
     async def ask_stream(self, prompt: str):
-        if not self.conversation_id:
-            success, conversation, message = self.conversation.create_conversation(self.current_user.id, model=self.model)
-            if success:
-                self.conversation_id = conversation.id
-            else:
-                raise Exception(message)
-        success, message, user_message = self.message.add_message(self.conversation_id, 'user', prompt)
-        if success:
-            self.parent_message_id = message.id
-        else:
-            raise Exception(message)
+        old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
+        messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
+        debug.console(old_messages)
+        debug.console(new_messages)
+        debug.console(messages)
+        response_message = ""
         # Streaming loop.
         self.streaming = True
-        messages = self._build_openai_message_list(prompt)
-        response_message = ""
         async for response in self._call_openai_streaming(messages):
             if not self.streaming:
                 self.log.info("Request to interrupt streaming")
@@ -147,12 +187,9 @@ class OpenAIAPI(Backend):
                     elif 'content' in delta:
                         response_message += delta['content']
                         yield delta['content']
-        if response_message and self.current_user:
-            success, message, user_message = self.message.add_message(self.conversation_id, 'assistant', response_message)
-            if success:
-                self.parent_message_id = message.id
-            else:
-                raise Exception(message)
+        if response_message:
+            last_message = self.add_new_messages_to_conversation(self.conversation_id, new_messages, response_message)
+            self.parent_message_id = last_message.id
         if not self.streaming:
             yield (
                 "\nGeneration stopped\n"
@@ -172,6 +209,10 @@ class OpenAIAPI(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        messages = self._build_openai_message_list(prompt)
-        success, response, message = await self._call_openai_non_streaming(messages)
-        return self._handle_response(success, response, message)
+        old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
+        messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
+        success, response_message, message = await self._call_openai_non_streaming(messages)
+        if success:
+            last_message = self.add_new_messages_to_conversation(self.conversation_id, new_messages, response_message)
+            self.parent_message_id = last_message.id
+        return self._handle_response(success, response_message, message)
