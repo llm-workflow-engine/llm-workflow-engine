@@ -17,6 +17,14 @@ browser:
 chat:
   # The model to use when communicating with the server.
   model: default
+  # When using the OpenAI API backend, the defaults for these values can be
+  # customized. See
+  # https://platform.openai.com/docs/api-reference/chat for more information.
+  model_customizations:
+      temperature: 1
+      top_p: 1
+      presence_penalty: 0
+      frequency_penalty: 0
   # If true, responses will be streamed in real time (no markdown formatting).
   streaming: true
   # Chat logs.

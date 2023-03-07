@@ -17,10 +17,10 @@ class OpenAIAPI(Backend):
         self.message = MessageManagement(self.config)
         self.current_user = None
         self.set_system_message()
-        self.set_model_temperature()
-        self.set_model_top_p()
-        self.set_model_presence_penalty()
-        self.set_model_frequency_penalty()
+        self.set_model_temperature(self.config.get('chat.model_customizations.temperature', constants.OPENAPI_DEFAULT_TEMPERATURE))
+        self.set_model_top_p(self.config.get('chat.model_customizations.top_p', constants.OPENAPI_DEFAULT_TOP_P))
+        self.set_model_presence_penalty(self.config.get('chat.model_customizations.presence_penalty', constants.OPENAPI_DEFAULT_PRESENCE_PENALTY))
+        self.set_model_frequency_penalty(self.config.get('chat.model_customizations.frequency_penalty', constants.OPENAPI_DEFAULT_FREQUENCY_PENALTY))
 
     def _configure_access_info(self):
         self.openai = openai

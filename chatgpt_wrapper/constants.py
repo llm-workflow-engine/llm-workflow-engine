@@ -46,6 +46,12 @@ DEFAULT_CONFIG = {
     },
     'chat': {
         'model': 'default',
+        'model_customizations': {
+            'temperature': OPENAPI_DEFAULT_TEMPERATURE,
+            'top_p': OPENAPI_DEFAULT_TOP_P,
+            'presence_penalty': OPENAPI_DEFAULT_PRESENCE_PENALTY,
+            'frequency_penalty': OPENAPI_DEFAULT_FREQUENCY_PENALTY,
+        },
         'streaming': False,
         'log': {
             'enabled': False,
