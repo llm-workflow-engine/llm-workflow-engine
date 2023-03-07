@@ -42,7 +42,6 @@ class AsyncChatGPT(Backend):
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
         self.streaming = False
-        self._setup_signal_handlers()
         self.lock = asyncio.Lock()
         self.play = await async_playwright().start()
         browser = self.config.get('browser.provider')

@@ -20,7 +20,8 @@ class Backend(ABC):
         self.conversation_id = None
         self.conversation_title_set = None
         self.model = self.config.get('chat.model')
-        self.streaming = None
+        self.streaming = False
+        self._setup_signal_handlers()
 
     def _setup_signal_handlers(self):
         sig = is_windows and signal.SIGBREAK or signal.SIGUSR1

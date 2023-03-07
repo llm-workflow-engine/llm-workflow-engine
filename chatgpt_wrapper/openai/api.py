@@ -73,12 +73,6 @@ class OpenAIAPI(Backend):
     async def _call_openai_streaming(self, messages, temperature=0):
         response = await self._build_openai_chat_request(messages, temperature, stream=True)
         async for chunk in response:
-            if not self.streaming:
-                self.log.info("Request to interrupt streaming")
-                yield (
-                    "\nGeneration stopped\n"
-                )
-                return
             yield chunk
 
     async def _call_openai_non_streaming(self, messages, temperature=0):
@@ -135,17 +129,14 @@ class OpenAIAPI(Backend):
             self.parent_message_id = message.id
         else:
             raise Exception(message)
-        # TODO: For prompt:
-        # If not self.conversation_id
-        #   - Insert conversation into database
-        #   - Update self.conversation_id
-        # - Insert message into database
-        # - Update self.parent_message_id
-        self.streaming = True
         # Streaming loop.
+        self.streaming = True
         messages = self._build_openai_message_list(prompt)
         response_message = ""
         async for response in self._call_openai_streaming(messages):
+            if not self.streaming:
+                self.log.info("Request to interrupt streaming")
+                break
             if 'choices' in response:
                 for choice in response['choices']:
                     delta = choice['delta']
@@ -162,15 +153,11 @@ class OpenAIAPI(Backend):
                 self.parent_message_id = message.id
             else:
                 raise Exception(message)
-        # TODO: For response:
-        # If success
-        # - Insert message into database
-        # - Update self.parent_message_id
         if not self.streaming:
             yield (
                 "\nGeneration stopped\n"
             )
-        # Streaming loop.
+        # End streaming loop.
         self.streaming = False
         # TODO: Implement.
         # await self._gen_title(prompt)
