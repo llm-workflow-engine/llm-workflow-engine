@@ -134,14 +134,17 @@ class OpenAIAPI(Backend):
             frequency_penalty=self.model_frequency_penalty,
             stream=stream,
         )
+        self.log.debug(f"ChatCompletion.create with message count: {len(messages)}, model: {self.model}, temperature: {self.model_temperature}, top_p: {self.model_top_p}, presence_penalty: {self.model_presence_penalty}, frequency_penalty: {self.model_frequency_penalty}, stream: {stream})")
         return response
 
     async def _call_openai_streaming(self, messages):
+        self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
         response = await self._build_openai_chat_request(messages, stream=True)
         async for chunk in response:
             yield chunk
 
     async def _call_openai_non_streaming(self, messages):
+        self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
         completion = await self._build_openai_chat_request(messages)
         response = completion.choices[0].message.content
         return True, response, "Retrieved stuff"
@@ -186,9 +189,6 @@ class OpenAIAPI(Backend):
     async def ask_stream(self, prompt: str):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
         messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
-        debug.console(old_messages)
-        debug.console(new_messages)
-        debug.console(messages)
         response_message = ""
         # Streaming loop.
         self.streaming = True
