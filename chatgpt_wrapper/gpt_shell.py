@@ -232,7 +232,7 @@ class GPTShell():
         self._print_markdown("* Setting title...")
         success, _, message = await self.backend.set_title(title, conversation['id'])
         if success:
-            return success, conversation, "Title set to: %s" % conversation["title"]
+            return success, conversation, f"Title set to: {conversation['title']}"
         else:
             return success, conversation, message
 
@@ -437,9 +437,14 @@ class GPTShell():
                         conversation = history_list[id - 1]
                     else:
                         return False, conversations, "Cannot set title on history item %d, does not exist" % id
-                if conversation:
                     new_title = input("Enter new title for '%s': " % conversation["title"] or constants.NO_TITLE_TEXT)
                 else:
+                    if self.backend.conversation_id in conversations:
+                        conversation = conversations[self.backend.conversation_id]
+                    else:
+                        success, conversation, message = await self.backend.get_conversation(self.backend.conversation_id)
+                        if not success:
+                            return success, conversations, message
                     new_title = arg
                 # Browser backend doesn't return a full conversation object,
                 # so adjust and re-use the current one.
