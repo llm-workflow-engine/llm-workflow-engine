@@ -115,10 +115,12 @@ class Orm:
         conversations = query.all()
         return conversations
 
-    def get_messages(self, conversation, limit=None, offset=None):
+    def get_messages(self, conversation, limit=None, offset=None, target_id=None):
         self.log.debug(f'Retrieving Messages for Conversation with id {conversation.id}')
         query = self.session.query(Message).filter(Message.conversation_id == conversation.id).order_by(Message.id)
         query = self._apply_limit_offset(query, limit, offset)
+        if target_id:
+            query = query.filter(Message.id <= target_id)
         messages = query.all()
         return messages
 

@@ -19,12 +19,12 @@ class MessageManagement:
             return (False, None, "Message not found")
         return (True, message, "Message retrieved successfully")
 
-    def get_messages(self, conversation_id, limit=None, offset=None):
+    def get_messages(self, conversation_id, limit=None, offset=None, target_id=None):
         conversation = self.orm.session.query(Conversation).get(conversation_id)
         if not conversation:
             return (False, None, "Conversation not found")
         try:
-            messages = self.orm.get_messages(conversation, limit=limit, offset=offset)
+            messages = self.orm.get_messages(conversation, limit=limit, offset=offset, target_id=None)
             return (True, messages, "Messages retrieved successfully")
         except Exception as e:
             self.log.error(f"Failed to retrieve messages: {e}")
