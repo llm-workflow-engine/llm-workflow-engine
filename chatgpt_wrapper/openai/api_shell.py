@@ -1,6 +1,5 @@
 import getpass
 import email_validator
-from typing import Tuple
 
 import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.openai.database import Database
@@ -58,18 +57,18 @@ class ApiShell(GPTShell):
     def _is_logged_in(self) -> bool:
         return self.logged_in_user_id is not None
 
-    def validate_email(self, email: str) -> Tuple[bool, str]:
+    def validate_email(self, email):
         try:
             valid = email_validator.validate_email(email)
             return True, valid.email
         except email_validator.EmailNotValidError as e:
             return False, f"Invalid email: {e}"
 
-    def validate_model(model: str) -> bool:
-        return model in constants.API_RENDER_MODELS.keys()
+    def validate_model(model):
+        return model in constants.OPENAPI_CHAT_RENDER_MODELS.keys()
 
-    def select_model(self, allow_empty: bool = False) -> Tuple[bool, str]:
-        models = list(constants.API_RENDER_MODELS.keys())
+    def select_model(self, allow_empty=False):
+        models = list(constants.OPENAPI_CHAT_RENDER_MODELS.keys())
         for i, model in enumerate(models):
             print(f"{i + 1}. {model}")
         selected_model = input("Choose a default model: ").strip() or None
@@ -80,7 +79,7 @@ class ApiShell(GPTShell):
         default_model = models[int(selected_model) - 1]
         return True, default_model
 
-    async def do_user_register(self, username: str = None) -> Tuple[bool, str]:
+    async def do_user_register(self, username=None):
         """
         Register a new user
 
@@ -167,7 +166,7 @@ Before you can start using the shell, you must create a new user.
         self.set_user_prompt(user)
         return success, user, message
 
-    async def do_user_login(self, identifier: str = None) -> Tuple[bool, str]:
+    async def do_user_login(self, identifier=None):
         """
         Login in as a user
 
@@ -189,7 +188,7 @@ Before you can start using the shell, you must create a new user.
             return self.login(user)
         return False, None, f"User {identifier} not found."
 
-    async def do_login(self, identifier: str = None) -> Tuple[bool, str]:
+    async def do_login(self, identifier=None):
         """
         Alias of '{leader}user_login'
 
@@ -205,7 +204,7 @@ Before you can start using the shell, you must create a new user.
         """
         return await self.do_user_login(identifier)
 
-    async def do_user_logout(self, _) -> Tuple[bool, str]:
+    async def do_user_logout(self, _):
         """
         Logout the current user.
 
@@ -219,7 +218,7 @@ Before you can start using the shell, you must create a new user.
         self.set_user_prompt()
         return True, None, "Logout successful."
 
-    async def do_logout(self, _) -> Tuple[bool, str]:
+    async def do_logout(self, _):
         """
         Alias of '{leader}user_logout'
 
@@ -231,7 +230,7 @@ Before you can start using the shell, you must create a new user.
         return await self.do_user_logout(None)
 
     def display_user(self, user):
-        output = f"""
+        output = """
 ## Username: %s
 
 * Email: %s
@@ -240,7 +239,7 @@ Before you can start using the shell, you must create a new user.
         """ % (user.username, user.email, "set" if user.password else "not set", user.default_model)
         self._print_markdown(output)
 
-    async def do_user(self, username: str = None) -> Tuple[bool, str]:
+    async def do_user(self, username=None):
         """
         Show user information
 
@@ -263,17 +262,20 @@ Before you can start using the shell, you must create a new user.
                 return self.display_user(user)
         return False, "User not found."
 
-    async def do_users(self, _) -> Tuple[bool, str]:
+    async def do_users(self, _):
         """
         Show information for all users
 
         Examples:
             {leader}users
         """
-        _success, users, _message = self.user_management.list()
-        user_list = ["* %s (%s)" % (user.username, user.default_model) for user in users]
-        user_list.insert(0, "# Users")
-        self._print_markdown("\n".join(user_list))
+        success, users, message = self.user_management.list()
+        if success:
+            user_list = ["* %s (%s)" % (user.username, user.default_model) for user in users]
+            user_list.insert(0, "# Users")
+            self._print_markdown("\n".join(user_list))
+        else:
+            return success, users, message
 
     def edit_user(self, user):
         self._print_markdown(f"## Editing user: {user.username}")
@@ -282,11 +284,11 @@ Before you can start using the shell, you must create a new user.
         if email:
             success, message = self.validate_email(email)
             if not success:
-                return False, message
+                return False, email, message
         password = getpass.getpass(prompt='New password (Press enter to skip): ') or None
         success, default_model = self.select_model(True)
         if not success:
-            return False, "Invalid default model."
+            return False, default_model, "Invalid default model."
 
         kwargs = {
             "username": username,
@@ -297,7 +299,7 @@ Before you can start using the shell, you must create a new user.
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return self.user_management.edit(user.id, **kwargs)
 
-    async def do_user_edit(self, username: str = None) -> Tuple[bool, str]:
+    async def do_user_edit(self, username=None):
         """
         Edit the current user's information
 
@@ -319,7 +321,7 @@ Before you can start using the shell, you must create a new user.
                 return self.edit_user(user)
         return False, "User not found."
 
-    async def do_user_delete(self, username: str = None) -> Tuple[bool, str]:
+    async def do_user_delete(self, username=None):
         """
         Delete a user
 
@@ -340,8 +342,97 @@ Before you can start using the shell, you must create a new user.
         user = self.user_management.find_user_by_username(username)
         if user:
             if user.id == self.logged_in_user_id:
-                return False, "Cannot delete currently logged in user."
+                return False, user, "Cannot delete currently logged in user."
             else:
                 return self.user_management.delete(user.id)
         else:
-            return False, "User does not exist."
+            return False, user, "User does not exist."
+
+    def adjust_model_setting_float(self, setting, value, min=None, max=None):
+        if not self._is_logged_in():
+            return False, None, "Not logged in."
+        if value:
+            value = self.validate_float(value, min, max)
+            if value is False:
+                return False, value, f"Invalid {setting}, must be float between {min} and {max}."
+            else:
+                method = getattr(self.backend, f"set_model_{setting}")
+                method(value)
+                return True, value, f"{setting} set to {value}"
+        else:
+            value = getattr(self.backend, f"model_{setting}")
+            self._print_markdown(f"* Current {setting}: {value}")
+
+    async def do_model_temperature(self, temperature=None):
+        """
+        Adjust the temperature of the current model
+
+        What sampling temperature to use.
+
+        Higher values like 0.8 will make the output more random, while lower values
+        like 0.2 will make it more focused and deterministic.
+
+        Recommend altering this or top_p but not both.
+
+        Arguments:
+            temperature: Float between 0 and 2
+
+        Examples:
+            {leader}model_temperature
+            {leader}model_temperature 1.5
+        """
+        return self.adjust_model_setting_float("temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
+
+    async def do_model_top_p(self, top_p=None):
+        """
+        Adjust the top_p of the current model
+
+        An alternative to sampling with temperature.
+
+        Nucleus sampling, where the model considers the results of the tokens with
+        top_p probability mass. So 0.1 means only the tokens comprising the top 10%
+        probability mass are considered.
+
+        Recommend altering this or temperature but not both.
+
+        Arguments:
+            top_p: Float between 0 and 1
+
+        Examples:
+            {leader}model_top_p
+            {leader}model_top_p .1
+        """
+        return self.adjust_model_setting_float("top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
+
+    async def do_model_presence_penalty(self, presence_penalty=None):
+        """
+        Adjust the presence penalty of the current model
+
+        The presence penalty penalizes new tokens based on whether they appear in the
+        text so far. Positive values increase the model's likelihood to talk about new
+        topics.
+
+        Arguments:
+            presence_penalty: Float between -2 and 2
+
+        Examples:
+            {leader}model_presence_penalty
+            {leader}model_presence_penalty 1.5
+        """
+        return self.adjust_model_setting_float("presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
+
+    async def do_model_frequency_penalty(self, frequency_penalty=None):
+        """
+        Adjust the frequency_penalty of the current model
+
+        The frequency penalty penalizes new tokens based on their frequency in the
+        text so far. Positive values can help prevent the model from repeating itself.
+
+        Arguments:
+            frequency_penalty: Float between -2 and 2
+
+        Examples:
+            {leader}model_frequency_penalty
+            {leader}model_frequency_penalty 1.5
+        """
+        return self.adjust_model_setting_float("frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)

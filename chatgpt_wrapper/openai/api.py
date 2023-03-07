@@ -17,6 +17,10 @@ class OpenAIAPI(Backend):
         self.message = MessageManagement(self.config)
         self.current_user = None
         self.set_system_message()
+        self.set_model_temperature()
+        self.set_model_top_p()
+        self.set_model_presence_penalty()
+        self.set_model_frequency_penalty()
 
     def _configure_access_info(self):
         self.openai = openai
@@ -42,7 +46,7 @@ class OpenAIAPI(Backend):
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": constants.API_RENDER_MODELS[self.model],
+            "model": constants.OPENAPI_CHAT_RENDER_MODELS[self.model],
         }
         ok, json, response = await self._api_post_request(url, data)
         if ok:
@@ -54,6 +58,18 @@ class OpenAIAPI(Backend):
 
     def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
         self.system_message = message
+
+    def set_model_temperature(self, temperature=constants.OPENAPI_DEFAULT_TEMPERATURE):
+        self.model_temperature = temperature
+
+    def set_model_top_p(self, top_p=constants.OPENAPI_DEFAULT_TOP_P):
+        self.model_top_p = top_p
+
+    def set_model_presence_penalty(self, presence_penalty=constants.OPENAPI_DEFAULT_PRESENCE_PENALTY):
+        self.model_presence_penalty = presence_penalty
+
+    def set_model_frequency_penalty(self, frequency_penalty=constants.OPENAPI_DEFAULT_FREQUENCY_PENALTY):
+        self.model_frequency_penalty = frequency_penalty
 
     def build_openai_message(self, role, content):
         message = {
@@ -108,28 +124,31 @@ class OpenAIAPI(Backend):
         else:
             raise Exception(user_message)
 
-    async def _build_openai_chat_request(self, messages, temperature=0, stream=False):
+    async def _build_openai_chat_request(self, messages, stream=False):
         response = await openai.ChatCompletion.acreate(
             model=self.model,
             messages=messages,
-            temperature=temperature,
+            temperature=self.model_temperature,
+            top_p=self.model_top_p,
+            presence_penalty=self.model_presence_penalty,
+            frequency_penalty=self.model_frequency_penalty,
             stream=stream,
         )
         return response
 
-    async def _call_openai_streaming(self, messages, temperature=0):
-        response = await self._build_openai_chat_request(messages, temperature, stream=True)
+    async def _call_openai_streaming(self, messages):
+        response = await self._build_openai_chat_request(messages, stream=True)
         async for chunk in response:
             yield chunk
 
-    async def _call_openai_non_streaming(self, messages, temperature=0):
-        completion = await self._build_openai_chat_request(messages, temperature)
+    async def _call_openai_non_streaming(self, messages):
+        completion = await self._build_openai_chat_request(messages)
         response = completion.choices[0].message.content
         return True, response, "Retrieved stuff"
 
     def set_current_user(self, user=None):
         self.current_user = user
-        self.model = constants.API_RENDER_MODELS[self.current_user.default_model]
+        self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.current_user.default_model]
 
     def conversation_data_to_messages(self, conversation_data):
         return conversation_data['messages']

@@ -92,6 +92,17 @@ class GPTShell():
         completer = NestedCompleter.from_nested_dict(commands_with_leader)
         return completer
 
+    def validate_float(self, value, min=None, max=None):
+        try:
+            value = float(value)
+        except ValueError:
+            return False
+        if min and value < min:
+            return False
+        if max and value > max:
+            return False
+        return value
+
     def get_history(self):
         return FileHistory(constants.COMMAND_HISTORY_FILE)
 
