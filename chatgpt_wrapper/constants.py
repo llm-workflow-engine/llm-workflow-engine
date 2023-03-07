@@ -29,7 +29,7 @@ DEFAULT_CONFIG = {
     },
     'chat': {
         'model': 'default',
-        'streaming': True,
+        'streaming': False,
         'log': {
             'enabled': False,
             'filepath': 'chatgpt.log',
