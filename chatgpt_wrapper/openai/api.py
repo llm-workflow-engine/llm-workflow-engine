@@ -61,8 +61,8 @@ class OpenAIAPI(Backend):
         ]
         return messages
 
-    def _build_openai_chat_request(self, messages, temperature=0, stream=False):
-        response = openai.ChatCompletion.create(
+    async def _build_openai_chat_request(self, messages, temperature=0, stream=False):
+        response = await openai.ChatCompletion.acreate(
             model=self.model,
             messages=messages,
             temperature=temperature,
@@ -71,15 +71,15 @@ class OpenAIAPI(Backend):
         return response
 
     async def _call_openai_streaming(self, messages, temperature=0):
-        response = self._build_openai_chat_request(messages, temperature, stream=True)
-        for chunk in response:
+        response = await self._build_openai_chat_request(messages, temperature, stream=True)
+        async for chunk in response:
             if not self.streaming:
                 self.log.info("Request to interrupt streaming")
                 return
             yield chunk
 
     async def _call_openai_non_streaming(self, messages, temperature=0):
-        completion = self._build_openai_chat_request(messages, temperature)
+        completion = await self._build_openai_chat_request(messages, temperature)
         response = completion.choices[0].message.content
         return True, response, "Retrieved stuff"
 
