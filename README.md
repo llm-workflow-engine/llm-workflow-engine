@@ -20,7 +20,7 @@
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
- - ChatGPT/AsyncChatGPT classes have changed how they receive configuration values, be sure to investiate the new function signatues for their __init__() and create() methods.
+ - ChatGPT/AsyncChatGPT classes have changed how they receive configuration values, be sure to investigate the new function signatues for their __init__() and create() methods.
 
 ### What is new?
 
