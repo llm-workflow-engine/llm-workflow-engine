@@ -232,6 +232,9 @@ class GPTShell():
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
+    def set_user_prompt(self):
+        pass
+
     async def configure_backend():
         raise NotImplementedError
 
@@ -872,6 +875,7 @@ class GPTShell():
         print("")
         self._print_markdown("### %s" % self.intro)
         while True:
+            self.set_user_prompt()
             try:
                 user_input = await self.prompt_session.prompt_async(self.prompt)
             except KeyboardInterrupt:

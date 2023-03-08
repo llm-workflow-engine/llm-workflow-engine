@@ -24,7 +24,7 @@ class ApiShell(GPTShell):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.logged_in_user_id = None
+        self.logged_in_user = None
 
     def not_logged_in_disallowed_commands(self):
         base_shell_commands = self._introspect_commands(GPTShell)
@@ -32,7 +32,7 @@ class ApiShell(GPTShell):
         return disallowed_commands
 
     def exec_prompt_pre(self, command, arg):
-        if not self.logged_in_user_id and command in self.not_logged_in_disallowed_commands():
+        if not self.logged_in_user and command in self.not_logged_in_disallowed_commands():
             return False, None, "Must be logged in to execute %s%s" % (constants.COMMAND_LEADER, command)
 
     def configure_commands(self):
@@ -46,16 +46,12 @@ class ApiShell(GPTShell):
         self.session = self.user_management.orm.session
         await self.check_login()
 
-    def get_logged_in_user(self) -> User:
-        if self.logged_in_user_id:
-            return self.get_user(self.logged_in_user_id)
-
-    def get_user(self, user_id) -> User:
+    def get_user(self, user_id):
         user = self.session.get(User, user_id)
         return user
 
-    def _is_logged_in(self) -> bool:
-        return self.logged_in_user_id is not None
+    def _is_logged_in(self):
+        return self.logged_in_user is not None
 
     def validate_email(self, email):
         try:
@@ -145,9 +141,9 @@ Before you can start using the shell, you must create a new user.
         else:
             await self.create_first_user()
 
-    def _build_shell_user_prefix(self, user):
+    def _build_shell_user_prefix(self):
         prompt_prefix = self.config.get("shell.prompt_prefix")
-        prompt_prefix = prompt_prefix.replace("$USER", user.username)
+        prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", str(self.backend.model_temperature))
@@ -158,8 +154,8 @@ Before you can start using the shell, you must create a new user.
         return f"{prompt_prefix} "
 
     def set_user_prompt(self, user=None):
-        if self.logged_in_user_id and user:
-            prefix = self._build_shell_user_prefix(user)
+        if self.logged_in_user:
+            prefix = self._build_shell_user_prefix()
         else:
             prefix = ''
         self._set_prompt_prefix(prefix)
@@ -170,12 +166,11 @@ Before you can start using the shell, you must create a new user.
             password = getpass.getpass(prompt='Enter password: ')
             success, user, message = self.user_management.login(user.username, password)
             if success:
-                self.logged_in_user_id = user.id
+                self.logged_in_user = user
         else:
-            self.logged_in_user_id = user.id
+            self.logged_in_user = user
             self.backend.set_current_user(user)
             success, user, message = True, user, "Login successful."
-        self.set_user_prompt(user)
         return success, user, message
 
     async def do_user_login(self, identifier=None):
@@ -226,9 +221,8 @@ Before you can start using the shell, you must create a new user.
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
-        self.logged_in_user_id = None
+        self.logged_in_user = None
         self.backend.set_current_user()
-        self.set_user_prompt()
         return True, None, "Logout successful."
 
     async def do_logout(self, _):
@@ -271,10 +265,8 @@ Before you can start using the shell, you must create a new user.
                 return self.display_user(user)
             else:
                 return success, user, message
-        else:
-            user = self.get_logged_in_user()
-            if user:
-                return self.display_user(user)
+        elif self.logged_in_user:
+            return self.display_user(self.logged_in_user)
         return False, None, "User not found."
 
     async def do_users(self, _):
@@ -332,10 +324,8 @@ Before you can start using the shell, you must create a new user.
                 return success, user, message
             if user:
                 return self.edit_user(user)
-        else:
-            user = self.get_logged_in_user()
-            if user:
-                return self.edit_user(user)
+        elif self.logged_in_user:
+            return self.edit_user(self.logged_in_user)
         return False, "User not found."
 
     async def do_user_delete(self, username=None):
@@ -360,7 +350,7 @@ Before you can start using the shell, you must create a new user.
         if not success:
             return success, user, message
         if user:
-            if user.id == self.logged_in_user_id:
+            if user.id == self.logged_in_user.id:
                 return False, user, "Cannot delete currently logged in user."
             else:
                 return self.user_management.delete_user(user.id)
