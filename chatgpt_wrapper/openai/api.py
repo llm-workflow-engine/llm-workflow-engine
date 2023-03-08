@@ -291,10 +291,13 @@ class OpenAIAPI(Backend):
     def _ask_request_post(self, conversation_id, new_messages, response_message):
         conversation_id = conversation_id or self.conversation_id
         if response_message:
-            conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, response_message)
-            self.parent_message_id = last_message.id
-            self.gen_title(conversation)
-            return True, conversation, "Conversation updated with new messages"
+            if self.current_user:
+                conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, response_message)
+                self.parent_message_id = last_message.id
+                self.gen_title(conversation)
+                return True, conversation, "Conversation updated with new messages"
+            else:
+                return True, response_message, "No current user, conversation not saved"
         return False, None, "Conversation not updated with new messages"
 
     async def ask_stream(self, prompt):
