@@ -33,9 +33,9 @@ class MessageManager(Manager):
         return True, messages, "Messages retrieved successfully"
 
     def add_message(self, conversation_id, role, message):
-        success, conversation, message = self.conversation_manager.get_conversation(conversation_id)
+        success, conversation, user_message = self.conversation_manager.get_conversation(conversation_id)
         if not success:
-            return success, conversation, message
+            return success, conversation, user_message
         if not conversation:
             return False, None, "Conversation not found"
         try:
