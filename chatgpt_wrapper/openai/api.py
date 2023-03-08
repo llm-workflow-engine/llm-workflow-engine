@@ -3,8 +3,8 @@ import openai
 
 from chatgpt_wrapper.backend import Backend
 import chatgpt_wrapper.constants as constants
-from chatgpt_wrapper.openai.conversation import ConversationManagement
-from chatgpt_wrapper.openai.message import MessageManagement
+from chatgpt_wrapper.openai.conversation import ConversationManager
+from chatgpt_wrapper.openai.message import MessageManager
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -13,8 +13,8 @@ class OpenAIAPI(Backend):
     def __init__(self, config=None):
         super().__init__(config)
         self._configure_access_info()
-        self.conversation = ConversationManagement(self.config)
-        self.message = MessageManagement(self.config)
+        self.conversation = ConversationManager(self.config)
+        self.message = MessageManager(self.config)
         self.current_user = None
         self.set_system_message()
         self.set_model_temperature(self.config.get('chat.model_customizations.temperature', constants.OPENAPI_DEFAULT_TEMPERATURE))
@@ -98,7 +98,7 @@ class OpenAIAPI(Backend):
 
     def create_new_converation_if_needed(self):
         if not self.conversation_id:
-            success, conversation, message = self.conversation.create_conversation(self.current_user.id, model=self.model)
+            success, conversation, message = self.conversation.add_conversation(self.current_user.id, model=self.model)
             if success:
                 self.conversation_id = conversation.id
                 return conversation
@@ -163,7 +163,7 @@ class OpenAIAPI(Backend):
 
     async def set_title(self, title, conversation=None):
         conversation = conversation if conversation else self.conversation.get_conversation(self.conversation_id)
-        success, conversation, message = self.conversation.update_conversation_title(conversation, title)
+        success, conversation, message = self.conversation.edit_conversation_title(conversation, title)
         return self._handle_response(success, conversation, message)
 
     async def get_history(self, limit=20, offset=0):

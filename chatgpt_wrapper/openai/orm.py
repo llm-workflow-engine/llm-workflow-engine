@@ -198,3 +198,14 @@ class Orm:
         self.session.delete(message)
         self.session.commit()
         self.log.info(f'Deleted Message with id {message.id}')
+
+class Manager:
+    def __init__(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.orm = Orm(self.config)
+
+    def _handle_error(self, message):
+        self.log.error(message)
+        return False, None, message
+

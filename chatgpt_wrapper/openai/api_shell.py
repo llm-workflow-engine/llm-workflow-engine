@@ -183,10 +183,11 @@ Before you can start using the shell, you must create a new user.
         """
         if not identifier:
             identifier = input("Enter username or email: ")
-        user = self.user_management.find_user_by_username_or_email(identifier)
-        if user:
+        success, user, message = self.user_management.get_by_username_or_email(identifier)
+        if success:
             return self.login(user)
-        return False, None, f"User {identifier} not found."
+        else:
+            return success, user, message
 
     async def do_login(self, identifier=None):
         """
@@ -253,14 +254,16 @@ Before you can start using the shell, you must create a new user.
         if not self._is_logged_in():
             return False, None, "Not logged in."
         if username:
-            success, user = self.user_management.get_by_username(username)
+            success, user, message = self.user_management.get_by_username(username)
             if success:
                 return self.display_user(user)
+            else:
+                return success, user, message
         else:
             user = self.get_logged_in_user()
             if user:
                 return self.display_user(user)
-        return False, "User not found."
+        return False, None, "User not found."
 
     async def do_users(self, _):
         """
@@ -269,7 +272,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {leader}users
         """
-        success, users, message = self.user_management.list()
+        success, users, message = self.user_management.get_users()
         if success:
             user_list = ["* %s (%s)" % (user.username, user.default_model) for user in users]
             user_list.insert(0, "# Users")
@@ -297,7 +300,7 @@ Before you can start using the shell, you must create a new user.
             "default_model": default_model,
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return self.user_management.edit(user.id, **kwargs)
+        return self.user_management.edit_user(user.id, **kwargs)
 
     async def do_user_edit(self, username=None):
         """
@@ -312,7 +315,9 @@ Before you can start using the shell, you must create a new user.
         if not self._is_logged_in():
             return False, None, "Not logged in."
         if username:
-            user = self.user_management.find_user_by_username(username)
+            success, user, message = self.user_management.get_user_by_username(username)
+            if not success:
+                return success, user, message
             if user:
                 return self.edit_user(user)
         else:
@@ -339,12 +344,14 @@ Before you can start using the shell, you must create a new user.
             return False, None, "Not logged in."
         if not username:
             username = input("Enter username: ")
-        user = self.user_management.find_user_by_username(username)
+        success, user, message = self.user_management.get_user_by_username(username)
+        if not success:
+            return success, user, message
         if user:
             if user.id == self.logged_in_user_id:
                 return False, user, "Cannot delete currently logged in user."
             else:
-                return self.user_management.delete(user.id)
+                return self.user_management.delete_user(user.id)
         else:
             return False, user, "User does not exist."
 
