@@ -78,11 +78,12 @@ class OpenAIAPI(Backend):
     def get_runtime_config(self):
         output = """
 * Model customizations:
+  * Model: %s
   * Temperature: %s
   * top_p: %s
   * Presence penalty: %s
   * Frequency penalty: %s
-""" % (self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty)
+""" % (self.model, self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty)
         return output
 
     def build_openai_message(self, role, content):
@@ -165,7 +166,10 @@ class OpenAIAPI(Backend):
 
     def set_current_user(self, user=None):
         self.current_user = user
-        self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.current_user.default_model]
+        if user:
+            self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.current_user.default_model]
+        else:
+            self.model = None
 
     def conversation_data_to_messages(self, conversation_data):
         return conversation_data['messages']
