@@ -1,6 +1,32 @@
 # The values in this sample configuration are the default values.
 # Configuration syntax is YAML, learn more at: https://yaml.org
 
+
+##########################################################
+# Backend settings.
+##########################################################
+# The backend the shell should use, one of: chatgpt-browser, chatgpt-api
+backend: chatgpt-browser
+# The database connection string, in a format SQLAlchemy understands.
+database: sqlite:////home/[username]/.local/share/chatgpt-wrapper/profiles/default/storage.db
+
+
+##########################################################
+# Shell settings.
+##########################################################
+shell:
+  # NOTE: This setting is only available on the following backends: chatgpt-api
+  # Customize the prompt prefix, the following token are available:
+  # - $USER: Logged in username
+  # - $MODEL: The LLM model name
+  # - $NEWLINE: Insert a newline
+  # - $TEMPERATURE: The current temperature
+  # - $TOP_P: The current top_p
+  # - $PRESENCE_PENALTY: The current presence penalty
+  # - $FREQUENCY_PENALTY: The current frequency penalty
+  # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
+  prompt_prefix: ($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS)$NEWLINE$USER@$MODEL
+
 ##########################################################
 # Browser settings.
 ##########################################################
