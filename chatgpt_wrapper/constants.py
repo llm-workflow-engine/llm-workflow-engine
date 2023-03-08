@@ -15,6 +15,11 @@ OPENAPI_CHAT_RENDER_MODELS = {
     "turbo": "gpt-3.5-turbo",
     "turbo-0301": "gpt-3.5-turbo-0301",
 }
+
+SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
+DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT = 'You write short 3-5 word titles for any content'
+DEFAULT_TITLE_GENERATION_USER_PROMPT = 'Write a title for this content:'
+
 OPENAPI_MAX_TOKENS = 4096
 OPENAPI_MIN_SUBMISSION_TOKENS = 1
 OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS = 4000
@@ -90,7 +95,6 @@ DEFAULT_HISTORY_LIMIT = 20
 
 # Interface-specific constants.
 NO_TITLE_TEXT = "No title"
-SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
 # These are the variables in this file that are available for substitution in
 # help messages.
 HELP_TOKEN_VARIBALE_SUBSTITUTIONS = [

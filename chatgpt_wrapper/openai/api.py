@@ -1,4 +1,6 @@
 import os
+import asyncio
+import threading
 import openai
 
 from chatgpt_wrapper.backend import Backend
@@ -40,22 +42,38 @@ class OpenAIAPI(Backend):
             self.log.error(message)
         return success, obj, message
 
-    async def _gen_title(self, prompt):
-        raise NotImplementedError()
-        if not self.conversation_id or self.conversation_id and self.conversation_title_set:
-            return
-        url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
-        data = {
-            "message_id": self.parent_message_id,
-            "model": constants.OPENAPI_CHAT_RENDER_MODELS[self.model],
-        }
-        ok, json, response = await self._api_post_request(url, data)
-        if ok:
-            # TODO: Do we want to do anything with the title we got back?
-            # response_data = response.json()
-            self.conversation_title_set = True
+    async def gen_title_thread_async(self, conversation):
+        if conversation.title:
+            self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
         else:
-            self.log.warning("Failed to auto-generate title for new conversation")
+            self.log.info(f"Generating title for {conversation.title}")
+            # NOTE: This might need to be smarter in the future, but for now
+            # it should be reasonable to assume that the second record is the
+            # first user message we need for generating the title.
+            success, messages, user_message = self.message.get_messages(conversation.id, limit=2)
+            if success:
+                user_content = messages[1].message
+                new_messages = [
+                    self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
+                    self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
+                ]
+                success, title, user_message = await self._call_openai_non_streaming(new_messages, temperature=0)
+                if success and title:
+                    self.log.info(f"Title generated for conversation {conversation.id}: {title}")
+                    success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
+                    if success:
+                        self.log.debug(f"Title saved for conversation {conversation.id}")
+                        return
+            self.log.info(f"Failed to generate title for conversation {conversation.id}: {str(user_message)}")
+
+    def gen_title_thread(self, conversation):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.gen_title_thread_async(conversation))
+
+    def gen_title(self, conversation):
+        thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
+        thread.start()
 
     def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
         self.system_message = message
@@ -106,30 +124,33 @@ class OpenAIAPI(Backend):
         return old_messages, new_messages
 
     def prepare_prompt_messsage_context(self, old_messages=[], new_messages=[]):
-        self.create_new_converation_if_needed()
         messages = [self.build_openai_message(m.role, m.message) for m in old_messages]
         messages.extend(new_messages)
         return messages
 
-    def create_new_converation_if_needed(self):
-        if not self.conversation_id:
-            success, conversation, message = self.conversation.add_conversation(self.current_user.id, model=self.model)
-            if success:
-                self.conversation_id = conversation.id
-                return conversation
-            else:
+    def create_new_converation_if_needed(self, conversation_id=None):
+        conversation_id = conversation_id or self.conversation_id
+        if conversation_id:
+            success, conversation, message = self.conversation.get_conversation(conversation_id)
+            if not success:
                 raise Exception(message)
+        else:
+            success, conversation, message = self.conversation.add_conversation(self.current_user.id, model=self.model)
+            if not success:
+                raise Exception(message)
+        self.conversation_id = conversation.id
+        return conversation
 
     def add_new_messages_to_conversation(self, conversation_id, new_messages, response_message):
+        conversation = self.create_new_converation_if_needed(conversation_id)
         for m in new_messages:
-            success, message, user_message = self.message.add_message(conversation_id, m['role'], m['content'])
+            success, message, user_message = self.message.add_message(conversation.id, m['role'], m['content'])
             if not success:
                 raise Exception(user_message)
-        success, last_message, user_message = self.message.add_message(conversation_id, 'assistant', response_message)
-        if success:
-            return last_message
-        else:
+        success, last_message, user_message = self.message.add_message(conversation.id, 'assistant', response_message)
+        if not success:
             raise Exception(user_message)
+        return conversation, last_message
 
     def add_message(self, role, message, conversation_id=None):
         conversation_id = conversation_id or self.conversation_id
@@ -139,28 +160,32 @@ class OpenAIAPI(Backend):
         else:
             raise Exception(user_message)
 
-    async def _build_openai_chat_request(self, messages, stream=False):
+    async def _build_openai_chat_request(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None, stream=False):
+        temperature = self.model_temperature if temperature is None else temperature
+        top_p = self.model_top_p if top_p is None else top_p
+        presence_penalty = self.model_presence_penalty if presence_penalty is None else presence_penalty
+        frequency_penalty = self.model_frequency_penalty if frequency_penalty is None else frequency_penalty
         response = await openai.ChatCompletion.acreate(
             model=self.model,
             messages=messages,
-            temperature=self.model_temperature,
-            top_p=self.model_top_p,
-            presence_penalty=self.model_presence_penalty,
-            frequency_penalty=self.model_frequency_penalty,
+            temperature=temperature,
+            top_p=top_p,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
             stream=stream,
         )
-        self.log.debug(f"ChatCompletion.create with message count: {len(messages)}, model: {self.model}, temperature: {self.model_temperature}, top_p: {self.model_top_p}, presence_penalty: {self.model_presence_penalty}, frequency_penalty: {self.model_frequency_penalty}, stream: {stream})")
+        self.log.debug(f"ChatCompletion.create with message count: {len(messages)}, model: {self.model}, temperature: {temperature}, top_p: {top_p}, presence_penalty: {presence_penalty}, frequency_penalty: {frequency_penalty}, stream: {stream})")
         return response
 
-    async def _call_openai_streaming(self, messages):
+    async def _call_openai_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
         self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
-        response = await self._build_openai_chat_request(messages, stream=True)
+        response = await self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, stream=True)
         async for chunk in response:
             yield chunk
 
-    async def _call_openai_non_streaming(self, messages):
+    async def _call_openai_non_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
         self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
-        completion = await self._build_openai_chat_request(messages)
+        completion = await self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
         response = completion.choices[0].message.content
         return True, response, "Retrieved stuff"
 
@@ -204,9 +229,22 @@ class OpenAIAPI(Backend):
                 return success, conversation_data, message
         return self._handle_response(success, conversation, message)
 
-    async def ask_stream(self, prompt: str):
+    def _prepare_ask_request(self, prompt):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
         messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
+        return new_messages, messages
+
+    def _ask_request_post(self, conversation_id, new_messages, response_message):
+        conversation_id = conversation_id or self.conversation_id
+        if response_message:
+            conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, response_message)
+            self.parent_message_id = last_message.id
+            self.gen_title(conversation)
+            return True, conversation, "Conversation updated with new messages"
+        return False, None, "Conversation not updated with new messages"
+
+    async def ask_stream(self, prompt):
+        new_messages, messages = self._prepare_ask_request(prompt)
         response_message = ""
         # Streaming loop.
         self.streaming = True
@@ -224,19 +262,15 @@ class OpenAIAPI(Backend):
                     elif 'content' in delta:
                         response_message += delta['content']
                         yield delta['content']
-        if response_message:
-            last_message = self.add_new_messages_to_conversation(self.conversation_id, new_messages, response_message)
-            self.parent_message_id = last_message.id
         if not self.streaming:
             yield (
                 "\nGeneration stopped\n"
             )
         # End streaming loop.
         self.streaming = False
-        # TODO: Implement.
-        # await self._gen_title(prompt)
+        self._ask_request_post(self.conversation_id, new_messages, response_message)
 
-    async def ask(self, prompt: str) -> str:
+    async def ask(self, prompt):
         """
         Send a message to chatGPT and return the response.
 
@@ -246,10 +280,11 @@ class OpenAIAPI(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
-        messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
+        new_messages, messages = self._prepare_ask_request(prompt)
         success, response_message, message = await self._call_openai_non_streaming(messages)
         if success:
-            last_message = self.add_new_messages_to_conversation(self.conversation_id, new_messages, response_message)
-            self.parent_message_id = last_message.id
+            success, conversation, message = self._ask_request_post(self.conversation_id, new_messages, response_message)
+            if success:
+                return self._handle_response(success, response_message, message)
+            return self._handle_response(success, conversation, message)
         return self._handle_response(success, response_message, message)
