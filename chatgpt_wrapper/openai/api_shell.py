@@ -145,9 +145,21 @@ Before you can start using the shell, you must create a new user.
         else:
             await self.create_first_user()
 
+    def _build_shell_user_prefix(self, user):
+        prompt_prefix = self.config.get("shell.prompt_prefix")
+        prompt_prefix = prompt_prefix.replace("$USER", user.username)
+        prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
+        prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
+        prompt_prefix = prompt_prefix.replace("$TEMPERATURE", str(self.backend.model_temperature))
+        prompt_prefix = prompt_prefix.replace("$TOP_P", str(self.backend.model_top_p))
+        prompt_prefix = prompt_prefix.replace("$PRESENCE_PENALTY", str(self.backend.model_presence_penalty))
+        prompt_prefix = prompt_prefix.replace("$FREQUENCY_PENALTY", str(self.backend.model_frequency_penalty))
+        prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
+        return f"{prompt_prefix} "
+
     def set_user_prompt(self, user=None):
         if self.logged_in_user_id and user:
-            prefix = f"{user.username} "
+            prefix = self._build_shell_user_prefix(user)
         else:
             prefix = ''
         self._set_prompt_prefix(prefix)
