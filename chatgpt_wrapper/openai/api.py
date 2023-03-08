@@ -75,6 +75,16 @@ class OpenAIAPI(Backend):
     def set_model_max_submission_tokens(self, max_submission_tokens=constants.OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS):
         self.model_max_submission_tokens = max_submission_tokens
 
+    def get_runtime_config(self):
+        output = """
+* Model customizations:
+  * Temperature: %s
+  * top_p: %s
+  * Presence penalty: %s
+  * Frequency penalty: %s
+""" % (self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty)
+        return output
+
     def build_openai_message(self, role, content):
         message = {
             "role": role,

@@ -775,17 +775,24 @@ class GPTShell():
             {COMMAND_LEADER}config
         """
         output = """
-## Configuration
+# File configuration
 
 * Config dir: %s
-* Profile: %s
 * Config file: %s
 * Data dir: %s
+
+# Profile '%s' configuration:
 
 ```
 %s
 ```
-        """ % (self.config.config_dir, self.config.profile, self.config.config_file or "None", self.config.data_dir, yaml.dump(self.config.get(), default_flow_style=False))
+
+# Runtime configuration
+
+* Streaming: %s
+* Logging to: %s
+""" % (self.config.config_dir, self.config.config_file or "None", self.config.data_dir, self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+        output += self.backend.get_runtime_config()
         self._print_markdown(output)
 
     async def do_exit(self, _):

@@ -37,6 +37,9 @@ class Backend(ABC):
         if self.streaming:
             self.streaming = False
 
+    def get_runtime_config(self):
+        return ""
+
     @abstractmethod
     def conversation_data_to_messages(self, conversation_data):
         pass
