@@ -10,6 +10,8 @@ import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
 
+from rich.console import Console
+
 is_windows = platform.system() == "Windows"
 
 class Backend(ABC):
@@ -26,10 +28,15 @@ class Backend(ABC):
         self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.config.get('chat.model')]
         self.streaming = False
         self._setup_signal_handlers()
+        self.console = Console()
 
     def _setup_signal_handlers(self):
         sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
         signal.signal(sig, self.terminate_stream)
+
+    def _print_status_message(self, success, message):
+        self.console.print(message, style="bold green" if success else "bold red")
+        print("")
 
     def new_conversation(self):
         self.parent_message_id = None
