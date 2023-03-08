@@ -4,7 +4,7 @@ import email_validator
 import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.openai.database import Database
 from chatgpt_wrapper.openai.orm import User
-from chatgpt_wrapper.openai.user import UserManagement
+from chatgpt_wrapper.openai.user import UserManager
 from chatgpt_wrapper.openai.api import OpenAIAPI
 from chatgpt_wrapper.gpt_shell import GPTShell
 import chatgpt_wrapper.debug as debug
@@ -42,7 +42,7 @@ class ApiShell(GPTShell):
         self.backend = OpenAIAPI(self.config)
         database = Database(self.config)
         database.create_schema()
-        self.user_management = UserManagement(self.config)
+        self.user_management = UserManager(self.config)
         self.session = self.user_management.orm.session
         await self.check_login()
 
@@ -355,11 +355,12 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, user, "User does not exist."
 
-    def adjust_model_setting_float(self, setting, value, min=None, max=None):
+    def adjust_model_setting(self, value_type, setting, value, min=None, max=None):
         if not self._is_logged_in():
             return False, None, "Not logged in."
         if value:
-            value = self.validate_float(value, min, max)
+            method = getattr(self, f"validate_{value_type}")
+            value = method(value, min, max)
             if value is False:
                 return False, value, f"Invalid {setting}, must be float between {min} and {max}."
             else:
@@ -388,7 +389,7 @@ Before you can start using the shell, you must create a new user.
             {leader}model_temperature
             {leader}model_temperature 1.5
         """
-        return self.adjust_model_setting_float("temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
+        return self.adjust_model_setting("float", "temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
 
     async def do_model_top_p(self, top_p=None):
         """
@@ -409,7 +410,7 @@ Before you can start using the shell, you must create a new user.
             {leader}model_top_p
             {leader}model_top_p .1
         """
-        return self.adjust_model_setting_float("top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
+        return self.adjust_model_setting("float", "top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
 
     async def do_model_presence_penalty(self, presence_penalty=None):
         """
@@ -426,7 +427,7 @@ Before you can start using the shell, you must create a new user.
             {leader}model_presence_penalty
             {leader}model_presence_penalty 1.5
         """
-        return self.adjust_model_setting_float("presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
+        return self.adjust_model_setting("float", "presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
 
     async def do_model_frequency_penalty(self, frequency_penalty=None):
         """
@@ -442,4 +443,21 @@ Before you can start using the shell, you must create a new user.
             {leader}model_frequency_penalty
             {leader}model_frequency_penalty 1.5
         """
-        return self.adjust_model_setting_float("frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)
+        return self.adjust_model_setting("float", "frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)
+
+    async def do_model_max_submission_tokens(self, max_submission_tokens=None):
+        """
+        The maximum number of tokens that can be submitted before older messages
+        start getting cut off.
+
+        Current max tokens for both submission and reply are 4096, so the current
+        default will still allow for a short reply from the model.
+
+        Arguments:
+            max_submission_tokens: Int between 1 and 4096
+
+        Examples:
+            {leader}model_max_submission_tokens
+            {leader}model_max_submission_tokens 3000
+        """
+        return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_DEFAULT_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)

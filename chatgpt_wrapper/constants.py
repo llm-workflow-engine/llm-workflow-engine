@@ -15,6 +15,9 @@ OPENAPI_CHAT_RENDER_MODELS = {
     "turbo": "gpt-3.5-turbo",
     "turbo-0301": "gpt-3.5-turbo-0301",
 }
+OPENAPI_MAX_TOKENS = 4096
+OPENAPI_DEFAULT_MIN_SUBMISSION_TOKENS = 1
+OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS = 4000
 
 OPENAPI_DEFAULT_TEMPERATURE = 1
 OPENAPI_TEMPERATURE_MIN = 0
@@ -51,6 +54,7 @@ DEFAULT_CONFIG = {
             'top_p': OPENAPI_DEFAULT_TOP_P,
             'presence_penalty': OPENAPI_DEFAULT_PRESENCE_PENALTY,
             'frequency_penalty': OPENAPI_DEFAULT_FREQUENCY_PENALTY,
+            'max_submission_tokens': OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS,
         },
         'streaming': False,
         'log': {

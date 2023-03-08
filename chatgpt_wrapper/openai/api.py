@@ -17,10 +17,11 @@ class OpenAIAPI(Backend):
         self.message = MessageManager(self.config)
         self.current_user = None
         self.set_system_message()
-        self.set_model_temperature(self.config.get('chat.model_customizations.temperature', constants.OPENAPI_DEFAULT_TEMPERATURE))
-        self.set_model_top_p(self.config.get('chat.model_customizations.top_p', constants.OPENAPI_DEFAULT_TOP_P))
-        self.set_model_presence_penalty(self.config.get('chat.model_customizations.presence_penalty', constants.OPENAPI_DEFAULT_PRESENCE_PENALTY))
-        self.set_model_frequency_penalty(self.config.get('chat.model_customizations.frequency_penalty', constants.OPENAPI_DEFAULT_FREQUENCY_PENALTY))
+        self.set_model_temperature(self.config.get('chat.model_customizations.temperature'))
+        self.set_model_top_p(self.config.get('chat.model_customizations.top_p'))
+        self.set_model_presence_penalty(self.config.get('chat.model_customizations.presence_penalty'))
+        self.set_model_frequency_penalty(self.config.get('chat.model_customizations.frequency_penalty'))
+        self.set_model_max_submission_tokens(self.config.get('chat.model_customizations.max_submission_tokens'))
 
     def _configure_access_info(self):
         self.openai = openai
@@ -70,6 +71,9 @@ class OpenAIAPI(Backend):
 
     def set_model_frequency_penalty(self, frequency_penalty=constants.OPENAPI_DEFAULT_FREQUENCY_PENALTY):
         self.model_frequency_penalty = frequency_penalty
+
+    def set_model_max_submission_tokens(self, max_submission_tokens=constants.OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS):
+        self.model_max_submission_tokens = max_submission_tokens
 
     def build_openai_message(self, role, content):
         message = {

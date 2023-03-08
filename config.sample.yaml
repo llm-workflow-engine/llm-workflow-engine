@@ -21,10 +21,12 @@ chat:
   # customized. See
   # https://platform.openai.com/docs/api-reference/chat for more information.
   model_customizations:
-      temperature: 1
-      top_p: 1
-      presence_penalty: 0
-      frequency_penalty: 0
+    temperature: 1
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    # See '/help model_max_submission_tokens' for more information.
+    max_submission_tokens: 4000
   # If true, responses will be streamed in real time (no markdown formatting).
   streaming: true
   # Chat logs.

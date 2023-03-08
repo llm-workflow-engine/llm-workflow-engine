@@ -92,6 +92,17 @@ class GPTShell():
         completer = NestedCompleter.from_nested_dict(commands_with_leader)
         return completer
 
+    def validate_int(self, value, min=None, max=None):
+        try:
+            value = int(value)
+        except ValueError:
+            return False
+        if min and value < min:
+            return False
+        if max and value > max:
+            return False
+        return value
+
     def validate_float(self, value, min=None, max=None):
         try:
             value = float(value)
