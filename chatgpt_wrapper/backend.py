@@ -3,8 +3,12 @@ from abc import ABC, abstractmethod
 import platform
 import signal
 
+import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 is_windows = platform.system() == "Windows"
 
@@ -19,7 +23,7 @@ class Backend(ABC):
         self.parent_message_id = None
         self.conversation_id = None
         self.conversation_title_set = None
-        self.model = self.config.get('chat.model')
+        self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.config.get('chat.model')]
         self.streaming = False
         self._setup_signal_handlers()
 
