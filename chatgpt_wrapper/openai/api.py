@@ -5,6 +5,8 @@ import openai
 import tiktoken
 
 from chatgpt_wrapper.backend import Backend
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.openai.conversation import ConversationManager
 from chatgpt_wrapper.openai.message import MessageManager
@@ -12,7 +14,7 @@ import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
 
-class OpenAIAPI(Backend):
+class AsyncOpenAIAPI(Backend):
     def __init__(self, config=None):
         super().__init__(config)
         self._configure_access_info()
@@ -346,3 +348,51 @@ class OpenAIAPI(Backend):
                 return self._handle_response(success, response_message, message)
             return self._handle_response(success, conversation, message)
         return self._handle_response(success, completion, message)
+
+class OpenAIAPI:
+    def __init__(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.async_openai_api = AsyncOpenAIAPI(config)
+        self.async_run(self.async_openai_api.create(timeout, proxy))
+
+    def __getattr__(self, __name: str):
+        if hasattr(self.async_openai_api, __name):
+            return getattr(self.async_openai_api, __name)
+        else:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{__name}'")
+
+    def async_run(self, awaitable):
+        return asyncio.get_event_loop().run_until_complete(awaitable)
+
+    def ask_stream(self, prompt: str):
+        def iter_over_async(ait):
+            loop = asyncio.get_event_loop()
+            ait = ait.__aiter__()
+            async def get_next():
+                try:
+                    obj = await ait.__anext__()
+                    return False, obj
+                except StopAsyncIteration:
+                    return True, None
+            while True:
+                done, obj = loop.run_until_complete(get_next())
+                if done:
+                    break
+                yield obj
+        yield from iter_over_async(self.async_openai_api.ask_stream(prompt))
+
+    def ask(self, message: str) -> str:
+        return self.async_run(self.async_openai_api.ask(message))
+
+    def get_conversation(self, id=None):
+        return self.async_run(self.async_openai_api.get_conversation(id))
+
+    def delete_conversation(self, id=None):
+        return self.async_run(self.async_openai_api.delete_conversation(id))
+
+    def set_title(self, title, conversation_id=None):
+        return self.async_run(self.async_openai_api.set_title(title, conversation_id))
+
+    def get_history(self, limit=20, offset=0):
+        return self.async_run(self.async_openai_api.get_history(limit, offset))

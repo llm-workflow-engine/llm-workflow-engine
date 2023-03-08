@@ -5,7 +5,7 @@ import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.openai.database import Database
 from chatgpt_wrapper.openai.orm import User
 from chatgpt_wrapper.openai.user import UserManager
-from chatgpt_wrapper.openai.api import OpenAIAPI
+from chatgpt_wrapper.openai.api import AsyncOpenAIAPI
 from chatgpt_wrapper.gpt_shell import GPTShell
 import chatgpt_wrapper.debug as debug
 if False:
@@ -39,7 +39,7 @@ class ApiShell(GPTShell):
         self.commands = self._introspect_commands(__class__)
 
     async def configure_backend(self):
-        self.backend = OpenAIAPI(self.config)
+        self.backend = AsyncOpenAIAPI(self.config)
         database = Database(self.config)
         database.create_schema()
         self.user_management = UserManager(self.config)
