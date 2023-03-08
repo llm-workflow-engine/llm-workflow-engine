@@ -498,6 +498,9 @@ class ChatGPT:
 
     def ask(self, message: str) -> str:
         return self.async_run(self.agpt.ask(message))
+    
+    def get_uuid(self):
+        return self.get_history().split("'")[1]
 
     def get_conversation(self, uuid=None):
         return self.async_run(self.agpt.get_conversation(uuid))
