@@ -597,8 +597,7 @@ class GPTShell():
             if conversation_data:
                 messages = self.backend.conversation_data_to_messages(conversation_data)
                 message = messages.pop()
-                self.backend.conversation_id = conversation_id
-                self.backend.parent_message_id = message['id']
+                self.backend.switch_to_conversation(conversation_id, message['id'])
                 self._update_message_map()
                 self._write_log_context()
                 if title:

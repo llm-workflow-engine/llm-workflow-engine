@@ -7,3 +7,4 @@ prompt-toolkit
 PyYAML
 rich
 sqlalchemy
+tiktoken

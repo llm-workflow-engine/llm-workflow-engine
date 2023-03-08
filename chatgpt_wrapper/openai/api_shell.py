@@ -151,6 +151,7 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$PRESENCE_PENALTY", str(self.backend.model_presence_penalty))
         prompt_prefix = prompt_prefix.replace("$FREQUENCY_PENALTY", str(self.backend.model_frequency_penalty))
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
+        prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
         return f"{prompt_prefix} "
 
     def set_user_prompt(self, user=None):

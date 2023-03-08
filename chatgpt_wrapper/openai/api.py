@@ -2,6 +2,7 @@ import os
 import asyncio
 import threading
 import openai
+import tiktoken
 
 from chatgpt_wrapper.backend import Backend
 import chatgpt_wrapper.constants as constants
@@ -18,6 +19,7 @@ class OpenAIAPI(Backend):
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
         self.current_user = None
+        self.conversation_tokens = 0
         self.set_system_message()
         self.set_model_temperature(self.config.get('chat.model_customizations.temperature'))
         self.set_model_top_p(self.config.get('chat.model_customizations.top_p'))
@@ -41,6 +43,45 @@ class OpenAIAPI(Backend):
         if not success:
             self.log.error(message)
         return success, obj, message
+
+    def get_token_encoding(self, model="gpt-3.5-turbo"):
+        if model not in constants.OPENAPI_CHAT_RENDER_MODELS.values():
+            raise NotImplementedError("Unsupported engine {self.engine}")
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+        except Exception as e:
+            raise Exception(f"Unable to get token encoding for model {model}: {str(e)}")
+        return encoding
+
+    def num_tokens_from_messages(self, messages, encoding=None):
+        if not encoding:
+            encoding = self.get_token_encoding()
+        """Returns the number of tokens used by a list of messages."""
+        num_tokens = 0
+        for message in messages:
+            num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(value))
+                if key == "name":  # if there's a name, the role is omitted
+                    num_tokens += -1  # role is always required and always 1 token
+        num_tokens += 2  # every reply is primed with <im_start>assistant
+        return num_tokens
+
+    def switch_to_conversation(self, conversation_id, parent_message_id):
+        super().switch_to_conversation(conversation_id, parent_message_id)
+        tokens = self.conversation_token_count(conversation_id)
+        self.conversation_tokens = tokens
+
+    def conversation_token_count(self, conversation_id=None):
+        conversation_id = conversation_id or self.conversation_id
+        success, old_messages, user_message = self.message.get_messages(conversation_id)
+        if not success:
+            raise Exception(user_message)
+        token_messages = self.prepare_prompt_messsage_context(old_messages)
+        tokens = self.num_tokens_from_messages(token_messages)
+        return tokens
 
     def _extract_completion_content(self, completion):
         content = "".join([c.message.content for c in completion.choices])
@@ -153,7 +194,10 @@ class OpenAIAPI(Backend):
             if not success:
                 raise Exception(user_message)
         success, last_message, user_message = self.message.add_message(conversation.id, 'assistant', response_message)
-        if not success:
+        if success:
+            tokens = self.conversation_token_count()
+            self.conversation_tokens = tokens
+        else:
             raise Exception(user_message)
         return conversation, last_message
 
@@ -233,9 +277,15 @@ class OpenAIAPI(Backend):
                 return success, conversation_data, message
         return self._handle_response(success, conversation, message)
 
+    def new_conversation(self):
+        super().new_conversation()
+        self.conversation_tokens = 0
+
     def _prepare_ask_request(self, prompt):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
         messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
+        tokens = self.num_tokens_from_messages(messages)
+        self.conversation_tokens = tokens
         return new_messages, messages
 
     def _ask_request_post(self, conversation_id, new_messages, response_message):

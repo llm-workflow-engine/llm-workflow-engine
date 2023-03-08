@@ -37,6 +37,10 @@ class Backend(ABC):
         if self.streaming:
             self.streaming = False
 
+    def switch_to_conversation(self, conversation_id, parent_message_id):
+        self.conversation_id = conversation_id
+        self.parent_message_id = parent_message_id
+
     def get_runtime_config(self):
         return ""
 

@@ -48,7 +48,7 @@ CONFIG_PROFILES_DIR = 'profiles'
 DEFAULT_CONFIG = {
     'backend': 'chatgpt-browser',
     'shell': {
-        'prompt_prefix': '($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS)$NEWLINE$USER@$MODEL',
+        'prompt_prefix': '($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL',
     },
     'database': None,
     'browser': {

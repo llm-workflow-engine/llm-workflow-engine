@@ -25,7 +25,8 @@ shell:
   # - $PRESENCE_PENALTY: The current presence penalty
   # - $FREQUENCY_PENALTY: The current frequency penalty
   # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
-  prompt_prefix: ($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS)$NEWLINE$USER@$MODEL
+  # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation
+  prompt_prefix: ($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL
 
 ##########################################################
 # Browser settings.
