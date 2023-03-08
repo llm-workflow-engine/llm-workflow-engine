@@ -42,6 +42,10 @@ class OpenAIAPI(Backend):
             self.log.error(message)
         return success, obj, message
 
+    def _extract_completion_content(self, completion):
+        content = "".join([c.message.content for c in completion.choices])
+        return content
+
     async def gen_title_thread_async(self, conversation):
         if conversation.title:
             self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
@@ -57,14 +61,15 @@ class OpenAIAPI(Backend):
                     self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
                     self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
                 ]
-                success, title, user_message = await self._call_openai_non_streaming(new_messages, temperature=0)
-                if success and title:
+                success, completion, user_message = await self._call_openai_non_streaming(new_messages, temperature=0)
+                if success:
+                    title = self._extract_completion_content(completion)
                     self.log.info(f"Title generated for conversation {conversation.id}: {title}")
                     success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
                     if success:
                         self.log.debug(f"Title saved for conversation {conversation.id}")
                         return
-            self.log.info(f"Failed to generate title for conversation {conversation.id}: {str(user_message)}")
+            self.log.info(f"Failed to generate title for conversation: {str(user_message)}")
 
     def gen_title_thread(self, conversation):
         loop = asyncio.new_event_loop()
@@ -186,8 +191,7 @@ class OpenAIAPI(Backend):
     async def _call_openai_non_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
         self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
         completion = await self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
-        response = completion.choices[0].message.content
-        return True, response, "Retrieved stuff"
+        return True, completion, "Retrieved response"
 
     def set_current_user(self, user=None):
         self.current_user = user
@@ -281,10 +285,11 @@ class OpenAIAPI(Backend):
             str: The response received from OpenAI.
         """
         new_messages, messages = self._prepare_ask_request(prompt)
-        success, response_message, message = await self._call_openai_non_streaming(messages)
+        success, completion, message = await self._call_openai_non_streaming(messages)
         if success:
+            response_message = self._extract_completion_content(completion)
             success, conversation, message = self._ask_request_post(self.conversation_id, new_messages, response_message)
             if success:
                 return self._handle_response(success, response_message, message)
             return self._handle_response(success, conversation, message)
-        return self._handle_response(success, response_message, message)
+        return self._handle_response(success, completion, message)
