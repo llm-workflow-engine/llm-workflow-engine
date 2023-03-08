@@ -45,6 +45,11 @@ async def async_main():
         help=f"directory to read/store data from (default: {dummy_config.data_dir})",
     )
     parser.add_argument(
+        "--database",
+        action="store",
+        help=f"Database to store chat-related data (default: {dummy_config.get('database')})",
+    )
+    parser.add_argument(
         "-n", "--no-stream", default=True, dest="stream", action="store_false",
         help="disable streaming mode"
     )
@@ -101,6 +106,8 @@ async def async_main():
         )
         config.set('browser.debug', True)
 
+    if args.database is not None:
+        config.set('database', args.database)
     config.set('chat.streaming', args.stream)
     if args.log is not None:
         config.set('chat.log.enabled', True)
