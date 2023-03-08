@@ -144,8 +144,13 @@ class GPTShell():
             method = self.get_command_method(command)
             doc = method.__doc__
             if doc:
-                help_text = doc.replace("{leader}", constants.COMMAND_LEADER)
-                return textwrap.dedent(help_text)
+                for sub in constants.HELP_TOKEN_VARIBALE_SUBSTITUTIONS:
+                    try:
+                        const_value = getattr(constants, sub)
+                    except AttributeError:
+                        raise AttributeError(f"'{sub}' in HELP_TOKEN_VARIBALE_SUBSTITUTIONS is not a valid constant")
+                    doc = doc.replace("{%s}" % sub, str(const_value))
+                return textwrap.dedent(doc)
 
     def help_commands(self):
         print("")
@@ -288,7 +293,7 @@ class GPTShell():
         Non-streaming mode: Returns full response at completion (markdown rendering supported).
 
         Examples:
-            {leader}stream
+            {COMMAND_LEADER}stream
         """
         self.stream = not self.stream
         self._print_markdown(
@@ -300,7 +305,7 @@ class GPTShell():
         Start a new conversation
 
         Examples:
-            {leader}new
+            {COMMAND_LEADER}new
         """
         self.backend.new_conversation()
         self._print_markdown("* New conversation started.")
@@ -320,12 +325,12 @@ class GPTShell():
         Arguments can be mixed and matched as in the examples below.
 
         Examples:
-            Current conversation: {leader}delete
-            By conversation ID: {leader}delete 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}delete 3
-            Multiple IDs: {leader}delete 1,5
-            Ranges: {leader}delete 1-5
-            Complex: {leader}delete 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
+            Current conversation: {COMMAND_LEADER}delete
+            By conversation ID: {COMMAND_LEADER}delete 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND_LEADER}delete 3
+            Multiple IDs: {COMMAND_LEADER}delete 1,5
+            Ranges: {COMMAND_LEADER}delete 1-5
+            Complex: {COMMAND_LEADER}delete 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
         """
         if arg:
             result = self._parse_conversation_ids(arg)
@@ -354,13 +359,13 @@ class GPTShell():
         Show recent conversation history
 
         Arguments;
-            limit: limit the number of messages to show (default 20)
+            limit: limit the number of messages to show (default {DEFAULT_HISTORY_LIMIT})
             offset: offset the list of messages by this number
 
         Examples:
-            {leader}history
-            {leader}history 10
-            {leader}history 10 5
+            {COMMAND_LEADER}history
+            {COMMAND_LEADER}history 10
+            {COMMAND_LEADER}history 10 5
         """
         limit = constants.DEFAULT_HISTORY_LIMIT
         offset = 0
@@ -396,7 +401,7 @@ class GPTShell():
             id: prompt ID
 
         Examples:
-            {leader}nav 2
+            {COMMAND_LEADER}nav 2
         """
 
         try:
@@ -440,9 +445,9 @@ class GPTShell():
             history_id: history ID of conversation
 
         Examples:
-            Get current conversation title: {leader}title
-            Set current conversation title: {leader}title new title
-            Set conversation title using history ID: {leader}title 1
+            Get current conversation title: {COMMAND_LEADER}title
+            Set current conversation title: {COMMAND_LEADER}title new title
+            Set conversation title using history ID: {COMMAND_LEADER}title 1
         """
         if arg:
             success, conversations, message = await self._fetch_history()
@@ -497,8 +502,8 @@ class GPTShell():
             history_id: The history ID
 
         Examples:
-            By conversation ID: {leader}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}chat 2
+            By conversation ID: {COMMAND_LEADER}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND_LEADER}chat 2
         """
         conversation = None
         conversation_id = None
@@ -552,8 +557,8 @@ class GPTShell():
             history_id: The history ID
 
         Examples:
-            By conversation ID: {leader}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}switch 2
+            By conversation ID: {COMMAND_LEADER}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND_LEADER}switch 2
         """
         conversation = None
         conversation_id = None
@@ -607,7 +612,7 @@ class GPTShell():
         It is purely optional.
 
         Examples:
-            {leader}ask what is 6+6 (is the same as 'what is 6+6')
+            {COMMAND_LEADER}ask what is 6+6 (is the same as 'what is 6+6')
         """
         return await self.default(line)
 
@@ -644,7 +649,7 @@ class GPTShell():
         Allows for entering more complex multi-line input prior to sending it to ChatGPT.
 
         Examples:
-            {leader}read
+            {COMMAND_LEADER}read
         """
         ctrl_sequence = "^z" if is_windows else "^d"
         self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
@@ -675,8 +680,8 @@ class GPTShell():
             default_text: The default text to open the editor with
 
         Examples:
-            {leader}editor
-            {leader}editor some text to start with
+            {COMMAND_LEADER}editor
+            {COMMAND_LEADER}editor some text to start with
         """
         try:
             process = subprocess.Popen(['vipe'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -699,7 +704,7 @@ class GPTShell():
             file_name: The name of the file to read from
 
         Examples:
-            {leader}file myprompt.txt
+            {COMMAND_LEADER}file myprompt.txt
         """
         try:
             fileprompt = open(arg, encoding="utf-8").read()
@@ -727,8 +732,8 @@ class GPTShell():
             file_name: The name of the file to write to
 
         Examples:
-            Log to file: {leader}log mylog.txt
-            Disable logging: {leader}log
+            Log to file: {COMMAND_LEADER}log mylog.txt
+            Disable logging: {COMMAND_LEADER}log
         """
         if arg:
             if self._open_log(arg):
@@ -745,7 +750,7 @@ class GPTShell():
             context_string: a context string from logs
 
         Examples:
-            {leader}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+            {COMMAND_LEADER}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
         """
         try:
             (conversation_id, parent_message_id) = arg.split(":")
@@ -767,7 +772,7 @@ class GPTShell():
         Show the current configuration
 
         Examples:
-            {leader}config
+            {COMMAND_LEADER}config
         """
         output = """
 ## Configuration
@@ -788,7 +793,7 @@ class GPTShell():
         Exit the ChatGPT shell
 
         Examples:
-            {leader}exit
+            {COMMAND_LEADER}exit
         """
         pass
 
@@ -797,7 +802,7 @@ class GPTShell():
         Exit the ChatGPT shell
 
         Examples:
-            {leader}quit
+            {COMMAND_LEADER}quit
         """
         pass
 

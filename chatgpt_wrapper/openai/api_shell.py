@@ -94,8 +94,8 @@ class ApiShell(GPTShell):
             username: The username of the new user
 
         Examples:
-            {leader}user_register
-            {leader}user_register myusername
+            {COMMAND_LEADER}user_register
+            {COMMAND_LEADER}user_register myusername
         """
         if not username:
             username = input("Enter username (no spaces): ").strip() or None
@@ -177,9 +177,9 @@ Before you can start using the shell, you must create a new user.
             identifier: The username or email
 
         Examples:
-            {leader}user_login
-            {leader}user_login myusername
-            {leader}user_login email@example.com
+            {COMMAND_LEADER}user_login
+            {COMMAND_LEADER}user_login myusername
+            {COMMAND_LEADER}user_login email@example.com
         """
         if not identifier:
             identifier = input("Enter username or email: ")
@@ -191,7 +191,7 @@ Before you can start using the shell, you must create a new user.
 
     async def do_login(self, identifier=None):
         """
-        Alias of '{leader}user_login'
+        Alias of '{COMMAND_LEADER}user_login'
 
         Login in as a user.
 
@@ -199,9 +199,9 @@ Before you can start using the shell, you must create a new user.
             identifier: The username or email
 
         Examples:
-            {leader}login
-            {leader}login myusername
-            {leader}login email@example.com
+            {COMMAND_LEADER}login
+            {COMMAND_LEADER}login myusername
+            {COMMAND_LEADER}login email@example.com
         """
         return await self.do_user_login(identifier)
 
@@ -210,7 +210,7 @@ Before you can start using the shell, you must create a new user.
         Logout the current user.
 
         Examples:
-            {leader}user_logout
+            {COMMAND_LEADER}user_logout
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -221,12 +221,12 @@ Before you can start using the shell, you must create a new user.
 
     async def do_logout(self, _):
         """
-        Alias of '{leader}user_logout'
+        Alias of '{COMMAND_LEADER}user_logout'
 
         Logout the current user.
 
         Examples:
-            {leader}logout
+            {COMMAND_LEADER}logout
         """
         return await self.do_user_logout(None)
 
@@ -248,8 +248,8 @@ Before you can start using the shell, you must create a new user.
             username: The username of the user to show, if not provided, the logged in user will be used.
 
         Examples:
-            {leader}user
-            {leader}user ausername
+            {COMMAND_LEADER}user
+            {COMMAND_LEADER}user ausername
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -270,7 +270,7 @@ Before you can start using the shell, you must create a new user.
         Show information for all users
 
         Examples:
-            {leader}users
+            {COMMAND_LEADER}users
         """
         success, users, message = self.user_management.get_users()
         if success:
@@ -310,7 +310,7 @@ Before you can start using the shell, you must create a new user.
         You can skip any prompt by pressing enter.
 
         Examples:
-            {leader}user_edit
+            {COMMAND_LEADER}user_edit
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -337,8 +337,8 @@ Before you can start using the shell, you must create a new user.
             username: The username of the user to be deleted
 
         Examples:
-            {leader}user_delete
-            {leader}user_delete myusername
+            {COMMAND_LEADER}user_delete
+            {COMMAND_LEADER}user_delete myusername
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -383,11 +383,11 @@ Before you can start using the shell, you must create a new user.
         Recommend altering this or top_p but not both.
 
         Arguments:
-            temperature: Float between 0 and 2
+            temperature: Float between {OPENAPI_TEMPERATURE_MIN} and {OPENAPI_TEMPERATURE_MAX}, default: {OPENAPI_DEFAULT_TEMPERATURE}
 
         Examples:
-            {leader}model_temperature
-            {leader}model_temperature 1.5
+            {COMMAND_LEADER}model_temperature
+            {COMMAND_LEADER}model_temperature {OPENAPI_TEMPERATURE_MAX}
         """
         return self.adjust_model_setting("float", "temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
 
@@ -404,11 +404,11 @@ Before you can start using the shell, you must create a new user.
         Recommend altering this or temperature but not both.
 
         Arguments:
-            top_p: Float between 0 and 1
+            top_p: Float between {OPENAPI_TOP_P_MIN} and {OPENAPI_TOP_P_MAX}, default: {OPENAPI_DEFAULT_TOP_P}
 
         Examples:
-            {leader}model_top_p
-            {leader}model_top_p .1
+            {COMMAND_LEADER}model_top_p
+            {COMMAND_LEADER}model_top_p {OPENAPI_TOP_P_MAX}
         """
         return self.adjust_model_setting("float", "top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
 
@@ -421,11 +421,11 @@ Before you can start using the shell, you must create a new user.
         topics.
 
         Arguments:
-            presence_penalty: Float between -2 and 2
+            presence_penalty: Float between {OPENAPI_PRESENCE_PENALTY_MIN} and {OPENAPI_PRESENCE_PENALTY_MAX}, default: {OPENAPI_DEFAULT_PRESENCE_PENALTY}
 
         Examples:
-            {leader}model_presence_penalty
-            {leader}model_presence_penalty 1.5
+            {COMMAND_LEADER}model_presence_penalty
+            {COMMAND_LEADER}model_presence_penalty {OPENAPI_PRESENCE_PENALTY_MAX}
         """
         return self.adjust_model_setting("float", "presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
 
@@ -437,11 +437,11 @@ Before you can start using the shell, you must create a new user.
         text so far. Positive values can help prevent the model from repeating itself.
 
         Arguments:
-            frequency_penalty: Float between -2 and 2
+            frequency_penalty: Float between {OPENAPI_FREQUENCY_PENALTY_MIN} and {OPENAPI_FREQUENCY_PENALTY_MAX}, default: {OPENAPI_DEFAULT_FREQUENCY_PENALTY}
 
         Examples:
-            {leader}model_frequency_penalty
-            {leader}model_frequency_penalty 1.5
+            {COMMAND_LEADER}model_frequency_penalty
+            {COMMAND_LEADER}model_frequency_penalty {OPENAPI_FREQUENCY_PENALTY_MAX}
         """
         return self.adjust_model_setting("float", "frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)
 
@@ -450,14 +450,14 @@ Before you can start using the shell, you must create a new user.
         The maximum number of tokens that can be submitted before older messages
         start getting cut off.
 
-        Current max tokens for both submission and reply are 4096, so the current
+        Current max tokens for both submission and reply are {OPENAPI_MAX_TOKENS}, so the current
         default will still allow for a short reply from the model.
 
         Arguments:
-            max_submission_tokens: Int between 1 and 4096
+            max_submission_tokens: Integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and {OPENAPI_MAX_TOKENS}, default: {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
 
         Examples:
-            {leader}model_max_submission_tokens
-            {leader}model_max_submission_tokens 3000
+            {COMMAND_LEADER}model_max_submission_tokens
+            {COMMAND_LEADER}model_max_submission_tokens {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
         """
-        return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_DEFAULT_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)
+        return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)
