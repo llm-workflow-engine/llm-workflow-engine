@@ -55,7 +55,9 @@ class UserManager(Manager):
             except SQLAlchemyError as e:
                 return self._handle_error(f"Failed to retrieve existing users: {str(e)}")
         else:
-            existing_user = self._find_by_username_or_email(username)
+            success, existing_user, message = self.get_by_username_or_email(username)
+            if not success:
+                return success, existing_user, message
         if existing_user:
             return False, None, "Username or email is already in use."
         try:
@@ -65,8 +67,9 @@ class UserManager(Manager):
         return True, user, "User successfully registered."
 
     def login(self, identifier, password):
-        # Get the user with the specified identifier (username or email)
-        user = self._find_by_username_or_email(identifier)
+        success, user, message = self.get_by_username_or_email(identifier)
+        if not success:
+            return success, user, message
         if not user:
             return False, None, "Username or email not found."
         # Hash the password and compare it to the hashed password in the database
