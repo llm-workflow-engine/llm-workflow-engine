@@ -92,6 +92,10 @@ LEGACY_COMMAND_LEADER = '!'
 DEFAULT_COMMAND = 'ask'
 COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
 DEFAULT_HISTORY_LIMIT = 20
+SHELL_ONE_SHOT_COMMANDS = [
+    'install',
+    'config',
+]
 
 # Interface-specific constants.
 NO_TITLE_TEXT = "No title"

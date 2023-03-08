@@ -2,10 +2,14 @@ import argparse
 import sys
 import asyncio
 
+import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.browser_shell import BrowserShell
 from chatgpt_wrapper.openai.api_shell import ApiShell
 from chatgpt_wrapper.version import __version__
 from chatgpt_wrapper.config import Config
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 def main():
     asyncio.run(async_main())
@@ -24,7 +28,7 @@ async def async_main():
     parser.add_argument(
         "params",
         nargs="*",
-        help="Use 'install' for install mode, or provide a prompt for ChatGPT.",
+        help="Use 'install' for install mode, 'config' to see current configuration, or provide a prompt for ChatGPT.",
     )
     parser.add_argument(
         "-c",
@@ -97,15 +101,6 @@ async def async_main():
     config = Config(**config_args)
     config.load_from_file()
 
-    install_mode = len(args.params) == 1 and args.params[0] == "install"
-    if install_mode:
-        print(
-            "Install mode: Log in to ChatGPT in the browser that pops up, and click\n"
-            "through all the dialogs, etc. Once that is achieved, exit and restart\n"
-            "this program without the 'install' parameter.\n"
-        )
-        config.set('browser.debug', True)
-
     if args.database is not None:
         config.set('database', args.database)
     config.set('chat.streaming', args.stream)
@@ -122,18 +117,39 @@ async def async_main():
     if args.model is not None:
         config.set('chat.model', args.model)
 
+    command = None
+    if len(args.params) == 1 and args.params[0] in constants.SHELL_ONE_SHOT_COMMANDS:
+        command = args.params[0]
+
     backend = config.get('backend')
     if backend == 'chatgpt-browser':
+        if command == 'install':
+            print(
+                "\n"
+                "Install mode: Log in to ChatGPT in the browser that pops up, and click\n"
+                "through all the dialogs, etc. Once that is achieved, exit and restart\n"
+                "this program without the 'install' parameter.\n"
+            )
+            config.set('browser.debug', True)
         shell = BrowserShell(config)
     elif backend == 'chatgpt-api':
+        if command == 'install':
+            print(
+                "\n"
+                "Install mode: The API backend is already configured.\n"
+            )
         shell = ApiShell(config)
     else:
         raise RuntimeError(f"Unknown backend: {backend}")
     await shell.setup()
 
-    if len(args.params) > 0 and not install_mode:
+    if command == 'config':
+        await shell.do_config("")
+        exit(0)
+
+    if len(args.params) > 0 and not command:
         await shell.default(" ".join(args.params))
-        return
+        exit(0)
 
     await shell.cmdloop()
     await shell.cleanup()
