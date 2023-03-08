@@ -103,10 +103,13 @@ class ApiShell(GPTShell):
             if not success:
                 return False, None, message
         password = getpass.getpass(prompt='Enter password (leave blank for passwordless login): ') or None
-        success, default_model = self.select_model()
-        if not success:
-            return False, None, "Invalid default model."
-        return self.user_management.register(username, email, password, default_model)
+        # NOTE: Not sure if it's a good workflow to prompt for this on register,
+        # leaving out for now.
+        # success, default_model = self.select_model()
+        # if not success:
+        #     return False, None, "Invalid default model."
+        # return self.user_management.register(username, email, password, default_model)
+        return self.user_management.register(username, email, password)
 
     async def check_login(self):
         user_count = self.session.query(User).count()
