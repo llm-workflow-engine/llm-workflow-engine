@@ -508,5 +508,5 @@ class ChatGPT:
     def get_history(self, limit=20, offset=0):
         return self.async_run(self.agpt.get_history(limit, offset))
 
-    def __del__(self):
+    def cleanup(self):
         self.async_run(self.agpt.cleanup())
