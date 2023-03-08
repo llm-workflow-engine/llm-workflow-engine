@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 import asyncio
 
@@ -92,12 +93,16 @@ async def async_main():
     )
     args = parser.parse_args()
 
-    config_args = {
-        'config_dir': args.config_dir,
-        'data_dir': args.data_dir,
-    }
-    if args.config_profile:
-        config_args['profile'] = args.config_profile
+    config_args = {}
+    config_dir = args.config_dir or os.environ.get('CHATGPT_WRAPPER_CONFIG_DIR', None)
+    config_profile = args.config_profile or os.environ.get('CHATGPT_WRAPPER_CONFIG_PROFILE', None)
+    data_dir = args.data_dir or os.environ.get('CHATGPT_WRAPPER_DATA_DIR', None)
+    if config_dir:
+        config_args['config_dir'] = config_dir
+    if config_profile:
+        config_args['profile'] = config_profile
+    if data_dir:
+        config_args['data_dir'] = data_dir
     config = Config(**config_args)
     config.load_from_file()
 
