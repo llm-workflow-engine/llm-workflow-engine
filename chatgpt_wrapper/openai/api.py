@@ -149,7 +149,8 @@ class AsyncOpenAIAPI(Backend):
   * top_p: %s
   * Presence penalty: %s
   * Frequency penalty: %s
-""" % (self.model, self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty)
+  * Max submission tokens: %s
+""" % (self.model, self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty, self.model_max_submission_tokens)
         return output
 
     def build_openai_message(self, role, content):
@@ -283,11 +284,28 @@ class AsyncOpenAIAPI(Backend):
         super().new_conversation()
         self.conversation_tokens = 0
 
+    def _strip_out_messages_over_max_tokens(self, messages, token_count, max_tokens):
+        stripped_messages_count = 0
+        while token_count > max_tokens and len(messages) > 1:
+            message = messages.pop(0)
+            token_count = self.num_tokens_from_messages(messages)
+            self.log.debug(f"Stripping message: {message['role']}, {message['content']} -- new token count: {token_count}")
+            stripped_messages_count += 1
+        token_count = self.num_tokens_from_messages(messages)
+        if token_count > max_tokens:
+            raise Exception(f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}")
+        if stripped_messages_count > 0:
+            max_tokens_exceeded_warning = f"Conversation exceeded max submission tokens ({max_tokens}), stripped out {stripped_messages_count} oldest messages before sending, sent {token_count} tokens instead"
+            self.log.warning(max_tokens_exceeded_warning)
+            self._print_status_message(False, max_tokens_exceeded_warning)
+        return messages
+
     def _prepare_ask_request(self, prompt):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
         messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
         tokens = self.num_tokens_from_messages(messages)
         self.conversation_tokens = tokens
+        messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.model_max_submission_tokens)
         return new_messages, messages
 
     def _ask_request_post(self, conversation_id, new_messages, response_message):
