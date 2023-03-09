@@ -38,6 +38,24 @@ class ApiShell(GPTShell):
     def configure_commands(self):
         self.commands = self._introspect_commands(__class__)
 
+    def get_custom_shell_completions(self):
+        user_commands = [
+            'login',
+            'user',
+            'user_delete',
+            'user_edit',
+            'user_login',
+        ]
+        success, users, user_message = self.user_management.get_users()
+        if not success:
+            raise Exception(user_message)
+        if users:
+            usernames = [u.username for u in users]
+            for command in user_commands:
+                # Overwriting the commands directly, as merging still includes deleted users.
+                self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
+        return {}
+
     async def configure_backend(self):
         self.backend = AsyncOpenAIAPI(self.config)
         database = Database(self.config)
@@ -135,7 +153,11 @@ class ApiShell(GPTShell):
         # if not success:
         #     return False, None, "Invalid default model."
         # return self.user_management.register(username, email, password, default_model)
-        return self.user_management.register(username, email, password)
+        success, user, user_message = self.user_management.register(username, email, password)
+        if success:
+            self.rebuild_completions()
+        return success, user, user_message
+
 
     async def check_login(self):
         user_count = self.session.query(User).count()
@@ -334,7 +356,10 @@ Before you can start using the shell, you must create a new user.
             "default_model": default_model,
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return self.user_management.edit_user(user.id, **kwargs)
+        success, user, user_message = self.user_management.edit_user(user.id, **kwargs)
+        if success:
+            self.rebuild_completions()
+        return success, user, user_message
 
     async def do_user_edit(self, username=None):
         """
@@ -383,7 +408,10 @@ Before you can start using the shell, you must create a new user.
             if user.id == self.logged_in_user.id:
                 return False, user, "Cannot delete currently logged in user."
             else:
-                return self.user_management.delete_user(user.id)
+                success, user, user_message = self.user_management.delete_user(user.id)
+                if success:
+                    self.rebuild_completions()
+                return success, user, user_message
         else:
             return False, user, "User does not exist."
 

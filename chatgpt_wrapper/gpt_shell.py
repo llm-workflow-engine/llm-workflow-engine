@@ -63,7 +63,6 @@ class GPTShell():
         self.log = Logger(self.__class__.__name__, self.config)
         self.console = Console()
         self.configure_commands()
-        self.command_completer = self.get_command_completer()
         self.history = self.get_history()
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
@@ -71,8 +70,7 @@ class GPTShell():
             # NOTE: Suggestions from history don't seem like a good fit for this REPL,
             # so we don't use it. Leaving it here for reference.
             # auto_suggest=AutoSuggestFromHistory(),
-            completer=self.command_completer,
-            style=self.style
+            style=self.style,
         )
         self.stream = self.config.get('chat.streaming')
         self._set_logging()
@@ -86,11 +84,25 @@ class GPTShell():
     def configure_commands(self):
         self.commands = self._introspect_commands(__class__)
 
-    def get_command_completer(self):
+    def merge_dicts(self, dict1, dict2):
+        for key in dict2:
+            if key in dict1 and isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
+                self.merge_dicts(dict1[key], dict2[key])
+            else:
+                dict1[key] = dict2[key]
+        return dict1
+
+    def get_custom_shell_completions(self):
+        return {}
+
+    def set_base_shell_completions(self):
         commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
         commands_with_leader["%shelp" % constants.COMMAND_LEADER] = {key: None for key in self.commands}
-        completer = NestedCompleter.from_nested_dict(commands_with_leader)
-        return completer
+        self.base_shell_completions = commands_with_leader
+
+    def rebuild_completions(self):
+        completions = self.merge_dicts(self.base_shell_completions, self.get_custom_shell_completions())
+        self.command_completer = NestedCompleter.from_nested_dict(completions)
 
     def validate_int(self, value, min=None, max=None):
         try:
@@ -240,6 +252,8 @@ class GPTShell():
 
     async def setup(self):
         await self.configure_backend()
+        self.set_base_shell_completions()
+        self.rebuild_completions()
         self._update_message_map()
 
     async def cleanup(self):
@@ -876,7 +890,10 @@ class GPTShell():
         while True:
             self.set_user_prompt()
             try:
-                user_input = await self.prompt_session.prompt_async(self.prompt)
+                user_input = await self.prompt_session.prompt_async(
+                    self.prompt,
+                    completer=self.command_completer,
+                )
             except KeyboardInterrupt:
                 continue  # Control-C pressed. Try again.
             except EOFError:
