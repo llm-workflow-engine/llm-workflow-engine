@@ -1,6 +1,33 @@
 # The values in this sample configuration are the default values.
 # Configuration syntax is YAML, learn more at: https://yaml.org
 
+
+##########################################################
+# Backend settings.
+##########################################################
+# The backend the shell should use, one of: chatgpt-browser, chatgpt-api
+backend: chatgpt-browser
+# The database connection string, in a format SQLAlchemy understands.
+database: sqlite:////home/[username]/.local/share/chatgpt-wrapper/profiles/default/storage.db
+
+
+##########################################################
+# Shell settings.
+##########################################################
+shell:
+  # NOTE: This setting is only available on the following backends: chatgpt-api
+  # Customize the prompt prefix, the following token are available:
+  # - $USER: Logged in username
+  # - $MODEL: The LLM model name
+  # - $NEWLINE: Insert a newline
+  # - $TEMPERATURE: The current temperature
+  # - $TOP_P: The current top_p
+  # - $PRESENCE_PENALTY: The current presence penalty
+  # - $FREQUENCY_PENALTY: The current frequency penalty
+  # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
+  # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation
+  prompt_prefix: ($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL
+
 ##########################################################
 # Browser settings.
 ##########################################################
@@ -17,6 +44,16 @@ browser:
 chat:
   # The model to use when communicating with the server.
   model: default
+  # When using the OpenAI API backend, the defaults for these values can be
+  # customized. See
+  # https://platform.openai.com/docs/api-reference/chat for more information.
+  model_customizations:
+    temperature: 1
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    # See '/help model_max_submission_tokens' for more information.
+    max_submission_tokens: 4000
   # If true, responses will be streamed in real time (no markdown formatting).
   streaming: true
   # Chat logs.

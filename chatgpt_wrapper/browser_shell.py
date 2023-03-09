@@ -7,20 +7,10 @@ class BrowserShell(GPTShell):
     """
 
     def configure_commands(self):
-        super().configure_commands()
-        self.commands.extend([method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")])
+        self.commands = self._introspect_commands(__class__)
 
     async def configure_backend(self):
         self.backend = await AsyncChatGPT(self.config).create(timeout=90)
-
-    def _conversation_from_messages(self, messages):
-        message_parts = []
-        for message in messages:
-            if 'content' in message:
-                message_parts.append("**%s**:" % message['author']['role'].capitalize())
-                message_parts.extend(message['content']['parts'])
-        content = "\n\n".join(message_parts)
-        return content
 
     async def do_session(self, _):
         """
@@ -29,7 +19,7 @@ class BrowserShell(GPTShell):
         This can resolve errors under certain scenarios.
 
         Examples:
-            {leader}session
+            {COMMAND_LEADER}session
         """
         await self.backend.refresh_session()
         usable = (

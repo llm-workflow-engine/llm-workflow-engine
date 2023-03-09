@@ -4,7 +4,6 @@ import yaml
 import os
 import platform
 import sys
-import datetime
 import subprocess
 
 from prompt_toolkit import PromptSession
@@ -20,8 +19,9 @@ from rich.markdown import Markdown
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
-
-console = Console()
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 is_windows = platform.system() == "Windows"
 
@@ -48,6 +48,7 @@ class GPTShell():
 
     intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
     prompt = "> "
+    prompt_prefix = ""
     doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
 
     # our stuff
@@ -60,6 +61,7 @@ class GPTShell():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
+        self.console = Console()
         self.configure_commands()
         self.command_completer = self.get_command_completer()
         self.history = self.get_history()
@@ -75,14 +77,42 @@ class GPTShell():
         self.stream = self.config.get('chat.streaming')
         self._set_logging()
 
+    def exec_prompt_pre(self, _command, _arg):
+        pass
+
+    def _introspect_commands(self, klass):
+        return [method[3:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("do_")]
+
     def configure_commands(self):
-        self.commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
+        self.commands = self._introspect_commands(__class__)
 
     def get_command_completer(self):
         commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
         commands_with_leader["%shelp" % constants.COMMAND_LEADER] = {key: None for key in self.commands}
         completer = NestedCompleter.from_nested_dict(commands_with_leader)
         return completer
+
+    def validate_int(self, value, min=None, max=None):
+        try:
+            value = int(value)
+        except ValueError:
+            return False
+        if min and value < min:
+            return False
+        if max and value > max:
+            return False
+        return value
+
+    def validate_float(self, value, min=None, max=None):
+        try:
+            value = float(value)
+        except ValueError:
+            return False
+        if min and value < min:
+            return False
+        if max and value > max:
+            return False
+        return value
 
     def get_history(self):
         return FileHistory(constants.COMMAND_HISTORY_FILE)
@@ -114,8 +144,13 @@ class GPTShell():
             method = self.get_command_method(command)
             doc = method.__doc__
             if doc:
-                help_text = doc.replace("{leader}", constants.COMMAND_LEADER)
-                return textwrap.dedent(help_text)
+                for sub in constants.HELP_TOKEN_VARIBALE_SUBSTITUTIONS:
+                    try:
+                        const_value = getattr(constants, sub)
+                    except AttributeError:
+                        raise AttributeError(f"'{sub}' in HELP_TOKEN_VARIBALE_SUBSTITUTIONS is not a valid constant")
+                    doc = doc.replace("{%s}" % sub, str(const_value))
+                return textwrap.dedent(doc)
 
     def help_commands(self):
         print("")
@@ -143,8 +178,11 @@ class GPTShell():
                     print("\nERROR: could not open log file: %s" % log_file)
                     sys.exit(0)
 
-    def _set_prompt(self):
-        self.prompt = f"{self.prompt_number}> "
+    def _set_prompt(self, prefix=''):
+        self.prompt = f"{self.prompt_prefix}{self.prompt_number}> "
+
+    def _set_prompt_prefix(self, prefix=''):
+        self.prompt_prefix = prefix
 
     def _update_message_map(self):
         self.prompt_number += 1
@@ -154,8 +192,12 @@ class GPTShell():
         )
         self._set_prompt()
 
+    def _print_status_message(self, success, message):
+        self.console.print(message, style="bold green" if success else "bold red")
+        print("")
+
     def _print_markdown(self, output):
-        console.print(Markdown(output))
+        self.console.print(Markdown(output))
         print("")
 
     def _write_log(self, prompt, response):
@@ -190,6 +232,9 @@ class GPTShell():
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
+    def set_user_prompt(self):
+        pass
+
     async def configure_backend():
         raise NotImplementedError
 
@@ -200,15 +245,26 @@ class GPTShell():
     async def cleanup(self):
         pass
 
+    def _conversation_from_messages(self, messages):
+        message_parts = []
+        for message in messages:
+            message_parts.append("**%s**:" % message['role'].capitalize())
+            message_parts.append(message['message'])
+        content = "\n\n".join(message_parts)
+        return content
+
     async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = await self.backend.get_history(limit=limit, offset=offset)
-        return history
+        success, history, message = await self.backend.get_history(limit=limit, offset=offset)
+        return success, history, message
 
-    async def _set_title(self, title, conversation_id=None):
+    async def _set_title(self, title, conversation=None):
         self._print_markdown("* Setting title...")
-        if await self.backend.set_title(title, conversation_id):
-            self._print_markdown("* Title set to: %s" % title)
+        success, _, message = await self.backend.set_title(title, conversation['id'])
+        if success:
+            return success, conversation, f"Title set to: {conversation['title']}"
+        else:
+            return success, conversation, message
 
     async def _delete_conversation(self, id, label=None):
         if id == self.backend.conversation_id:
@@ -216,14 +272,21 @@ class GPTShell():
         else:
             label = label or id
             self._print_markdown("* Deleting conversation: %s" % label)
-            if await self.backend.delete_conversation(id):
-                self._print_markdown("* Deleted conversation: %s" % label)
+            success, conversation, message = await self.backend.delete_conversation(id)
+            if success:
+                self._print_status_message(True, f"Deleted conversation: {label}")
+            else:
+                self._print_status_message(False, f"Failed to deleted conversation: {label}, {message}")
 
     async def _delete_current_conversation(self):
         self._print_markdown("* Deleting current conversation")
-        if await self.backend.delete_conversation():
-            self._print_markdown("* Deleted current conversation")
+        success, conversation, message = await self.backend.delete_conversation()
+        if success:
+            self._print_status_message(True, "Deleted current conversation")
             await self.do_new(None)
+        else:
+            self._print_status_message(False, "Failed to delete current conversation")
+
 
     async def do_stream(self, _):
         """
@@ -233,7 +296,7 @@ class GPTShell():
         Non-streaming mode: Returns full response at completion (markdown rendering supported).
 
         Examples:
-            {leader}stream
+            {COMMAND_LEADER}stream
         """
         self.stream = not self.stream
         self._print_markdown(
@@ -245,7 +308,7 @@ class GPTShell():
         Start a new conversation
 
         Examples:
-            {leader}new
+            {COMMAND_LEADER}new
         """
         self.backend.new_conversation()
         self._print_markdown("* New conversation started.")
@@ -265,19 +328,19 @@ class GPTShell():
         Arguments can be mixed and matched as in the examples below.
 
         Examples:
-            Current conversation: {leader}delete
-            By conversation ID: {leader}delete 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}delete 3
-            Multiple IDs: {leader}delete 1,5
-            Ranges: {leader}delete 1-5
-            Complex: {leader}delete 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
+            Current conversation: {COMMAND_LEADER}delete
+            By conversation ID: {COMMAND_LEADER}delete 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND_LEADER}delete 3
+            Multiple IDs: {COMMAND_LEADER}delete 1,5
+            Ranges: {COMMAND_LEADER}delete 1-5
+            Complex: {COMMAND_LEADER}delete 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
         """
         if arg:
             result = self._parse_conversation_ids(arg)
             if isinstance(result, list):
-                history = await self._fetch_history()
-                if history:
-                    history_list = [h for h in history.values()]
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [c for c in conversations.values()]
                     for item in result:
                         if isinstance(item, str) and len(item) == 36:
                             await self._delete_conversation(item)
@@ -286,9 +349,11 @@ class GPTShell():
                                 conversation = history_list[item - 1]
                                 await self._delete_conversation(conversation['id'], conversation['title'])
                             else:
-                                self._print_markdown("* Cannont delete history item %d, does not exist" % item)
+                                self._print_status_message(False, f"Cannont delete history item {item}, does not exist")
+                else:
+                    return success, conversations, message
             else:
-                self._print_markdown(result)
+                return False, None, result
         else:
             await self._delete_current_conversation()
 
@@ -297,13 +362,13 @@ class GPTShell():
         Show recent conversation history
 
         Arguments;
-            limit: limit the number of messages to show (default 20)
+            limit: limit the number of messages to show (default {DEFAULT_HISTORY_LIMIT})
             offset: offset the list of messages by this number
 
         Examples:
-            {leader}history
-            {leader}history 10
-            {leader}history 10 5
+            {COMMAND_LEADER}history
+            {COMMAND_LEADER}history 10
+            {COMMAND_LEADER}history 10 5
         """
         limit = constants.DEFAULT_HISTORY_LIMIT
         offset = 0
@@ -324,10 +389,12 @@ class GPTShell():
                     except ValueError:
                         self._print_markdown("* Invalid offset, must be an integer")
                         return
-        history = await self._fetch_history(limit=limit, offset=offset)
-        if history:
+        success, history, message = await self._fetch_history(limit=limit, offset=offset)
+        if success:
             history_list = [h for h in history.values()]
-            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
+            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'] or constants.NO_TITLE_TEXT, h['id']) for h in history_list]))
+        else:
+            return success, history, message
 
     async def do_nav(self, arg):
         """
@@ -337,7 +404,7 @@ class GPTShell():
             id: prompt ID
 
         Examples:
-            {leader}nav 2
+            {COMMAND_LEADER}nav 2
         """
 
         try:
@@ -381,39 +448,52 @@ class GPTShell():
             history_id: history ID of conversation
 
         Examples:
-            Get current conversation title: {leader}title
-            Set current conversation title: {leader}title new title
-            Set conversation title using history ID: {leader}title 1
+            Get current conversation title: {COMMAND_LEADER}title
+            Set current conversation title: {COMMAND_LEADER}title new title
+            Set conversation title using history ID: {COMMAND_LEADER}title 1
         """
         if arg:
-            history = await self._fetch_history()
-            history_list = [h for h in history.values()]
-            conversation_id = None
-            id = None
-            try:
-                id = int(arg)
-            except Exception:
-                pass
-            if id:
-                if id <= len(history_list):
-                    conversation_id = history_list[id - 1]["id"]
+            success, conversations, message = await self._fetch_history()
+            if success:
+                history_list = [c for c in conversations.values()]
+                conversation = None
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    pass
+                if id:
+                    if id <= len(history_list):
+                        conversation = history_list[id - 1]
+                    else:
+                        return False, conversations, "Cannot set title on history item %d, does not exist" % id
+                    new_title = input("Enter new title for '%s': " % conversation["title"] or constants.NO_TITLE_TEXT)
                 else:
-                    self._print_markdown("* Cannot set title on history item %d, does not exist" % id)
-                    return
-            if conversation_id:
-                new_title = input("Enter new title for '%s': " % history[conversation_id]["title"])
+                    if self.backend.conversation_id in conversations:
+                        conversation = conversations[self.backend.conversation_id]
+                    else:
+                        success, conversation, message = await self.backend.get_conversation(self.backend.conversation_id)
+                        if not success:
+                            return success, conversations, message
+                    new_title = arg
+                # Browser backend doesn't return a full conversation object,
+                # so adjust and re-use the current one.
+                conversation['title'] = new_title
+                return await self._set_title(new_title, conversation)
             else:
-                new_title = arg
-            await self._set_title(new_title, conversation_id)
+                return success, conversations, message
         else:
             if self.backend.conversation_id:
-                history = await self._fetch_history()
-                if self.backend.conversation_id in history:
-                    self._print_markdown("* Title: %s" % history[self.backend.conversation_id]['title'])
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    if self.backend.conversation_id in conversations:
+                        self._print_markdown("* Title: %s" % conversations[self.backend.conversation_id]['title'] or constants.NO_TITLE_TEXT)
+                    else:
+                        return False, conversations, "Cannot load conversation title, not in history"
                 else:
-                    self._print_markdown("* Cannot load conversation title, not in history.")
+                    return success, conversations, message
             else:
-                self._print_markdown("* Current conversation has no title, you must send information first")
+                return False, None, "Current conversation has no title, you must send information first"
 
     async def do_chat(self, arg):
         """
@@ -425,9 +505,10 @@ class GPTShell():
             history_id: The history ID
 
         Examples:
-            By conversation ID: {leader}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}chat 2
+            By conversation ID: {COMMAND_LEADER}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND_LEADER}chat 2
         """
+        conversation = None
         conversation_id = None
         title = None
         if arg:
@@ -435,33 +516,39 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = await self._fetch_history()
-                history_list = [h for h in history.values()]
-                id = None
-                try:
-                    id = int(arg)
-                except Exception:
-                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
-                    return
-                if id:
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [h for h in conversations.values()]
+                    id = None
+                    try:
+                        id = int(arg)
+                    except Exception:
+                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
-                        conversation_id = history_list[id - 1]["id"]
-                        title = history_list[id - 1]["title"]
+                        conversation = history_list[id - 1]
+                        title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
-                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
-                        return
+                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                else:
+                    return success, conversations, message
         else:
-            if not self.backend.conversation_id:
-                self._print_markdown("* Current conversation is empty, you must send information first")
-                return
-        conversation_data = await self.backend.get_conversation(conversation_id)
-        if conversation_data:
-            messages = self.backend.conversation_data_to_messages(conversation_data)
-            if title:
-                self._print_markdown(f"### {title}")
-            self._print_markdown(self._conversation_from_messages(messages))
+            if self.backend.conversation_id:
+                conversation_id = self.backend.conversation_id
+            else:
+                return False, None, "Current conversation is empty, you must send information first"
+        if conversation:
+            conversation_id = conversation["id"]
+        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        if success:
+            if conversation_data:
+                messages = self.backend.conversation_data_to_messages(conversation_data)
+                if title:
+                    self._print_markdown(f"### {title}")
+                self._print_markdown(self._conversation_from_messages(messages))
+            else:
+                return False, conversation_data, "Could not load chat content"
         else:
-            self._print_markdown("* Could not load chat content")
+            return success, conversation_data, message
 
     async def do_switch(self, arg):
         """
@@ -473,9 +560,10 @@ class GPTShell():
             history_id: The history ID
 
         Examples:
-            By conversation ID: {leader}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}switch 2
+            By conversation ID: {COMMAND_LEADER}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND_LEADER}switch 2
         """
+        conversation = None
         conversation_id = None
         title = None
         if arg:
@@ -483,39 +571,41 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = await self._fetch_history()
-                history_list = [h for h in history.values()]
-                id = None
-                try:
-                    id = int(arg)
-                except Exception:
-                    self._print_markdown(f"* Invalid chat history item {id}, must be in integer")
-                    return
-                if id:
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [c for c in conversations.values()]
+                    id = None
+                    try:
+                        id = int(arg)
+                    except Exception:
+                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
-                        conversation_id = history_list[id - 1]["id"]
-                        title = history_list[id - 1]["title"]
+                        conversation = history_list[id - 1]
+                        title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
-                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
-                        return
+                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                else:
+                    return success, conversations, message
         else:
-            self._print_markdown("* Argument required, ID or history ID")
-            return
-        if conversation_id and conversation_id == self.backend.conversation_id:
-            self._print_markdown("* You are already in chat: %s" % title)
-            return
-        conversation_data = await self.backend.get_conversation(conversation_id)
-        if conversation_data:
-            messages = self.backend.conversation_data_to_messages(conversation_data)
-            message = messages.pop()
-            self.backend.conversation_id = conversation_id
-            self.backend.parent_message_id = message['id']
-            self._update_message_map()
-            self._write_log_context()
-            if title:
-                self._print_markdown(f"### Switched to: {title}")
+            return False, None, "Argument required, ID or history ID"
+        if conversation:
+            conversation_id = conversation["id"]
+        if conversation_id == self.backend.conversation_id:
+            return True, conversation, f"You are already in chat: {title}"
+        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        if success:
+            if conversation_data:
+                messages = self.backend.conversation_data_to_messages(conversation_data)
+                message = messages.pop()
+                self.backend.switch_to_conversation(conversation_id, message['id'])
+                self._update_message_map()
+                self._write_log_context()
+                if title:
+                    self._print_markdown(f"### Switched to: {title}")
+            else:
+                return False, conversation_data, "Could not switch to chat"
         else:
-            self._print_markdown("* Could not switch to chat")
+            return success, conversation_data, message
 
     async def do_ask(self, line):
         """
@@ -524,7 +614,7 @@ class GPTShell():
         It is purely optional.
 
         Examples:
-            {leader}ask what is 6+6 (is the same as 'what is 6+6')
+            {COMMAND_LEADER}ask what is 6+6 (is the same as 'what is 6+6')
         """
         return await self.default(line)
 
@@ -544,9 +634,12 @@ class GPTShell():
                 response += chunk
             print("\n")
         else:
-            response = await self.backend.ask(line)
-            print("")
-            self._print_markdown(response)
+            success, response, message = await self.backend.ask(line)
+            if success:
+                print("")
+                self._print_markdown(response)
+            else:
+                return success, response, message
 
         self._write_log(line, response)
         self._update_message_map()
@@ -558,7 +651,7 @@ class GPTShell():
         Allows for entering more complex multi-line input prior to sending it to ChatGPT.
 
         Examples:
-            {leader}read
+            {COMMAND_LEADER}read
         """
         ctrl_sequence = "^z" if is_windows else "^d"
         self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
@@ -589,8 +682,8 @@ class GPTShell():
             default_text: The default text to open the editor with
 
         Examples:
-            {leader}editor
-            {leader}editor some text to start with
+            {COMMAND_LEADER}editor
+            {COMMAND_LEADER}editor some text to start with
         """
         try:
             process = subprocess.Popen(['vipe'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -613,7 +706,7 @@ class GPTShell():
             file_name: The name of the file to read from
 
         Examples:
-            {leader}file myprompt.txt
+            {COMMAND_LEADER}file myprompt.txt
         """
         try:
             fileprompt = open(arg, encoding="utf-8").read()
@@ -641,8 +734,8 @@ class GPTShell():
             file_name: The name of the file to write to
 
         Examples:
-            Log to file: {leader}log mylog.txt
-            Disable logging: {leader}log
+            Log to file: {COMMAND_LEADER}log mylog.txt
+            Disable logging: {COMMAND_LEADER}log
         """
         if arg:
             if self._open_log(arg):
@@ -659,7 +752,7 @@ class GPTShell():
             context_string: a context string from logs
 
         Examples:
-            {leader}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+            {COMMAND_LEADER}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
         """
         try:
             (conversation_id, parent_message_id) = arg.split(":")
@@ -681,19 +774,27 @@ class GPTShell():
         Show the current configuration
 
         Examples:
-            {leader}config
+            {COMMAND_LEADER}config
         """
         output = """
-## Configuration
+# File configuration
 
 * Config dir: %s
-* Profile: %s (as %s.yaml)
+* Config file: %s
 * Data dir: %s
+
+# Profile '%s' configuration:
 
 ```
 %s
 ```
-        """ % (self.config.config_dir, self.config.profile, self.config.profile, self.config.data_dir, yaml.dump(self.config.get(), default_flow_style=False))
+
+# Runtime configuration
+
+* Streaming: %s
+* Logging to: %s
+""" % (self.config.config_dir, self.config.config_file or "None", self.config.data_dir, self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+        output += self.backend.get_runtime_config()
         self._print_markdown(output)
 
     async def do_exit(self, _):
@@ -701,7 +802,7 @@ class GPTShell():
         Exit the ChatGPT shell
 
         Examples:
-            {leader}exit
+            {COMMAND_LEADER}exit
         """
         pass
 
@@ -710,7 +811,7 @@ class GPTShell():
         Exit the ChatGPT shell
 
         Examples:
-            {leader}quit
+            {COMMAND_LEADER}quit
         """
         pass
 
@@ -746,6 +847,14 @@ class GPTShell():
                 return method
         raise AttributeError(f"{do_command} method not found in any shell class")
 
+    def output_response(self, response):
+        if response:
+            if isinstance(response, tuple):
+                success, _obj, message = response
+                self._print_status_message(success, message)
+            else:
+                print(response)
+
     async def run_command(self, command, argument):
         if command == 'help':
             self.help(argument)
@@ -757,8 +866,7 @@ class GPTShell():
                 except Exception as e:
                     print(repr(e))
                 else:
-                    if response:
-                        print(response)
+                    self.output_response(response)
             else:
                 print(f'Unknown command: {command}')
 
@@ -766,6 +874,7 @@ class GPTShell():
         print("")
         self._print_markdown("### %s" % self.intro)
         while True:
+            self.set_user_prompt()
             try:
                 user_input = await self.prompt_session.prompt_async(self.prompt)
             except KeyboardInterrupt:
@@ -778,5 +887,9 @@ class GPTShell():
                 continue
             except EOFError:
                 break
-            await self.run_command(command, argument)
+            exec_prompt_pre_result = self.exec_prompt_pre(command, argument)
+            if exec_prompt_pre_result:
+                self.output_response(exec_prompt_pre_result)
+            else:
+                await self.run_command(command, argument)
         print('GoodBye!')

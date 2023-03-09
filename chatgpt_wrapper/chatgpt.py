@@ -1,9 +1,8 @@
-import platform
 import asyncio
-import signal
 import base64
 import json
 import time
+import datetime
 import uuid
 import re
 import shutil
@@ -11,13 +10,15 @@ from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
+from chatgpt_wrapper.backend import Backend
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
-is_windows = platform.system() == "Windows"
-
-class AsyncChatGPT:
+class AsyncChatGPT(Backend):
     """
     A ChatGPT interface that uses Playwright to run a browser,
     and interacts with that browser to communicate with ChatGPT in
@@ -31,22 +32,17 @@ class AsyncChatGPT:
 
 
     def __init__(self, config=None):
-        self.config = config or Config()
-        self.log = Logger(self.__class__.__name__, self.config)
+        super().__init__(config)
         self.play = None
         self.user_data_dir = None
         self.page = None
         self.browser = None
-        self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
-        self.model = self.config.get('chat.model')
         self.session = None
-        self.streaming = None
+        self.model = 'default'
+        self.new_conversation()
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
         self.streaming = False
-        self._setup_signal_handlers()
         self.lock = asyncio.Lock()
         self.play = await async_playwright().start()
         browser = self.config.get('browser.provider')
@@ -80,16 +76,17 @@ class AsyncChatGPT:
         self.log.info("ChatGPT initialized")
         return self
 
-    def _setup_signal_handlers(self):
-        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
-        signal.signal(sig, self.terminate_stream)
-
     def _shutdown(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(self.cleanup()))
 
     async def _start_browser(self):
         await self.page.goto("https://chat.openai.com/")
+
+    def _handle_error(self, obj, response, message):
+        full_message = f"{message}: {response.status} {response.status_text}"
+        self.log.error(full_message)
+        return False, obj, full_message
 
     async def cleanup(self):
         self.log.info("Cleaning up")
@@ -204,16 +201,26 @@ class AsyncChatGPT:
             self.log.warning("Failed to auto-generate title for new conversation")
 
     def conversation_data_to_messages(self, conversation_data):
-        mapping_dict = conversation_data['mapping']
+        mapping_dict = conversation_data['mapping'].values()
         messages = []
-        parent_id = None
+        parent_nodes = [item for item in mapping_dict if 'parent' not in item]
+        mapping_dict = [item for item in mapping_dict if 'parent' in item]
+        if len(parent_nodes) == 1 and 'children' in parent_nodes[0]:
+            parent_id = parent_nodes[0]['children'][0]
+        else:
+            parent_id = None
         while True:
-            current_item = next((item for item in mapping_dict.values() if item['parent'] == parent_id), None)
+            current_item = next((item for item in mapping_dict if item['parent'] == parent_id), None)
             if current_item is None:
                 return messages
             message = current_item['message']
-            if message is not None and 'author' in message and message['author']['role'] != 'system':
-                messages.append(current_item['message'])
+            if message is not None and 'content' in message and 'author' in message and message['author']['role'] != 'system':
+                messages.append({
+                    'id': message['id'],
+                    'role': message['author']['role'],
+                    'message': "".join(message['content']['parts']),
+                    'created_time': datetime.datetime.fromtimestamp(int(message['create_time'])),
+                })
             parent_id = current_item['id']
 
     async def delete_conversation(self, uuid=None):
@@ -228,9 +235,9 @@ class AsyncChatGPT:
         }
         ok, json, response = await self._api_patch_request(url, data)
         if ok:
-            return json
+            return ok, json, response
         else:
-            self.log.error("Failed to delete conversation")
+            return self._handle_error(json, response, "Failed to delete conversation")
 
     async def set_title(self, title, conversation_id=None):
         if self.session is None:
@@ -242,9 +249,9 @@ class AsyncChatGPT:
         }
         ok, json, response = await self._api_patch_request(url, data)
         if ok:
-            return json
+            return ok, json, "Title set"
         else:
-            self.log.error("Failed to set title")
+            return self._handle_error(json, response, "Failed to set title")
 
     async def get_history(self, limit=20, offset=0):
         if self.session is None:
@@ -258,10 +265,12 @@ class AsyncChatGPT:
         if ok:
             history = {}
             for item in json["items"]:
+                item['created_time'] = datetime.datetime.strptime(item['create_time'], "%Y-%m-%dT%H:%M:%S.%f")
+                del item['create_time']
                 history[item["id"]] = item
-            return history
+            return ok, history, "Retrieved history"
         else:
-            self.log.error("Failed to get history")
+            return self._handle_error(json, response, "Failed to get history")
 
     async def get_conversation(self, uuid=None):
         if self.session is None:
@@ -271,9 +280,9 @@ class AsyncChatGPT:
             url = f"https://chat.openai.com/backend-api/conversation/{uuid}"
             ok, json, response = await self._api_get_request(url)
             if ok:
-                return json
+                return ok, json, response
             else:
-                self.log.error(f"Failed to get conversation {uuid}")
+                return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
     async def ask_stream(self, prompt: str):
         if self.session is None:
@@ -432,11 +441,6 @@ class AsyncChatGPT:
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         await self.page.evaluate(code)
 
-    def terminate_stream(self, _signal, _frame):
-        self.log.info("Received signal to terminate stream")
-        if self.streaming:
-            self.streaming = False
-
     async def ask(self, message: str) -> str:
         """
         Send a message to chatGPT and return the response.
@@ -450,14 +454,13 @@ class AsyncChatGPT:
         async with self.lock:
             response = list([i async for i in self.ask_stream(message)])
             if len(response) == 0:
-                return "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
+                return False, response, "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
             else:
-                return ''.join(response)
+                return True, ''.join(response), "Response received"
 
     def new_conversation(self):
+        super().new_conversation()
         self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
 
 class ChatGPT:
 
