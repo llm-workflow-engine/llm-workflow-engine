@@ -23,7 +23,7 @@ class AsyncOpenAIAPI(Backend):
         self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.config.get('chat.model')]
         self.current_user = None
         self.conversation_tokens = 0
-        self.set_system_message()
+        self.set_model_system_message()
         self.set_model_temperature(self.config.get('chat.model_customizations.temperature'))
         self.set_model_top_p(self.config.get('chat.model_customizations.top_p'))
         self.set_model_presence_penalty(self.config.get('chat.model_customizations.presence_penalty'))
@@ -124,8 +124,8 @@ class AsyncOpenAIAPI(Backend):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
-    def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
-        self.system_message = message
+    def set_model_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
+        self.model_system_message = message
 
     def set_model_temperature(self, temperature=constants.OPENAPI_DEFAULT_TEMPERATURE):
         self.model_temperature = temperature
@@ -151,7 +151,8 @@ class AsyncOpenAIAPI(Backend):
   * Presence penalty: %s
   * Frequency penalty: %s
   * Max submission tokens: %s
-""" % (self.model, self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty, self.model_max_submission_tokens)
+  * System message: %s
+""" % (self.model, self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty, self.model_max_submission_tokens, self.model_system_message)
         return output
 
     def build_openai_message(self, role, content):
@@ -169,7 +170,7 @@ class AsyncOpenAIAPI(Backend):
             if not success:
                 raise Exception(message)
         if len(old_messages) == 0:
-            new_messages.append(self.build_openai_message('system', self.system_message))
+            new_messages.append(self.build_openai_message('system', self.model_system_message))
         new_messages.append(self.build_openai_message('user', prompt))
         return old_messages, new_messages
 

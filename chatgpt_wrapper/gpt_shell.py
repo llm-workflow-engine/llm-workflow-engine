@@ -128,6 +128,17 @@ class GPTShell():
             return False
         return value
 
+    def validate_str(self, value, min=None, max=None):
+        try:
+            value = str(value)
+        except ValueError:
+            return False
+        if min and len(value) < min:
+            return False
+        if max and len(value) > max:
+            return False
+        return value
+
     def get_history(self):
         return FileHistory(constants.COMMAND_HISTORY_FILE)
 

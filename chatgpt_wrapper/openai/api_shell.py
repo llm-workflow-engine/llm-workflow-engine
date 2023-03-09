@@ -533,3 +533,26 @@ Before you can start using the shell, you must create a new user.
             {COMMAND_LEADER}model_max_submission_tokens {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
         """
         return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)
+
+    async def do_model_system_message(self, system_message=None):
+        """
+        Set the system message sent for conversations.
+
+        The system message helps set the behavior of the assistant. Conversations begin with a system message to gently instruct the assistant.
+
+        Arguments:
+            system_message: String, {OPENAPI_MIN_SUBMISSION_TOKENS} to {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS} characters long.
+                            The special string 'default' will reset the system message to its default value.
+                            With no arguments, show the currently set system message.
+
+        Examples:
+            {COMMAND_LEADER}model_system_message
+            {COMMAND_LEADER}model_system_message {SYSTEM_MESSAGE_DEFAULT}
+        """
+        if system_message:
+            if system_message == 'default':
+                system_message = constants.SYSTEM_MESSAGE_DEFAULT
+            return self.adjust_model_setting("str", "system_message", system_message, constants.OPENAPI_MIN_SUBMISSION_TOKENS, self.backend.model_max_submission_tokens)
+        else:
+            output = "## System message:\n\n" + self.backend.model_system_message
+            self._print_markdown(output)
