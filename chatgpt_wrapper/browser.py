@@ -26,14 +26,14 @@ class AsyncBrowser(LogCapable):
         if AsyncBrowser.play is None:
             AsyncBrowser.play=await async_playwright().start()
         browser=self.config.get("browser.provider")
-        headless=self.config.get("browser.debug")
+        headless=not self.config.get("browser.debug")
         if not hasattr(self.play,browser):
             self.log.error("Browser %s is invalid, falling back on firefox. ",browser)
             browser='firefox'
         self.browser:BrowserType=getattr(self.play,browser)
 
         try:
-            self.browser_context=await self.browser.lauch_persistent_context(
+            self.browser_context=await self.browser.launch_persistent_context(
                 user_data_dir="/tmp/playwright",
                 headless=headless,
                 proxy=proxy
@@ -55,7 +55,8 @@ class AsyncBrowser(LogCapable):
         self.log.info("Going to ChatGPT website...")
         try:
             await self.page.goto("https://chat.openai.com")
-            await self.page.wait_for_url("/chat",timeout=timeout*1000)
+            if not self.config.get("browser.debug"):
+                await self.page.wait_for_url("/chat",timeout=timeout*1000)
             self.log.info("ChatGPT website loaded. ")
         except Exception as err:
             self.log.error("Cannot load ChatGPT website. Currently at %s",self.page.url)
