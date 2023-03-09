@@ -38,6 +38,7 @@ class AsyncChatGPT(Backend):
         self.page = None
         self.browser = None
         self.session = None
+        self.model = 'default'
         self.new_conversation()
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
@@ -200,11 +201,16 @@ class AsyncChatGPT(Backend):
             self.log.warning("Failed to auto-generate title for new conversation")
 
     def conversation_data_to_messages(self, conversation_data):
-        mapping_dict = conversation_data['mapping']
+        mapping_dict = conversation_data['mapping'].values()
         messages = []
-        parent_id = None
+        parent_nodes = [item for item in mapping_dict if 'parent' not in item]
+        mapping_dict = [item for item in mapping_dict if 'parent' in item]
+        if len(parent_nodes) == 1 and 'children' in parent_nodes[0]:
+            parent_id = parent_nodes[0]['children'][0]
+        else:
+            parent_id = None
         while True:
-            current_item = next((item for item in mapping_dict.values() if item['parent'] == parent_id), None)
+            current_item = next((item for item in mapping_dict if item['parent'] == parent_id), None)
             if current_item is None:
                 return messages
             message = current_item['message']

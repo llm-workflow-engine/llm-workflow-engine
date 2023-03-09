@@ -25,7 +25,6 @@ class Backend(ABC):
         self.parent_message_id = None
         self.conversation_id = None
         self.conversation_title_set = None
-        self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.config.get('chat.model')]
         self.streaming = False
         self._setup_signal_handlers()
         self.console = Console()

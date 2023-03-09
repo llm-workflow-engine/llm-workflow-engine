@@ -20,6 +20,7 @@ class AsyncOpenAIAPI(Backend):
         self._configure_access_info()
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
+        self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.config.get('chat.model')]
         self.current_user = None
         self.conversation_tokens = 0
         self.set_system_message()

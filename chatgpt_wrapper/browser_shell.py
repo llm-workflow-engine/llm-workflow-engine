@@ -7,8 +7,7 @@ class BrowserShell(GPTShell):
     """
 
     def configure_commands(self):
-        super().configure_commands()
-        self.commands.extend([method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")])
+        self.commands = self._introspect_commands(__class__)
 
     async def configure_backend(self):
         self.backend = await AsyncChatGPT(self.config).create(timeout=90)
