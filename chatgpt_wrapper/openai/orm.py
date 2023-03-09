@@ -13,6 +13,9 @@ from sqlalchemy.orm import sessionmaker
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 Base = declarative_base()
 def _set_sqlite_pragma(conn, _record):
