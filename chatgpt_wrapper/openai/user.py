@@ -109,18 +109,18 @@ class UserManager(Manager):
                 return success, existing_user, message
             if existing_user and existing_user.id != user.id:
                 return False, user, "Username cannot be the same as an existing user's email."
-            kwargs[username] = username
+            kwargs['username'] = username
         if email:
             success, existing_user, message = self.get_by_username_or_email(email)
             if not success:
                 return success, existing_user, message
             if existing_user and existing_user.id != user.id:
                 return False, user, "Email cannot be the same as an existing user's username."
-            kwargs[email] = email
+            kwargs['email'] = email
         if password:
-            kwargs[password] = self._hash_password(password)
+            kwargs['password'] = self._hash_password(password)
         if default_model:
-            kwargs[default_model] = default_model
+            kwargs['default_model'] = default_model
         try:
             user = self.orm.edit_user(user, **kwargs)
         except SQLAlchemyError as e:
