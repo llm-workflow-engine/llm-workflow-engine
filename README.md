@@ -208,7 +208,7 @@ mkdir -p ~/.config/chatgpt-wrapper/profiles/default
 cp config.sample.yaml ~/.config/chatgpt-wrapper/profiles/default/config.yaml
 ```
 
-Then edit the settings in that file to taste.
+Then edit the settings in that file to taste.  You'll want to make sure `backend` is set to `chatgpt-api` in order to use the API.
 
 ##### Database configuration
 
