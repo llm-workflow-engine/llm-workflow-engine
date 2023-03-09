@@ -18,6 +18,13 @@
 
 ## Release Notes
 
+### v0.5.1 - 09/03/2023
+
+ - Add completions for many more commands
+ - Show/set system message (initial context message for all conversations)
+ - System message aliases
+ - Template management system. See below for details
+
 ### v0.5.0 - 08/03/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
@@ -261,6 +268,21 @@ of the settings.
 
 Command line arguments overrride custom configuration settings, which override default
 configuration settings.
+
+## Templates
+
+The wrapper comes with a full template management system.
+
+Templates allow storing text in template files, and quickly leveraging the contents as your user input.
+
+Features:
+
+ * Per-profile templates
+ * Create/edit templates
+ * `{{ variable }}` syntax substitution
+ * Five different workflows for collecting variable values, editing, and running
+
+See the various `/help template` commands for more information.
 
 ## Tutorials:
 
