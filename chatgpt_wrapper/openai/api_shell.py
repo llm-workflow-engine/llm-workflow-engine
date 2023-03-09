@@ -75,6 +75,32 @@ class ApiShell(GPTShell):
         default_model = models[int(selected_model) - 1]
         return True, default_model
 
+    # Overriding default implementation because API should use UUIDs.
+    async def do_context(self, arg):
+        """
+        Load an old context from the log
+
+        Arguments:
+            context_string: a context string from logs
+
+        Examples:
+            {COMMAND_LEADER}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+        """
+        try:
+            (conversation_id, parent_message_id) = arg.split(":")
+            assert conversation_id == "None" or int(conversation_id) > 0
+            assert int(parent_message_id) > 0
+        except Exception:
+            self._print_markdown("Invalid parameter to `context`.")
+            return
+        self._print_markdown("* Loaded specified context.")
+        self.backend.conversation_id = (
+            conversation_id if conversation_id != "None" else None
+        )
+        self.backend.parent_message_id = parent_message_id
+        self._update_message_map()
+        self._write_log_context()
+
     async def do_user_register(self, username=None):
         """
         Register a new user
@@ -323,7 +349,7 @@ Before you can start using the shell, you must create a new user.
         if not self._is_logged_in():
             return False, None, "Not logged in."
         if username:
-            success, user, message = self.user_management.get_user_by_username(username)
+            success, user, message = self.user_management.get_by_username(username)
             if not success:
                 return success, user, message
             if user:
@@ -350,7 +376,7 @@ Before you can start using the shell, you must create a new user.
             return False, None, "Not logged in."
         if not username:
             username = input("Enter username: ")
-        success, user, message = self.user_management.get_user_by_username(username)
+        success, user, message = self.user_management.get_by_username(username)
         if not success:
             return success, user, message
         if user:
