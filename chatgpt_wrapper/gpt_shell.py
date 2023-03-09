@@ -9,7 +9,7 @@ import subprocess
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.completion import NestedCompleter
+from prompt_toolkit.completion import NestedCompleter, PathCompleter
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
 
@@ -98,6 +98,8 @@ class GPTShell():
     def set_base_shell_completions(self):
         commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
         commands_with_leader["%shelp" % constants.COMMAND_LEADER] = {key: None for key in self.commands}
+        commands_with_leader["%sfile" % constants.COMMAND_LEADER] = PathCompleter()
+        commands_with_leader["%slog" % constants.COMMAND_LEADER] = PathCompleter()
         self.base_shell_completions = commands_with_leader
 
     def rebuild_completions(self):
