@@ -16,6 +16,22 @@
 
 ## Release Notes
 
+### v0.5.0 - 08/03/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+ - The return values for the public methods of the `ChatGPT`/`AsyncChatGPT` classes have changed, they are now tuple with the following values:
+   - success: Boolean, True if the operation succeeded, False if the operation failed.
+   - data: Object, the data the command generated.
+   - message: Human-readable message about the outcome of the operation.
+
+ - Introduced the concept of multiple 'backends' -- see below for the currently supported ones
+ - Added the 'chatgpt-api' backend, communicates via the official OpenAI REST endpoint for ChatGPT
+   - Basic multi-user support (admin party at CLI)
+   - Data stored in a database (SQLite by default, any configurable in SQLAlchemy allowed)
+   - Allows full model customiztion
+   - Numerous new shell commands and enhancements
+
 ### v0.4.3 - 03/03/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
@@ -88,25 +104,141 @@ To use the /write command, you need to install vipe. In ubuntu, you can install 
 
 ## Installation
 
-1. Install the latest version of this software directly from github with pip:
+### Code
+
+#### From packages
+
+Install the latest version of this software directly from github with pip:
 
 ```bash
 pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 ```
+#### From source (recommended for development)
 
-2. Install a browser in playwright (if you haven't already). The program will use firefox by default.
+* Install the latest version of this software directly from git:
+  ```bash
+  git clone https://github.com/mmabrouk/chatgpt-wrapper.git
+  ```
+* Install the the development package:
+  ```bash
+  cd chatgpt-wrapper
+  pip install -e .
+  ```
+
+### Backend
+
+The wrapper works with several differnt backends to connect to the ChatGPT models, and installation is different for each backend.
+
+#### Playwright (browser-based)
+
+* Pros:
+  * Free or paid version available (as of this writing)
+  * Fairly easy to set up for non-technical users
+* Cons:
+  * Slow (runs a full browser session)
+  * Clunky authentication method
+  * No model customizations
+  * Third party controls your data
+
+Install a browser in playwright (if you haven't already). The program will use firefox by default.
 
 ```
 playwright install firefox
 ```
 
-3. Start up the program in `install` mode. This opens up a browser window. Log in to ChatGPT in the browser window, then stop the program.
+Start up the program in `install` mode:
 
 ```bash
 chatgpt install
 ```
 
-4. Restart the program without the `install` parameter to begin using it.
+This opens up a browser window. Log in to ChatGPT in the browser window, walk through all the intro screens, then exit program.
+
+```bash
+1> /exit
+```
+
+Restart the program without the `install` parameter to begin using it.
+
+```bash
+chatgpt
+```
+
+#### API (REST-based)
+
+* Pros:
+  * Fast (many operations run locally for speed)
+  * Simple API authentication
+  * Full model customizations
+  * You control your data
+* Cons:
+  * Only paid version available (as of this writing)
+  * More commplex setup suitable for technical users
+
+Grab an API key from [https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys)
+
+Export the key into your local environment:
+
+```bash
+export OPENAI_API_KEY=<API_KEY>
+```
+
+Run the program with the 'config' command:
+
+```bash
+chatgpt config
+```
+
+This will show all the current configuration settings, the most important ones for installation are:
+
+* **Config dir:** Where configuration files are stored
+* **Current profile:** (shown in the 'Profile configuration' section)
+* **Config file:** The configuration file current being used
+* **Data dir:** The data storage directory
+
+Find the 'Config file' setting, and copy the [config.sample.yaml](/config.sample.yaml) there:
+
+ ```bash
+mkdir -p ~/.config/chatgpt-wrapper/profiles/default
+cp config.sample.yaml ~/.config/chatgpt-wrapper/profiles/default/config.yaml
+```
+
+Then edit the settings in that file to taste.
+
+##### Database configuration
+
+The API backend requires a database server to store conversation data. The wrapper leverages [SQLAlchemy](https://www.sqlalchemy.org/) for this.
+
+The simplest supported database is SQLite (which is already installed on most modern operating systems), but you can use any database that is supported by SQLAlchemy.
+
+Check the `database` setting from the `config` command above, which will show you the currently configured connection string for a default SQLite database.
+
+If you're happy with that setting, nothing else needs to be done -- the database will be created automatically in that location when you run the program.
+
+##### Initial user creation and login
+
+Once the database is configured, run the program with no arguments:
+
+```bash
+chatgpt
+```
+
+It will recognize no users have been created, and prompt you to create the first user:
+
+* Username: Required, no spaces or special characters
+* Email: Optional
+* Password: Optional, if not provided the user can log in without a password
+
+Once the user is created, execute the `/login` command with the username:
+
+```bash
+/login [username]
+```
+
+Once you're logged in, you have full access to all commands.
+
+**IMPORTANT NOTE:** The user authorization system from the command line is 'admin party' -- meaning every logged in user has admin privileges, including editing and deleting other users.
+
 
 ## Configuration
 
@@ -119,6 +251,8 @@ Configuration is optional, default values will be used if no configuration profi
 provided. The default configuation settings can be seen in
 [config.sample.yaml](/config.sample.yaml) -- the file is commented with descriptions 
 of the settings.
+
+*NOTE:* Not all settings are available on all backends. See the example config for more information.
 
 Command line arguments overrride custom configuration settings, which override default
 configuration settings.
@@ -172,8 +306,11 @@ To use the `ChatGPT` class as an API for talking to ChatGPT, create an instance 
 from chatgpt_wrapper import ChatGPT
 
 bot = ChatGPT()
-response = bot.ask("Hello, world!")
-print(response)  # prints the response from chatGPT
+success, response, message = bot.ask("Hello, world!")
+if success:
+    print(response)
+else:
+    raise RuntimeError(message)
 ```
 
 The say method takes a string argument representing the message to send to ChatGPT, and returns a string representing the response received from ChatGPT.
@@ -189,8 +326,11 @@ from chatgpt_wrapper.config import Config
 config = Config()
 config.set('browser.debug', True)
 bot = ChatGPT(config)
-response = bot.ask("Hello, world!")
-print(response)
+success, response, message = bot.ask("Hello, world!")
+if success:
+    print(response)
+else:
+    raise RuntimeError(message)
 ```
 
 ### Flask API (experimental)
