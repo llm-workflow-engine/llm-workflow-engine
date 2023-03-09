@@ -54,7 +54,19 @@ class ApiShell(GPTShell):
             for command in user_commands:
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
+        self.base_shell_completions["%smodel_temperature" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)}
+        self.base_shell_completions["%smodel_top_p" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)}
+        self.base_shell_completions["%smodel_presence_penalty" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)}
+        self.base_shell_completions["%smodel_frequency_penalty" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)}
         return {}
+
+    def float_range(self, min_val, max_val):
+        range_list = []
+        num_steps = int((max_val - min_val) * 10)
+        for i in range(num_steps + 1):
+            val = round((min_val + (i / 10)), 1)
+            range_list.append(val)
+        return range_list
 
     async def configure_backend(self):
         self.backend = AsyncOpenAIAPI(self.config)
