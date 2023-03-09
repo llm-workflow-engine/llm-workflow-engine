@@ -13,6 +13,8 @@ from prompt_toolkit.completion import NestedCompleter, PathCompleter
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
 
+from jinja2 import Environment, FileSystemLoader, meta
+
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -106,6 +108,10 @@ class GPTShell():
         commands_with_leader[self.command_with_leader('help')] = self.list_to_completion_hash(self.commands)
         commands_with_leader[self.command_with_leader('file')] = PathCompleter()
         commands_with_leader[self.command_with_leader('log')] = PathCompleter()
+        template_completions = self.list_to_completion_hash(self.templates)
+        template_commands = [c for c in self.commands if c.startswith('template') and c != 'templates']
+        for command in template_commands:
+            commands_with_leader[self.command_with_leader(command)] = template_completions
         self.base_shell_completions = commands_with_leader
 
     def list_to_completion_hash(self, completion_list):
@@ -113,6 +119,7 @@ class GPTShell():
         return completions
 
     def rebuild_completions(self):
+        self.set_base_shell_completions()
         completions = self.merge_dicts(self.base_shell_completions, self.get_custom_shell_completions())
         self.command_completer = NestedCompleter.from_nested_dict(completions)
 
@@ -160,6 +167,53 @@ class GPTShell():
             'scrollbar.button': 'bg:#222222',
         })
         return style
+
+    def ensure_template(self, template_name):
+        if not template_name:
+            return False, None, "No template name specified"
+        self.log.debug(f"Ensuring template {template_name} exists")
+        self.load_templates()
+        if template_name not in self.templates:
+            return False, template_name, f"Template '{template_name}' not found"
+        message = f"Template {template_name} exists"
+        self.log.debug(message)
+        return True, template_name, message
+
+    async def run_template(self, template_name, substitutions={}):
+        template, _ = self.get_template_and_variables(template_name)
+        self.log.debug(f"Rendering template: {template_name}")
+        message = template.render(**substitutions)
+        self.log.info(f"Running template: {template_name}")
+        print("")
+        print(message)
+        return await self.default(message)
+
+    async def collect_template_variable_values(self, template_name, variables):
+        await self.do_template(template_name)
+        self._print_markdown("##### Enter variables:\n")
+        substitutions = {}
+        for variable in variables:
+            value = input(f"    {variable}: ").strip()
+            substitutions[variable] = value
+            self.log.info(f"Collected variable {variable} for template {template_name}: {value}")
+        return substitutions
+
+    def load_templates(self):
+        self.templates_dir = '%s%s%stemplates' % (self.config.config_dir, self.config.profile, os.path.sep)
+        self.log.debug(f"Loading templates from dir: {self.templates_dir}")
+        if not os.path.exists(self.templates_dir):
+            os.makedirs(self.templates_dir)
+        jinja_env = Environment(loader=FileSystemLoader(self.templates_dir))
+        filenames = jinja_env.list_templates()
+        self.templates_env = jinja_env
+        self.templates = filenames
+
+    def get_template_and_variables(self, template_name):
+        template = self.templates_env.get_template(template_name)
+        template_source = self.templates_env.loader.get_source(self.templates_env, template_name)
+        parsed_content = self.templates_env.parse(template_source)
+        variables = meta.find_undeclared_variables(parsed_content)
+        return template, variables
 
     def legacy_command_leader_warning(self, command):
         print("\nWarning: The legacy command leader '%s' has been removed.\n"
@@ -275,7 +329,7 @@ class GPTShell():
 
     async def setup(self):
         await self.configure_backend()
-        self.set_base_shell_completions()
+        self.load_templates()
         self.rebuild_completions()
         self._update_message_map()
 
@@ -806,6 +860,135 @@ class GPTShell():
         self._update_message_map()
         self._write_log_context()
 
+    async def do_templates(self, _):
+        """
+        List available templates
+
+        Templates are pre-configured text content that can be customized before sending a message to the model.
+
+        Templates are are per-profile, located in the 'templates' directory of the profile. (see {COMMAND_LEADER}config for current location)
+
+        Examples:
+            {COMMAND_LEADER}templates
+        """
+        self.load_templates()
+        self.rebuild_completions()
+        self._print_markdown("## Templates:\n\n%s" % "\n".join([f"* {t}" for t in self.templates]))
+
+    async def do_template(self, template_name):
+        """
+        Display a template
+
+        Arguments:
+            template_name: Required. The name of the template
+
+        Examples:
+            {COMMAND_LEADER}template mytemplate.txt
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, _ = self.get_template_and_variables(template_name)
+        message = open(template.filename).read()
+        self._print_markdown(f"\n## Template '{template_name}'\n\n{message}")
+
+
+
+    async def do_template_edit(self, template_name):
+        """
+        Create a new template, or edit an existing template
+
+        Arguments:
+            template_name: Required. The name of the template
+
+        Examples:
+            {COMMAND_LEADER}template_edit mytemplate.txt
+        """
+        if not template_name:
+            return False, template_name, "No template name specified"
+        editor = os.environ.get('EDITOR', 'vim')
+        filepath = "%s%s%s" % (self.templates_dir, os.path.sep, template_name)
+        subprocess.run([editor, filepath], check=True)
+        self.load_templates()
+        self.rebuild_completions()
+
+    async def do_template_run(self, template_name):
+        """
+        Run a template
+
+        Running a template sends the content of it to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND_LEADER}template_run mytemplate.txt
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        return await self.run_template(template_name)
+
+    async def do_template_prompt_run(self, template_name):
+        """
+        Prompt for template variable values, then run
+
+        Prompts for a value for each variable in the template, sustitutes the values
+        in the template, and sends the final content to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND_LEADER}template_prompt_run mytemplate.txt
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        _, variables = self.get_template_and_variables(template_name)
+        substitutions = await self.collect_template_variable_values(template_name, variables)
+        return await self.run_template(template_name, substitutions)
+
+    async def do_template_edit_run(self, template_name):
+        """
+        Open a template for final editing, then run it
+
+        Open the template in an editor, and upon editor exit, send the final content
+        to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND_LEADER}template_edit_run mytemplate.txt
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, _ = self.get_template_and_variables(template_name)
+        message = template.render()
+        return await self.do_editor(message)
+
+    async def do_template_prompt_edit_run(self, template_name):
+        """
+        Prompts for a value for each variable in the template, sustitutes the values
+        in the template, opens an editor for final edits, and sends the final content
+        to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND_LEADER}template_prompt_edit_run mytemplate.txt
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, variables = self.get_template_and_variables(template_name)
+        substitutions = await self.collect_template_variable_values(template_name, variables)
+        message = template.render(**substitutions)
+        return await self.do_editor(message)
+
     async def do_config(self, _):
         """
         Show the current configuration
@@ -819,6 +1002,7 @@ class GPTShell():
 * Config dir: %s
 * Config file: %s
 * Data dir: %s
+* Templates dir: %s
 
 # Profile '%s' configuration:
 
@@ -830,7 +1014,7 @@ class GPTShell():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.config.config_dir, self.config.config_file or "None", self.config.data_dir, self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.config.config_dir, self.config.config_file or "None", self.config.data_dir, self.templates_dir, self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         self._print_markdown(output)
 
