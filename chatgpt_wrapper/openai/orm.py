@@ -191,6 +191,7 @@ class Orm:
         self.session.delete(user)
         self.session.commit()
         self.log.info(f'Deleted User with id {user.id}')
+        return user
 
     def delete_conversation(self, conversation):
         self.session.delete(conversation)
