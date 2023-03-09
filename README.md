@@ -8,6 +8,8 @@
 
 💬 **Runs in Shell**. You can call and interact with ChatGPT in the terminal.
 
+💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint.
+
 🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT in your Python scripts.
 
 🐳 **Docker image**. The ChatGPT Wrapper is also available as a docker image. (experimental)
@@ -21,9 +23,9 @@
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
  - The return values for the public methods of the `ChatGPT`/`AsyncChatGPT` classes have changed, they are now tuple with the following values:
-   - success: Boolean, True if the operation succeeded, False if the operation failed.
-   - data: Object, the data the command generated.
-   - message: Human-readable message about the outcome of the operation.
+   - `success`: Boolean, True if the operation succeeded, False if the operation failed.
+   - `data`: Object, the data the command generated.
+   - `message`: Human-readable message about the outcome of the operation.
 
  - Introduced the concept of multiple 'backends' -- see below for the currently supported ones
  - Added the 'chatgpt-api' backend, communicates via the official OpenAI REST endpoint for ChatGPT
