@@ -54,6 +54,10 @@ chat:
     frequency_penalty: 0
     # See '/help model_max_submission_tokens' for more information.
     max_submission_tokens: 4000
+    # Configure aliases to switch between system messages, key is alias, value is message.
+    # See '/help model_system_message' for more information.
+    system_message:
+      programmer: "You are an expert programmer, who responds to questions with brief examples in code."
   # If true, responses will be streamed in real time (no markdown formatting).
   streaming: true
   # Chat logs.

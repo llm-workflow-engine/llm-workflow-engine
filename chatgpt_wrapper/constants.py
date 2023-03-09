@@ -17,6 +17,7 @@ OPENAPI_CHAT_RENDER_MODELS = {
 }
 
 SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
+SYSTEM_MESSAGE_PROGRAMMER = "You are an expert programmer, who responds to questions with brief examples in code."
 DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT = 'You write short 3-5 word titles for any content'
 DEFAULT_TITLE_GENERATION_USER_PROMPT = 'Write a title for this content:'
 
@@ -63,6 +64,9 @@ DEFAULT_CONFIG = {
             'presence_penalty': OPENAPI_DEFAULT_PRESENCE_PENALTY,
             'frequency_penalty': OPENAPI_DEFAULT_FREQUENCY_PENALTY,
             'max_submission_tokens': OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS,
+            'system_message': {
+                'programmer': SYSTEM_MESSAGE_PROGRAMMER,
+            },
         },
         'streaming': False,
         'log': {

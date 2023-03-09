@@ -84,6 +84,10 @@ class GPTShell():
     def configure_commands(self):
         self.commands = self._introspect_commands(__class__)
 
+    def command_with_leader(self, command):
+        key = "%s%s" % (constants.COMMAND_LEADER, command)
+        return key
+
     def merge_dicts(self, dict1, dict2):
         for key in dict2:
             if key in dict1 and isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
@@ -96,11 +100,17 @@ class GPTShell():
         return {}
 
     def set_base_shell_completions(self):
-        commands_with_leader = {"%s%s" % (constants.COMMAND_LEADER, key): None for key in self.commands}
-        commands_with_leader["%shelp" % constants.COMMAND_LEADER] = {key: None for key in self.commands}
-        commands_with_leader["%sfile" % constants.COMMAND_LEADER] = PathCompleter()
-        commands_with_leader["%slog" % constants.COMMAND_LEADER] = PathCompleter()
+        commands_with_leader = {}
+        for command in self.commands:
+            commands_with_leader[self.command_with_leader(command)] = None
+        commands_with_leader[self.command_with_leader('help')] = self.list_to_completion_hash(self.commands)
+        commands_with_leader[self.command_with_leader('file')] = PathCompleter()
+        commands_with_leader[self.command_with_leader('log')] = PathCompleter()
         self.base_shell_completions = commands_with_leader
+
+    def list_to_completion_hash(self, completion_list):
+        completions = {str(val): None for val in completion_list}
+        return completions
 
     def rebuild_completions(self):
         completions = self.merge_dicts(self.base_shell_completions, self.get_custom_shell_completions())

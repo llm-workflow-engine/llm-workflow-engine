@@ -54,19 +54,27 @@ class ApiShell(GPTShell):
             for command in user_commands:
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
-        self.base_shell_completions["%smodel_temperature" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)}
-        self.base_shell_completions["%smodel_top_p" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)}
-        self.base_shell_completions["%smodel_presence_penalty" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)}
-        self.base_shell_completions["%smodel_frequency_penalty" % constants.COMMAND_LEADER] = {str(val): None for val in self.float_range(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)}
-        return {}
+        return {
+            self.command_with_leader('model_temperature'): self.float_range_to_completions(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX),
+            self.command_with_leader('model_top_p'): self.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
+            self.command_with_leader('model_presence_penalty'): self.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
+            self.command_with_leader('model_frequency_penalty'): self.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
+            self.command_with_leader('model_system_message'): self.list_to_completion_hash(self.get_system_message_aliases()),
+        }
 
-    def float_range(self, min_val, max_val):
+    def float_range_to_completions(self, min_val, max_val):
         range_list = []
         num_steps = int((max_val - min_val) * 10)
         for i in range(num_steps + 1):
             val = round((min_val + (i / 10)), 1)
             range_list.append(val)
-        return range_list
+        completions = self.list_to_completion_hash(range_list)
+        return completions
+
+    def get_system_message_aliases(self):
+        aliases = self.config.get('chat.model_customizations.system_message')
+        aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
+        return aliases
 
     async def configure_backend(self):
         self.backend = AsyncOpenAIAPI(self.config)
@@ -541,7 +549,7 @@ Before you can start using the shell, you must create a new user.
         The system message helps set the behavior of the assistant. Conversations begin with a system message to gently instruct the assistant.
 
         Arguments:
-            system_message: String, {OPENAPI_MIN_SUBMISSION_TOKENS} to {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS} characters long.
+            system_message: String, {OPENAPI_MIN_SUBMISSION_TOKENS} to {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS} characters long, or a system message alias name from the configuration.
                             The special string 'default' will reset the system message to its default value.
                             With no arguments, show the currently set system message.
 
@@ -549,10 +557,11 @@ Before you can start using the shell, you must create a new user.
             {COMMAND_LEADER}model_system_message
             {COMMAND_LEADER}model_system_message {SYSTEM_MESSAGE_DEFAULT}
         """
+        aliases = self.get_system_message_aliases()
         if system_message:
-            if system_message == 'default':
-                system_message = constants.SYSTEM_MESSAGE_DEFAULT
+            if system_message in aliases:
+                system_message = aliases[system_message]
             return self.adjust_model_setting("str", "system_message", system_message, constants.OPENAPI_MIN_SUBMISSION_TOKENS, self.backend.model_max_submission_tokens)
         else:
-            output = "## System message:\n\n" + self.backend.model_system_message
+            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.model_system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
             self._print_markdown(output)
