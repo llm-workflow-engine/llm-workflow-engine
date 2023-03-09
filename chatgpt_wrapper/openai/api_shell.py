@@ -273,7 +273,7 @@ Before you can start using the shell, you must create a new user.
 * Email: %s
 * Password: %s
 * Default model: %s
-        """ % (user.username, user.email, "set" if user.password else "not set", user.default_model)
+        """ % (user.username, user.email, "set" if user.password else "Not set", user.default_model)
         self._print_markdown(output)
 
     async def do_user(self, username=None):
