@@ -38,7 +38,7 @@ def discover_editor():
         command_parts = [editor_path]
         # Little extra sauce for Vim users.
         if executable in LINUX_EDITOR_VIM_BINARIES:
-            command_parts.extend(['-c', 'set filetype=md'])
+            command_parts.extend(['-c', 'set filetype=markdown'])
     return command_parts
 
 def open_temp_file(input_data='', suffix=None):
