@@ -350,7 +350,7 @@ Before you can start using the shell, you must create a new user.
         """
         success, users, message = self.user_management.get_users()
         if success:
-            user_list = ["* %s (%s)" % (user.username, user.default_model) for user in users]
+            user_list = ["* %s: %s (%s)" % (user.id, user.username, user.default_model) for user in users]
             user_list.insert(0, "# Users")
             self._print_markdown("\n".join(user_list))
         else:
