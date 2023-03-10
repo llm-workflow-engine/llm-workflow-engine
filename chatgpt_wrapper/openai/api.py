@@ -402,7 +402,7 @@ class OpenAIAPI:
                 yield obj
         yield from iter_over_async(self.async_openai_api.ask_stream(prompt))
 
-    def ask(self, message: str) -> str:
+    def ask(self, message: str):
         return self.async_run(self.async_openai_api.ask(message))
 
     def get_conversation(self, id=None):

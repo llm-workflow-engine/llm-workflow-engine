@@ -441,7 +441,7 @@ class AsyncChatGPT(Backend):
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         await self.page.evaluate(code)
 
-    async def ask(self, message: str) -> str:
+    async def ask(self, message: str):
         """
         Send a message to chatGPT and return the response.
 
@@ -499,7 +499,7 @@ class ChatGPT:
                 yield obj
         yield from iter_over_async(self.agpt.ask_stream(prompt))
 
-    def ask(self, message: str) -> str:
+    def ask(self, message: str):
         return self.async_run(self.agpt.ask(message))
 
     def get_conversation(self, uuid=None):

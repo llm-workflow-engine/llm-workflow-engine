@@ -79,5 +79,5 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    async def ask(self, message: str) -> str:
+    async def ask(self, message: str):
         pass

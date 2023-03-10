@@ -830,7 +830,7 @@ class GPTShell():
             return
         await self.default(fileprompt)
 
-    def _open_log(self, filename) -> bool:
+    def _open_log(self, filename):
         try:
             if os.path.isabs(filename):
                 self.logfile = open(filename, "a", encoding="utf-8")
