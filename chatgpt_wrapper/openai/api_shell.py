@@ -243,6 +243,8 @@ Before you can start using the shell, you must create a new user.
             self.logged_in_user = user
             self.backend.set_current_user(user)
             success, user, message = True, user, "Login successful."
+        if success:
+            self.backend.new_conversation()
         return success, user, message
 
     async def do_user_login(self, identifier=None):
