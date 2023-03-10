@@ -5,6 +5,7 @@ names
 openai>=0.27.0
 playwright
 prompt-toolkit
+pyperclip
 PyYAML
 rich
 sqlalchemy

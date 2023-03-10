@@ -5,6 +5,7 @@ import os
 import platform
 import sys
 import subprocess
+import pyperclip
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -173,6 +174,15 @@ class GPTShell():
         })
         return style
 
+    def paste_from_clipboard(self):
+        value = pyperclip.paste()
+        return value
+
+    def template_builtin_variables(self):
+        return {
+            'clipboard': self.paste_from_clipboard,
+        }
+
     def ensure_template(self, template_name):
         if not template_name:
             return False, None, "No template name specified"
@@ -193,14 +203,23 @@ class GPTShell():
         print(message)
         return await self.default(message)
 
-    async def collect_template_variable_values(self, template_name, variables):
+    async def collect_template_variable_values(self, template_name, variables=[]):
+        builtin_variables = self.template_builtin_variables()
+        variables = list(variables)
+        variables.extend(builtin_variables.keys())
+        # Remove dups.
+        variables = list(set(variables))
         await self.do_template(template_name)
         self._print_markdown("##### Enter variables:\n")
+        self.log.debug(f"Collecting variable values for: {template_name}")
         substitutions = {}
         for variable in variables:
-            value = input(f"    {variable}: ").strip()
+            if variable in builtin_variables:
+                value = builtin_variables[variable]()
+            else:
+                value = input(f"    {variable}: ").strip()
             substitutions[variable] = value
-            self.log.info(f"Collected variable {variable} for template {template_name}: {value}")
+            self.log.debug(f"Collected variable {variable} for template {template_name}: {value}")
         return substitutions
 
     def load_templates(self):
@@ -915,7 +934,7 @@ class GPTShell():
         command_parts = [editor]
         # Little extra sauce for Vim users.
         if executable in ['vim', 'nvim']:
-            command_parts.extend(['-c', 'set filetype=markdown'])
+            command_parts.extend(['-c', 'set filetype=md'])
         filepath = "%s%s%s" % (self.templates_dir, os.path.sep, template_name)
         command_parts.append(filepath)
         subprocess.run(command_parts, check=True)
@@ -937,7 +956,8 @@ class GPTShell():
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        return await self.run_template(template_name)
+        substitutions = await self.collect_template_variable_values(template_name)
+        return await self.run_template(template_name, substitutions)
 
     async def do_template_prompt_run(self, template_name):
         """
@@ -976,7 +996,8 @@ class GPTShell():
         if not success:
             return success, template_name, user_message
         template, _ = self.get_template_and_variables(template_name)
-        message = template.render()
+        substitutions = await self.collect_template_variable_values(template_name)
+        message = template.render(**substitutions)
         return await self.do_editor(message)
 
     async def do_template_prompt_edit_run(self, template_name):
