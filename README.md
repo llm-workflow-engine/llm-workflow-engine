@@ -24,6 +24,8 @@
  - Show/set system message (initial context message for all conversations)
  - System message aliases
  - Template management system. See below for details
+ - Set 'markdown' filetype for editor invocations (supports syntax highlighting)
+ - Add built template variables, see below for details
 
 ### v0.5.0 - 08/03/2023
 
@@ -283,6 +285,12 @@ Features:
  * Five different workflows for collecting variable values, editing, and running
 
 See the various `/help template` commands for more information.
+
+### Template builtin variables
+
+The wrapper exposes some builtin variables that can be used in templates:
+
+ * `{{ clipboard }}` - Insert the contents of the clipboard
 
 ## Tutorials:
 
