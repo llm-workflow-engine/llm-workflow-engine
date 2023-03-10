@@ -4,7 +4,6 @@ import yaml
 import os
 import platform
 import sys
-import subprocess
 import pyperclip
 
 from prompt_toolkit import PromptSession
@@ -19,9 +18,10 @@ from jinja2 import Environment, FileSystemLoader, meta
 from rich.console import Console
 from rich.markdown import Markdown
 
+import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
-import chatgpt_wrapper.constants as constants
+from chatgpt_wrapper.editor import file_editor, pipe_editor
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -86,11 +86,6 @@ class GPTShell():
 
     def configure_commands(self):
         self.commands = self._introspect_commands(__class__)
-
-    def get_editor(self):
-        editor = os.environ.get('EDITOR', 'vim')
-        executable = os.path.basename(editor)
-        return editor, executable
 
     def command_with_leader(self, command):
         key = "%s%s" % (constants.COMMAND_LEADER, command)
@@ -800,16 +795,7 @@ class GPTShell():
             {COMMAND_LEADER}editor
             {COMMAND_LEADER}editor some text to start with
         """
-        try:
-            process = subprocess.Popen(['vipe', '--suffix', 'md'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        except FileNotFoundError:
-            self._print_markdown(
-                "Failed to execute `vipe`, must be installed and in path. Install package `moreutils`. `brew install moreutils` on macOS and `apt install moreutils` on Ubuntu.")
-            return
-        process.stdin.write(args.encode())
-        process.stdin.close()
-        process.wait()
-        output = process.stdout.read().decode()
+        output = pipe_editor(args, suffix='md')
         print(output)
         await self.default(output)
 
@@ -930,14 +916,8 @@ class GPTShell():
         """
         if not template_name:
             return False, template_name, "No template name specified"
-        editor, executable = self.get_editor()
-        command_parts = [editor]
-        # Little extra sauce for Vim users.
-        if executable in ['vim', 'nvim']:
-            command_parts.extend(['-c', 'set filetype=md'])
         filepath = "%s%s%s" % (self.templates_dir, os.path.sep, template_name)
-        command_parts.append(filepath)
-        subprocess.run(command_parts, check=True)
+        file_editor(filepath)
         self.load_templates()
         self.rebuild_completions()
 
