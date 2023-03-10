@@ -613,8 +613,10 @@ class GPTShell():
             conversation_id: The ID of the conversation
             ...or...
             history_id: The history ID
+            With no arguments, show content of the current conversation.
 
         Examples:
+            Current conversation: {COMMAND_LEADER}chat
             By conversation ID: {COMMAND_LEADER}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
             By history ID: {COMMAND_LEADER}chat 2
         """
