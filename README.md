@@ -23,7 +23,7 @@
  - Add completions for many more commands
  - Show/set system message (initial context message for all conversations)
  - System message aliases
- - Template management system. See below for details
+ - Template management system. See below for details (alpha, subject to change)
  - Set 'markdown' filetype for editor invocations (supports syntax highlighting)
  - Add built template variables, see below for details
 
@@ -271,7 +271,7 @@ of the settings.
 Command line arguments overrride custom configuration settings, which override default
 configuration settings.
 
-## Templates
+## Templates (alpha, subject to change)
 
 The wrapper comes with a full template management system.
 
