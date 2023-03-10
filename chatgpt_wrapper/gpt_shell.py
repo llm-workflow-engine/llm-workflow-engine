@@ -86,6 +86,11 @@ class GPTShell():
     def configure_commands(self):
         self.commands = self._introspect_commands(__class__)
 
+    def get_editor(self):
+        editor = os.environ.get('EDITOR', 'vim')
+        executable = os.path.basename(editor)
+        return editor, executable
+
     def command_with_leader(self, command):
         key = "%s%s" % (constants.COMMAND_LEADER, command)
         return key
@@ -777,7 +782,7 @@ class GPTShell():
             {COMMAND_LEADER}editor some text to start with
         """
         try:
-            process = subprocess.Popen(['vipe'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            process = subprocess.Popen(['vipe', '--suffix', 'md'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         except FileNotFoundError:
             self._print_markdown(
                 "Failed to execute `vipe`, must be installed and in path. Install package `moreutils`. `brew install moreutils` on macOS and `apt install moreutils` on Ubuntu.")
@@ -906,9 +911,14 @@ class GPTShell():
         """
         if not template_name:
             return False, template_name, "No template name specified"
-        editor = os.environ.get('EDITOR', 'vim')
+        editor, executable = self.get_editor()
+        command_parts = [editor]
+        # Little extra sauce for Vim users.
+        if executable in ['vim', 'nvim']:
+            command_parts.extend(['-c', 'set filetype=markdown'])
         filepath = "%s%s%s" % (self.templates_dir, os.path.sep, template_name)
-        subprocess.run([editor, filepath], check=True)
+        command_parts.append(filepath)
+        subprocess.run(command_parts, check=True)
         self.load_templates()
         self.rebuild_completions()
 
