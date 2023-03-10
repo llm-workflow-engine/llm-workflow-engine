@@ -218,7 +218,7 @@ class GPTShell():
         return substitutions
 
     def load_templates(self):
-        self.templates_dir = '%s%s%stemplates' % (self.config.config_dir, self.config.profile, os.path.sep)
+        self.templates_dir = '%s%stemplates' % (self.config.config_dir, os.path.sep)
         self.log.debug(f"Loading templates from dir: {self.templates_dir}")
         if not os.path.exists(self.templates_dir):
             os.makedirs(self.templates_dir)
