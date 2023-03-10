@@ -107,8 +107,8 @@ class GPTShell():
         for command in self.commands:
             commands_with_leader[self.command_with_leader(command)] = None
         commands_with_leader[self.command_with_leader('help')] = self.list_to_completion_hash(self.commands)
-        commands_with_leader[self.command_with_leader('file')] = PathCompleter()
-        commands_with_leader[self.command_with_leader('log')] = PathCompleter()
+        for command in ['file', 'log']:
+            commands_with_leader[self.command_with_leader(command)] = PathCompleter()
         template_completions = self.list_to_completion_hash(self.templates)
         template_commands = [c for c in self.commands if c.startswith('template') and c != 'templates']
         for command in template_commands:
