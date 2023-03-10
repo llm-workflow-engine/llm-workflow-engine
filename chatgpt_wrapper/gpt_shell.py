@@ -786,8 +786,6 @@ class GPTShell():
 
         When the editor is closed, the content is sent to ChatGPT.
 
-        Requires 'vipe' executable in your path.
-
         Arguments:
             default_text: The default text to open the editor with
 

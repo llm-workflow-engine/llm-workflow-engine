@@ -112,8 +112,6 @@ See below for details on using ChatGPT as an API from Python.
 
 To use this repository, you need `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
 
-To use the `/editor` command, you need to install vipe. In ubuntu, you can install it with `sudo apt install moreutils`, in macos with `brew install moreutils`
-
 To use the 'chatgpt-api' backend, you need a database backend (SQLite by default, any configurable in SQLAlchemy allowed).
 
 ## Installation
