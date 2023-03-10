@@ -8,6 +8,7 @@ from chatgpt_wrapper.backend import Backend
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.constants as constants
+from chatgpt_wrapper.openai.user import UserManager
 from chatgpt_wrapper.openai.conversation import ConversationManager
 from chatgpt_wrapper.openai.message import MessageManager
 import chatgpt_wrapper.debug as debug
@@ -15,9 +16,10 @@ if False:
     debug.console(None)
 
 class AsyncOpenAIAPI(Backend):
-    def __init__(self, config=None):
+    def __init__(self, config=None, default_user_id=None):
         super().__init__(config)
         self._configure_access_info()
+        self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
         self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.config.get('chat.model')]
@@ -29,6 +31,12 @@ class AsyncOpenAIAPI(Backend):
         self.set_model_presence_penalty(self.config.get('chat.model_customizations.presence_penalty'))
         self.set_model_frequency_penalty(self.config.get('chat.model_customizations.frequency_penalty'))
         self.set_model_max_submission_tokens(self.config.get('chat.model_customizations.max_submission_tokens'))
+        if default_user_id is not None:
+            success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
+            if success:
+                self.set_current_user(user)
+            else:
+                raise Exception(user_message)
 
     def _configure_access_info(self):
         self.openai = openai
@@ -370,11 +378,10 @@ class AsyncOpenAIAPI(Backend):
         return self._handle_response(success, completion, message)
 
 class OpenAIAPI:
-    def __init__(self, config=None):
+    def __init__(self, config=None, default_user_id=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.async_openai_api = AsyncOpenAIAPI(config)
-        self.async_run(self.async_openai_api.create(timeout, proxy))
+        self.async_openai_api = AsyncOpenAIAPI(config, default_user_id)
 
     def __getattr__(self, __name: str):
         if hasattr(self.async_openai_api, __name):
