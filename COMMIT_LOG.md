@@ -1,3 +1,14 @@
+### v0.5.2 - 09/03/2023
+
+* **Fri Mar 10 2023:** **HOTFIX** for broken templates directory location
+* **Fri Mar 10 2023:** indicator for current conversation in /history list
+* **Fri Mar 10 2023:** tweak /chat help
+* **Fri Mar 10 2023:** set new conversation in API backend on user login
+* **Fri Mar 10 2023:** add default_user_id arg to init of API backend
+* **Fri Mar 10 2023:** add tests for chatgpt-api Python module
+* **Fri Mar 10 2023:** output user id in users list
+* **Fri Mar 10 2023:** add utility scripts for commit log and pypi release
+
 ### v0.5.1 - 09/03/2023
 
  - Add completions for many more commands
