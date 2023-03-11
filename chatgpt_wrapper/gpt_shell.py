@@ -4,6 +4,7 @@ import yaml
 import os
 import platform
 import sys
+import shutil
 import pyperclip
 
 from prompt_toolkit import PromptSession
@@ -172,6 +173,10 @@ class GPTShell():
     def paste_from_clipboard(self):
         value = pyperclip.paste()
         return value
+
+    def get_template_path(self, template_name):
+        filepath = "%s%s%s" % (self.templates_dir, os.path.sep, template_name)
+        return filepath
 
     def template_builtin_variables(self):
         return {
@@ -893,7 +898,7 @@ class GPTShell():
             template_name: Required. The name of the template
 
         Examples:
-            {COMMAND_LEADER}template mytemplate.txt
+            {COMMAND_LEADER}template mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -901,8 +906,6 @@ class GPTShell():
         template, _ = self.get_template_and_variables(template_name)
         message = open(template.filename).read()
         self._print_markdown(f"\n## Template '{template_name}'\n\n{message}")
-
-
 
     async def do_template_edit(self, template_name):
         """
@@ -912,14 +915,63 @@ class GPTShell():
             template_name: Required. The name of the template
 
         Examples:
-            {COMMAND_LEADER}template_edit mytemplate.txt
+            {COMMAND_LEADER}template_edit mytemplate.md
         """
         if not template_name:
             return False, template_name, "No template name specified"
-        filepath = "%s%s%s" % (self.templates_dir, os.path.sep, template_name)
+        filepath = self.get_template_path(template_name)
         file_editor(filepath)
         self.load_templates()
         self.rebuild_completions()
+
+    async def do_template_copy(self, template_names):
+        """
+        Copies an existing template and saves it as a new template
+
+        Arguments:
+            template_names: Required. The name of the old and new templates separated by whitespace,
+
+        Examples:
+            {COMMAND_LEADER}template_copy old_template.md new_template.md
+        """
+        try:
+            old_name, new_name = template_names.split()
+        except ValueError:
+            return False, template_names, "Old and new template name required"
+        old_filepath = self.get_template_path(old_name)
+        new_filepath = self.get_template_path(new_name)
+        if not os.path.exists(old_filepath):
+            return False, template_names, f"{old_name} does not exist"
+        if os.path.exists(new_filepath):
+            return False, template_names, f"{new_name} already exists"
+        shutil.copy2(old_filepath, new_filepath)
+        self.load_templates()
+        self.rebuild_completions()
+        return True, template_names, f"Copied {old_name} to {new_name}"
+
+    async def do_template_delete(self, template_name):
+        """
+        Deletes an existing template
+
+        Arguments:
+            template_name: Required. The name of the template to delete
+
+        Examples:
+            {COMMAND_LEADER}template_delete mytemplate.md
+        """
+        if not template_name:
+            return False, template_name, "No template name specified"
+        filepath = self.get_template_path(template_name)
+        if not os.path.exists(filepath):
+            return False, template_name, f"{template_name} does not exist"
+        confirmation = input(f"Are you sure you want to delete template {template_name}? [y/N] ").strip()
+        if confirmation.lower() in ["yes", "y"]:
+            os.remove(filepath)
+            self.load_templates()
+            self.rebuild_completions()
+            return True, template_name, f"Deleted {template_name}"
+        else:
+            return False, template_name, "Deletion aborted"
 
     async def do_template_run(self, template_name):
         """
@@ -931,7 +983,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_run mytemplate.txt
+            {COMMAND_LEADER}template_run mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -950,7 +1002,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_prompt_run mytemplate.txt
+            {COMMAND_LEADER}template_prompt_run mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -970,7 +1022,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_edit_run mytemplate.txt
+            {COMMAND_LEADER}template_edit_run mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -990,7 +1042,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_prompt_edit_run mytemplate.txt
+            {COMMAND_LEADER}template_prompt_edit_run mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
