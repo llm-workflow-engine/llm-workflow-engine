@@ -10,12 +10,6 @@ if False:
 SYSTEM = platform.system()
 
 WINDOWS_EDITOR_BINARIES = ['vim', 'micro', 'nano']
-LINUX_EDITOR_VIM_BINARIES = ['vim', 'nvim']
-
-def get_linux_editor():
-    editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
-    executable = os.path.basename(editor)
-    return editor, executable
 
 def discover_editor():
     command_parts = []
@@ -35,11 +29,8 @@ def discover_editor():
     elif SYSTEM == 'Darwin':
         command_parts = ['open', '-t']
     else:
-        editor_path, executable = get_linux_editor()
+        editor_path = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
         command_parts = [editor_path]
-        # Little extra sauce for Vim users.
-        if executable in LINUX_EDITOR_VIM_BINARIES:
-            command_parts.extend(['-c', 'set filetype=markdown'])
     return command_parts
 
 def open_temp_file(input_data='', suffix=None):
