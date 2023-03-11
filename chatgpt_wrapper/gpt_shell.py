@@ -225,7 +225,7 @@ class GPTShell():
         jinja_env = Environment(loader=FileSystemLoader(self.templates_dir))
         filenames = jinja_env.list_templates()
         self.templates_env = jinja_env
-        self.templates = filenames
+        self.templates = filenames or []
 
     def get_template_and_variables(self, template_name):
         template = self.templates_env.get_template(template_name)
