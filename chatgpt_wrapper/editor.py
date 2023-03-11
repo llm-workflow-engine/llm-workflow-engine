@@ -23,11 +23,12 @@ def discover_editor():
         editor_path = None
         for editor in WINDOWS_EDITOR_BINARIES:
             try:
-                editor_path = subprocess.check_output(f"where {editor}", shell=True).decode().strip()
+                editor_paths = subprocess.check_output(f"where {editor}", shell=True).decode().strip()
                 break
             except subprocess.CalledProcessError:
                 continue
-        if editor_path:
+        if editor_paths:
+            editor_path = editor_paths.split("\r")[0].strip()
             command_parts = [editor_path]
         else:
             raise Exception("No Windows editor found, tried: " + ", ".join(WINDOWS_EDITOR_BINARIES))
