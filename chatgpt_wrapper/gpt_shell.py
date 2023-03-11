@@ -66,6 +66,8 @@ class GPTShell():
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.console = Console()
+        self.templates = []
+        self.templates_env = None
         self.configure_commands()
         self.history = self.get_history()
         self.style = self.get_styles()
