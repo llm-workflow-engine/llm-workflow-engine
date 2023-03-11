@@ -187,21 +187,21 @@ class AsyncOpenAIAPI(Backend):
         messages.extend(new_messages)
         return messages
 
-    def create_new_converation_if_needed(self, conversation_id=None):
+    def create_new_converation_if_needed(self, conversation_id=None, title=None):
         conversation_id = conversation_id or self.conversation_id
         if conversation_id:
             success, conversation, message = self.conversation.get_conversation(conversation_id)
             if not success:
                 raise Exception(message)
         else:
-            success, conversation, message = self.conversation.add_conversation(self.current_user.id, model=self.model)
+            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title, model=self.model)
             if not success:
                 raise Exception(message)
         self.conversation_id = conversation.id
         return conversation
 
-    def add_new_messages_to_conversation(self, conversation_id, new_messages, response_message):
-        conversation = self.create_new_converation_if_needed(conversation_id)
+    def add_new_messages_to_conversation(self, conversation_id, new_messages, response_message, title=None):
+        conversation = self.create_new_converation_if_needed(conversation_id, title)
         for m in new_messages:
             success, message, user_message = self.message.add_message(conversation.id, m['role'], m['content'])
             if not success:
@@ -318,11 +318,11 @@ class AsyncOpenAIAPI(Backend):
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.model_max_submission_tokens)
         return new_messages, messages
 
-    def _ask_request_post(self, conversation_id, new_messages, response_message):
+    def _ask_request_post(self, conversation_id, new_messages, response_message, title=None):
         conversation_id = conversation_id or self.conversation_id
         if response_message:
             if self.current_user:
-                conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, response_message)
+                conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, response_message, title)
                 self.parent_message_id = last_message.id
                 self.gen_title(conversation)
                 return True, conversation, "Conversation updated with new messages"
@@ -330,7 +330,7 @@ class AsyncOpenAIAPI(Backend):
                 return True, response_message, "No current user, conversation not saved"
         return False, None, "Conversation not updated with new messages"
 
-    async def ask_stream(self, prompt):
+    async def ask_stream(self, prompt, title=None):
         new_messages, messages = self._prepare_ask_request(prompt)
         response_message = ""
         # Streaming loop.
@@ -355,9 +355,9 @@ class AsyncOpenAIAPI(Backend):
             )
         # End streaming loop.
         self.streaming = False
-        self._ask_request_post(self.conversation_id, new_messages, response_message)
+        self._ask_request_post(self.conversation_id, new_messages, response_message, title)
 
-    async def ask(self, prompt):
+    async def ask(self, prompt, title=None):
         """
         Send a message to chatGPT and return the response.
 
@@ -371,7 +371,7 @@ class AsyncOpenAIAPI(Backend):
         success, completion, message = await self._call_openai_non_streaming(messages)
         if success:
             response_message = self._extract_completion_content(completion)
-            success, conversation, message = self._ask_request_post(self.conversation_id, new_messages, response_message)
+            success, conversation, message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
             if success:
                 return self._handle_response(success, response_message, message)
             return self._handle_response(success, conversation, message)
@@ -392,7 +392,7 @@ class OpenAIAPI:
     def async_run(self, awaitable):
         return asyncio.get_event_loop().run_until_complete(awaitable)
 
-    def ask_stream(self, prompt: str):
+    def ask_stream(self, prompt, title=None):
         def iter_over_async(ait):
             loop = asyncio.get_event_loop()
             ait = ait.__aiter__()
@@ -407,10 +407,10 @@ class OpenAIAPI:
                 if done:
                     break
                 yield obj
-        yield from iter_over_async(self.async_openai_api.ask_stream(prompt))
+        yield from iter_over_async(self.async_openai_api.ask_stream(prompt, title=title))
 
-    def ask(self, message: str):
-        return self.async_run(self.async_openai_api.ask(message))
+    def ask(self, message, title=None):
+        return self.async_run(self.async_openai_api.ask(message, title=title))
 
     def get_conversation(self, id=None):
         return self.async_run(self.async_openai_api.get_conversation(id))
