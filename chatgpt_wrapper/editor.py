@@ -9,7 +9,7 @@ if False:
 
 SYSTEM = platform.system()
 
-WINDOWS_EDITOR_BINARIES = ['notepad++.exe', 'WordPad.exe', 'notepad']
+WINDOWS_EDITOR_BINARIES = ['vim', 'micro', 'nano']
 LINUX_EDITOR_VIM_BINARIES = ['vim', 'nvim']
 
 def get_linux_editor():
