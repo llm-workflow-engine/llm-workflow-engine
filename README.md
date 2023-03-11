@@ -212,6 +212,7 @@ The wrapper exposes some builtin variables that can be used in templates:
 
 ## Tutorials:
 
+- **Newest Youtube video:** [ChatCPT intro, walkthrough of features](https://www.youtube.com/watch?v=Ho3-pzAf5e8)
 - Youtube Tutorial: [How To Use ChatGPT With Unity: Python And API Setup #2](https://www.youtube.com/watch?v=CthF8c8qk4c) includes a step by step guide to installing this repository on a windows machine
 - This [Blog post](https://medium.com/geekculture/using-chatgpt-in-python-eeaed9847e72) provides a visual step-by-step guide for installing this library.
 
