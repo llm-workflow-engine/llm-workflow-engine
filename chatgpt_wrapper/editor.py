@@ -11,6 +11,10 @@ SYSTEM = platform.system()
 
 WINDOWS_EDITOR_BINARIES = ['vim', 'micro', 'nano']
 
+def get_environment_editor(default=None):
+    editor = os.environ.get('VISUAL', os.environ.get('EDITOR', default))
+    return editor
+
 def discover_editor():
     command_parts = []
     if SYSTEM == 'Windows':
@@ -27,9 +31,10 @@ def discover_editor():
         else:
             raise Exception("No Windows editor found, tried: " + ", ".join(WINDOWS_EDITOR_BINARIES))
     elif SYSTEM == 'Darwin':
-        command_parts = ['open', '-t']
+        editor_path = get_environment_editor()
+        command_parts = [editor_path] if editor_path else ['open', '-t']
     else:
-        editor_path = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
+        editor_path = get_environment_editor('vi')
         command_parts = [editor_path]
     return command_parts
 
