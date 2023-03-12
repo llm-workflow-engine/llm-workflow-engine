@@ -1,3 +1,15 @@
+### v0.5.3 - 11/03/2023
+
+* **Sat Mar 11 2023:** add some example templates and API scripts
+* **Sat Mar 11 2023:** allow passing custom title to ask/ask_stream in api backend
+* **Sat Mar 11 2023:** init defaults for templates
+* **Sat Mar 11 2023:** try to discover env editor on osx
+* **Sat Mar 11 2023:** template_copy/template_delete commands
+* **Sat Mar 11 2023:** kill special sauce for linux editor filetype, no longer needed
+* **Fri Mar 10 2023:** ensure self.templates is a list
+* **Fri Mar 10 2023:** add link to new video walkthrough
+* **Fri Mar 10 2023:** fix markdown filetype for vim syntax highlighting
+
 ### v0.5.2 - 09/03/2023
 
 * **Fri Mar 10 2023:** **HOTFIX** for broken templates directory location
