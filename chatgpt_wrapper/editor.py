@@ -48,12 +48,17 @@ def open_temp_file(input_data='', suffix=None):
 def file_editor(filepath):
     command_parts = discover_editor()
     command_parts.append(filepath)
-    subprocess.run(command_parts, check=True)
+    subprocess.call(command_parts)
 
 def pipe_editor(input_data='', suffix=None):
     filepath = open_temp_file(input_data, suffix)
     file_editor(filepath)
     with open(filepath, 'r') as f:
         output_data = f.read()
-    os.remove(filepath)
+    # This is ugly, but Windows is throwing an error on deletion of the temp file.
+    if SYSTEM == 'Windows':
+        print(f"Deletion of temporary files on Windows is not currently supported, editor content was saved to '{filepath}', and can be deleted manually if desired")
+        print("If you'd like to help fix this issue, see https://github.com/mmabrouk/chatgpt-wrapper/issues/224")
+    else:
+        os.remove(filepath)
     return output_data
