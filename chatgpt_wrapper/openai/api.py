@@ -94,6 +94,16 @@ class AsyncOpenAIAPI(Backend):
         tokens = self.num_tokens_from_messages(token_messages)
         return tokens
 
+    def extract_system_message(self, model_customizations):
+        system_message = None
+        if 'system_message' in model_customizations:
+            system_message = model_customizations['system_message']
+            del model_customizations['system_message']
+            aliases = self.get_system_message_aliases()
+            if system_message in aliases:
+                system_message = aliases[system_message]
+        return system_message, model_customizations
+
     def _extract_completion_content(self, completion):
         content = "".join([c.message.content for c in completion.choices])
         return content
@@ -163,6 +173,11 @@ class AsyncOpenAIAPI(Backend):
 """ % (self.model, self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty, self.model_max_submission_tokens, self.model_system_message)
         return output
 
+    def get_system_message_aliases(self):
+        aliases = self.config.get('chat.model_customizations.system_message')
+        aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
+        return aliases
+
     def build_openai_message(self, role, content):
         message = {
             "role": role,
@@ -170,7 +185,7 @@ class AsyncOpenAIAPI(Backend):
         }
         return message
 
-    def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None):
+    def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None, system_message=None):
         old_messages = []
         new_messages = []
         if conversation_id:
@@ -178,7 +193,8 @@ class AsyncOpenAIAPI(Backend):
             if not success:
                 raise Exception(message)
         if len(old_messages) == 0:
-            new_messages.append(self.build_openai_message('system', self.model_system_message))
+            system_message = system_message or self.model_system_message
+            new_messages.append(self.build_openai_message('system', system_message))
         new_messages.append(self.build_openai_message('user', prompt))
         return old_messages, new_messages
 
@@ -310,8 +326,8 @@ class AsyncOpenAIAPI(Backend):
             self._print_status_message(False, max_tokens_exceeded_warning)
         return messages
 
-    def _prepare_ask_request(self, prompt):
-        old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id)
+    def _prepare_ask_request(self, prompt, system_message=None):
+        old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id, system_message=system_message)
         messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
         tokens = self.num_tokens_from_messages(messages)
         self.conversation_tokens = tokens
@@ -331,7 +347,8 @@ class AsyncOpenAIAPI(Backend):
         return False, None, "Conversation not updated with new messages"
 
     async def ask_stream(self, prompt, title=None, model_customizations={}):
-        new_messages, messages = self._prepare_ask_request(prompt)
+        system_message, model_customizations = self.extract_system_message(model_customizations)
+        new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         response_message = ""
         # Streaming loop.
         self.streaming = True
@@ -367,7 +384,8 @@ class AsyncOpenAIAPI(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        new_messages, messages = self._prepare_ask_request(prompt)
+        system_message, model_customizations = self.extract_system_message(model_customizations)
+        new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         success, completion, message = await self._call_openai_non_streaming(messages, **model_customizations)
         if success:
             response_message = self._extract_completion_content(completion)

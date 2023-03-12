@@ -59,7 +59,7 @@ class ApiShell(GPTShell):
             self.command_with_leader('model_top_p'): self.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
             self.command_with_leader('model_presence_penalty'): self.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
             self.command_with_leader('model_frequency_penalty'): self.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
-            self.command_with_leader('model_system_message'): self.list_to_completion_hash(self.get_system_message_aliases()),
+            self.command_with_leader('model_system_message'): self.list_to_completion_hash(self.backend.get_system_message_aliases()),
         }
 
     def float_range_to_completions(self, min_val, max_val):
@@ -70,11 +70,6 @@ class ApiShell(GPTShell):
             range_list.append(val)
         completions = self.list_to_completion_hash(range_list)
         return completions
-
-    def get_system_message_aliases(self):
-        aliases = self.config.get('chat.model_customizations.system_message')
-        aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
-        return aliases
 
     async def configure_backend(self):
         self.backend = AsyncOpenAIAPI(self.config)
@@ -559,7 +554,7 @@ Before you can start using the shell, you must create a new user.
             {COMMAND_LEADER}model_system_message
             {COMMAND_LEADER}model_system_message {SYSTEM_MESSAGE_DEFAULT}
         """
-        aliases = self.get_system_message_aliases()
+        aliases = self.backend.get_system_message_aliases()
         if system_message:
             if system_message in aliases:
                 system_message = aliases[system_message]
