@@ -9,7 +9,7 @@ if False:
 
 SYSTEM = platform.system()
 
-WINDOWS_EDITOR_BINARIES = ['vim', 'micro', 'nano']
+WINDOWS_EDITOR_BINARIES = ['micro', 'nano', 'notepad', 'vim']
 
 def get_environment_editor(default=None):
     editor = os.environ.get('VISUAL', os.environ.get('EDITOR', default))
@@ -18,18 +18,19 @@ def get_environment_editor(default=None):
 def discover_editor():
     command_parts = []
     if SYSTEM == 'Windows':
-        editor_path = None
-        for editor in WINDOWS_EDITOR_BINARIES:
-            try:
-                editor_paths = subprocess.check_output(f"where {editor}", shell=True).decode().strip()
-                break
-            except subprocess.CalledProcessError:
-                continue
-        if editor_paths:
-            editor_path = editor_paths.split("\r")[0].strip()
-            command_parts = [editor_path]
-        else:
-            raise Exception("No Windows editor found, tried: " + ", ".join(WINDOWS_EDITOR_BINARIES))
+        editor_path = get_environment_editor()
+        if not editor_path:
+            for editor in WINDOWS_EDITOR_BINARIES:
+                try:
+                    editor_paths = subprocess.check_output(f"where {editor}", shell=True).decode().strip()
+                    break
+                except subprocess.CalledProcessError:
+                    continue
+            if editor_paths:
+                editor_path = editor_paths.split("\r")[0].strip()
+                command_parts = [editor_path]
+            else:
+                raise Exception("No Windows editor found, tried: " + ", ".join(WINDOWS_EDITOR_BINARIES))
     elif SYSTEM == 'Darwin':
         editor_path = get_environment_editor()
         command_parts = [editor_path] if editor_path else ['open', '-t']
