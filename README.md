@@ -123,6 +123,8 @@ Export the key into your local environment:
 export OPENAI_API_KEY=<API_KEY>
 ```
 
+Windows users, see [here](https://www.computerhope.com/issues/ch000549.htm) for how to edit environment variables.
+
 Run the program with the 'config' command:
 
 ```bash
@@ -137,6 +139,8 @@ This will show all the current configuration settings, the most important ones f
 * **Data dir:** The data storage directory
 
 Find the 'Config file' setting, and copy the [config.sample.yaml](/config.sample.yaml) there:
+
+On Linux:
 
  ```bash
 mkdir -p ~/.config/chatgpt-wrapper/profiles/default
