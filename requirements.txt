@@ -6,6 +6,7 @@ openai>=0.27.0
 playwright
 prompt-toolkit
 pyperclip
+python-frontmatter
 PyYAML
 rich
 sqlalchemy

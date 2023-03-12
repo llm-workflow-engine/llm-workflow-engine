@@ -6,6 +6,7 @@ import platform
 import sys
 import shutil
 import pyperclip
+import frontmatter
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -14,7 +15,7 @@ from prompt_toolkit.completion import NestedCompleter, PathCompleter
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
 
-from jinja2 import Environment, FileSystemLoader, meta
+from jinja2 import Environment, FileSystemLoader, Template, meta
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -196,14 +197,30 @@ class GPTShell():
         self.log.debug(message)
         return True, template_name, message
 
+    def extract_template_run_overrides(self, metadata):
+        keys = [
+            'title',
+            'model_customizations',
+        ]
+        overrides = {}
+        for key in keys:
+            if key in metadata:
+                overrides[key] = metadata[key]
+                del metadata[key]
+        return metadata, overrides
+
     async def run_template(self, template_name, substitutions={}):
         template, _ = self.get_template_and_variables(template_name)
+        source = frontmatter.load(template.filename)
+        template_substitutions, overrides = self.extract_template_run_overrides(source.metadata)
+        final_substitutions = {**template_substitutions, **substitutions}
         self.log.debug(f"Rendering template: {template_name}")
-        message = template.render(**substitutions)
+        final_template = Template(source.content)
+        message = final_template.render(**final_substitutions)
         self.log.info(f"Running template: {template_name}")
         print("")
         print(message)
-        return await self.default(message)
+        return await self.default(message, **overrides)
 
     async def collect_template_variable_values(self, template_name, variables=[]):
         builtin_variables = self.template_builtin_variables()
@@ -737,14 +754,14 @@ class GPTShell():
         """
         return await self.default(line)
 
-    async def default(self, line):
+    async def default(self, line, title=None, model_customizations={}):
         if not line:
             return
 
         if self.stream:
             response = ""
             first = True
-            async for chunk in self.backend.ask_stream(line):
+            async for chunk in self.backend.ask_stream(line, title=title, model_customizations=model_customizations):
                 if first:
                     print("")
                     first = False
@@ -753,7 +770,7 @@ class GPTShell():
                 response += chunk
             print("\n")
         else:
-            success, response, message = await self.backend.ask(line)
+            success, response, message = await self.backend.ask(line, title=title, model_customizations=model_customizations)
             if success:
                 print("")
                 self._print_markdown(response)

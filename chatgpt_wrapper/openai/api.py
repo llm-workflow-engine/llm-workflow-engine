@@ -330,12 +330,12 @@ class AsyncOpenAIAPI(Backend):
                 return True, response_message, "No current user, conversation not saved"
         return False, None, "Conversation not updated with new messages"
 
-    async def ask_stream(self, prompt, title=None):
+    async def ask_stream(self, prompt, title=None, model_customizations={}):
         new_messages, messages = self._prepare_ask_request(prompt)
         response_message = ""
         # Streaming loop.
         self.streaming = True
-        async for response in self._call_openai_streaming(messages):
+        async for response in self._call_openai_streaming(messages, **model_customizations):
             if not self.streaming:
                 self.log.info("Request to interrupt streaming")
                 break
@@ -357,7 +357,7 @@ class AsyncOpenAIAPI(Backend):
         self.streaming = False
         self._ask_request_post(self.conversation_id, new_messages, response_message, title)
 
-    async def ask(self, prompt, title=None):
+    async def ask(self, prompt, title=None, model_customizations={}):
         """
         Send a message to chatGPT and return the response.
 
@@ -368,7 +368,7 @@ class AsyncOpenAIAPI(Backend):
             str: The response received from OpenAI.
         """
         new_messages, messages = self._prepare_ask_request(prompt)
-        success, completion, message = await self._call_openai_non_streaming(messages)
+        success, completion, message = await self._call_openai_non_streaming(messages, **model_customizations)
         if success:
             response_message = self._extract_completion_content(completion)
             success, conversation, message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
