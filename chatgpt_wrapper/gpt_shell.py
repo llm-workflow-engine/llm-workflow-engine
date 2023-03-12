@@ -1079,6 +1079,7 @@ class GPTShell():
             {COMMAND_LEADER}config
         """
         output = """
+# Backend configuration: %s
 # File configuration
 
 * Config dir: %s
@@ -1096,7 +1097,7 @@ class GPTShell():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.config.config_dir, self.config.config_file or "None", self.config.data_dir, self.templates_dir, self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.config.get('backend'), self.config.config_dir, self.config.config_file or "None", self.config.data_dir, self.templates_dir, self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         self._print_markdown(output)
 
