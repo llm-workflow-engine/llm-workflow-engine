@@ -1,3 +1,13 @@
+### v0.5.4 - 12/03/2023
+
+* **Sun Mar 12 2023:** launch backend after check for config CLI arg
+* **Sun Mar 12 2023:** fix ask/ask_stream signatures to support custom titles
+* **Sun Mar 12 2023:** add prompt-engineer example
+* **Sun Mar 12 2023:** add 'Backend configuration' section to config output
+* **Sun Mar 12 2023:** temp workaround for issue #224
+* **Sat Mar 11 2023:** allow overriding system message in template front matter
+* **Sat Mar 11 2023:** add support for frontmatter in templates
+
 ### v0.5.3 - 11/03/2023
 
 * **Sat Mar 11 2023:** add some example templates and API scripts
