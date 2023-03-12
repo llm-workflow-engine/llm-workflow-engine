@@ -36,6 +36,14 @@ To use the 'chatgpt-api' backend, you need a database backend (SQLite by default
 
 ## Installation
 
+### Notes for Windows users
+
+Most other operating systems come with SQLite (the default database choice) installed, Windows may not.
+
+If not, you can grab the 32-bit or 64-bit DLL file from [https://www.sqlite.org/download.html](https://www.sqlite.org/download.html), then place the DLL in `C:\Windows\System32` directory.
+
+You also may need to install Python, if so grab the latest stable package from [https://www.python.org/downloads/windows/](https://www.python.org/downloads/windows/) -- make sure to select the install option to `Add Python to PATH`.
+
 ### Code
 
 #### From packages
