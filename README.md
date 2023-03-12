@@ -44,6 +44,8 @@ If not, you can grab the 32-bit or 64-bit DLL file from [https://www.sqlite.org/
 
 You also may need to install Python, if so grab the latest stable package from [https://www.python.org/downloads/windows/](https://www.python.org/downloads/windows/) -- make sure to select the install option to `Add Python to PATH`.
 
+For the `/editor` command to work, you'll need a command line editor installed and in your path. You can control which editor is used by setting the `EDITOR` environment variable to the name of the editor executable, e.g. `nano` or `vim`.
+
 ### Code
 
 #### From packages
