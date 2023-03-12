@@ -10,7 +10,10 @@ class BrowserShell(GPTShell):
         self.commands = self._introspect_commands(__class__)
 
     async def configure_backend(self):
-        self.backend = await AsyncChatGPT(self.config).create(timeout=90)
+        self.backend = AsyncChatGPT(self.config)
+
+    async def launch_backend(self):
+        await self.backend.create(timeout=90)
 
     async def do_session(self, _):
         """

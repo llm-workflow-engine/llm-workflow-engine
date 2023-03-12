@@ -79,6 +79,9 @@ class ApiShell(GPTShell):
         self.session = self.user_management.orm.session
         await self.check_login()
 
+    async def launch_backend(self):
+        pass
+
     def get_user(self, user_id):
         user = self.session.get(User, user_id)
         return user

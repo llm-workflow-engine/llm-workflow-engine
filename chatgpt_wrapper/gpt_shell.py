@@ -370,6 +370,9 @@ class GPTShell():
     async def configure_backend():
         raise NotImplementedError
 
+    async def launch_backend():
+        raise NotImplementedError
+
     async def setup(self):
         await self.configure_backend()
         self.load_templates()
