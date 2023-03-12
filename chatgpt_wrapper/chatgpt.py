@@ -284,7 +284,7 @@ class AsyncChatGPT(Backend):
             else:
                 return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
-    async def ask_stream(self, prompt: str):
+    async def ask_stream(self, prompt, title=None, model_customizations={}):
         if self.session is None:
             await self.refresh_session()
 
@@ -428,7 +428,10 @@ class AsyncChatGPT(Backend):
             )
         self.streaming = False
         await self._cleanup_divs()
-        await self._gen_title()
+        if title:
+            await self.set_title(title)
+        else:
+            await self._gen_title()
 
     async def interrupt_stream(self):
         self.log.info("Interrupting stream")
@@ -441,7 +444,7 @@ class AsyncChatGPT(Backend):
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         await self.page.evaluate(code)
 
-    async def ask(self, message: str):
+    async def ask(self, message, title=None, model_customizations={}):
         """
         Send a message to chatGPT and return the response.
 
@@ -452,7 +455,7 @@ class AsyncChatGPT(Backend):
             str: The response received from OpenAI.
         """
         async with self.lock:
-            response = list([i async for i in self.ask_stream(message)])
+            response = list([i async for i in self.ask_stream(message, title=title)])
             if len(response) == 0:
                 return False, response, "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
             else:
@@ -482,7 +485,7 @@ class ChatGPT:
     def refresh_session(self):
         return self.async_run(self.agpt.refresh_session())
 
-    def ask_stream(self, prompt: str):
+    def ask_stream(self, prompt, title=None, model_customizations={}):
         def iter_over_async(ait):
             loop = asyncio.get_event_loop()
             ait = ait.__aiter__()
@@ -497,10 +500,10 @@ class ChatGPT:
                 if done:
                     break
                 yield obj
-        yield from iter_over_async(self.agpt.ask_stream(prompt))
+        yield from iter_over_async(self.agpt.ask_stream(prompt, title=title))
 
-    def ask(self, message: str):
-        return self.async_run(self.agpt.ask(message))
+    def ask(self, message, title=None, model_customizations={}):
+        return self.async_run(self.agpt.ask(message, title=title))
 
     def get_conversation(self, uuid=None):
         return self.async_run(self.agpt.get_conversation(uuid))
