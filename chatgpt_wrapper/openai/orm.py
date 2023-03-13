@@ -96,7 +96,7 @@ class Orm:
         return query
 
     def create_engine_and_metadata(self):
-        engine = create_engine(self.database)
+        engine = create_engine(f"{self.database}?check_same_thread=False")
         metadata = MetaData()
         metadata.reflect(bind=engine)
         return engine, metadata
