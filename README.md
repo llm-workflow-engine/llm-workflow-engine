@@ -1,6 +1,17 @@
 <h1><p align="center">:candy:ChatGPT Wrapper:candy:</p></h1>
 
-<p align="center">ChatGPT Wrapper is an open-source unofficial <b>Power CLI</b>, <b>Python API</b> and <b>Flask API</b> that lets you interact programmatically with ChatGPT.</p>
+## Welcome!
+
+What would you like to do?
+
+* [Learn about the project](#summary-header)
+* [Install the wrapper](#requirements)
+* [Learn more about configuration/features](#configuration)
+* [Learn how to use it](#usage)
+* [Report a bug](ISSUES.md)
+* [Get support](SUPPORT.md)
+
+<p id="summary-header" align="center">ChatGPT Wrapper is an open-source unofficial <b>Power CLI</b>, <b>Python API</b> and <b>Flask API</b> that lets you interact programmatically with ChatGPT.</p>
 
 ## Highlights
 
