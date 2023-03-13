@@ -96,7 +96,14 @@ class Orm:
         return query
 
     def create_engine_and_metadata(self):
-        engine = create_engine(f"{self.database}?check_same_thread=False")
+        args = ""
+        # TODO: check_same_thread is currently needed for SQLite so the
+        # separate thread that generates titles can run without error.
+        # It would probably be better to work this out with locking or
+        # a separate database connection or other fix.
+        if self.database.startswith('sqlite'):
+            args = "?check_same_thread=False"
+        engine = create_engine(f"{self.database}{args}")
         metadata = MetaData()
         metadata.reflect(bind=engine)
         return engine, metadata
