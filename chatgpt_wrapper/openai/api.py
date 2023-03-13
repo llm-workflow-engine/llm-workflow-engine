@@ -109,29 +109,26 @@ class AsyncOpenAIAPI(Backend):
         return content
 
     async def gen_title_thread_async(self, conversation):
-        if conversation.title:
-            self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
-        else:
-            self.log.info(f"Generating title for {conversation.title}")
-            # NOTE: This might need to be smarter in the future, but for now
-            # it should be reasonable to assume that the second record is the
-            # first user message we need for generating the title.
-            success, messages, user_message = self.message.get_messages(conversation.id, limit=2)
+        self.log.info(f"Generating title for conversation {conversation.id}")
+        # NOTE: This might need to be smarter in the future, but for now
+        # it should be reasonable to assume that the second record is the
+        # first user message we need for generating the title.
+        success, messages, user_message = self.message.get_messages(conversation.id, limit=2)
+        if success:
+            user_content = messages[1].message
+            new_messages = [
+                self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
+                self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
+            ]
+            success, completion, user_message = await self._call_openai_non_streaming(new_messages, temperature=0)
             if success:
-                user_content = messages[1].message
-                new_messages = [
-                    self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
-                    self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
-                ]
-                success, completion, user_message = await self._call_openai_non_streaming(new_messages, temperature=0)
+                title = self._extract_completion_content(completion)
+                self.log.info(f"Title generated for conversation {conversation.id}: {title}")
+                success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
                 if success:
-                    title = self._extract_completion_content(completion)
-                    self.log.info(f"Title generated for conversation {conversation.id}: {title}")
-                    success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
-                    if success:
-                        self.log.debug(f"Title saved for conversation {conversation.id}")
-                        return
-            self.log.info(f"Failed to generate title for conversation: {str(user_message)}")
+                    self.log.debug(f"Title saved for conversation {conversation.id}")
+                    return
+        self.log.info(f"Failed to generate title for conversation: {str(user_message)}")
 
     def gen_title_thread(self, conversation):
         loop = asyncio.new_event_loop()
@@ -340,7 +337,10 @@ class AsyncOpenAIAPI(Backend):
             if self.current_user:
                 conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, response_message, title)
                 self.parent_message_id = last_message.id
-                self.gen_title(conversation)
+                if conversation.title:
+                    self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
+                else:
+                    self.gen_title(conversation)
                 return True, conversation, "Conversation updated with new messages"
             else:
                 return True, response_message, "No current user, conversation not saved"
