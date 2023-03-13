@@ -1,3 +1,11 @@
+### v0.5.5 - 13/03/2023
+
+* **Mon Mar 13 2023:** fix threading error with SQLite connections
+* **Mon Mar 13 2023:** updates to example config
+* **Sun Mar 12 2023:** add note about adding EDITOR env var in Windows
+* **Sun Mar 12 2023:** try to get windows editor from env first
+* **Sun Mar 12 2023:** add install notes for windows users
+
 ### v0.5.4 - 12/03/2023
 
 * **Sun Mar 12 2023:** launch backend after check for config CLI arg
