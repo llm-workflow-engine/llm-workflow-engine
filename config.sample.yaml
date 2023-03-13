@@ -48,9 +48,9 @@ chat:
   # customized. See
   # https://platform.openai.com/docs/api-reference/chat for more information.
   model_customizations:
-    temperature: 1
+    temperature: .9
     top_p: 1
-    presence_penalty: 0
+    presence_penalty: .6
     frequency_penalty: 0
     # See '/help model_max_submission_tokens' for more information.
     max_submission_tokens: 4000
@@ -89,7 +89,7 @@ debug:
     # Enable to log debug messages.
     enabled: false
     # Full path to the log file.
-    filepath: //tmpchatgpt-debug.log
+    filepath: /tmp/chatgpt-debug.log
     # Message format.
     format: '%(name)s - %(asctime)s - %(levelname)s - %(message)s'
     # Message level (must be valid Python logging module level).
