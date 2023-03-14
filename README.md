@@ -334,18 +334,36 @@ Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
 
-## Use GPT-4
+## Using GPT-4
 
-You can use GPT-4 with the provided wrapper if you have a ChatGPT-Plus subscription. To utilize GPT4 in the shell, follow one of these methods:
+To use GPT-4 with the provided wrapper, you must have a ChatGPT-Plus subscription. Follow one of the methods below to utilize GPT-4 in the shell:
 
-1. Run the command:
+### Method 1: Run the command
+
+Enter the following command in your shell:
+
 ```
 chatgpt --model=gpt4
 ```
 
-2. Modify your `config.yaml` file to include:
+### Method 2: Modify the `config.yaml` file
+
+Update your `config.yaml` file to include the following line:
+
 ```
 model: gpt4
+```
+
+### Using GPT-4 in Python
+
+To use GPT-4 within your Python code, follow the template below:
+
+```python
+from chatgpt import ChatGPT
+
+bot = ChatGPT()
+bot.agpt.model = 'gpt4'
+success, response, message = bot.ask("Hello, world!")
 ```
 
 ## Projects built with chatgpt-wrapper
