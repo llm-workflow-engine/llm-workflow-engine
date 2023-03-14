@@ -94,7 +94,7 @@ DEFAULT_CONFIG = {
 COMMAND_LEADER = '/'
 LEGACY_COMMAND_LEADER = '!'
 DEFAULT_COMMAND = 'ask'
-COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
+COMMAND_HISTORY_FILE = '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep)
 DEFAULT_HISTORY_LIMIT = 20
 SHELL_ONE_SHOT_COMMANDS = [
     'install',
