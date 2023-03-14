@@ -2,7 +2,7 @@ email-validator
 Flask
 Jinja2
 names
-openai>=0.27.0
+openai>=0.27.2
 playwright
 prompt-toolkit
 pyperclip
