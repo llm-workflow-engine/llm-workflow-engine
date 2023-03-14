@@ -7,7 +7,8 @@ import tempfile
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
     "legacy-paid": "text-davinci-002-render-paid",
-    "legacy-free": "text-davinci-002-render"
+    "legacy-free": "text-davinci-002-render",
+    "gpt4": "gpt-4"
 }
 
 OPENAPI_CHAT_RENDER_MODELS = {
