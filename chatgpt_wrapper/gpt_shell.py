@@ -36,7 +36,7 @@ is_windows = platform.system() == "Windows"
 # to start commands with a special character.
 # It would also be possible to subclass NesteredCompleter and override
 # the get_completions() method, but that feels more brittle.
-document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
+document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
@@ -69,7 +69,6 @@ class GPTShell():
         self.console = Console()
         self.templates = []
         self.templates_env = None
-        self.configure_commands()
         self.history = self.get_history()
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
@@ -91,6 +90,11 @@ class GPTShell():
     def configure_commands(self):
         self.commands = self._introspect_commands(__class__)
 
+    def configure_dashed_commands(self):
+        self.dashed_commands = [self.underscore_to_dash(command) for command in self.commands]
+        self.all_commands = self.dashed_commands + ['help']
+        self.all_commands.sort()
+
     def command_with_leader(self, command):
         key = "%s%s" % (constants.COMMAND_LEADER, command)
         return key
@@ -106,15 +110,21 @@ class GPTShell():
     def get_custom_shell_completions(self):
         return {}
 
+    def underscore_to_dash(self, text):
+        return text.replace("_", "-")
+
+    def dash_to_underscore(self, text):
+        return text.replace("-", "_")
+
     def set_base_shell_completions(self):
         commands_with_leader = {}
-        for command in self.commands:
+        for command in self.all_commands:
             commands_with_leader[self.command_with_leader(command)] = None
-        commands_with_leader[self.command_with_leader('help')] = self.list_to_completion_hash(self.commands)
+        commands_with_leader[self.command_with_leader('help')] = self.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
             commands_with_leader[self.command_with_leader(command)] = PathCompleter()
         template_completions = self.list_to_completion_hash(self.templates)
-        template_commands = [c for c in self.commands if c.startswith('template') and c != 'templates']
+        template_commands = [c for c in self.dashed_commands if c.startswith('template') and c != 'templates']
         for command in template_commands:
             commands_with_leader[self.command_with_leader(command)] = template_completions
         self.base_shell_completions = commands_with_leader
@@ -272,10 +282,12 @@ class GPTShell():
         return help_brief
 
     def get_command_help(self, command):
+        command = self.dash_to_underscore(command)
         if command in self.commands:
             method = self.get_command_method(command)
             doc = method.__doc__
             if doc:
+                doc = doc.replace("{COMMAND}", "%s%s" % (constants.COMMAND_LEADER, command))
                 for sub in constants.HELP_TOKEN_VARIBALE_SUBSTITUTIONS:
                     try:
                         const_value = getattr(constants, sub)
@@ -288,7 +300,7 @@ class GPTShell():
         print("")
         self._print_markdown(f"#### {self.doc_header}")
         print("")
-        for command in self.commands:
+        for command in self.dashed_commands:
             print(self.get_command_help_brief(command))
         print("")
 
@@ -298,7 +310,7 @@ class GPTShell():
             if help_doc:
                 print(help_doc)
             else:
-                print("\nNo help for '%s'\n\nAvailable commands: %s" % (command, ", ".join(self.commands)))
+                print("\nNo help for '%s'\n\nAvailable commands: %s" % (command, ", ".join(self.dashed_commands)))
         else:
             self.help_commands()
 
@@ -376,6 +388,8 @@ class GPTShell():
     async def setup(self):
         await self.configure_backend()
         self.load_templates()
+        self.configure_commands()
+        self.configure_dashed_commands()
         self.rebuild_completions()
         self._update_message_map()
 
@@ -433,7 +447,7 @@ class GPTShell():
         Non-streaming mode: Returns full response at completion (markdown rendering supported).
 
         Examples:
-            {COMMAND_LEADER}stream
+            {COMMAND}
         """
         self.stream = not self.stream
         self._print_markdown(
@@ -445,7 +459,7 @@ class GPTShell():
         Start a new conversation
 
         Examples:
-            {COMMAND_LEADER}new
+            {COMMAND}
         """
         self.backend.new_conversation()
         self._print_markdown("* New conversation started.")
@@ -465,12 +479,12 @@ class GPTShell():
         Arguments can be mixed and matched as in the examples below.
 
         Examples:
-            Current conversation: {COMMAND_LEADER}delete
-            By conversation ID: {COMMAND_LEADER}delete 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {COMMAND_LEADER}delete 3
-            Multiple IDs: {COMMAND_LEADER}delete 1,5
-            Ranges: {COMMAND_LEADER}delete 1-5
-            Complex: {COMMAND_LEADER}delete 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
+            Current conversation: {COMMAND}
+            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND} 3
+            Multiple IDs: {COMMAND} 1,5
+            Ranges: {COMMAND} 1-5
+            Complex: {COMMAND} 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
         """
         if arg:
             result = self._parse_conversation_ids(arg)
@@ -503,9 +517,9 @@ class GPTShell():
             offset: offset the list of messages by this number
 
         Examples:
-            {COMMAND_LEADER}history
-            {COMMAND_LEADER}history 10
-            {COMMAND_LEADER}history 10 5
+            {COMMAND}
+            {COMMAND} 10
+            {COMMAND} 10 5
         """
         limit = constants.DEFAULT_HISTORY_LIMIT
         offset = 0
@@ -541,7 +555,7 @@ class GPTShell():
             id: prompt ID
 
         Examples:
-            {COMMAND_LEADER}nav 2
+            {COMMAND} 2
         """
 
         try:
@@ -585,9 +599,9 @@ class GPTShell():
             history_id: history ID of conversation
 
         Examples:
-            Get current conversation title: {COMMAND_LEADER}title
-            Set current conversation title: {COMMAND_LEADER}title new title
-            Set conversation title using history ID: {COMMAND_LEADER}title 1
+            Get current conversation title: {COMMAND}
+            Set current conversation title: {COMMAND} new title
+            Set conversation title using history ID: {COMMAND} 1
         """
         if arg:
             success, conversations, message = await self._fetch_history()
@@ -643,9 +657,9 @@ class GPTShell():
             With no arguments, show content of the current conversation.
 
         Examples:
-            Current conversation: {COMMAND_LEADER}chat
-            By conversation ID: {COMMAND_LEADER}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {COMMAND_LEADER}chat 2
+            Current conversation: {COMMAND}
+            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND} 2
         """
         conversation = None
         conversation_id = None
@@ -699,8 +713,8 @@ class GPTShell():
             history_id: The history ID
 
         Examples:
-            By conversation ID: {COMMAND_LEADER}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {COMMAND_LEADER}switch 2
+            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND} 2
         """
         conversation = None
         conversation_id = None
@@ -753,7 +767,7 @@ class GPTShell():
         It is purely optional.
 
         Examples:
-            {COMMAND_LEADER}ask what is 6+6 (is the same as 'what is 6+6')
+            {COMMAND} what is 6+6 (is the same as 'what is 6+6')
         """
         return await self.default(line)
 
@@ -790,7 +804,7 @@ class GPTShell():
         Allows for entering more complex multi-line input prior to sending it to ChatGPT.
 
         Examples:
-            {COMMAND_LEADER}read
+            {COMMAND}
         """
         ctrl_sequence = "^z" if is_windows else "^d"
         self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
@@ -819,8 +833,8 @@ class GPTShell():
             default_text: The default text to open the editor with
 
         Examples:
-            {COMMAND_LEADER}editor
-            {COMMAND_LEADER}editor some text to start with
+            {COMMAND}
+            {COMMAND} some text to start with
         """
         output = pipe_editor(args, suffix='md')
         print(output)
@@ -834,7 +848,7 @@ class GPTShell():
             file_name: The name of the file to read from
 
         Examples:
-            {COMMAND_LEADER}file myprompt.txt
+            {COMMAND} myprompt.txt
         """
         try:
             fileprompt = open(arg, encoding="utf-8").read()
@@ -862,8 +876,8 @@ class GPTShell():
             file_name: The name of the file to write to
 
         Examples:
-            Log to file: {COMMAND_LEADER}log mylog.txt
-            Disable logging: {COMMAND_LEADER}log
+            Log to file: {COMMAND} mylog.txt
+            Disable logging: {COMMAND}
         """
         if arg:
             if self._open_log(arg):
@@ -880,7 +894,7 @@ class GPTShell():
             context_string: a context string from logs
 
         Examples:
-            {COMMAND_LEADER}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+            {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
         """
         try:
             (conversation_id, parent_message_id) = arg.split(":")
@@ -906,7 +920,7 @@ class GPTShell():
         Templates are are per-profile, located in the 'templates' directory of the profile. (see {COMMAND_LEADER}config for current location)
 
         Examples:
-            {COMMAND_LEADER}templates
+            {COMMAND}
         """
         self.load_templates()
         self.rebuild_completions()
@@ -920,7 +934,7 @@ class GPTShell():
             template_name: Required. The name of the template
 
         Examples:
-            {COMMAND_LEADER}template mytemplate.md
+            {COMMAND} mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -937,7 +951,7 @@ class GPTShell():
             template_name: Required. The name of the template
 
         Examples:
-            {COMMAND_LEADER}template_edit mytemplate.md
+            {COMMAND} mytemplate.md
         """
         if not template_name:
             return False, template_name, "No template name specified"
@@ -954,7 +968,7 @@ class GPTShell():
             template_names: Required. The name of the old and new templates separated by whitespace,
 
         Examples:
-            {COMMAND_LEADER}template_copy old_template.md new_template.md
+            {COMMAND} old_template.md new_template.md
         """
         try:
             old_name, new_name = template_names.split()
@@ -979,7 +993,7 @@ class GPTShell():
             template_name: Required. The name of the template to delete
 
         Examples:
-            {COMMAND_LEADER}template_delete mytemplate.md
+            {COMMAND} mytemplate.md
         """
         if not template_name:
             return False, template_name, "No template name specified"
@@ -1005,7 +1019,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_run mytemplate.md
+            {COMMAND} mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -1024,7 +1038,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_prompt_run mytemplate.md
+            {COMMAND} mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -1044,7 +1058,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_edit_run mytemplate.md
+            {COMMAND} mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -1064,7 +1078,7 @@ class GPTShell():
             template_name: Required. The name of the template.
 
         Examples:
-            {COMMAND_LEADER}template_prompt_edit_run mytemplate.md
+            {COMMAND} mytemplate.md
         """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
@@ -1079,7 +1093,7 @@ class GPTShell():
         Show the current configuration
 
         Examples:
-            {COMMAND_LEADER}config
+            {COMMAND}
         """
         output = """
 # Backend configuration: %s
@@ -1109,7 +1123,7 @@ class GPTShell():
         Exit the ChatGPT shell
 
         Examples:
-            {COMMAND_LEADER}exit
+            {COMMAND}
         """
         pass
 
@@ -1118,7 +1132,7 @@ class GPTShell():
         Exit the ChatGPT shell
 
         Examples:
-            {COMMAND_LEADER}quit
+            {COMMAND}
         """
         pass
 
@@ -1163,6 +1177,7 @@ class GPTShell():
                 print(response)
 
     async def run_command(self, command, argument):
+        command = self.dash_to_underscore(command)
         if command == 'help':
             self.help(argument)
         else:

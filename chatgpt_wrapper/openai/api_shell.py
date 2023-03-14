@@ -42,9 +42,9 @@ class ApiShell(GPTShell):
         user_commands = [
             'login',
             'user',
-            'user_delete',
-            'user_edit',
-            'user_login',
+            'user-delete',
+            'user-edit',
+            'user-login',
         ]
         success, users, user_message = self.user_management.get_users()
         if not success:
@@ -55,11 +55,11 @@ class ApiShell(GPTShell):
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
         return {
-            self.command_with_leader('model_temperature'): self.float_range_to_completions(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX),
-            self.command_with_leader('model_top_p'): self.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
-            self.command_with_leader('model_presence_penalty'): self.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
-            self.command_with_leader('model_frequency_penalty'): self.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
-            self.command_with_leader('model_system_message'): self.list_to_completion_hash(self.backend.get_system_message_aliases()),
+            self.command_with_leader('model-temperature'): self.float_range_to_completions(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX),
+            self.command_with_leader('model-top-p'): self.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
+            self.command_with_leader('model-presence-penalty'): self.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
+            self.command_with_leader('model-frequency-penalty'): self.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
+            self.command_with_leader('model-system-message'): self.list_to_completion_hash(self.backend.get_system_message_aliases()),
         }
 
     def float_range_to_completions(self, min_val, max_val):
@@ -120,7 +120,7 @@ class ApiShell(GPTShell):
             context_string: a context string from logs
 
         Examples:
-            {COMMAND_LEADER}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+            {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
         """
         try:
             (conversation_id, parent_message_id) = arg.split(":")
@@ -152,8 +152,8 @@ class ApiShell(GPTShell):
             username: The username of the new user
 
         Examples:
-            {COMMAND_LEADER}user_register
-            {COMMAND_LEADER}user_register myusername
+            {COMMAND}
+            {COMMAND} myusername
         """
         if not username:
             username = input("Enter username (no spaces): ").strip() or None
@@ -256,9 +256,9 @@ Before you can start using the shell, you must create a new user.
             identifier: The username or email
 
         Examples:
-            {COMMAND_LEADER}user_login
-            {COMMAND_LEADER}user_login myusername
-            {COMMAND_LEADER}user_login email@example.com
+            {COMMAND}
+            {COMMAND} myusername
+            {COMMAND} email@example.com
         """
         if not identifier:
             identifier = input("Enter username or email: ")
@@ -270,7 +270,7 @@ Before you can start using the shell, you must create a new user.
 
     async def do_login(self, identifier=None):
         """
-        Alias of '{COMMAND_LEADER}user_login'
+        Alias of '{COMMAND_LEADER}user-login'
 
         Login in as a user.
 
@@ -278,9 +278,9 @@ Before you can start using the shell, you must create a new user.
             identifier: The username or email
 
         Examples:
-            {COMMAND_LEADER}login
-            {COMMAND_LEADER}login myusername
-            {COMMAND_LEADER}login email@example.com
+            {COMMAND}
+            {COMMAND} myusername
+            {COMMAND} email@example.com
         """
         return await self.do_user_login(identifier)
 
@@ -289,7 +289,7 @@ Before you can start using the shell, you must create a new user.
         Logout the current user.
 
         Examples:
-            {COMMAND_LEADER}user_logout
+            {COMMAND}
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -299,12 +299,12 @@ Before you can start using the shell, you must create a new user.
 
     async def do_logout(self, _):
         """
-        Alias of '{COMMAND_LEADER}user_logout'
+        Alias of '{COMMAND_LEADER}user-logout'
 
         Logout the current user.
 
         Examples:
-            {COMMAND_LEADER}logout
+            {COMMAND}
         """
         return await self.do_user_logout(None)
 
@@ -326,8 +326,8 @@ Before you can start using the shell, you must create a new user.
             username: The username of the user to show, if not provided, the logged in user will be used.
 
         Examples:
-            {COMMAND_LEADER}user
-            {COMMAND_LEADER}user ausername
+            {COMMAND}
+            {COMMAND} ausername
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -346,7 +346,7 @@ Before you can start using the shell, you must create a new user.
         Show information for all users
 
         Examples:
-            {COMMAND_LEADER}users
+            {COMMAND}
         """
         success, users, message = self.user_management.get_users()
         if success:
@@ -389,7 +389,7 @@ Before you can start using the shell, you must create a new user.
         You can skip any prompt by pressing enter.
 
         Examples:
-            {COMMAND_LEADER}user_edit
+            {COMMAND}
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -414,8 +414,8 @@ Before you can start using the shell, you must create a new user.
             username: The username of the user to be deleted
 
         Examples:
-            {COMMAND_LEADER}user_delete
-            {COMMAND_LEADER}user_delete myusername
+            {COMMAND}
+            {COMMAND} myusername
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -466,8 +466,8 @@ Before you can start using the shell, you must create a new user.
             temperature: Float between {OPENAPI_TEMPERATURE_MIN} and {OPENAPI_TEMPERATURE_MAX}, default: {OPENAPI_DEFAULT_TEMPERATURE}
 
         Examples:
-            {COMMAND_LEADER}model_temperature
-            {COMMAND_LEADER}model_temperature {OPENAPI_TEMPERATURE_MAX}
+            {COMMAND}
+            {COMMAND} {OPENAPI_TEMPERATURE_MAX}
         """
         return self.adjust_model_setting("float", "temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
 
@@ -487,8 +487,8 @@ Before you can start using the shell, you must create a new user.
             top_p: Float between {OPENAPI_TOP_P_MIN} and {OPENAPI_TOP_P_MAX}, default: {OPENAPI_DEFAULT_TOP_P}
 
         Examples:
-            {COMMAND_LEADER}model_top_p
-            {COMMAND_LEADER}model_top_p {OPENAPI_TOP_P_MAX}
+            {COMMAND}
+            {COMMAND} {OPENAPI_TOP_P_MAX}
         """
         return self.adjust_model_setting("float", "top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
 
@@ -504,8 +504,8 @@ Before you can start using the shell, you must create a new user.
             presence_penalty: Float between {OPENAPI_PRESENCE_PENALTY_MIN} and {OPENAPI_PRESENCE_PENALTY_MAX}, default: {OPENAPI_DEFAULT_PRESENCE_PENALTY}
 
         Examples:
-            {COMMAND_LEADER}model_presence_penalty
-            {COMMAND_LEADER}model_presence_penalty {OPENAPI_PRESENCE_PENALTY_MAX}
+            {COMMAND}
+            {COMMAND} {OPENAPI_PRESENCE_PENALTY_MAX}
         """
         return self.adjust_model_setting("float", "presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
 
@@ -520,8 +520,8 @@ Before you can start using the shell, you must create a new user.
             frequency_penalty: Float between {OPENAPI_FREQUENCY_PENALTY_MIN} and {OPENAPI_FREQUENCY_PENALTY_MAX}, default: {OPENAPI_DEFAULT_FREQUENCY_PENALTY}
 
         Examples:
-            {COMMAND_LEADER}model_frequency_penalty
-            {COMMAND_LEADER}model_frequency_penalty {OPENAPI_FREQUENCY_PENALTY_MAX}
+            {COMMAND}
+            {COMMAND} {OPENAPI_FREQUENCY_PENALTY_MAX}
         """
         return self.adjust_model_setting("float", "frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)
 
@@ -537,8 +537,8 @@ Before you can start using the shell, you must create a new user.
             max_submission_tokens: Integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and {OPENAPI_MAX_TOKENS}, default: {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
 
         Examples:
-            {COMMAND_LEADER}model_max_submission_tokens
-            {COMMAND_LEADER}model_max_submission_tokens {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
+            {COMMAND}
+            {COMMAND} {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
         """
         return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)
 
@@ -554,8 +554,8 @@ Before you can start using the shell, you must create a new user.
                             With no arguments, show the currently set system message.
 
         Examples:
-            {COMMAND_LEADER}model_system_message
-            {COMMAND_LEADER}model_system_message {SYSTEM_MESSAGE_DEFAULT}
+            {COMMAND}
+            {COMMAND} {SYSTEM_MESSAGE_DEFAULT}
         """
         aliases = self.backend.get_system_message_aliases()
         if system_message:

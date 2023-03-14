@@ -22,7 +22,7 @@ class BrowserShell(GPTShell):
         This can resolve errors under certain scenarios.
 
         Examples:
-            {COMMAND_LEADER}session
+            {COMMAND}
         """
         await self.backend.refresh_session()
         usable = (
