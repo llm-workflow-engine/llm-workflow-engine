@@ -8,7 +8,7 @@ What would you like to do?
 * [Install the wrapper](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
-* [Using GPT4](#using-gpt4)
+* [Using GPT4](#gpt4)
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
 
@@ -20,7 +20,7 @@ What would you like to do?
 
 💬 **Runs in Shell**. You can call and interact with ChatGPT/GPT4 in the terminal.
 
-💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint.
+💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint (all supported models accessible by your OpenAI account)
 
 🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
 
@@ -334,11 +334,25 @@ Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
 
-## Using GPT4
+## GPT4
 
-To use GPT-4 with the provided wrapper, you must have a ChatGPT-Plus subscription. Follow one of the methods below to utilize GPT-4 in the shell:
+### Backend notes
 
-### Method 1: Run the command
+#### Playwright (browser-based) backend
+
+To use GPT-4 with this backend, you must have a ChatGPT-Plus subscription.
+
+#### API backend
+
+To use GPT-4 with this backend, you must have been granted access to the model in your OpenAI account.
+
+### Using GPT-4
+
+#### From the shell
+
+Follow one of the methods below to utilize GPT-4 in the shell:
+
+##### Method 1: Run the command
 
 Enter the following command in your shell:
 
@@ -346,7 +360,7 @@ Enter the following command in your shell:
 chatgpt --model=gpt4
 ```
 
-### Method 2: Modify the `config.yaml` file
+##### Method 2: Modify the `config.yaml` file
 
 Update your `config.yaml` file to include the following line:
 
@@ -354,15 +368,17 @@ Update your `config.yaml` file to include the following line:
 model: gpt4
 ```
 
-### Using GPT-4 in Python
+#### Via Python module
 
 To use GPT-4 within your Python code, follow the template below:
 
 ```python
 from chatgpt import ChatGPT
+from chatgpt_wrapper.config import Config
 
-bot = ChatGPT()
-bot.agpt.model = 'gpt4'
+config = Config()
+config.set('chat.model', 'gpt4')
+bot = ChatGPT(config)
 success, response, message = bot.ask("Hello, world!")
 ```
 
