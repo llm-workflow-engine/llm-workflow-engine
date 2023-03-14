@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-import platform
-
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.debug as debug
