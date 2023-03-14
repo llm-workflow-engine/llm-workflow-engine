@@ -8,6 +8,7 @@ What would you like to do?
 * [Install the wrapper](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
+* [Use GPT4](#use-gpt4)
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
 
@@ -15,13 +16,13 @@ What would you like to do?
 
 ## Highlights
 
-🤖 **Programmable ChatGPT**. The ChatGPT Wrapper lets you use the powerful ChatGPT bot in your _Python scripts_ or on the _command line_, making it easy to leverage its functionality into your projects.
+🤖 **Programmable ChatGPT**. The ChatGPT Wrapper lets you use the powerful ChatGPT/GPT4 bot in your _Python scripts_ or on the _command line_, making it easy to leverage its functionality into your projects.
 
-💬 **Runs in Shell**. You can call and interact with ChatGPT in the terminal.
+💬 **Runs in Shell**. You can call and interact with ChatGPT/GPT4 in the terminal.
 
 💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint.
 
-🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT in your Python scripts.
+🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
 
 🐳 **Docker image**. The ChatGPT Wrapper is also available as a docker image. (experimental)
 
@@ -332,6 +333,20 @@ Then, visit http://localhost:6901/vnc.html with password `headless` and login Ch
 Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
+
+## Use GPT-4
+
+You can use GPT-4 with the provided wrapper if you have a ChatGPT-Plus subscription. To utilize GPT4 in the shell, follow one of these methods:
+
+1. Run the command:
+```
+chatgpt --model=gpt4
+```
+
+2. Modify your `config.yaml` file to include:
+```
+model: gpt4
+```
 
 ## Projects built with chatgpt-wrapper
 
