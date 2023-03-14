@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 
 import platform
-import signal
 
-import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 import chatgpt_wrapper.debug as debug
@@ -11,8 +9,6 @@ if False:
     debug.console(None)
 
 from rich.console import Console
-
-is_windows = platform.system() == "Windows"
 
 class Backend(ABC):
     """
@@ -26,12 +22,7 @@ class Backend(ABC):
         self.conversation_id = None
         self.conversation_title_set = None
         self.streaming = False
-        self._setup_signal_handlers()
         self.console = Console()
-
-    def _setup_signal_handlers(self):
-        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
-        signal.signal(sig, self.terminate_stream)
 
     def _print_status_message(self, success, message):
         self.console.print(message, style="bold green" if success else "bold red")

@@ -5,6 +5,7 @@ import os
 import platform
 import sys
 import shutil
+import signal
 import pyperclip
 import frontmatter
 
@@ -80,6 +81,14 @@ class GPTShell():
         )
         self.stream = self.config.get('chat.streaming')
         self._set_logging()
+        self._setup_signal_handlers()
+
+    def terminate_stream(self, _signal, _frame):
+        self.backend.terminate_stream(_signal, _frame)
+
+    def _setup_signal_handlers(self):
+        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
+        signal.signal(sig, self.terminate_stream)
 
     def exec_prompt_pre(self, _command, _arg):
         pass
