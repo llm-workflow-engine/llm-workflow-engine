@@ -1,5 +1,13 @@
+email-validator
+Flask
+Jinja2
+names
+openai>=0.27.0
 playwright
-readline; platform_system=="Linux"
-pyreadline3; platform_system=="Windows"
+prompt-toolkit
+pyperclip
+python-frontmatter
+PyYAML
 rich
-flask
+sqlalchemy
+tiktoken

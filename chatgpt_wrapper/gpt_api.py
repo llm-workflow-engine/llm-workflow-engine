@@ -1,9 +1,15 @@
-from flask import Flask, request, jsonify
-from chatgpt_wrapper.chatgpt import ChatGPT
+import argparse
 
-def create_application(name, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy=None):
+from flask import Flask, jsonify, request
+
+from chatgpt_wrapper.chatgpt import ChatGPT
+from chatgpt_wrapper.config import Config
+
+
+def create_application(name, config=None, timeout=60, proxy=None):
+    config = config or Config()
     app = Flask(name)
-    chatgpt = ChatGPT(headless, browser, model, timeout, debug_log, proxy)
+    chatgpt = ChatGPT(config, timeout, proxy)
 
     def _error_handler(message):
         return jsonify({"success": False, "error": str(message)}), 500
@@ -82,7 +88,6 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
 
     @app.route("/conversations/<string:conversation_id>/set-title", methods=["PATCH"])
     def set_title(conversation_id):
-
         """
         Set the title of a conversation.
 
@@ -120,7 +125,6 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
 
     @app.route("/history", methods=["GET"])
     def get_history():
-
         """
         Retrieve conversation history.
 
@@ -157,6 +161,10 @@ def create_application(name, headless: bool = True, browser="firefox", model="de
 
     return app
 
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5000)
+    args = parser.parse_args()
     app = create_application("chatgpt")
-    app.run(host="0.0.0.0", port=5000, threaded=False)
+    app.run(host="0.0.0.0", port=args.port, threaded=False)
