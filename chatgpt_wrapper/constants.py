@@ -15,6 +15,10 @@ OPENAPI_CHAT_RENDER_MODELS = {
     "default": "gpt-3.5-turbo",
     "turbo": "gpt-3.5-turbo",
     "turbo-0301": "gpt-3.5-turbo-0301",
+    "gpt4": "gpt-4",
+    "gpt4-0314": "gpt-4-0314",
+    "gpt4-32k": "gpt-4-32k",
+    "gpt4-32k-0314": "gpt-4-32k-0314",
 }
 
 SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
