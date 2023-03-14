@@ -1,4 +1,4 @@
-<h1><p align="center">:candy:ChatGPT Wrapper:candy:</p></h1>
+<h1><p align="center">:candy:ChatGPT (and GPT4) Wrapper:candy:</p></h1>
 
 ## Welcome!
 
