@@ -8,7 +8,7 @@ What would you like to do?
 * [Install the wrapper](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
-* [Using GPT4](#using-gpt4)
+* [Using GPT4](#using-gpt--4)
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
 
