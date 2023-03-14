@@ -4,6 +4,8 @@ import threading
 import openai
 import tiktoken
 
+from openai.error import OpenAIError
+
 from chatgpt_wrapper.backend import Backend
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
@@ -139,6 +141,9 @@ class AsyncOpenAIAPI(Backend):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
+    def set_model(self, model):
+        self.model = model
+
     def set_model_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
         self.model_system_message = message
 
@@ -240,16 +245,20 @@ class AsyncOpenAIAPI(Backend):
         top_p = self.model_top_p if top_p is None else top_p
         presence_penalty = self.model_presence_penalty if presence_penalty is None else presence_penalty
         frequency_penalty = self.model_frequency_penalty if frequency_penalty is None else frequency_penalty
-        response = await openai.ChatCompletion.acreate(
-            model=self.model,
-            messages=messages,
-            temperature=temperature,
-            top_p=top_p,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
-            stream=stream,
-        )
         self.log.debug(f"ChatCompletion.create with message count: {len(messages)}, model: {self.model}, temperature: {temperature}, top_p: {top_p}, presence_penalty: {presence_penalty}, frequency_penalty: {frequency_penalty}, stream: {stream})")
+        try:
+            response = await openai.ChatCompletion.acreate(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                top_p=top_p,
+                presence_penalty=presence_penalty,
+                frequency_penalty=frequency_penalty,
+                stream=stream,
+            )
+        except OpenAIError as e:
+            self.log.error(f"OpenAIError: {e}")
+            raise OpenAIError(e)
         return response
 
     async def _call_openai_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
