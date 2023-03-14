@@ -80,7 +80,7 @@ async def async_main():
     parser.add_argument(
         "-m",
         "--model",
-        choices=['default', 'legacy-paid', 'legacy-free'],
+        choices=['default', 'legacy-paid', 'legacy-free', 'gpt4'],
         action="store",
         help="set preferred model",
     )
