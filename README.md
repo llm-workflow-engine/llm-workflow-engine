@@ -8,7 +8,7 @@ What would you like to do?
 * [Install the wrapper](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
-* [Using GPT4](#using-gpt--4)
+* [Using GPT4](#using-gpt4)
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
 
@@ -334,7 +334,7 @@ Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
 
-## Using GPT-4
+## Using GPT4
 
 To use GPT-4 with the provided wrapper, you must have a ChatGPT-Plus subscription. Follow one of the methods below to utilize GPT-4 in the shell:
 
