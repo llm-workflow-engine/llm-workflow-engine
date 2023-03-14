@@ -378,7 +378,7 @@ Before you can start using the shell, you must create a new user.
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)
         if success:
-            self.backend.set_model(user.default_model)
+            self.backend.set_model(constants.OPENAPI_CHAT_RENDER_MODELS[user.default_model])
             self.rebuild_completions()
         return success, user, user_message
 
