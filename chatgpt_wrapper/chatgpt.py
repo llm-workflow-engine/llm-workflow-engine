@@ -18,6 +18,7 @@ import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
 
+
 class AsyncChatGPT(Backend):
     """
     A ChatGPT interface that uses Playwright to run a browser,
@@ -30,7 +31,6 @@ class AsyncChatGPT(Backend):
     interrupt_div_id = "chatgpt-wrapper-conversation-stream-data-interrupt"
     session_div_id = "chatgpt-wrapper-session-data"
 
-
     def __init__(self, config=None):
         super().__init__(config)
         self.play = None
@@ -38,7 +38,7 @@ class AsyncChatGPT(Backend):
         self.page = None
         self.browser = None
         self.session = None
-        self.model = 'default'
+        self.model = self.config.get('chat.model')
         self.new_conversation()
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
@@ -465,6 +465,7 @@ class AsyncChatGPT(Backend):
         super().new_conversation()
         self.parent_message_id = str(uuid.uuid4())
 
+
 class ChatGPT:
 
     def __init__(self, config=None, timeout=60, proxy: Optional[ProxySettings] = None):
@@ -489,6 +490,7 @@ class ChatGPT:
         def iter_over_async(ait):
             loop = asyncio.get_event_loop()
             ait = ait.__aiter__()
+
             async def get_next():
                 try:
                     obj = await ait.__anext__()

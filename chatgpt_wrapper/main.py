@@ -12,8 +12,10 @@ import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
 
+
 def main():
     asyncio.run(async_main())
+
 
 async def async_main():
 
