@@ -12,7 +12,7 @@ What would you like to do?
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
 
-<p id="summary-header" align="center">ChatGPT Wrapper is an open-source unofficial <b>Power CLI</b>, <b>Python API</b> and <b>Flask API</b> that lets you interact programmatically with ChatGPT.</p>
+<p id="summary-header" align="center">ChatGPT Wrapper is an open-source unofficial <b>Power CLI</b>, <b>Python API</b> and <b>Flask API</b> that lets you interact programmatically with ChatGPT/GPT4.</p>
 
 ## Highlights
 
