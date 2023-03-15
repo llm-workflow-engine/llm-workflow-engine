@@ -81,6 +81,15 @@ log:
 
 
 ##########################################################
+# Plugin settings.
+# See the README for more informaiton on plugins.
+##########################################################
+plugins:
+  enabled:
+    # Use a prompt from Awesome ChatGPT Prompts.
+    - awesome
+
+##########################################################
 # Debug settings.
 ##########################################################
 debug:

@@ -95,6 +95,9 @@ class AsyncChatGPT(Backend):
             shutil.rmtree(self.user_data_dir)
         await self.play.stop()
 
+    def get_backend_name(self):
+        return "chatgpt-browser"
+
     def set_available_models(self):
         self.available_models = constants.RENDER_MODELS
 

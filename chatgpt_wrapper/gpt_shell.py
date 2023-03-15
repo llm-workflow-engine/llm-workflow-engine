@@ -25,6 +25,7 @@ import chatgpt_wrapper.constants as constants
 from chatgpt_wrapper.config import Config
 from chatgpt_wrapper.logger import Logger
 from chatgpt_wrapper.editor import file_editor, pipe_editor
+from chatgpt_wrapper.plugin_manager import PluginManager
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -93,14 +94,23 @@ class GPTShell():
     def exec_prompt_pre(self, _command, _arg):
         pass
 
-    def _introspect_commands(self, klass):
+    def introspect_commands(self, klass):
         return [method[3:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("do_")]
 
-    def configure_commands(self):
-        self.commands = self._introspect_commands(__class__)
+    def configure_shell_commands(self):
+        self.commands = self.introspect_commands(__class__)
 
-    def configure_dashed_commands(self):
+    def get_plugin_commands(self):
+        commands = []
+        for plugin in self.plugins.values():
+            plugin_commands = self.introspect_commands(plugin.__class__)
+            commands.extend(plugin_commands)
+        return commands
+
+    def configure_commands(self):
+        self.commands.extend(self.get_plugin_commands())
         self.dashed_commands = [self.underscore_to_dash(command) for command in self.commands]
+        self.dashed_commands.sort()
         self.all_commands = self.dashed_commands + ['help']
         self.all_commands.sort()
 
@@ -118,6 +128,13 @@ class GPTShell():
 
     def get_custom_shell_completions(self):
         return {}
+
+    def get_plugin_shell_completions(self, completions):
+        for plugin in self.plugins.values():
+            plugin_completions = plugin.get_shell_completions(self.base_shell_completions)
+            if plugin_completions:
+                completions = self.merge_dicts(completions, plugin_completions)
+        return completions
 
     def underscore_to_dash(self, text):
         return text.replace("_", "-")
@@ -146,6 +163,7 @@ class GPTShell():
     def rebuild_completions(self):
         self.set_base_shell_completions()
         completions = self.merge_dicts(self.base_shell_completions, self.get_custom_shell_completions())
+        completions = self.get_plugin_shell_completions(completions)
         self.command_completer = NestedCompleter.from_nested_dict(completions)
 
     def validate_int(self, value, min=None, max=None):
@@ -294,7 +312,7 @@ class GPTShell():
     def get_command_help(self, command):
         command = self.dash_to_underscore(command)
         if command in self.commands:
-            method = self.get_command_method(command)
+            method, _obj = self.get_command_method(command)
             doc = method.__doc__
             if doc:
                 doc = doc.replace("{COMMAND}", "%s%s" % (constants.COMMAND_LEADER, command))
@@ -389,6 +407,12 @@ class GPTShell():
     def set_user_prompt(self):
         pass
 
+    def configure_plugins(self):
+        self.plugin_manager = PluginManager(self.config, self.backend)
+        self.plugins = self.plugin_manager.get_plugins()
+        for plugin in self.plugins.values():
+            plugin.set_shell(self)
+
     async def configure_backend():
         raise NotImplementedError
 
@@ -397,9 +421,10 @@ class GPTShell():
 
     async def setup(self):
         await self.configure_backend()
+        self.configure_plugins()
         self.load_templates()
+        self.configure_shell_commands()
         self.configure_commands()
-        self.configure_dashed_commands()
         self.rebuild_completions()
         self._update_message_map()
 
@@ -1192,12 +1217,22 @@ class GPTShell():
                 argument = text
         return command, argument
 
-    def get_command_method(self, command):
-        do_command = f"do_{command}"
-        for klass in self.__class__.__mro__:
+    def get_class_command_method(self, klass, do_command):
+        mro = getattr(klass, '__mro__')
+        for klass in mro:
             method = getattr(klass, do_command, None)
             if method:
                 return method
+
+    def get_command_method(self, command):
+        do_command = f"do_{command}"
+        method = self.get_class_command_method(self.__class__, do_command)
+        if method:
+            return method, self
+        for plugin in self.plugins.values():
+            method = self.get_class_command_method(plugin.__class__, do_command)
+            if method:
+                return method, plugin
         raise AttributeError(f"{do_command} method not found in any shell class")
 
     def output_response(self, response):
@@ -1214,9 +1249,9 @@ class GPTShell():
             self.help(argument)
         else:
             if command in self.commands:
-                method = self.get_command_method(command)
+                method, obj = self.get_command_method(command)
                 try:
-                    response = await method(self, argument)
+                    response = await method(obj, argument)
                 except Exception as e:
                     print(repr(e))
                 else:

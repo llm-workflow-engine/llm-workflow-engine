@@ -6,8 +6,8 @@ class BrowserShell(GPTShell):
     A shell interpreter that serves as a front end to the ChatGPT class
     """
 
-    def configure_commands(self):
-        self.commands = self._introspect_commands(__class__)
+    def configure_shell_commands(self):
+        self.commands = self.introspect_commands(__class__)
 
     async def configure_backend(self):
         self.backend = AsyncChatGPT(self.config)

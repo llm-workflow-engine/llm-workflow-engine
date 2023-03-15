@@ -24,6 +24,8 @@ What would you like to do?
 
 🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
 
+🔌 **Simple plugin architecture**. Extend the wrapper with custom functionality (alpha)
+
 🐳 **Docker image**. The ChatGPT Wrapper is also available as a docker image. (experimental)
 
 :test_tube: **Flask API**. You can use the ChatGPT Wrapper as an API. (experimental)
@@ -235,6 +237,38 @@ See the various `/help template` commands for more information.
 The wrapper exposes some builtin variables that can be used in templates:
 
  * `{{ clipboard }}` - Insert the contents of the clipboard
+
+## Plugins (alpha, subject to change)
+
+### Using plugins
+
+1. Place the plugin file in either:
+  * The main `plugins` directory of this module
+  * A `plugins` directory in your profile
+
+2. Enable the plugin in your configuration:
+
+   ```yaml
+   plugins:
+     enabled:
+       # This is a list of plugins to enable, each list item should be the name of a plugin file, without the extension.
+       - test
+   ```
+   Note that setting `plugins.enabled` will overwrite the default enabled plugins. see `/config` for a list of default enabled plugins.
+
+
+### Writing plugins
+
+There is currently no developer documentation for writing plugins.
+
+The `plugins` directory has some default plugins, examining those will give a good idea for how to design a new one.
+
+Currently, plugins for the shell can only add new commands. An instantiated plugin has access to these resources:
+
+* `self.config`: The current instantiated Config object
+* `self.log`: The instantiated Logger object
+* `self.backend`: The instantiated backend
+* `self.shell`: The instantiated shell
 
 ## Tutorials:
 

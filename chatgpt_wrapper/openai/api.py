@@ -140,6 +140,9 @@ class AsyncOpenAIAPI(Backend):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
+    def get_backend_name(self):
+        return "chatgpt-api"
+
     def set_available_models(self):
         self.available_models = constants.OPENAPI_CHAT_RENDER_MODELS
 

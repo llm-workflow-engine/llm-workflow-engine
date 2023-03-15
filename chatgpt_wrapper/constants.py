@@ -85,6 +85,11 @@ DEFAULT_CONFIG = {
             'format': '%(name)s - %(levelname)s - %(message)s',
         },
     },
+    'plugins': {
+        'enabled': [
+            'awesome',
+        ],
+    },
     'debug': {
         'log': {
             'enabled': False,
