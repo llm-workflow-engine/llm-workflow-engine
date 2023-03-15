@@ -96,11 +96,8 @@ class ApiShell(GPTShell):
         except email_validator.EmailNotValidError as e:
             return False, f"Invalid email: {e}"
 
-    def validate_model(model):
-        return model in constants.OPENAPI_CHAT_RENDER_MODELS.keys()
-
     def select_model(self, allow_empty=False):
-        models = list(constants.OPENAPI_CHAT_RENDER_MODELS.keys())
+        models = list(self.backend.available_models.keys())
         for i, model in enumerate(models):
             print(f"{i + 1}. {model}")
         selected_model = input("Choose a default model: ").strip() or None
@@ -315,7 +312,7 @@ Before you can start using the shell, you must create a new user.
 * Email: %s
 * Password: %s
 * Default model: %s
-        """ % (user.username, user.email, "set" if user.password else "Not set", user.default_model)
+        """ % (user.username, user.email, "set" if user.password else "Not set", self.backend.available_models[user.default_model])
         self._print_markdown(output)
 
     async def do_user(self, username=None):
@@ -378,8 +375,7 @@ Before you can start using the shell, you must create a new user.
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)
         if success:
-            self.backend.set_model(constants.OPENAPI_CHAT_RENDER_MODELS[user.default_model])
-            self.rebuild_completions()
+            self.backend.set_active_model(user.default_model)
         return success, user, user_message
 
     async def do_user_edit(self, username=None):

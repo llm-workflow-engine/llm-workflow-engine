@@ -132,6 +132,7 @@ class GPTShell():
         commands_with_leader[self.command_with_leader('help')] = self.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
             commands_with_leader[self.command_with_leader(command)] = PathCompleter()
+        commands_with_leader[self.command_with_leader('model')] = self.list_to_completion_hash(self.backend.available_models.keys())
         template_completions = self.list_to_completion_hash(self.templates)
         template_commands = [c for c in self.dashed_commands if c.startswith('template') and c != 'templates']
         for command in template_commands:
@@ -919,6 +920,28 @@ class GPTShell():
         self.backend.parent_message_id = parent_message_id
         self._update_message_map()
         self._write_log_context()
+
+    async def do_model(self, arg):
+        """
+        View or set the current LLM model
+
+        Arguments:
+            model_name: The name of the model to set
+            With no arguments, view currently set model
+
+        Examples:
+            {COMMAND}
+            {COMMAND} default
+        """
+        if arg:
+            model_names = self.backend.available_models.keys()
+            if arg in model_names:
+                self.backend.set_active_model(arg)
+                return True, self.backend.model, f"Current model updated to: {self.backend.model}"
+            else:
+                return False, arg, "Invalid model, must be one of: %s" % ", ".join(model_names)
+        else:
+            return True, self.backend.model, f"Current model: {self.backend.model}"
 
     async def do_templates(self, _):
         """

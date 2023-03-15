@@ -24,7 +24,6 @@ class AsyncOpenAIAPI(Backend):
         self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
-        self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.config.get('chat.model')]
         self.current_user = None
         self.conversation_tokens = 0
         self.set_model_system_message()
@@ -58,7 +57,7 @@ class AsyncOpenAIAPI(Backend):
         return success, obj, message
 
     def get_token_encoding(self, model="gpt-3.5-turbo"):
-        if model not in constants.OPENAPI_CHAT_RENDER_MODELS.values():
+        if model not in self.available_models.values():
             raise NotImplementedError("Unsupported engine {self.engine}")
         try:
             encoding = tiktoken.encoding_for_model(model)
@@ -141,8 +140,8 @@ class AsyncOpenAIAPI(Backend):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
-    def set_model(self, model):
-        self.model = model
+    def set_available_models(self):
+        self.available_models = constants.OPENAPI_CHAT_RENDER_MODELS
 
     def set_model_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
         self.model_system_message = message
@@ -274,10 +273,10 @@ class AsyncOpenAIAPI(Backend):
 
     def set_current_user(self, user=None):
         self.current_user = user
-        if user:
-            self.model = constants.OPENAPI_CHAT_RENDER_MODELS[self.current_user.default_model]
+        if self.current_user:
+            self.set_active_model(self.current_user.default_model)
         else:
-            self.model = None
+            self.set_active_model()
 
     def conversation_data_to_messages(self, conversation_data):
         return conversation_data['messages']

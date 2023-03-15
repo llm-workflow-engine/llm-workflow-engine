@@ -21,10 +21,18 @@ class Backend(ABC):
         self.conversation_title_set = None
         self.streaming = False
         self.console = Console()
+        self.set_available_models()
+        self.set_active_model(self.config.get('chat.model'))
 
     def _print_status_message(self, success, message):
         self.console.print(message, style="bold green" if success else "bold red")
         print("")
+
+    def set_active_model(self, model=None):
+        if model is None:
+            self.model = None
+        else:
+            self.model = self.available_models[model]
 
     def new_conversation(self):
         self.parent_message_id = None
@@ -42,6 +50,10 @@ class Backend(ABC):
 
     def get_runtime_config(self):
         return ""
+
+    @abstractmethod
+    def set_available_models(self):
+        raise NotImplementedError
 
     @abstractmethod
     def conversation_data_to_messages(self, conversation_data):

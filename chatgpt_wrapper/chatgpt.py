@@ -38,7 +38,6 @@ class AsyncChatGPT(Backend):
         self.page = None
         self.browser = None
         self.session = None
-        self.model = self.config.get('chat.model')
         self.new_conversation()
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
@@ -95,6 +94,16 @@ class AsyncChatGPT(Backend):
         if self.user_data_dir:
             shutil.rmtree(self.user_data_dir)
         await self.play.stop()
+
+    def set_available_models(self):
+        self.available_models = constants.RENDER_MODELS
+
+    def get_runtime_config(self):
+        output = """
+* Model customizations:
+  * Model: %s
+""" % (self.model)
+        return output
 
     async def refresh_session(self, timeout=15):
         """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
@@ -190,7 +199,7 @@ class AsyncChatGPT(Backend):
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": constants.RENDER_MODELS[self.model],
+            "model": self.model,
         }
         ok, json, response = await self._api_post_request(url, data)
         if ok:
@@ -306,7 +315,7 @@ class AsyncChatGPT(Backend):
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": constants.RENDER_MODELS[self.model],
+            "model": self.model,
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",
@@ -371,6 +380,7 @@ class AsyncChatGPT(Backend):
             .replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         )
 
+        self.log.debug(f"Sending stream request -- model: {self.model}, conversation_id: {self.conversation_id}, parent_message_id: {self.parent_message_id}")
         self.streaming = True
         await self.page.evaluate(code)
 
