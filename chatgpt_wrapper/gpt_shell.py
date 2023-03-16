@@ -981,7 +981,15 @@ class GPTShell():
         """
         self.load_templates()
         self.rebuild_completions()
-        self._print_markdown("## Templates:\n\n%s" % "\n".join([f"* {t}" for t in self.templates]))
+        templates = []
+        for template_name in self.templates:
+            content = f"* {template_name}"
+            template, _ = self.get_template_and_variables(template_name)
+            source = frontmatter.load(template.filename)
+            if 'description' in source.metadata:
+                content += f": {source.metadata['description']}"
+            templates.append(content)
+        self._print_markdown("## Templates:\n\n%s" % "\n".join(templates))
 
     async def do_template(self, template_name):
         """
@@ -997,8 +1005,11 @@ class GPTShell():
         if not success:
             return success, template_name, user_message
         template, _ = self.get_template_and_variables(template_name)
-        message = open(template.filename).read()
-        self._print_markdown(f"\n## Template '{template_name}'\n\n{message}")
+        source = frontmatter.load(template.filename)
+        self._print_markdown(f"\n## Template '{template_name}'")
+        if source.metadata:
+            self._print_markdown("\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False))
+        self._print_markdown(f"\n\n{source.content}")
 
     async def do_template_edit(self, template_name):
         """
