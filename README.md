@@ -373,7 +373,7 @@ model: gpt4
 To use GPT-4 within your Python code, follow the template below:
 
 ```python
-from chatgpt import ChatGPT
+from chatgpt_wrapper import ChatGPT
 from chatgpt_wrapper.config import Config
 
 config = Config()
