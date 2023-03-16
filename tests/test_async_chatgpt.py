@@ -7,6 +7,7 @@ from chatgpt_wrapper.config import Config
 async def main():
     config = Config()
     config.set('browser.debug', True)
+    config.set('debug.log.enabled', True)
     gpt = AsyncChatGPT(config)
     bot1 = await gpt.create()
     #bot2 = await gpt.create(browser=bot1.browser)

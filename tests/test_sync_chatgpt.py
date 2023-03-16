@@ -6,6 +6,7 @@ from chatgpt_wrapper.config import Config
 def main():
     config = Config()
     config.set('browser.debug', True)
+    config.set('debug.log.enabled', True)
     gpt = ChatGPT(config)
     response1 = gpt.ask("Say, bot1!")
     print(response1)

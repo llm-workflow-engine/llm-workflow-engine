@@ -6,6 +6,7 @@ from chatgpt_wrapper.config import Config
 
 async def main():
     config = Config()
+    config.set('debug.log.enabled', True)
     gpt = AsyncOpenAIAPI(config, default_user_id=1)
     success, history, user_message = await gpt.get_history(limit=3)
     if success:
