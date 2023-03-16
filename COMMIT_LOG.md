@@ -1,3 +1,21 @@
+### v0.6.0 - 16/03/2023
+
+* **Thu Mar 16 2023:** fix crash after initial user creation on api backend
+* **Wed Mar 15 2023:** Basic plugin functionality (alpha, subject to change)
+* **Wed Mar 15 2023:** improvements to model handling
+* **Tue Mar 14 2023:** set new backend model after user edit
+* **Tue Mar 14 2023:** add set_model method to API backend, error handling/logging for API requests
+* **Tue Mar 14 2023:** bump openai version requirement
+* **Tue Mar 14 2023:** Minor bug fix: model option was not used in the wrapper (default option was hardcoded)
+* **Tue Mar 14 2023:** added gpt4 model option
+* **Tue Mar 14 2023:** move signal handling to base shell class, fixes #226
+* **Tue Mar 14 2023:** repl_history file use platform agnostic temp dir, fixes #227
+* **Mon Mar 13 2023:** Convert commands from underscore to dash
+* **Mon Mar 13 2023:** don't start gen_title thread if title already exists
+* **Mon Mar 13 2023:** only add check_same_thread for sqlite connections
+* **Sun Feb 26 2023:** added flask to requirements
+* **Sun Feb 26 2023:** improvement to docker (speed up in debugging and adding api port)
+
 ### v0.5.5 - 13/03/2023
 
 * **Mon Mar 13 2023:** fix threading error with SQLite connections
