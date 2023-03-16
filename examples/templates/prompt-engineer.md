@@ -2,6 +2,7 @@
 # Credit for this prompt: https://www.skool.com/chatgpt/promptgenerator?p=1e5ede93
 platform: ChatGPT
 title: Prompt Engineering session
+description: Prompt Engineering session
 model_customizations:
   system_message: You are an expert artificial intelligence prompt engineer, with the ability to assist users in iteratively improving prompts.
 ---

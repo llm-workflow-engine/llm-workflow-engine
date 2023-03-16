@@ -1,3 +1,7 @@
+---
+description: Summarize conversation with action items and conclusions
+---
+
 Provide a summary of this entire conversation to this point, following these guidelines:
 
 1. If there was an issue or task, briefly state it
