@@ -494,7 +494,12 @@ class ChatGPT:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{__name}'")
 
     def async_run(self, awaitable):
-        return asyncio.get_event_loop().run_until_complete(awaitable)
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            future = asyncio.ensure_future(awaitable)
+            return future.result()
+        else:
+            return loop.run_until_complete(awaitable)
 
     def refresh_session(self):
         return self.async_run(self.agpt.refresh_session())
