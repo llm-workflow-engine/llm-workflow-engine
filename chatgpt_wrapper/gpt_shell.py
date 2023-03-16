@@ -983,11 +983,11 @@ class GPTShell():
         self.rebuild_completions()
         templates = []
         for template_name in self.templates:
-            content = f"* {template_name}"
+            content = f"* **{template_name}**"
             template, _ = self.get_template_and_variables(template_name)
             source = frontmatter.load(template.filename)
             if 'description' in source.metadata:
-                content += f": {source.metadata['description']}"
+                content += f": *{source.metadata['description']}*"
             templates.append(content)
         self._print_markdown("## Templates:\n\n%s" % "\n".join(templates))
 
