@@ -235,6 +235,7 @@ class GPTShell():
     def extract_template_run_overrides(self, metadata):
         keys = [
             'title',
+            'description',
             'model_customizations',
         ]
         overrides = {}
