@@ -246,7 +246,7 @@ These front matter attributes have special functionality:
 
 * title: Sets the title of new conversations to this value
 * description: Displayed in the output of `/templates`
-* model_customizations: A hash of model customizations to apply to when the template is run (see `/config` for available model customizations)
+* model_customizations: A hash of model customizations to apply when the template is run (see `/config` for available model customizations)
 
 All other attributes will be passed to the template as variable substitutions.
 
