@@ -16,7 +16,7 @@ from prompt_toolkit.completion import NestedCompleter, PathCompleter
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
 
-from jinja2 import Environment, FileSystemLoader, Template, meta
+from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound, meta
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -69,6 +69,7 @@ class GPTShell():
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.console = Console()
+        self.template_dirs = self.make_template_dirs()
         self.templates = []
         self.templates_env = None
         self.history = self.get_history()
@@ -215,10 +216,6 @@ class GPTShell():
         value = pyperclip.paste()
         return value
 
-    def get_template_path(self, template_name):
-        filepath = "%s%s%s" % (self.templates_dir, os.path.sep, template_name)
-        return filepath
-
     def template_builtin_variables(self):
         return {
             'clipboard': self.paste_from_clipboard,
@@ -279,18 +276,27 @@ class GPTShell():
             self.log.debug(f"Collected variable {variable} for template {template_name}: {value}")
         return substitutions
 
+    def make_template_dirs(self):
+        template_dirs = []
+        template_dirs.append(os.path.join(self.config.config_dir, 'templates'))
+        template_dirs.append(os.path.join(self.config.config_profile_dir, 'templates'))
+        for template_dir in template_dirs:
+            if not os.path.exists(template_dir):
+                os.makedirs(template_dir)
+        return template_dirs
+
     def load_templates(self):
-        self.templates_dir = '%s%stemplates' % (self.config.config_dir, os.path.sep)
-        self.log.debug(f"Loading templates from dir: {self.templates_dir}")
-        if not os.path.exists(self.templates_dir):
-            os.makedirs(self.templates_dir)
-        jinja_env = Environment(loader=FileSystemLoader(self.templates_dir))
+        self.log.debug("Loading templates from dirs: %s" % ", ".join(self.template_dirs))
+        jinja_env = Environment(loader=FileSystemLoader(self.template_dirs))
         filenames = jinja_env.list_templates()
         self.templates_env = jinja_env
         self.templates = filenames or []
 
     def get_template_and_variables(self, template_name):
-        template = self.templates_env.get_template(template_name)
+        try:
+            template = self.templates_env.get_template(template_name)
+        except TemplateNotFound:
+            return None, None
         template_source = self.templates_env.loader.get_source(self.templates_env, template_name)
         parsed_content = self.templates_env.parse(template_source)
         variables = meta.find_undeclared_variables(parsed_content)
@@ -1023,8 +1029,10 @@ class GPTShell():
         """
         if not template_name:
             return False, template_name, "No template name specified"
-        filepath = self.get_template_path(template_name)
-        file_editor(filepath)
+        template, _ = self.get_template_and_variables(template_name)
+        if not template:
+            return False, template_name, f"{template_name} does not exist"
+        file_editor(template.filename)
         self.load_templates()
         self.rebuild_completions()
 
@@ -1042,10 +1050,11 @@ class GPTShell():
             old_name, new_name = template_names.split()
         except ValueError:
             return False, template_names, "Old and new template name required"
-        old_filepath = self.get_template_path(old_name)
-        new_filepath = self.get_template_path(new_name)
-        if not os.path.exists(old_filepath):
+        template, _ = self.get_template_and_variables(old_name)
+        if not template:
             return False, template_names, f"{old_name} does not exist"
+        old_filepath = template.filename
+        new_filepath = os.path.join(os.path.dirname(old_filepath), new_name)
         if os.path.exists(new_filepath):
             return False, template_names, f"{new_name} already exists"
         shutil.copy2(old_filepath, new_filepath)
@@ -1065,12 +1074,12 @@ class GPTShell():
         """
         if not template_name:
             return False, template_name, "No template name specified"
-        filepath = self.get_template_path(template_name)
-        if not os.path.exists(filepath):
+        template, _ = self.get_template_and_variables(template_name)
+        if not template:
             return False, template_name, f"{template_name} does not exist"
         confirmation = input(f"Are you sure you want to delete template {template_name}? [y/N] ").strip()
         if confirmation.lower() in ["yes", "y"]:
-            os.remove(filepath)
+            os.remove(template.filename)
             self.load_templates()
             self.rebuild_completions()
             return True, template_name, f"Deleted {template_name}"
@@ -1168,9 +1177,11 @@ class GPTShell():
 # File configuration
 
 * Config dir: %s
+* Config profile dir: %s
 * Config file: %s
 * Data dir: %s
-* Templates dir: %s
+* Data profile dir: %s
+* Templates dirs: %s
 
 # Profile '%s' configuration:
 
@@ -1182,7 +1193,7 @@ class GPTShell():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.config.get('backend'), self.config.config_dir, self.config.config_file or "None", self.config.data_dir, self.templates_dir, self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.config.get('backend'), self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         self._print_markdown(output)
 

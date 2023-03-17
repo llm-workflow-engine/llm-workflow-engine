@@ -28,6 +28,7 @@ class PluginManager:
         plugin_paths = [
             os.path.join(self.get_package_root(), 'plugins'),
             os.path.join(self.config.config_dir, 'plugins'),
+            os.path.join(self.config.config_profile_dir, 'plugins'),
         ]
         return plugin_paths
 
