@@ -232,11 +232,23 @@ Features:
 
 See the various `/help template` commands for more information.
 
-### Template builtin variables
+### Builtin variables
 
 The wrapper exposes some builtin variables that can be used in templates:
 
  * `{{ clipboard }}` - Insert the contents of the clipboard
+
+### Front matter
+
+Templates may include front matter (see [examples](examples/templates)).
+
+These front matter attributes have special functionality:
+
+* title: Sets the title of new conversations to this value
+* description: Displayed in the output of `/templates`
+* model_customizations: A hash of model customizations to apply to when the template is run (see `/config` for available model customizations)
+
+All other attributes will be passed to the template as variable substitutions.
 
 ## Plugins (alpha, subject to change)
 
