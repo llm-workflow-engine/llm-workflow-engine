@@ -1,3 +1,24 @@
+### v0.6.1 - 17/03/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+The `--config-dir` and `--data-dir` arguments have changed how they interpret locations:
+
+* Both now point to the root `chatgpt-wrapper` directory instead of a profile directory
+* Config and data are still stored under `profiles/[profile]` subdirectories inside these directories
+* Installations that use the default locations instead of providing CLI arguments for the locations are unaffected
+* See the output of `chatgpt config` with no other arguments to see these updates reflected in the `File configuration` section
+
+* **Fri Mar 17 2023:** find version in version.py
+* **Fri Mar 17 2023:** doc for template front matter
+* **Fri Mar 17 2023:** refactor config/data dir implementation, support non-profile specific templates/plugins dirs **BREAKING CHANGE**
+* **Thu Mar 16 2023:** pretty up templates list output
+* **Thu Mar 16 2023:** add descriptions to example templates
+* **Thu Mar 16 2023:** better formatting of template front matter, use description key from front matter in /templates list
+* **Thu Mar 16 2023:** enable debug logging for test scripts
+* **Thu Mar 16 2023:** check for running event loop, use if found
+* **Thu Mar 16 2023:** clarify how to use the sample config
+
 ### v0.6.0 - 16/03/2023
 
 * **Thu Mar 16 2023:** fix crash after initial user creation on api backend
