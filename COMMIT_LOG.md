@@ -1,3 +1,8 @@
+### v0.6.2 - 17/03/2023
+
+* **Sat Mar 18 2023:** /templates command improvements
+* **Sat Mar 18 2023:** fix secondary invocations with browser backend, fixes #236
+
 ### v0.6.1 - 17/03/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
