@@ -232,17 +232,24 @@ class GPTShell():
         self.log.debug(message)
         return True, template_name, message
 
-    def extract_template_run_overrides(self, metadata):
-        keys = [
-            'title',
-            'description',
-            'model_customizations',
-        ]
-        overrides = {}
+    def extract_metadata_keys(self, keys, metadata):
+        extracted_keys = {}
         for key in keys:
             if key in metadata:
-                overrides[key] = metadata[key]
+                extracted_keys[key] = metadata[key]
                 del metadata[key]
+        return metadata, extracted_keys
+
+    def extract_template_run_overrides(self, metadata):
+        override_keys = [
+            'title',
+            'model_customizations',
+        ]
+        custom_keys = [
+            'description',
+        ]
+        metadata, overrides = self.extract_metadata_keys(override_keys, metadata)
+        metadata, _ = self.extract_metadata_keys(custom_keys, metadata)
         return metadata, overrides
 
     async def run_template(self, template_name, substitutions={}):
