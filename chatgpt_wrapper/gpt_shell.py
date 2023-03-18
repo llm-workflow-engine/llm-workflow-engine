@@ -975,16 +975,25 @@ class GPTShell():
         else:
             return True, self.backend.model, f"Current model: {self.backend.model}"
 
-    async def do_templates(self, _):
+    async def do_templates(self, arg):
         """
         List available templates
 
         Templates are pre-configured text content that can be customized before sending a message to the model.
 
-        Templates are are per-profile, located in the 'templates' directory of the profile. (see {COMMAND_LEADER}config for current location)
+        They are located in the 'templates' directory in the following locations:
+
+            - The main configuration directory
+            - The profile configuration directory
+
+        See {COMMAND_LEADER}config for current locations.
+
+        Arguments:
+            filter_string: Optional. If provided, only templates with a name or description containing the filter string will be shown.
 
         Examples:
             {COMMAND}
+            {COMMAND} filterstring
         """
         self.load_templates()
         self.rebuild_completions()
@@ -995,7 +1004,8 @@ class GPTShell():
             source = frontmatter.load(template.filename)
             if 'description' in source.metadata:
                 content += f": *{source.metadata['description']}*"
-            templates.append(content)
+            if not arg or arg.lower() in content.lower():
+                templates.append(content)
         self._print_markdown("## Templates:\n\n%s" % "\n".join(templates))
 
     async def do_template(self, template_name):
