@@ -245,11 +245,11 @@ class GPTShell():
             'title',
             'model_customizations',
         ]
-        custom_keys = [
+        builtin_keys = [
             'description',
         ]
         metadata, overrides = self.extract_metadata_keys(override_keys, metadata)
-        metadata, _ = self.extract_metadata_keys(custom_keys, metadata)
+        metadata, _ = self.extract_metadata_keys(builtin_keys, metadata)
         return metadata, overrides
 
     async def run_template(self, template_name, substitutions={}):
