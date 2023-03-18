@@ -1,3 +1,4 @@
+import os
 import asyncio
 import base64
 import json
@@ -6,6 +7,7 @@ import datetime
 import uuid
 import re
 import shutil
+import tempfile
 from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
@@ -41,6 +43,7 @@ class AsyncChatGPT(Backend):
         self.new_conversation()
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
+        primary_profile = os.path.join(tempfile.gettempdir(), "playwright")
         self.streaming = False
         self.lock = asyncio.Lock()
         self.play = await async_playwright().start()
@@ -53,13 +56,16 @@ class AsyncChatGPT(Backend):
             playbrowser = self.play.firefox
         try:
             self.browser = await playbrowser.launch_persistent_context(
-                user_data_dir="/tmp/playwright",
+                user_data_dir=primary_profile,
                 headless=headless,
                 proxy=proxy,
             )
         except Exception:
-            self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
-            shutil.copytree("/tmp/playwright", self.user_data_dir)
+            self.user_data_dir = f"{primary_profile}-{str(uuid.uuid4())}"
+            message = f"Unable to launch browser from primary profile, trying alternate profile {self.user_data_dir}"
+            print(message)
+            self.log.warning(message)
+            shutil.copytree(primary_profile, self.user_data_dir, ignore=shutil.ignore_patterns("lock"))
             self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir=self.user_data_dir,
                 headless=headless,
