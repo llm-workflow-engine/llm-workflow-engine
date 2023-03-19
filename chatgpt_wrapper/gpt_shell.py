@@ -265,23 +265,27 @@ class GPTShell():
         print(message)
         return await self.default(message, **overrides)
 
-    async def collect_template_variable_values(self, template_name, variables=[]):
+    def process_template_builtin_variables(self, template_name, variables=[]):
         builtin_variables = self.template_builtin_variables()
-        variables = list(variables)
-        variables.extend(builtin_variables.keys())
-        # Remove dups.
-        variables = list(set(variables))
-        await self.do_template(template_name)
-        self._print_markdown("##### Enter variables:\n")
-        self.log.debug(f"Collecting variable values for: {template_name}")
         substitutions = {}
-        for variable in variables:
-            if variable in builtin_variables:
-                value = builtin_variables[variable]()
-            else:
-                value = input(f"    {variable}: ").strip()
-            substitutions[variable] = value
-            self.log.debug(f"Collected variable {variable} for template {template_name}: {value}")
+        for variable, method in builtin_variables.items():
+            if variable in variables:
+                substitutions[variable] = method()
+                self.log.debug(f"Collected builtin variable {variable} for template {template_name}: {substitutions[variable]}")
+        return substitutions
+
+    async def collect_template_variable_values(self, template_name, variables=[]):
+        substitutions = {}
+        builtin_variables = self.template_builtin_variables()
+        user_variables = list(set([v for v in variables if v not in builtin_variables]))
+        if user_variables:
+            await self.do_template(template_name)
+            self._print_markdown("##### Enter variables:\n")
+            self.log.debug(f"Collecting variable values for: {template_name}")
+            for variable in user_variables:
+                substitutions[variable] = input(f"    {variable}: ").strip()
+                self.log.debug(f"Collected variable {variable} for template {template_name}: {substitutions[variable]}")
+        substitutions = self.merge_dicts(substitutions, self.process_template_builtin_variables(template_name, variables))
         return substitutions
 
     def make_template_dirs(self):
@@ -1119,7 +1123,8 @@ class GPTShell():
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        substitutions = await self.collect_template_variable_values(template_name)
+        _, variables = self.get_template_and_variables(template_name)
+        substitutions = self.process_template_builtin_variables(template_name, variables)
         return await self.run_template(template_name, substitutions)
 
     async def do_template_prompt_run(self, template_name):
@@ -1158,8 +1163,8 @@ class GPTShell():
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        template, _ = self.get_template_and_variables(template_name)
-        substitutions = await self.collect_template_variable_values(template_name)
+        template, variables = self.get_template_and_variables(template_name)
+        substitutions = self.process_template_builtin_variables(template_name, variables)
         message = template.render(**substitutions)
         return await self.do_editor(message)
 
