@@ -79,7 +79,7 @@ class Awesome(Plugin):
             self.log.error(f"Error downloading prompts file: {e}")
             return
         try:
-            with open(self.prompts_temp_file, 'wb') as out_file:
+            with open(self.prompts_temp_file, 'wb', encoding='utf-8') as out_file:
                 out_file.write(data)
             self.prompts_downloaded = True
         except Exception as e:
@@ -88,7 +88,7 @@ class Awesome(Plugin):
     def load_prompts(self):
         self.get_prompts()
         if not self.loaded_prompts:
-            with open(self.prompts_temp_file) as f:
+            with open(self.prompts_temp_file, encoding='utf-8') as f:
                 self.log.info(f"Loading prompts from {self.prompts_temp_file}")
                 reader = csv.DictReader(f)
                 for row in reader:
