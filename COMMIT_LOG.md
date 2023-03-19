@@ -1,4 +1,9 @@
-### v0.6.2 - 17/03/2023
+### v0.6.3 - 18/03/2023
+
+* **Sat Mar 18 2023:** clean up template display/workflows
+* **Sat Mar 18 2023:** extract description separate from overrides, fixes #238
+
+### v0.6.2 - 18/03/2023
 
 * **Sat Mar 18 2023:** /templates command improvements
 * **Sat Mar 18 2023:** fix secondary invocations with browser backend, fixes #236
