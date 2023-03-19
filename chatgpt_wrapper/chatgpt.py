@@ -502,7 +502,7 @@ class ChatGPT:
     def async_run(self, awaitable):
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            future = asyncio.ensure_future(awaitable)
+            future = asyncio.run_coroutine_threadsafe(awaitable, loop)
             return future.result()
         else:
             return loop.run_until_complete(awaitable)
