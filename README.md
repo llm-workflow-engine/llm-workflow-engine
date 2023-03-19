@@ -8,6 +8,7 @@ What would you like to do?
 * [Install the wrapper](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
+* [Upgrade the wrapper](#upgrading)
 * [Using GPT4](#gpt4)
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
@@ -384,6 +385,25 @@ Then, visit http://localhost:6901/vnc.html with password `headless` and login Ch
 Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
+
+## Upgrading:
+
+### Via pip
+
+Until an official release exists, you'll need to uninstall and reinstall:
+
+```sh
+pip uninstall -y chatGPT
+pip install chatGPT
+```
+
+### Via git
+
+If the package was installed via `pip install -e`, simply pull in the latest changes from the repository:
+
+```sh
+git pull
+```
 
 ## GPT4
 
