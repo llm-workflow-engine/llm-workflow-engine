@@ -1,3 +1,11 @@
+### v0.6.4 - 19/03/2023
+
+* **Sun Mar 19 2023:** add all core plugins to example config
+* **Sun Mar 19 2023:** add init file to plugins dir, fixes #239
+* **Sun Mar 19 2023:** add langchain dependency
+* **Sun Mar 19 2023:** add doc for current core plugins
+* **Sun Mar 19 2023:** add zap plugin
+
 ### v0.6.3 - 18/03/2023
 
 * **Sat Mar 18 2023:** clean up template display/workflows
