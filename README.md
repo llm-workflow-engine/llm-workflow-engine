@@ -268,6 +268,11 @@ All other attributes will be passed to the template as variable substitutions.
    ```
    Note that setting `plugins.enabled` will overwrite the default enabled plugins. see `/config` for a list of default enabled plugins.
 
+### Core plugins:
+
+* **test:** Test plugin, echos back the command you give it
+* **awesome:** Use a prompt from Awesome ChatGPT Prompts: [https://github.com/f/awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
+* **zap:** Send natural language commands to Zapier actions: [https://nla.zapier.com/get-started/](https://nla.zapier.com/get-started/)
 
 ### Writing plugins
 
