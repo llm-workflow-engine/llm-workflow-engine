@@ -79,8 +79,8 @@ class Awesome(Plugin):
             self.log.error(f"Error downloading prompts file: {e}")
             return
         try:
-            with open(self.prompts_temp_file, 'wb', encoding='utf-8') as out_file:
-                out_file.write(data)
+            with open(self.prompts_temp_file, 'w', encoding='utf-8') as out_file:
+                out_file.write(data.decode('utf-8'))
             self.prompts_downloaded = True
         except Exception as e:
             self.log.error(f"Error writing prompts file: {e}")
