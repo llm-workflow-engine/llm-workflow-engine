@@ -130,7 +130,7 @@ chatgpt
   * You control your data
 * Cons:
   * Only paid version available (as of this writing)
-  * More commplex setup suitable for technical users
+  * More complex setup suitable for technical users
 
 Grab an API key from [https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys)
 
