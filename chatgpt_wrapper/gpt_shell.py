@@ -1052,9 +1052,11 @@ class GPTShell():
         if not template_name:
             return False, template_name, "No template name specified"
         template, _ = self.get_template_and_variables(template_name)
-        if not template:
-            return False, template_name, f"{template_name} does not exist"
-        file_editor(template.filename)
+        if template:
+            filename = template.filename
+        else:
+            filename = os.path.join(self.template_dirs[0], template_name)
+        file_editor(filename)
         self.load_templates()
         self.rebuild_completions()
 
