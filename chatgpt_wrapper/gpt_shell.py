@@ -830,6 +830,8 @@ class GPTShell():
         return await self.default(line)
 
     async def default(self, line, title=None, model_customizations={}):
+        # TODO: This signal is recognized on Windows, and calls the callback, but the entire
+        # process is still killed.
         signal.signal(signal.SIGINT, self.catch_ctrl_c)
         if not line:
             return
