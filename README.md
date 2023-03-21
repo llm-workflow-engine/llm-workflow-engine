@@ -458,6 +458,7 @@ success, response, message = bot.ask("Hello, world!")
 - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)
 - [ChatGPT.el: ChatGPT in Emacs](https://github.com/joshcho/ChatGPT.el)
 - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
+- [Smarty GPT](https://github.com/citiususc/Smarty-GPT/tree/v1.1.0)
 
 ## Contributing
 
