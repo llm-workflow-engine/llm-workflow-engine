@@ -1,35 +1,27 @@
-import sys
+import os
 import asyncio
-import atexit
 import base64
 import json
-import operator
 import time
+import datetime
 import uuid
-import logging
 import re
 import shutil
-from functools import reduce
-from time import sleep
+import tempfile
 from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
-import nest_asyncio
-nest_asyncio.apply()
+from chatgpt_wrapper.backend import Backend
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
+import chatgpt_wrapper.constants as constants
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
-RENDER_MODELS = {
-    "default": "text-davinci-002-render-sha",
-    "legacy-paid": "text-davinci-002-render-paid",
-    "legacy-free": "text-davinci-002-render"
-}
 
-DEFAULT_CONSOLE_LOG_LEVEL = logging.ERROR
-DEFAULT_CONSOLE_LOG_FORMATTER = logging.Formatter("%(levelname)s - %(message)s")
-DEFAULT_FILE_LOG_LEVEL = logging.DEBUG
-DEFAULT_FILE_LOG_FORMATTER = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
-class ChatGPT:
+class AsyncChatGPT(Backend):
     """
     A ChatGPT interface that uses Playwright to run a browser,
     and interacts with that browser to communicate with ChatGPT in
@@ -38,16 +30,25 @@ class ChatGPT:
 
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
+    interrupt_div_id = "chatgpt-wrapper-conversation-stream-data-interrupt"
     session_div_id = "chatgpt-wrapper-session-data"
 
-    def __init__(self, headless: bool = True, browser="firefox", model="default", timeout=60, debug_log=None, proxy: Optional[ProxySettings] = None):
-        self.model = model
-        self.log = self._set_logging(debug_log)
-        self.log.info("ChatGPT initialized")
-        asyncio.run(self.create(headless, browser, timeout, proxy))
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.play = None
+        self.user_data_dir = None
+        self.page = None
+        self.browser = None
+        self.session = None
+        self.new_conversation()
 
-    async def create(self, headless: bool = True, browser="firefox", timeout=60, proxy: Optional[ProxySettings] = None):
+    async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
+        primary_profile = os.path.join(tempfile.gettempdir(), "playwright")
+        self.streaming = False
+        self.lock = asyncio.Lock()
         self.play = await async_playwright().start()
+        browser = self.config.get('browser.provider')
+        headless = not self.config.get('browser.debug')
         try:
             playbrowser = getattr(self.play, browser)
         except Exception:
@@ -55,13 +56,16 @@ class ChatGPT:
             playbrowser = self.play.firefox
         try:
             self.browser = await playbrowser.launch_persistent_context(
-                user_data_dir="/tmp/playwright",
+                user_data_dir=primary_profile,
                 headless=headless,
                 proxy=proxy,
             )
         except Exception:
-            self.user_data_dir = f"/tmp/{str(uuid.uuid4())}"
-            shutil.copytree("/tmp/playwright", self.user_data_dir)
+            self.user_data_dir = f"{primary_profile}-{str(uuid.uuid4())}"
+            message = f"Unable to launch browser from primary profile, trying alternate profile {self.user_data_dir}"
+            print(message)
+            self.log.warning(message)
+            shutil.copytree(primary_profile, self.user_data_dir, ignore=shutil.ignore_patterns("lock"))
             self.browser = await playbrowser.launch_persistent_context(
                 user_data_dir=self.user_data_dir,
                 headless=headless,
@@ -73,42 +77,44 @@ class ChatGPT:
         else:
             self.page = await self.browser.new_page()
         await self._start_browser()
-        self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
-        self.session = None
         self.timeout = timeout
-        atexit.register(self._shutdown)
+        self.log.info("ChatGPT initialized")
+        return self
 
     def _shutdown(self):
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(asyncio.gather(self._cleanup()))
-
-    def _set_logging(self, debug_log):
-        logger = logging.getLogger(self.__class__.__name__)
-        logger.setLevel(logging.DEBUG)
-        log_console_handler = logging.StreamHandler()
-        log_console_handler.setFormatter(DEFAULT_CONSOLE_LOG_FORMATTER)
-        log_console_handler.setLevel(DEFAULT_CONSOLE_LOG_LEVEL)
-        logger.addHandler(log_console_handler)
-        if debug_log:
-            log_file_handler = logging.FileHandler(debug_log)
-            log_file_handler.setFormatter(DEFAULT_FILE_LOG_FORMATTER)
-            log_file_handler.setLevel(DEFAULT_FILE_LOG_LEVEL)
-            logger.addHandler(log_file_handler)
-        return logger
+        loop.run_until_complete(asyncio.gather(self.cleanup()))
 
     async def _start_browser(self):
         await self.page.goto("https://chat.openai.com/")
 
-    async def _cleanup(self):
+    def _handle_error(self, obj, response, message):
+        full_message = f"{message}: {response.status} {response.status_text}"
+        self.log.error(full_message)
+        return False, obj, full_message
+
+    async def cleanup(self):
+        self.log.info("Cleaning up")
         await self.browser.close()
         # remove the user data dir in case this is a second instance
-        if hasattr(self, "user_data_dir"):
+        if self.user_data_dir:
             shutil.rmtree(self.user_data_dir)
         await self.play.stop()
 
-    async def refresh_session(self,timeout=15):
+    def get_backend_name(self):
+        return "chatgpt-browser"
+
+    def set_available_models(self):
+        self.available_models = constants.RENDER_MODELS
+
+    def get_runtime_config(self):
+        output = """
+* Model customizations:
+  * Model: %s
+""" % (self.model)
+        return output
+
+    async def refresh_session(self, timeout=15):
         """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
 
         In this way, we can pass the browser check.
@@ -119,13 +125,13 @@ class ChatGPT:
         self.log.info("Refreshing session...")
         await self.page.goto("https://chat.openai.com/api/auth/session")
         try:
-            await self.page.wait_for_url("/api/auth/session",timeout=timeout*1000)
+            await self.page.wait_for_url("/api/auth/session", timeout=timeout * 1000)
         except Exception:
             self.log.error("Timed out refreshing session. Page is now at %s. Calling _start_browser()...")
             await self._start_browser()
         try:
             while "Please stand by, while we are checking your browser..." in await self.page.content():
-                time.sleep(1)
+                await asyncio.sleep(1)
             contents = await self.page.content()
             """
             By GETting /api/auth/session, the server would ultimately return a raw json file.
@@ -136,12 +142,12 @@ class ChatGPT:
 
             The following code tries to extract the json part from the page, by simply finding the first `{` and the last `}`.
             """
-            found_json=re.search('{.*}',contents)
-            if found_json==None:
-                raise json.JSONDecodeError("Cannot find JSON in /api/auth/session 's response",contents,0)
-            contents=contents[found_json.start():found_json.end()]
-            self.log.debug("Refreshing session received: %s",contents)
-            self.session=json.loads(contents)
+            found_json = re.search('{.*}', contents)
+            if found_json is None:
+                raise json.JSONDecodeError("Cannot find JSON in /api/auth/session 's response", contents, 0)
+            contents = contents[found_json.start():found_json.end()]
+            self.log.debug("Refreshing session received: %s", contents)
+            self.session = json.loads(contents)
             self.log.info("Succeessfully refreshed session. ")
         except json.JSONDecodeError:
             self.log.error("Failed to decode session key. Maybe Access denied? ")
@@ -152,11 +158,19 @@ class ChatGPT:
 
     async def _cleanup_divs(self):
         await self.page.evaluate(f"document.getElementById('{self.stream_div_id}').remove()")
-        await self.page.evaluate(f"document.getElementById('{self.eof_div_id}').remove()")
+        code = (
+            """
+            const eof_div = document.getElementById('EOF_DIV_ID');
+            if(typeof eof_div !== 'undefined' && eof_div !== null) {
+              eof_div.remove();
+            }
+            """
+        ).replace("EOF_DIV_ID", self.eof_div_id)
+        await self.page.evaluate(code)
 
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
-            "Authorization": "Bearer %s" % self.session["accessToken"],
+            "Authorization": f"Bearer {self.session['accessToken']}",
         }
         headers.update(custom_headers)
         return headers
@@ -167,7 +181,7 @@ class ChatGPT:
         if response.ok:
             try:
                 json = await response.json()
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 pass
         if not response.ok or not json:
             self.log.debug(f"{response.status} {response.status_text} {response.headers}")
@@ -194,7 +208,7 @@ class ChatGPT:
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": RENDER_MODELS[self.model],
+            "model": self.model,
         }
         ok, json, response = await self._api_post_request(url, data)
         if ok:
@@ -205,16 +219,26 @@ class ChatGPT:
             self.log.warning("Failed to auto-generate title for new conversation")
 
     def conversation_data_to_messages(self, conversation_data):
-        mapping_dict = conversation_data['mapping']
+        mapping_dict = conversation_data['mapping'].values()
         messages = []
-        parent_id = None
+        parent_nodes = [item for item in mapping_dict if 'parent' not in item]
+        mapping_dict = [item for item in mapping_dict if 'parent' in item]
+        if len(parent_nodes) == 1 and 'children' in parent_nodes[0]:
+            parent_id = parent_nodes[0]['children'][0]
+        else:
+            parent_id = None
         while True:
-            current_item = next((item for item in mapping_dict.values() if item['parent'] == parent_id), None)
+            current_item = next((item for item in mapping_dict if item['parent'] == parent_id), None)
             if current_item is None:
                 return messages
             message = current_item['message']
-            if message is not None and 'author' in message and message['author']['role'] != 'system':
-                messages.append(current_item['message'])
+            if message is not None and 'content' in message and 'author' in message and message['author']['role'] != 'system':
+                messages.append({
+                    'id': message['id'],
+                    'role': message['author']['role'],
+                    'message': "".join(message['content']['parts']),
+                    'created_time': datetime.datetime.fromtimestamp(int(message['create_time'])),
+                })
             parent_id = current_item['id']
 
     async def delete_conversation(self, uuid=None):
@@ -229,9 +253,9 @@ class ChatGPT:
         }
         ok, json, response = await self._api_patch_request(url, data)
         if ok:
-            return json
+            return ok, json, response
         else:
-            self.log.error("Failed to delete conversation")
+            return self._handle_error(json, response, "Failed to delete conversation")
 
     async def set_title(self, title, conversation_id=None):
         if self.session is None:
@@ -243,9 +267,9 @@ class ChatGPT:
         }
         ok, json, response = await self._api_patch_request(url, data)
         if ok:
-            return json
+            return ok, json, "Title set"
         else:
-            self.log.error("Failed to set title")
+            return self._handle_error(json, response, "Failed to set title")
 
     async def get_history(self, limit=20, offset=0):
         if self.session is None:
@@ -259,24 +283,26 @@ class ChatGPT:
         if ok:
             history = {}
             for item in json["items"]:
+                item['created_time'] = datetime.datetime.strptime(item['create_time'], "%Y-%m-%dT%H:%M:%S.%f")
+                del item['create_time']
                 history[item["id"]] = item
-            return history
+            return ok, history, "Retrieved history"
         else:
-            self.log.error("Failed to get history")
+            return self._handle_error(json, response, "Failed to get history")
 
-    async def get_conversation(self, id=None):
+    async def get_conversation(self, uuid=None):
         if self.session is None:
             await self.refresh_session()
-        id = id if id else self.conversation_id
-        if id:
-            url = f"https://chat.openai.com/backend-api/conversation/{id}"
+        uuid = uuid if uuid else self.conversation_id
+        if uuid:
+            url = f"https://chat.openai.com/backend-api/conversation/{uuid}"
             ok, json, response = await self._api_get_request(url)
             if ok:
-                return json
+                return ok, json, response
             else:
-                self.log.error(f"Failed to get conversation {uuid}")
+                return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
-    async def ask_stream(self, prompt: str):
+    async def ask_stream(self, prompt, title=None, model_customizations={}):
         if self.session is None:
             await self.refresh_session()
 
@@ -298,7 +324,7 @@ class ChatGPT:
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": RENDER_MODELS[self.model],
+            "model": self.model,
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",
@@ -317,6 +343,7 @@ class ChatGPT:
             xhr.responseType = 'stream';
             xhr.onreadystatechange = function() {
               var newEvent;
+              const interrupt_div = document.getElementById('INTERRUPT_DIV_ID');
               if(xhr.readyState == 3 || xhr.readyState == 4) {
                 const newData = xhr.response.substr(xhr.seenBytes);
                 try {
@@ -341,10 +368,15 @@ class ChatGPT:
                   xhr.seenBytes = xhr.responseText.length;
                 }
               }
-              if(xhr.readyState == 4) {
+              if(xhr.readyState == 4 && (typeof interrupt_div === 'undefined' || interrupt_div === null)) {
                 const eof_div = document.createElement('DIV');
                 eof_div.id = "EOF_DIV_ID";
                 document.body.appendChild(eof_div);
+              }
+              if(typeof interrupt_div !== 'undefined' && interrupt_div !== null) {
+                console.warn('Interrupting stream');
+                xhr.abort();
+                interrupt_div.remove();
               }
             };
             xhr.send(JSON.stringify(REQUEST_JSON));
@@ -354,13 +386,20 @@ class ChatGPT:
             .replace("REQUEST_JSON", json.dumps(request))
             .replace("STREAM_DIV_ID", self.stream_div_id)
             .replace("EOF_DIV_ID", self.eof_div_id)
+            .replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         )
 
+        self.log.debug(f"Sending stream request -- model: {self.model}, conversation_id: {self.conversation_id}, parent_message_id: {self.parent_message_id}")
+        self.streaming = True
         await self.page.evaluate(code)
 
         last_event_msg = ""
         start_time = time.time()
         while True:
+            if not self.streaming:
+                self.log.info("Request to interrupt streaming")
+                await self.interrupt_stream()
+                break
             eof_datas = await self.page.query_selector_all(f"div#{self.eof_div_id}")
 
             conversation_datas = await self.page.query_selector_all(
@@ -402,10 +441,29 @@ class ChatGPT:
 
             await asyncio.sleep(0.2)
 
+        if not self.streaming:
+            yield (
+                "\nGeneration stopped\n"
+            )
+        self.streaming = False
         await self._cleanup_divs()
-        await self._gen_title()
+        if title:
+            await self.set_title(title)
+        else:
+            await self._gen_title()
 
-    async def ask(self, message: str) -> str:
+    async def interrupt_stream(self):
+        self.log.info("Interrupting stream")
+        code = (
+            """
+            const interrupt_div = document.createElement('DIV');
+            interrupt_div.id = "INTERRUPT_DIV_ID";
+            document.body.appendChild(interrupt_div);
+            """
+        ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
+        await self.page.evaluate(code)
+
+    async def ask(self, message, title=None, model_customizations={}):
         """
         Send a message to chatGPT and return the response.
 
@@ -415,17 +473,75 @@ class ChatGPT:
         Returns:
             str: The response received from OpenAI.
         """
-        response = ""
-        async for chunk in self.ask_stream(message):
-            sys.stdout.flush()
-            response += chunk
-        return (
-            reduce(operator.add, response)
-            if len(response) > 0
-            else "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
-        )
+        async with self.lock:
+            response = list([i async for i in self.ask_stream(message, title=title)])
+            if len(response) == 0:
+                return False, response, "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
+            else:
+                return True, ''.join(response), "Response received"
 
     def new_conversation(self):
+        super().new_conversation()
         self.parent_message_id = str(uuid.uuid4())
-        self.conversation_id = None
-        self.conversation_title_set = None
+
+
+class ChatGPT:
+
+    def __init__(self, config=None, timeout=60, proxy: Optional[ProxySettings] = None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.agpt = AsyncChatGPT(config)
+        self.async_run(self.agpt.create(timeout, proxy))
+
+    def __getattr__(self, __name: str):
+        if hasattr(self.agpt, __name):
+            return getattr(self.agpt, __name)
+        else:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{__name}'")
+
+    def async_run(self, awaitable):
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(awaitable, loop)
+            return future.result()
+        else:
+            return loop.run_until_complete(awaitable)
+
+    def refresh_session(self):
+        return self.async_run(self.agpt.refresh_session())
+
+    def ask_stream(self, prompt, title=None, model_customizations={}):
+        def iter_over_async(ait):
+            loop = asyncio.get_event_loop()
+            ait = ait.__aiter__()
+
+            async def get_next():
+                try:
+                    obj = await ait.__anext__()
+                    return False, obj
+                except StopAsyncIteration:
+                    return True, None
+            while True:
+                done, obj = loop.run_until_complete(get_next())
+                if done:
+                    break
+                yield obj
+        yield from iter_over_async(self.agpt.ask_stream(prompt, title=title))
+
+    def ask(self, message, title=None, model_customizations={}):
+        return self.async_run(self.agpt.ask(message, title=title))
+
+    def get_conversation(self, uuid=None):
+        return self.async_run(self.agpt.get_conversation(uuid))
+
+    def delete_conversation(self, uuid=None):
+        return self.async_run(self.agpt.delete_conversation(uuid))
+
+    def set_title(self, title, conversation_id=None):
+        return self.async_run(self.agpt.set_title(title, conversation_id))
+
+    def get_history(self, limit=20, offset=0):
+        return self.async_run(self.agpt.get_history(limit, offset))
+
+    def cleanup(self):
+        self.async_run(self.agpt.cleanup())

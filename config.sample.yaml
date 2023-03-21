@@ -1,0 +1,112 @@
+# DO NOT SIMPLY COPY AND PASTE THIS CONFIGURATION FILE!
+# It is a reference for the default configuration. The correct way to
+# do it is to ONLY include the values in your configuration that you
+# want to override.
+
+# Configuration syntax is YAML, learn more at: https://yaml.org
+
+
+##########################################################
+# Backend settings.
+##########################################################
+# The backend the shell should use, one of: chatgpt-browser, chatgpt-api
+backend: chatgpt-browser
+# The database connection string, in a format SQLAlchemy understands.
+# DO NOT USE THE LINE AS IT IS WRITTEN BELOW, IT ONLY ILLUSTRATES THE DEFAULT LOCATION.
+# database: sqlite:////home/[username]/.local/share/chatgpt-wrapper/profiles/default/storage.db
+
+
+##########################################################
+# Shell settings.
+##########################################################
+shell:
+  # NOTE: This setting is only available on the following backends: chatgpt-api
+  # Customize the prompt prefix, the following token are available:
+  # - $USER: Logged in username
+  # - $MODEL: The LLM model name
+  # - $NEWLINE: Insert a newline
+  # - $TEMPERATURE: The current temperature
+  # - $TOP_P: The current top_p
+  # - $PRESENCE_PENALTY: The current presence penalty
+  # - $FREQUENCY_PENALTY: The current frequency penalty
+  # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
+  # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation
+  prompt_prefix: ($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL
+
+##########################################################
+# Browser settings.
+##########################################################
+browser:
+  # Enable debug mode (shows browser window if true, headless if false)
+  debug: false
+  # The browser to use, one of: firefox, chromium, webkit
+  provider: firefox
+
+
+##########################################################
+# Chat settings.
+##########################################################
+chat:
+  # The model to use when communicating with the server.
+  model: default
+  # When using the OpenAI API backend, the defaults for these values can be
+  # customized. See
+  # https://platform.openai.com/docs/api-reference/chat for more information.
+  model_customizations:
+    temperature: .9
+    top_p: 1
+    presence_penalty: .6
+    frequency_penalty: 0
+    # See '/help model_max_submission_tokens' for more information.
+    max_submission_tokens: 4000
+    # Configure aliases to switch between system messages, key is alias, value is message.
+    # See '/help model_system_message' for more information.
+    system_message:
+      programmer: "You are an expert programmer, who responds to questions with brief examples in code."
+  # If true, responses will be streamed in real time (no markdown formatting).
+  streaming: true
+  # Chat logs.
+  log:
+    # Enable logging to a file.
+    enabled: false
+    # Full path to the log file.
+    filepath: chatgpt.log
+
+
+##########################################################
+# Log settings.
+##########################################################
+log:
+  # Console logging.
+  console:
+    # Message format.
+    format: '%(name)s - %(levelname)s - %(message)s'
+    # Message level (must be valid Python logging module level).
+    level: ERROR
+
+
+##########################################################
+# Plugin settings.
+# See the README for more informaiton on plugins.
+##########################################################
+plugins:
+  enabled:
+    # Core plugins, see README for more details.
+    - awesome
+    #- test
+    #- zap
+
+##########################################################
+# Debug settings.
+##########################################################
+debug:
+  # Debug logging.
+  log:
+    # Enable to log debug messages.
+    enabled: false
+    # Full path to the log file.
+    filepath: /tmp/chatgpt-debug.log
+    # Message format.
+    format: '%(name)s - %(asctime)s - %(levelname)s - %(message)s'
+    # Message level (must be valid Python logging module level).
+    level: DEBUG

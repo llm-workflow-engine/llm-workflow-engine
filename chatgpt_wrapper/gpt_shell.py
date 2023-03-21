@@ -1,31 +1,36 @@
 import re
 import textwrap
-import asyncio
-from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
-# from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.completion import NestedCompleter
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.styles import Style
-import prompt_toolkit.document as document
-
+import yaml
 import os
 import platform
 import sys
-import datetime
-import subprocess
+import shutil
+import signal
+import pyperclip
+import frontmatter
+
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import FileHistory
+# from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.completion import NestedCompleter, PathCompleter
+from prompt_toolkit.styles import Style
+import prompt_toolkit.document as document
+
+from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound, meta
 
 from rich.console import Console
 from rich.markdown import Markdown
 
-console = Console()
+import chatgpt_wrapper.constants as constants
+from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.logger import Logger
+from chatgpt_wrapper.editor import file_editor, pipe_editor
+from chatgpt_wrapper.plugin_manager import PluginManager
+import chatgpt_wrapper.debug as debug
+if False:
+    debug.console(None)
 
 is_windows = platform.system() == "Windows"
-
-COMMAND_LEADER = '/'
-LEGACY_COMMAND_LEADER = '!'
-DEFAULT_COMMAND = 'ask'
-COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -33,20 +38,25 @@ COMMAND_HISTORY_FILE = '/tmp/repl_history.log'
 # to start commands with a special character.
 # It would also be possible to subclass NesteredCompleter and override
 # the get_completions() method, but that feels more brittle.
-document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9_" + COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
+document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
-DEFAULT_HISTORY_LIMIT = 20
+class LegacyCommandLeaderError(Exception):
+    pass
+
+class NoInputError(Exception):
+    pass
 
 class GPTShell():
     """
     A shell interpreter that serves as a front end to the ChatGPT class
     """
 
-    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % COMMAND_LEADER
+    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
     prompt = "> "
-    doc_header = "Documented commands (type %shelp [command without leading %s]):" % (COMMAND_LEADER, COMMAND_LEADER)
+    prompt_prefix = ""
+    doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
 
     # our stuff
     prompt_number = 0
@@ -55,39 +65,143 @@ class GPTShell():
     stream = False
     logfile = None
 
-    def __init__(self):
-        self.commands = self.configure_commands()
-        self.command_completer = self.get_command_completer()
+    def __init__(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.console = Console()
+        self.template_dirs = self.make_template_dirs()
+        self.templates = []
+        self.templates_env = None
         self.history = self.get_history()
-        self.key_bindings = self.get_key_bindings()
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
             history=self.history,
-            #auto_suggest=AutoSuggestFromHistory(),
-            completer=self.command_completer,
-            key_bindings=self.key_bindings,
-            style=self.style
+            # NOTE: Suggestions from history don't seem like a good fit for this REPL,
+            # so we don't use it. Leaving it here for reference.
+            # auto_suggest=AutoSuggestFromHistory(),
+            style=self.style,
         )
+        self.stream = self.config.get('chat.streaming')
+        self._set_logging()
+        self._setup_signal_handlers()
 
-    def configure_commands(self):
-        commands = [method[3:] for method in dir(__class__) if callable(getattr(__class__, method)) and method.startswith("do_")]
+    def terminate_stream(self, _signal, _frame):
+        self.backend.terminate_stream(_signal, _frame)
+
+    def _setup_signal_handlers(self):
+        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
+        signal.signal(sig, self.terminate_stream)
+
+    def exec_prompt_pre(self, _command, _arg):
+        pass
+
+    def introspect_commands(self, klass):
+        return [method[3:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("do_")]
+
+    def configure_shell_commands(self):
+        self.commands = self.introspect_commands(__class__)
+
+    def get_plugin_commands(self):
+        commands = []
+        for plugin in self.plugins.values():
+            plugin_commands = self.introspect_commands(plugin.__class__)
+            commands.extend(plugin_commands)
         return commands
 
-    def get_command_completer(self):
-        commands_with_leader = {"%s%s" % (COMMAND_LEADER, key): None for key in self.commands}
-        commands_with_leader["%shelp" % COMMAND_LEADER] = {key: None for key in self.commands}
-        completer = NestedCompleter.from_nested_dict(commands_with_leader)
-        return completer
+    def configure_commands(self):
+        self.commands.extend(self.get_plugin_commands())
+        self.dashed_commands = [self.underscore_to_dash(command) for command in self.commands]
+        self.dashed_commands.sort()
+        self.all_commands = self.dashed_commands + ['help']
+        self.all_commands.sort()
+
+    def command_with_leader(self, command):
+        key = "%s%s" % (constants.COMMAND_LEADER, command)
+        return key
+
+    def merge_dicts(self, dict1, dict2):
+        for key in dict2:
+            if key in dict1 and isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
+                self.merge_dicts(dict1[key], dict2[key])
+            else:
+                dict1[key] = dict2[key]
+        return dict1
+
+    def get_custom_shell_completions(self):
+        return {}
+
+    def get_plugin_shell_completions(self, completions):
+        for plugin in self.plugins.values():
+            plugin_completions = plugin.get_shell_completions(self.base_shell_completions)
+            if plugin_completions:
+                completions = self.merge_dicts(completions, plugin_completions)
+        return completions
+
+    def underscore_to_dash(self, text):
+        return text.replace("_", "-")
+
+    def dash_to_underscore(self, text):
+        return text.replace("-", "_")
+
+    def set_base_shell_completions(self):
+        commands_with_leader = {}
+        for command in self.all_commands:
+            commands_with_leader[self.command_with_leader(command)] = None
+        commands_with_leader[self.command_with_leader('help')] = self.list_to_completion_hash(self.dashed_commands)
+        for command in ['file', 'log']:
+            commands_with_leader[self.command_with_leader(command)] = PathCompleter()
+        commands_with_leader[self.command_with_leader('model')] = self.list_to_completion_hash(self.backend.available_models.keys())
+        template_completions = self.list_to_completion_hash(self.templates)
+        template_commands = [c for c in self.dashed_commands if c.startswith('template') and c != 'templates']
+        for command in template_commands:
+            commands_with_leader[self.command_with_leader(command)] = template_completions
+        self.base_shell_completions = commands_with_leader
+
+    def list_to_completion_hash(self, completion_list):
+        completions = {str(val): None for val in completion_list}
+        return completions
+
+    def rebuild_completions(self):
+        self.set_base_shell_completions()
+        completions = self.merge_dicts(self.base_shell_completions, self.get_custom_shell_completions())
+        completions = self.get_plugin_shell_completions(completions)
+        self.command_completer = NestedCompleter.from_nested_dict(completions)
+
+    def validate_int(self, value, min=None, max=None):
+        try:
+            value = int(value)
+        except ValueError:
+            return False
+        if min and value < min:
+            return False
+        if max and value > max:
+            return False
+        return value
+
+    def validate_float(self, value, min=None, max=None):
+        try:
+            value = float(value)
+        except ValueError:
+            return False
+        if min and value < min:
+            return False
+        if max and value > max:
+            return False
+        return value
+
+    def validate_str(self, value, min=None, max=None):
+        try:
+            value = str(value)
+        except ValueError:
+            return False
+        if min and len(value) < min:
+            return False
+        if max and len(value) > max:
+            return False
+        return value
 
     def get_history(self):
-        return FileHistory(COMMAND_HISTORY_FILE)
-
-    def get_key_bindings(self):
-        key_bindings = KeyBindings()
-        @key_bindings.add('c-x')
-        def _(event):
-            event.cli.current_buffer.insert_text('!command1')
-        return key_bindings
+        return FileHistory(constants.COMMAND_HISTORY_FILE)
 
     def get_styles(self):
         style = Style.from_dict({
@@ -98,29 +212,141 @@ class GPTShell():
         })
         return style
 
+    def paste_from_clipboard(self):
+        value = pyperclip.paste()
+        return value
+
+    def template_builtin_variables(self):
+        return {
+            'clipboard': self.paste_from_clipboard,
+        }
+
+    def ensure_template(self, template_name):
+        if not template_name:
+            return False, None, "No template name specified"
+        self.log.debug(f"Ensuring template {template_name} exists")
+        self.load_templates()
+        if template_name not in self.templates:
+            return False, template_name, f"Template '{template_name}' not found"
+        message = f"Template {template_name} exists"
+        self.log.debug(message)
+        return True, template_name, message
+
+    def extract_metadata_keys(self, keys, metadata):
+        extracted_keys = {}
+        for key in keys:
+            if key in metadata:
+                extracted_keys[key] = metadata[key]
+                del metadata[key]
+        return metadata, extracted_keys
+
+    def extract_template_run_overrides(self, metadata):
+        override_keys = [
+            'title',
+            'model_customizations',
+        ]
+        builtin_keys = [
+            'description',
+        ]
+        metadata, overrides = self.extract_metadata_keys(override_keys, metadata)
+        metadata, _ = self.extract_metadata_keys(builtin_keys, metadata)
+        return metadata, overrides
+
+    async def run_template(self, template_name, substitutions={}):
+        template, _ = self.get_template_and_variables(template_name)
+        source = frontmatter.load(template.filename)
+        template_substitutions, overrides = self.extract_template_run_overrides(source.metadata)
+        final_substitutions = {**template_substitutions, **substitutions}
+        self.log.debug(f"Rendering template: {template_name}")
+        final_template = Template(source.content)
+        message = final_template.render(**final_substitutions)
+        self.log.info(f"Running template: {template_name}")
+        print("")
+        print(message)
+        return await self.default(message, **overrides)
+
+    def process_template_builtin_variables(self, template_name, variables=[]):
+        builtin_variables = self.template_builtin_variables()
+        substitutions = {}
+        for variable, method in builtin_variables.items():
+            if variable in variables:
+                substitutions[variable] = method()
+                self.log.debug(f"Collected builtin variable {variable} for template {template_name}: {substitutions[variable]}")
+        return substitutions
+
+    async def collect_template_variable_values(self, template_name, variables=[]):
+        substitutions = {}
+        builtin_variables = self.template_builtin_variables()
+        user_variables = list(set([v for v in variables if v not in builtin_variables]))
+        if user_variables:
+            await self.do_template(template_name)
+            self._print_markdown("##### Enter variables:\n")
+            self.log.debug(f"Collecting variable values for: {template_name}")
+            for variable in user_variables:
+                substitutions[variable] = input(f"    {variable}: ").strip()
+                self.log.debug(f"Collected variable {variable} for template {template_name}: {substitutions[variable]}")
+        substitutions = self.merge_dicts(substitutions, self.process_template_builtin_variables(template_name, variables))
+        return substitutions
+
+    def make_template_dirs(self):
+        template_dirs = []
+        template_dirs.append(os.path.join(self.config.config_dir, 'templates'))
+        template_dirs.append(os.path.join(self.config.config_profile_dir, 'templates'))
+        for template_dir in template_dirs:
+            if not os.path.exists(template_dir):
+                os.makedirs(template_dir)
+        return template_dirs
+
+    def load_templates(self):
+        self.log.debug("Loading templates from dirs: %s" % ", ".join(self.template_dirs))
+        jinja_env = Environment(loader=FileSystemLoader(self.template_dirs))
+        filenames = jinja_env.list_templates()
+        self.templates_env = jinja_env
+        self.templates = filenames or []
+
+    def get_template_and_variables(self, template_name):
+        try:
+            template = self.templates_env.get_template(template_name)
+        except TemplateNotFound:
+            return None, None
+        template_source = self.templates_env.loader.get_source(self.templates_env, template_name)
+        parsed_content = self.templates_env.parse(template_source)
+        variables = meta.find_undeclared_variables(parsed_content)
+        return template, variables
+
     def legacy_command_leader_warning(self, command):
         print("\nWarning: The legacy command leader '%s' has been removed.\n"
               "Use the new command leader '%s' instead, e.g. %s%s\n" % (
-                  LEGACY_COMMAND_LEADER, COMMAND_LEADER, COMMAND_LEADER, command))
+                  constants.LEGACY_COMMAND_LEADER, constants.COMMAND_LEADER, constants.COMMAND_LEADER, command))
 
     def get_command_help_brief(self, command):
+        help_brief = "    %s%s" % (constants.COMMAND_LEADER, command)
         help_doc = self.get_command_help(command)
         if help_doc:
             first_line = next(filter(lambda x: x.strip(), help_doc.splitlines()), "")
-            help_brief = "    %s%s: %s" % (COMMAND_LEADER, command, first_line)
-            return help_brief
+            help_brief += ": %s" % first_line
+        return help_brief
 
     def get_command_help(self, command):
+        command = self.dash_to_underscore(command)
         if command in self.commands:
-            method = getattr(__class__, f"do_{command}")
-            help_text = method.__doc__.replace("{leader}", COMMAND_LEADER)
-            return textwrap.dedent(help_text)
+            method, _obj = self.get_command_method(command)
+            doc = method.__doc__
+            if doc:
+                doc = doc.replace("{COMMAND}", "%s%s" % (constants.COMMAND_LEADER, command))
+                for sub in constants.HELP_TOKEN_VARIBALE_SUBSTITUTIONS:
+                    try:
+                        const_value = getattr(constants, sub)
+                    except AttributeError:
+                        raise AttributeError(f"'{sub}' in HELP_TOKEN_VARIBALE_SUBSTITUTIONS is not a valid constant")
+                    doc = doc.replace("{%s}" % sub, str(const_value))
+                return textwrap.dedent(doc)
 
     def help_commands(self):
         print("")
         self._print_markdown(f"#### {self.doc_header}")
         print("")
-        for command in self.commands:
+        for command in self.dashed_commands:
             print(self.get_command_help_brief(command))
         print("")
 
@@ -130,33 +356,38 @@ class GPTShell():
             if help_doc:
                 print(help_doc)
             else:
-                print("\nNo help for '%s'\n\nAvailable commands: %s" % (command, ", ".join(self.commands)))
+                print("\nNo help for '%s'\n\nAvailable commands: %s" % (command, ", ".join(self.dashed_commands)))
         else:
             self.help_commands()
 
-    def _set_args(self, args):
-        self.stream = args.stream
-        if args.log is not None:
-            if not self._open_log(args.log):
-                sys.exit(0)
+    def _set_logging(self):
+        if self.config.get('chat.log.enabled'):
+            log_file = self.config.get('chat.log.filepath')
+            if log_file:
+                if not self._open_log(log_file):
+                    print("\nERROR: could not open log file: %s" % log_file)
+                    sys.exit(0)
 
-    def _set_chatgpt(self, chatgpt):
-        self.chatgpt = chatgpt
-        self._update_message_map()
+    def _set_prompt(self, prefix=''):
+        self.prompt = f"{self.prompt_prefix}{self.prompt_number}> "
 
-    def _set_prompt(self):
-        self.prompt = f"{self.prompt_number}> "
+    def _set_prompt_prefix(self, prefix=''):
+        self.prompt_prefix = prefix
 
     def _update_message_map(self):
         self.prompt_number += 1
         self.message_map[self.prompt_number] = (
-            self.chatgpt.conversation_id,
-            self.chatgpt.parent_message_id,
+            self.backend.conversation_id,
+            self.backend.parent_message_id,
         )
         self._set_prompt()
 
+    def _print_status_message(self, success, message):
+        self.console.print(message, style="bold green" if success else "bold red")
+        print("")
+
     def _print_markdown(self, output):
-        console.print(Markdown(output))
+        self.console.print(Markdown(output))
         print("")
 
     def _write_log(self, prompt, response):
@@ -167,7 +398,7 @@ class GPTShell():
     def _write_log_context(self):
         if self.logfile is not None:
             self.logfile.write(
-                f"## context {self.chatgpt.conversation_id}:{self.chatgpt.parent_message_id}\n"
+                f"## context {self.backend.conversation_id}:{self.backend.parent_message_id}\n"
             )
             self.logfile.flush()
 
@@ -180,7 +411,7 @@ class GPTShell():
             else:
                 sub_items = item.split('-')
                 try:
-                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= DEFAULT_HISTORY_LIMIT]
+                    sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= constants.DEFAULT_HISTORY_LIMIT]
                 except ValueError:
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
                 if len(sub_items) == 1:
@@ -191,41 +422,77 @@ class GPTShell():
                     return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
         return list(set(final_list))
 
+    def set_user_prompt(self):
+        pass
+
+    def configure_plugins(self):
+        self.plugin_manager = PluginManager(self.config, self.backend)
+        self.plugins = self.plugin_manager.get_plugins()
+        for plugin in self.plugins.values():
+            plugin.set_shell(self)
+
+    async def configure_backend():
+        raise NotImplementedError
+
+    async def launch_backend():
+        raise NotImplementedError
+
+    async def setup(self):
+        await self.configure_backend()
+        self.configure_plugins()
+        self.load_templates()
+        self.configure_shell_commands()
+        self.configure_commands()
+        self.rebuild_completions()
+        self._update_message_map()
+
+    async def cleanup(self):
+        pass
+
     def _conversation_from_messages(self, messages):
         message_parts = []
         for message in messages:
-            if 'content' in message:
-                message_parts.append("**%s**:" % message['author']['role'].capitalize())
-                message_parts.extend(message['content']['parts'])
+            message_parts.append("**%s**:" % message['role'].capitalize())
+            message_parts.append(message['message'])
         content = "\n\n".join(message_parts)
         return content
 
-    async def _fetch_history(self, limit=DEFAULT_HISTORY_LIMIT, offset=0):
+    async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         self._print_markdown("* Fetching conversation history...")
-        history = await self.chatgpt.get_history(limit=limit, offset=offset)
-        return history
+        success, history, message = await self.backend.get_history(limit=limit, offset=offset)
+        return success, history, message
 
-    async def _set_title(self, title, conversation_id=None):
+    async def _set_title(self, title, conversation=None):
         self._print_markdown("* Setting title...")
-        if await self.chatgpt.set_title(title, conversation_id):
-            self._print_markdown("* Title set to: %s" % title)
+        success, _, message = await self.backend.set_title(title, conversation['id'])
+        if success:
+            return success, conversation, f"Title set to: {conversation['title']}"
+        else:
+            return success, conversation, message
 
     async def _delete_conversation(self, id, label=None):
-        if id == self.chatgpt.conversation_id:
+        if id == self.backend.conversation_id:
             await self._delete_current_conversation()
         else:
             label = label or id
             self._print_markdown("* Deleting conversation: %s" % label)
-            if await self.chatgpt.delete_conversation(id):
-                self._print_markdown("* Deleted conversation: %s" % label)
+            success, conversation, message = await self.backend.delete_conversation(id)
+            if success:
+                self._print_status_message(True, f"Deleted conversation: {label}")
+            else:
+                self._print_status_message(False, f"Failed to deleted conversation: {label}, {message}")
 
     async def _delete_current_conversation(self):
         self._print_markdown("* Deleting current conversation")
-        if await self.chatgpt.delete_conversation():
-            self._print_markdown("* Deleted current conversation")
-            self.do_new(None)
+        success, conversation, message = await self.backend.delete_conversation()
+        if success:
+            self._print_status_message(True, "Deleted current conversation")
+            await self.do_new(None)
+        else:
+            self._print_status_message(False, "Failed to delete current conversation")
 
-    def do_stream(self, _):
+
+    async def do_stream(self, _):
         """
         Toggle streaming mode
 
@@ -233,21 +500,21 @@ class GPTShell():
         Non-streaming mode: Returns full response at completion (markdown rendering supported).
 
         Examples:
-            {leader}stream
+            {COMMAND}
         """
         self.stream = not self.stream
         self._print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
 
-    def do_new(self, _):
+    async def do_new(self, _):
         """
         Start a new conversation
 
         Examples:
-            {leader}new
+            {COMMAND}
         """
-        self.chatgpt.new_conversation()
+        self.backend.new_conversation()
         self._print_markdown("* New conversation started.")
         self._update_message_map()
         self._write_log_context()
@@ -265,19 +532,19 @@ class GPTShell():
         Arguments can be mixed and matched as in the examples below.
 
         Examples:
-            Current conversation: {leader}delete
-            By conversation ID: {leader}delete 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}delete 3
-            Multiple IDs: {leader}delete 1,5
-            Ranges: {leader}delete 1-5
-            Complex: {leader}delete 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
+            Current conversation: {COMMAND}
+            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND} 3
+            Multiple IDs: {COMMAND} 1,5
+            Ranges: {COMMAND} 1-5
+            Complex: {COMMAND} 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
         """
         if arg:
             result = self._parse_conversation_ids(arg)
             if isinstance(result, list):
-                history = await self._fetch_history()
-                if history:
-                    history_list = [h for h in history.values()]
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [c for c in conversations.values()]
                     for item in result:
                         if isinstance(item, str) and len(item) == 36:
                             await self._delete_conversation(item)
@@ -286,9 +553,11 @@ class GPTShell():
                                 conversation = history_list[item - 1]
                                 await self._delete_conversation(conversation['id'], conversation['title'])
                             else:
-                                self._print_markdown("* Cannont delete history item %d, does not exist" % item)
+                                self._print_status_message(False, f"Cannont delete history item {item}, does not exist")
+                else:
+                    return success, conversations, message
             else:
-                self._print_markdown(result)
+                return False, None, result
         else:
             await self._delete_current_conversation()
 
@@ -297,15 +566,15 @@ class GPTShell():
         Show recent conversation history
 
         Arguments;
-            limit: limit the number of messages to show (default 20)
+            limit: limit the number of messages to show (default {DEFAULT_HISTORY_LIMIT})
             offset: offset the list of messages by this number
 
         Examples:
-            {leader}history
-            {leader}history 10
-            {leader}history 10 5
+            {COMMAND}
+            {COMMAND} 10
+            {COMMAND} 10 5
         """
-        limit = DEFAULT_HISTORY_LIMIT
+        limit = constants.DEFAULT_HISTORY_LIMIT
         offset = 0
         if arg:
             args = arg.split(' ')
@@ -324,12 +593,14 @@ class GPTShell():
                     except ValueError:
                         self._print_markdown("* Invalid offset, must be an integer")
                         return
-        history = await self._fetch_history(limit=limit, offset=offset)
-        if history:
+        success, history, message = await self._fetch_history(limit=limit, offset=offset)
+        if success:
             history_list = [h for h in history.values()]
-            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)" % (datetime.datetime.strptime(h['create_time'], "%Y-%m-%dT%H:%M:%S.%f").strftime("%Y-%m-%d %H:%M"), h['title'], h['id']) for h in history_list]))
+            self._print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)%s" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'] or constants.NO_TITLE_TEXT, h['id'], ' (✓)' if h['id'] == self.backend.conversation_id else '') for h in history_list]))
+        else:
+            return success, history, message
 
-    def do_nav(self, arg):
+    async def do_nav(self, arg):
         """
         Navigate to a past point in the conversation
 
@@ -337,7 +608,7 @@ class GPTShell():
             id: prompt ID
 
         Examples:
-            {leader}nav 2
+            {COMMAND} 2
         """
 
         try:
@@ -355,10 +626,15 @@ class GPTShell():
                 "The argument to `nav` contained an unknown prompt number."
             )
             return
+        elif self.message_map[msg_id][0] is None:
+            self._print_markdown(
+                f"Cannot navigate to prompt number {msg_id}, no conversation present, try next prompt."
+            )
+            return
 
         (
-            self.chatgpt.conversation_id,
-            self.chatgpt.parent_message_id,
+            self.backend.conversation_id,
+            self.backend.parent_message_id,
         ) = self.message_map[msg_id]
         self._update_message_map()
         self._write_log_context()
@@ -376,39 +652,52 @@ class GPTShell():
             history_id: history ID of conversation
 
         Examples:
-            Get current conversation title: {leader}title
-            Set current conversation title: {leader}title new title
-            Set conversation title using history ID: {leader}title 1
+            Get current conversation title: {COMMAND}
+            Set current conversation title: {COMMAND} new title
+            Set conversation title using history ID: {COMMAND} 1
         """
         if arg:
-            history = await self._fetch_history()
-            history_list = [h for h in history.values()]
-            conversation_id = None
-            id = None
-            try:
-                id = int(arg)
-            except Exception:
-                pass
-            if id:
-                if id <= len(history_list):
-                    conversation_id = history_list[id - 1]["id"]
+            success, conversations, message = await self._fetch_history()
+            if success:
+                history_list = [c for c in conversations.values()]
+                conversation = None
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    pass
+                if id:
+                    if id <= len(history_list):
+                        conversation = history_list[id - 1]
+                    else:
+                        return False, conversations, "Cannot set title on history item %d, does not exist" % id
+                    new_title = input("Enter new title for '%s': " % conversation["title"] or constants.NO_TITLE_TEXT)
                 else:
-                    self._print_markdown("* Cannot set title on history item %d, does not exist" % id)
-                    return
-            if conversation_id:
-                new_title = input("Enter new title for '%s': " % history[conversation_id]["title"])
+                    if self.backend.conversation_id in conversations:
+                        conversation = conversations[self.backend.conversation_id]
+                    else:
+                        success, conversation, message = await self.backend.get_conversation(self.backend.conversation_id)
+                        if not success:
+                            return success, conversations, message
+                    new_title = arg
+                # Browser backend doesn't return a full conversation object,
+                # so adjust and re-use the current one.
+                conversation['title'] = new_title
+                return await self._set_title(new_title, conversation)
             else:
-                new_title = arg
-            await self._set_title(new_title, conversation_id)
+                return success, conversations, message
         else:
-            if self.chatgpt.conversation_id:
-                history = await self._fetch_history()
-                if self.chatgpt.conversation_id in history:
-                    self._print_markdown("* Title: %s" % history[self.chatgpt.conversation_id]['title'])
+            if self.backend.conversation_id:
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    if self.backend.conversation_id in conversations:
+                        self._print_markdown("* Title: %s" % conversations[self.backend.conversation_id]['title'] or constants.NO_TITLE_TEXT)
+                    else:
+                        return False, conversations, "Cannot load conversation title, not in history"
                 else:
-                    self._print_markdown("* Cannot load conversation title, not in history.")
+                    return success, conversations, message
             else:
-                self._print_markdown("* Current conversation has no title, you must send information first")
+                return False, None, "Current conversation has no title, you must send information first"
 
     async def do_chat(self, arg):
         """
@@ -418,11 +707,14 @@ class GPTShell():
             conversation_id: The ID of the conversation
             ...or...
             history_id: The history ID
+            With no arguments, show content of the current conversation.
 
         Examples:
-            By conversation ID: {leader}chat 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}chat 2
+            Current conversation: {COMMAND}
+            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND} 2
         """
+        conversation = None
         conversation_id = None
         title = None
         if arg:
@@ -430,33 +722,39 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = await self._fetch_history()
-                history_list = [h for h in history.values()]
-                id = None
-                try:
-                    id = int(arg)
-                except Exception:
-                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
-                    return
-                if id:
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [h for h in conversations.values()]
+                    id = None
+                    try:
+                        id = int(arg)
+                    except Exception:
+                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
-                        conversation_id = history_list[id - 1]["id"]
-                        title = history_list[id - 1]["title"]
+                        conversation = history_list[id - 1]
+                        title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
-                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
-                        return
+                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                else:
+                    return success, conversations, message
         else:
-            if not self.chatgpt.conversation_id:
-                self._print_markdown("* Current conversation is empty, you must send information first")
-                return
-        conversation_data = await self.chatgpt.get_conversation(conversation_id)
-        if conversation_data:
-            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
-            if title:
-                self._print_markdown(f"### {title}")
-            self._print_markdown(self._conversation_from_messages(messages))
+            if self.backend.conversation_id:
+                conversation_id = self.backend.conversation_id
+            else:
+                return False, None, "Current conversation is empty, you must send information first"
+        if conversation:
+            conversation_id = conversation["id"]
+        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        if success:
+            if conversation_data:
+                messages = self.backend.conversation_data_to_messages(conversation_data)
+                if title:
+                    self._print_markdown(f"### {title}")
+                self._print_markdown(self._conversation_from_messages(messages))
+            else:
+                return False, conversation_data, "Could not load chat content"
         else:
-            self._print_markdown("* Could not load chat content")
+            return success, conversation_data, message
 
     async def do_switch(self, arg):
         """
@@ -468,9 +766,10 @@ class GPTShell():
             history_id: The history ID
 
         Examples:
-            By conversation ID: {leader}switch 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {leader}switch 2
+            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
+            By history ID: {COMMAND} 2
         """
+        conversation = None
         conversation_id = None
         title = None
         if arg:
@@ -478,39 +777,41 @@ class GPTShell():
                 conversation_id = arg
                 title = arg
             else:
-                history = await self._fetch_history()
-                history_list = [h for h in history.values()]
-                id = None
-                try:
-                    id = int(arg)
-                except Exception:
-                    self._print_markdown("* Invalid chat history item %d, must be in integer" % id)
-                    return
-                if id:
+                success, conversations, message = await self._fetch_history()
+                if success:
+                    history_list = [c for c in conversations.values()]
+                    id = None
+                    try:
+                        id = int(arg)
+                    except Exception:
+                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
-                        conversation_id = history_list[id - 1]["id"]
-                        title = history_list[id - 1]["title"]
+                        conversation = history_list[id - 1]
+                        title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
-                        self._print_markdown("* Cannot retrieve chat content on history item %d, does not exist" % id)
-                        return
+                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                else:
+                    return success, conversations, message
         else:
-            self._print_markdown("* Argument required, ID or history ID")
-            return
-        if conversation_id and conversation_id == self.chatgpt.conversation_id:
-            self._print_markdown("* You are already in chat: %s" % title)
-            return
-        conversation_data = await self.chatgpt.get_conversation(conversation_id)
-        if conversation_data:
-            messages = self.chatgpt.conversation_data_to_messages(conversation_data)
-            message = messages.pop()
-            self.chatgpt.conversation_id = conversation_id
-            self.chatgpt.parent_message_id = message['id']
-            self._update_message_map()
-            self._write_log_context()
-            if title:
-                self._print_markdown(f"### Switched to: {title}")
+            return False, None, "Argument required, ID or history ID"
+        if conversation:
+            conversation_id = conversation["id"]
+        if conversation_id == self.backend.conversation_id:
+            return True, conversation, f"You are already in chat: {title}"
+        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        if success:
+            if conversation_data:
+                messages = self.backend.conversation_data_to_messages(conversation_data)
+                message = messages.pop()
+                self.backend.switch_to_conversation(conversation_id, message['id'])
+                self._update_message_map()
+                self._write_log_context()
+                if title:
+                    self._print_markdown(f"### Switched to: {title}")
+            else:
+                return False, conversation_data, "Could not switch to chat"
         else:
-            self._print_markdown("* Could not switch to chat")
+            return success, conversation_data, message
 
     async def do_ask(self, line):
         """
@@ -519,18 +820,18 @@ class GPTShell():
         It is purely optional.
 
         Examples:
-            {leader}ask what is 6+6 (is the same as 'what is 6+6')
+            {COMMAND} what is 6+6 (is the same as 'what is 6+6')
         """
         return await self.default(line)
 
-    async def default(self, line):
+    async def default(self, line, title=None, model_customizations={}):
         if not line:
             return
 
         if self.stream:
             response = ""
             first = True
-            async for chunk in self.chatgpt.ask_stream(line):
+            async for chunk in self.backend.ask_stream(line, title=title, model_customizations=model_customizations):
                 if first:
                     print("")
                     first = False
@@ -539,29 +840,15 @@ class GPTShell():
                 response += chunk
             print("\n")
         else:
-            response = await self.chatgpt.ask(line)
-            print("")
-            self._print_markdown(response)
+            success, response, message = await self.backend.ask(line, title=title, model_customizations=model_customizations)
+            if success:
+                print("")
+                self._print_markdown(response)
+            else:
+                return success, response, message
 
         self._write_log(line, response)
         self._update_message_map()
-
-    async def do_session(self, _):
-        """
-        Refresh session information
-
-        This can resolve errors under certain scenarios.
-
-        Examples:
-            {leader}session
-        """
-        await self.chatgpt.refresh_session()
-        usable = (
-            "The session appears to be usable."
-            if "accessToken" in self.chatgpt.session
-            else "The session is not usable.  Try `install` mode."
-        )
-        self._print_markdown(f"* Session information refreshed.  {usable}")
 
     async def do_read(self, _):
         """
@@ -570,7 +857,7 @@ class GPTShell():
         Allows for entering more complex multi-line input prior to sending it to ChatGPT.
 
         Examples:
-            {leader}read
+            {COMMAND}
         """
         ctrl_sequence = "^z" if is_windows else "^d"
         self._print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
@@ -595,25 +882,14 @@ class GPTShell():
 
         When the editor is closed, the content is sent to ChatGPT.
 
-        Requires 'vipe' executable in your path.
-
         Arguments:
             default_text: The default text to open the editor with
 
         Examples:
-            {leader}editor
-            {leader}editor some text to start with
+            {COMMAND}
+            {COMMAND} some text to start with
         """
-        try:
-            process = subprocess.Popen(['vipe'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        except FileNotFoundError:
-            self._print_markdown(
-                "Failed to execute `vipe`, must be installed and in path. Install package `moreutils`. `brew install moreutils` on macOS and `apt install moreutils` on Ubuntu.")
-            return
-        process.stdin.write(args.encode())
-        process.stdin.close()
-        process.wait()
-        output = process.stdout.read().decode()
+        output = pipe_editor(args, suffix='md')
         print(output)
         await self.default(output)
 
@@ -625,7 +901,7 @@ class GPTShell():
             file_name: The name of the file to read from
 
         Examples:
-            {leader}file myprompt.txt
+            {COMMAND} myprompt.txt
         """
         try:
             fileprompt = open(arg, encoding="utf-8").read()
@@ -634,7 +910,7 @@ class GPTShell():
             return
         await self.default(fileprompt)
 
-    def _open_log(self, filename) -> bool:
+    def _open_log(self, filename):
         try:
             if os.path.isabs(filename):
                 self.logfile = open(filename, "a", encoding="utf-8")
@@ -645,7 +921,7 @@ class GPTShell():
             return False
         return True
 
-    def do_log(self, arg):
+    async def do_log(self, arg):
         """
         Enable/disable logging to a file
 
@@ -653,8 +929,8 @@ class GPTShell():
             file_name: The name of the file to write to
 
         Examples:
-            Log to file: {leader}log mylog.txt
-            Disable logging: {leader}log
+            Log to file: {COMMAND} mylog.txt
+            Disable logging: {COMMAND}
         """
         if arg:
             if self._open_log(arg):
@@ -663,7 +939,7 @@ class GPTShell():
             self.logfile = None
             self._print_markdown("* Logging is now disabled.")
 
-    def do_context(self, arg):
+    async def do_context(self, arg):
         """
         Load an old context from the log
 
@@ -671,7 +947,7 @@ class GPTShell():
             context_string: a context string from logs
 
         Examples:
-            {leader}context 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+            {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
         """
         try:
             (conversation_id, parent_message_id) = arg.split(":")
@@ -681,78 +957,378 @@ class GPTShell():
             self._print_markdown("Invalid parameter to `context`.")
             return
         self._print_markdown("* Loaded specified context.")
-        self.chatgpt.conversation_id = (
+        self.backend.conversation_id = (
             conversation_id if conversation_id != "None" else None
         )
-        self.chatgpt.parent_message_id = parent_message_id
+        self.backend.parent_message_id = parent_message_id
         self._update_message_map()
         self._write_log_context()
 
-    def do_exit(self, _):
+    async def do_model(self, arg):
+        """
+        View or set the current LLM model
+
+        Arguments:
+            model_name: The name of the model to set
+            With no arguments, view currently set model
+
+        Examples:
+            {COMMAND}
+            {COMMAND} default
+        """
+        if arg:
+            model_names = self.backend.available_models.keys()
+            if arg in model_names:
+                self.backend.set_active_model(arg)
+                return True, self.backend.model, f"Current model updated to: {self.backend.model}"
+            else:
+                return False, arg, "Invalid model, must be one of: %s" % ", ".join(model_names)
+        else:
+            return True, self.backend.model, f"Current model: {self.backend.model}"
+
+    async def do_templates(self, arg):
+        """
+        List available templates
+
+        Templates are pre-configured text content that can be customized before sending a message to the model.
+
+        They are located in the 'templates' directory in the following locations:
+
+            - The main configuration directory
+            - The profile configuration directory
+
+        See {COMMAND_LEADER}config for current locations.
+
+        Arguments:
+            filter_string: Optional. If provided, only templates with a name or description containing the filter string will be shown.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} filterstring
+        """
+        self.load_templates()
+        self.rebuild_completions()
+        templates = []
+        for template_name in self.templates:
+            content = f"* **{template_name}**"
+            template, _ = self.get_template_and_variables(template_name)
+            source = frontmatter.load(template.filename)
+            if 'description' in source.metadata:
+                content += f": *{source.metadata['description']}*"
+            if not arg or arg.lower() in content.lower():
+                templates.append(content)
+        self._print_markdown("## Templates:\n\n%s" % "\n".join(templates))
+
+    async def do_template(self, template_name):
+        """
+        Display a template
+
+        Arguments:
+            template_name: Required. The name of the template
+
+        Examples:
+            {COMMAND} mytemplate.md
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, _ = self.get_template_and_variables(template_name)
+        source = frontmatter.load(template.filename)
+        self._print_markdown(f"\n## Template '{template_name}'")
+        if source.metadata:
+            self._print_markdown("\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False))
+        self._print_markdown(f"\n\n{source.content}")
+
+    async def do_template_edit(self, template_name):
+        """
+        Create a new template, or edit an existing template
+
+        Arguments:
+            template_name: Required. The name of the template
+
+        Examples:
+            {COMMAND} mytemplate.md
+        """
+        if not template_name:
+            return False, template_name, "No template name specified"
+        template, _ = self.get_template_and_variables(template_name)
+        if template:
+            filename = template.filename
+        else:
+            filename = os.path.join(self.template_dirs[0], template_name)
+        file_editor(filename)
+        self.load_templates()
+        self.rebuild_completions()
+
+    async def do_template_copy(self, template_names):
+        """
+        Copies an existing template and saves it as a new template
+
+        Arguments:
+            template_names: Required. The name of the old and new templates separated by whitespace,
+
+        Examples:
+            {COMMAND} old_template.md new_template.md
+        """
+        try:
+            old_name, new_name = template_names.split()
+        except ValueError:
+            return False, template_names, "Old and new template name required"
+        template, _ = self.get_template_and_variables(old_name)
+        if not template:
+            return False, template_names, f"{old_name} does not exist"
+        old_filepath = template.filename
+        new_filepath = os.path.join(os.path.dirname(old_filepath), new_name)
+        if os.path.exists(new_filepath):
+            return False, template_names, f"{new_name} already exists"
+        shutil.copy2(old_filepath, new_filepath)
+        self.load_templates()
+        self.rebuild_completions()
+        return True, template_names, f"Copied {old_name} to {new_name}"
+
+    async def do_template_delete(self, template_name):
+        """
+        Deletes an existing template
+
+        Arguments:
+            template_name: Required. The name of the template to delete
+
+        Examples:
+            {COMMAND} mytemplate.md
+        """
+        if not template_name:
+            return False, template_name, "No template name specified"
+        template, _ = self.get_template_and_variables(template_name)
+        if not template:
+            return False, template_name, f"{template_name} does not exist"
+        confirmation = input(f"Are you sure you want to delete template {template_name}? [y/N] ").strip()
+        if confirmation.lower() in ["yes", "y"]:
+            os.remove(template.filename)
+            self.load_templates()
+            self.rebuild_completions()
+            return True, template_name, f"Deleted {template_name}"
+        else:
+            return False, template_name, "Deletion aborted"
+
+    async def do_template_run(self, template_name):
+        """
+        Run a template
+
+        Running a template sends the content of it to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND} mytemplate.md
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        _, variables = self.get_template_and_variables(template_name)
+        substitutions = self.process_template_builtin_variables(template_name, variables)
+        return await self.run_template(template_name, substitutions)
+
+    async def do_template_prompt_run(self, template_name):
+        """
+        Prompt for template variable values, then run
+
+        Prompts for a value for each variable in the template, sustitutes the values
+        in the template, and sends the final content to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND} mytemplate.md
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        _, variables = self.get_template_and_variables(template_name)
+        substitutions = await self.collect_template_variable_values(template_name, variables)
+        return await self.run_template(template_name, substitutions)
+
+    async def do_template_edit_run(self, template_name):
+        """
+        Open a template for final editing, then run it
+
+        Open the template in an editor, and upon editor exit, send the final content
+        to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND} mytemplate.md
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, variables = self.get_template_and_variables(template_name)
+        substitutions = self.process_template_builtin_variables(template_name, variables)
+        message = template.render(**substitutions)
+        return await self.do_editor(message)
+
+    async def do_template_prompt_edit_run(self, template_name):
+        """
+        Prompts for a value for each variable in the template, sustitutes the values
+        in the template, opens an editor for final edits, and sends the final content
+        to the model as your input.
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+        Examples:
+            {COMMAND} mytemplate.md
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, variables = self.get_template_and_variables(template_name)
+        substitutions = await self.collect_template_variable_values(template_name, variables)
+        message = template.render(**substitutions)
+        return await self.do_editor(message)
+
+    async def do_config(self, _):
+        """
+        Show the current configuration
+
+        Examples:
+            {COMMAND}
+        """
+        output = """
+# Backend configuration: %s
+# File configuration
+
+* Config dir: %s
+* Config profile dir: %s
+* Config file: %s
+* Data dir: %s
+* Data profile dir: %s
+* Templates dirs: %s
+
+# Profile '%s' configuration:
+
+```
+%s
+```
+
+# Runtime configuration
+
+* Streaming: %s
+* Logging to: %s
+""" % (self.config.get('backend'), self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+        output += self.backend.get_runtime_config()
+        self._print_markdown(output)
+
+    async def do_exit(self, _):
         """
         Exit the ChatGPT shell
 
         Examples:
-            {leader}exit
+            {COMMAND}
         """
         pass
 
-    def do_quit(self, _):
+    async def do_quit(self, _):
         """
         Exit the ChatGPT shell
 
         Examples:
-            {leader}quit
+            {COMMAND}
         """
         pass
+
+    def parse_shell_input(self, user_input):
+        text = user_input.strip()
+        if not text:
+            raise NoInputError
+        leader = text[0]
+        if leader == constants.COMMAND_LEADER or leader == constants.LEGACY_COMMAND_LEADER:
+            text = text[1:]
+            parts = [arg.strip() for arg in text.split(maxsplit=1)]
+            command = parts[0]
+            argument = parts[1] if len(parts) > 1 else ''
+            if leader == constants.LEGACY_COMMAND_LEADER:
+                self.legacy_command_leader_warning(command)
+                raise LegacyCommandLeaderError
+            if command == "exit" or command == "quit":
+                raise EOFError
+        else:
+            if text == '?':
+                command = 'help'
+                argument = ''
+            else:
+                command = constants.DEFAULT_COMMAND
+                argument = text
+        return command, argument
+
+    def get_class_command_method(self, klass, do_command):
+        mro = getattr(klass, '__mro__')
+        for klass in mro:
+            method = getattr(klass, do_command, None)
+            if method:
+                return method
+
+    def get_command_method(self, command):
+        do_command = f"do_{command}"
+        method = self.get_class_command_method(self.__class__, do_command)
+        if method:
+            return method, self
+        for plugin in self.plugins.values():
+            method = self.get_class_command_method(plugin.__class__, do_command)
+            if method:
+                return method, plugin
+        raise AttributeError(f"{do_command} method not found in any shell class")
+
+    def output_response(self, response):
+        if response:
+            if isinstance(response, tuple):
+                success, _obj, message = response
+                self._print_status_message(success, message)
+            else:
+                print(response)
+
+    async def run_command(self, command, argument):
+        command = self.dash_to_underscore(command)
+        if command == 'help':
+            self.help(argument)
+        else:
+            if command in self.commands:
+                method, obj = self.get_command_method(command)
+                try:
+                    response = await method(obj, argument)
+                except Exception as e:
+                    print(repr(e))
+                else:
+                    self.output_response(response)
+            else:
+                print(f'Unknown command: {command}')
 
     async def cmdloop(self):
         print("")
         self._print_markdown("### %s" % self.intro)
         while True:
+            self.set_user_prompt()
             try:
-                user_input = self.prompt_session.prompt(self.prompt)
+                user_input = await self.prompt_session.prompt_async(
+                    self.prompt,
+                    completer=self.command_completer,
+                )
             except KeyboardInterrupt:
                 continue  # Control-C pressed. Try again.
             except EOFError:
                 break  # Control-D pressed.
-
-            text = user_input.strip()
-            leader = text[0]
-            if leader == COMMAND_LEADER or leader == LEGACY_COMMAND_LEADER:
-                text = text[1:]
-                parts = [arg.strip() for arg in text.split(maxsplit=1)]
-                command = parts[0]
-                argument = parts[1] if len(parts) > 1 else ''
-                if leader == LEGACY_COMMAND_LEADER:
-                    self.legacy_command_leader_warning(command)
-                    continue
-                if command == "exit" or command == "quit":
-                    break
+            try:
+                command, argument = self.parse_shell_input(user_input)
+            except (NoInputError, LegacyCommandLeaderError):
+                continue
+            except EOFError:
+                break
+            exec_prompt_pre_result = self.exec_prompt_pre(command, argument)
+            if exec_prompt_pre_result:
+                self.output_response(exec_prompt_pre_result)
             else:
-                if text == '?':
-                    command = 'help'
-                    argument = ''
-                else:
-                    command = DEFAULT_COMMAND
-                    argument = text
-
-            if command == 'help':
-                self.help(argument)
-            else:
-                if command in self.commands:
-                    method = getattr(__class__, f"do_{command}")
-                    try:
-                        if asyncio.iscoroutinefunction(method):
-                            response = await method(self, argument)
-                        else:
-                            response = method(self, argument)
-                    except Exception as e:
-                        print(repr(e))
-                    else:
-                        if response:
-                            print(response)
-                else:
-                    print(f'Unknown command: {command}')
-
+                await self.run_command(command, argument)
         print('GoodBye!')

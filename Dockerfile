@@ -1,6 +1,4 @@
 FROM accetto/ubuntu-vnc-xfce-python-g3:vscode-firefox
-COPY . /src
-WORKDIR /src
 
 USER root
 
@@ -10,9 +8,17 @@ RUN apt-get update && apt-get install -y make build-essential libssl-dev zlib1g-
 # Fonts
 RUN apt-get -y -qq install fonts-droid-fallback ttf-wqy-zenhei ttf-wqy-microhei fonts-arphic-ukai fonts-arphic-uming fonts-emojione
 
+# Install browser and other pkgs (to cache things that do not change and speed up development)
+RUN pip install playwright
+RUN python -m playwright install firefox
+RUN pip install readline
+
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
+COPY . /src
+WORKDIR /src
+
 # Install wrapper
-RUN pip install -r requirements.txt
 RUN python setup.py install
 
-# Install browser
-RUN python -m playwright install firefox
