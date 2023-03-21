@@ -88,6 +88,11 @@ class GPTShell():
     def terminate_stream(self, _signal, _frame):
         self.backend.terminate_stream(_signal, _frame)
 
+    def catch_ctrl_c(self, signum, _frame):
+        self.log.debug(f'Ctrl-c hit: {signum}')
+        sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
+        os.kill(os.getpid(), sig)
+
     def _setup_signal_handlers(self):
         sig = is_windows and signal.SIGBREAK or signal.SIGUSR1
         signal.signal(sig, self.terminate_stream)
@@ -825,6 +830,7 @@ class GPTShell():
         return await self.default(line)
 
     async def default(self, line, title=None, model_customizations={}):
+        signal.signal(signal.SIGINT, self.catch_ctrl_c)
         if not line:
             return
 
