@@ -20,6 +20,7 @@ import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
 
+GEN_TITLE_TIMEOUT = 5000
 
 class AsyncChatGPT(Backend):
     """
@@ -187,19 +188,40 @@ class AsyncChatGPT(Backend):
             self.log.debug(f"{response.status} {response.status_text} {response.headers}")
         return response.ok, json, response
 
-    async def _api_get_request(self, url, query_params={}, custom_headers={}):
+    async def _api_get_request(self, url, query_params={}, custom_headers={}, timeout=None):
         headers = self._api_request_build_headers(custom_headers)
-        response = await self.page.request.get(url, headers=headers, params=query_params)
+        kwargs = {
+            "headers": headers,
+            "params": query_params,
+        }
+        if timeout:
+            kwargs["timeout"] = timeout
+        self.log.debug(f"GET {url} request, query params: {query_params}, headers: {headers}")
+        response = await self.page.request.get(url, **kwargs)
         return await self._process_api_response(url, response)
 
-    async def _api_post_request(self, url, data={}, custom_headers={}):
+    async def _api_post_request(self, url, data={}, custom_headers={}, timeout=None):
         headers = self._api_request_build_headers(custom_headers)
-        response = await self.page.request.post(url, headers=headers, data=data)
+        kwargs = {
+            "headers": headers,
+            "data": data,
+        }
+        if timeout:
+            kwargs["timeout"] = timeout
+        self.log.debug(f"POST {url} request, data: {data}, headers: {headers}")
+        response = await self.page.request.post(url, **kwargs)
         return await self._process_api_response(url, response, method="POST")
 
-    async def _api_patch_request(self, url, data={}, custom_headers={}):
+    async def _api_patch_request(self, url, data={}, custom_headers={}, timeout=None):
         headers = self._api_request_build_headers(custom_headers)
-        response = await self.page.request.patch(url, headers=headers, data=data)
+        kwargs = {
+            "headers": headers,
+            "data": data,
+        }
+        if timeout:
+            kwargs["timeout"] = timeout
+        self.log.debug(f"PATCH {url} request, data: {data}, headers: {headers}")
+        response = await self.page.request.patch(url, **kwargs)
         return await self._process_api_response(url, response, method="PATCH")
 
     async def _gen_title(self):
@@ -210,7 +232,11 @@ class AsyncChatGPT(Backend):
             "message_id": self.parent_message_id,
             "model": self.model,
         }
-        ok, json, response = await self._api_post_request(url, data)
+        ok = False
+        try:
+            ok, json, response = await self._api_post_request(url, data, timeout=GEN_TITLE_TIMEOUT)
+        except Exception as e:
+            self.log.warning(f"Failed to generate title: {e}")
         if ok:
             # TODO: Do we want to do anything with the title we got back?
             # response_data = response.json()
@@ -298,6 +324,7 @@ class AsyncChatGPT(Backend):
             url = f"https://chat.openai.com/backend-api/conversation/{uuid}"
             ok, json, response = await self._api_get_request(url)
             if ok:
+                json['id'] = uuid
                 return ok, json, response
             else:
                 return self._handle_error(json, response, f"Failed to get conversation {uuid}")
