@@ -1,3 +1,13 @@
+### v0.6.5 - 22/03/2023
+
+* **Wed Mar 22 2023:** inject id into get_conversation() result, add timeout logic for api requests, use for gen_title()
+* **Tue Mar 21 2023:** add comment, ctrl-c interrupt generation not working on windows
+* **Tue Mar 21 2023:** add support for interrupting streaming by ctrl-c
+* **Mon Mar 20 2023:** fix issue writing awesome prompts CSV file
+* **Mon Mar 20 2023:** restore ability of /template-edit to create new templates
+* **Sun Mar 19 2023:** attempt to fix sync wrapper when loop is always running
+* **Sun Mar 19 2023:** add upgrading section to doc
+
 ### v0.6.4 - 19/03/2023
 
 * **Sun Mar 19 2023:** add all core plugins to example config
