@@ -92,8 +92,9 @@ log:
 plugins:
   enabled:
     # Core plugins, see README for more details.
-    - awesome
     #- test
+    - awesome
+    #- shell
     #- zap
 
 ##########################################################

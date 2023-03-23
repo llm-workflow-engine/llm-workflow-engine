@@ -273,6 +273,7 @@ All other attributes will be passed to the template as variable substitutions.
 
 * **test:** Test plugin, echos back the command you give it
 * **awesome:** Use a prompt from Awesome ChatGPT Prompts: [https://github.com/f/awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
+* **shell:** Transform natural language into a shell command, and optionally execute it **WARNING: POTENTIALLY DANGEROUS -- YOU ARE RESPONSIBLE FOR VALIDATING THE COMMAND RETURNED BY THE LLM, AND THE OUTCOME OF ITS EXECUTION.**
 * **zap:** Send natural language commands to Zapier actions: [https://nla.zapier.com/get-started/](https://nla.zapier.com/get-started/)
 
 ### Writing plugins
