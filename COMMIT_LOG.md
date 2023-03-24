@@ -1,3 +1,9 @@
+### v0.6.6 - 24/03/2023
+
+* **Fri Mar 24 2023:** add troubleshooting section to docs
+* **Fri Mar 24 2023:** add 'chatgpt reinstall' one shot command
+* **Thu Mar 23 2023:** add shell plugin
+
 ### v0.6.5 - 22/03/2023
 
 * **Wed Mar 22 2023:** inject id into get_conversation() result, add timeout logic for api requests, use for gen_title()
