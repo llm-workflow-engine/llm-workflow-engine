@@ -8,6 +8,7 @@ What would you like to do?
 * [Install the wrapper](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
+* [Troubleshoot common issues](#troubleshooting)
 * [Upgrade the wrapper](#upgrading)
 * [Using GPT4](#gpt4)
 * [Report a bug](ISSUES.md)
@@ -386,6 +387,21 @@ Then, visit http://localhost:6901/vnc.html with password `headless` and login Ch
 Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
+
+## Troubleshooting
+
+### OpenAI system issues
+
+**Oftentimes issues are related to upstream service problems with OpenAI, so please check [https://status.openai.com](https://status.openai.com) before concluding there's an issue with this codebase!**
+
+### Playwright (browser-based) backend issues
+
+It's possible that:
+
+1. Your session has gone stale: Try issuing a `/session` command to refresh it
+2. Your browser session information is corrupted: Try `chatgpt reinstall` and go through the login process again
+3. You're running an outdated version of this project, or one of its dependencies: Completely reinstall the project and its dependencies
+4. You're running into geolocation restrictions in OpenAI's security systems: Try proxying your requests through a VPN server in the US.
 
 ## Upgrading:
 
