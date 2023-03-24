@@ -108,6 +108,7 @@ COMMAND_HISTORY_FILE = '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.
 DEFAULT_HISTORY_LIMIT = 20
 SHELL_ONE_SHOT_COMMANDS = [
     'install',
+    'reinstall',
     'config',
 ]
 

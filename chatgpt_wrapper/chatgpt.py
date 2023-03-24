@@ -43,8 +43,12 @@ class AsyncChatGPT(Backend):
         self.session = None
         self.new_conversation()
 
-    async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
+    def get_primary_profile_directory(self):
         primary_profile = os.path.join(tempfile.gettempdir(), "playwright")
+        return primary_profile
+
+    async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
+        primary_profile = self.get_primary_profile_directory()
         self.streaming = False
         self.lock = asyncio.Lock()
         self.play = await async_playwright().start()
@@ -81,6 +85,13 @@ class AsyncChatGPT(Backend):
         self.timeout = timeout
         self.log.info("ChatGPT initialized")
         return self
+
+    def destroy_primary_profile(self):
+        primary_profile = self.get_primary_profile_directory()
+        shutil.rmtree(primary_profile)
+        message = f"Destroyed primary profile: {primary_profile}"
+        print(message)
+        self.log.info(message)
 
     def _shutdown(self):
         loop = asyncio.get_event_loop()

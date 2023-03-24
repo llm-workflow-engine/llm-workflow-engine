@@ -4,6 +4,7 @@ import sys
 import asyncio
 
 import chatgpt_wrapper.constants as constants
+from chatgpt_wrapper.chatgpt import AsyncChatGPT
 from chatgpt_wrapper.browser_shell import BrowserShell
 from chatgpt_wrapper.openai.api_shell import ApiShell
 from chatgpt_wrapper.version import __version__
@@ -130,7 +131,12 @@ async def async_main():
 
     backend = config.get('backend')
     if backend == 'chatgpt-browser':
-        if command == 'install':
+        if command == 'reinstall':
+            print('Reinstalling...')
+            temp_backend = AsyncChatGPT(config)
+            temp_backend.destroy_primary_profile()
+            del temp_backend
+        if command in ['install', 'reinstall']:
             print(
                 "\n"
                 "Install mode: Log in to ChatGPT in the browser that pops up, and click\n"
@@ -140,7 +146,7 @@ async def async_main():
             config.set('browser.debug', True)
         shell = BrowserShell(config)
     elif backend == 'chatgpt-api':
-        if command == 'install':
+        if command in ['install', 'reinstall']:
             print(
                 "\n"
                 "Install mode: The API backend is already configured.\n"
