@@ -312,7 +312,7 @@ To run the CLI in one-shot mode, simply follow the command with the prompt you w
 chatgpt Hello World!
 ```
 
-#### Interacive mode
+#### Interactive mode
 
 To run the CLI in interactive mode, execute it with no additional arguments:
 
