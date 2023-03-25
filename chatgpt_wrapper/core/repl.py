@@ -21,11 +21,11 @@ from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound, me
 from rich.console import Console
 from rich.markdown import Markdown
 
-import chatgpt_wrapper.constants as constants
-from chatgpt_wrapper.config import Config
-from chatgpt_wrapper.logger import Logger
-from chatgpt_wrapper.editor import file_editor, pipe_editor
-from chatgpt_wrapper.plugin_manager import PluginManager
+import chatgpt_wrapper.core.constants as constants
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.core.logger import Logger
+from chatgpt_wrapper.core.editor import file_editor, pipe_editor
+from chatgpt_wrapper.core.plugin_manager import PluginManager
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -48,7 +48,7 @@ class LegacyCommandLeaderError(Exception):
 class NoInputError(Exception):
     pass
 
-class GPTShell():
+class Repl():
     """
     A shell interpreter that serves as a front end to the ChatGPT class
     """

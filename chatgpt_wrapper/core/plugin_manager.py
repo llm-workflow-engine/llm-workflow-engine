@@ -2,8 +2,8 @@ import importlib.util
 import os
 import sys
 
-from chatgpt_wrapper.config import Config
-from chatgpt_wrapper.logger import Logger
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.core.logger import Logger
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

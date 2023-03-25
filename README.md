@@ -355,7 +355,7 @@ To pass custom configuration to ChatGPT, use the Config class:
 
 ```python
 from chatgpt_wrapper import ChatGPT
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.core.config import Config
 
 config = Config()
 config.set('browser.debug', True)
@@ -462,7 +462,7 @@ To use GPT-4 within your Python code, follow the template below:
 
 ```python
 from chatgpt_wrapper import ChatGPT
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.core.config import Config
 
 config = Config()
 config.set('chat.model', 'gpt4')

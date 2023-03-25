@@ -1,7 +1,7 @@
-from chatgpt_wrapper.chatgpt import AsyncChatGPT
-from chatgpt_wrapper.gpt_shell import GPTShell
+from chatgpt_wrapper.backends.browser.chatgpt import AsyncChatGPT
+from chatgpt_wrapper.core.repl import Repl
 
-class BrowserShell(GPTShell):
+class BrowserRepl(Repl):
     """
     A shell interpreter that serves as a front end to the ChatGPT class
     """

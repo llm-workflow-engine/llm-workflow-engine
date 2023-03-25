@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from chatgpt_wrapper import ChatGPT
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.core.config import Config
 
 def main():
     config = Config()

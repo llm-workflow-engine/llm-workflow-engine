@@ -2,8 +2,8 @@ import argparse
 
 from flask import Flask, jsonify, request
 
-from chatgpt_wrapper.chatgpt import ChatGPT
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
+from chatgpt_wrapper.core.config import Config
 
 
 def create_application(name, config=None, timeout=60, proxy=None):

@@ -2,8 +2,8 @@
 
 import sys
 import asyncio
-from chatgpt_wrapper.openai.api import AsyncOpenAIAPI
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.backends.openai.api import AsyncOpenAIAPI
+from chatgpt_wrapper.core.config import Config
 
 async def main():
     config = Config()

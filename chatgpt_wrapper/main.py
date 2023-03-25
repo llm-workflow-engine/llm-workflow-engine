@@ -3,12 +3,12 @@ import os
 import sys
 import asyncio
 
-import chatgpt_wrapper.constants as constants
-from chatgpt_wrapper.chatgpt import AsyncChatGPT
-from chatgpt_wrapper.browser_shell import BrowserShell
-from chatgpt_wrapper.openai.api_shell import ApiShell
 from chatgpt_wrapper.version import __version__
-from chatgpt_wrapper.config import Config
+import chatgpt_wrapper.core.constants as constants
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.backends.browser.chatgpt import AsyncChatGPT
+from chatgpt_wrapper.backends.browser.repl import BrowserRepl
+from chatgpt_wrapper.backends.openai.repl import ApiRepl
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -144,14 +144,14 @@ async def async_main():
                 "this program without the 'install' parameter.\n"
             )
             config.set('browser.debug', True)
-        shell = BrowserShell(config)
+        shell = BrowserRepl(config)
     elif backend == 'chatgpt-api':
         if command in ['install', 'reinstall']:
             print(
                 "\n"
                 "Install mode: The API backend is already configured.\n"
             )
-        shell = ApiShell(config)
+        shell = ApiRepl(config)
     else:
         raise RuntimeError(f"Unknown backend: {backend}")
     await shell.setup()

@@ -2,7 +2,7 @@ import os
 import platform
 import subprocess
 
-from chatgpt_wrapper.plugin import Plugin
+from chatgpt_wrapper.core.plugin import Plugin
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

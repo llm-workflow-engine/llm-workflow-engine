@@ -1,7 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 
-from chatgpt_wrapper.openai.orm import Manager, Conversation, Message
-from chatgpt_wrapper.openai.conversation import ConversationManager
+from chatgpt_wrapper.backends.openai.orm import Manager, Message
+from chatgpt_wrapper.backends.openai.conversation import ConversationManager
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

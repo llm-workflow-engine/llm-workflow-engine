@@ -3,7 +3,7 @@ from langchain.agents import initialize_agent
 from langchain.agents.agent_toolkits import ZapierToolkit
 from langchain.utilities.zapier import ZapierNLAWrapper
 
-from chatgpt_wrapper.plugin import Plugin
+from chatgpt_wrapper.core.plugin import Plugin
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

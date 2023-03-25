@@ -1,12 +1,12 @@
 import getpass
 import email_validator
 
-import chatgpt_wrapper.constants as constants
-from chatgpt_wrapper.openai.database import Database
-from chatgpt_wrapper.openai.orm import User
-from chatgpt_wrapper.openai.user import UserManager
-from chatgpt_wrapper.openai.api import AsyncOpenAIAPI
-from chatgpt_wrapper.gpt_shell import GPTShell
+import chatgpt_wrapper.core.constants as constants
+from chatgpt_wrapper.core.repl import Repl
+from chatgpt_wrapper.backends.openai.database import Database
+from chatgpt_wrapper.backends.openai.orm import User
+from chatgpt_wrapper.backends.openai.user import UserManager
+from chatgpt_wrapper.backends.openai.api import AsyncOpenAIAPI
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -17,7 +17,7 @@ ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'quit',
 ]
 
-class ApiShell(GPTShell):
+class ApiRepl(Repl):
     """
     A shell interpreter that serves as a front end to the ChatGPT class
     """
@@ -27,7 +27,7 @@ class ApiShell(GPTShell):
         self.logged_in_user = None
 
     def not_logged_in_disallowed_commands(self):
-        base_shell_commands = self.introspect_commands(GPTShell)
+        base_shell_commands = self.introspect_commands(Repl)
         disallowed_commands = [c for c in base_shell_commands if c not in ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS]
         return disallowed_commands
 

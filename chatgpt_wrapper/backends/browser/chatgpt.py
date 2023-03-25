@@ -12,10 +12,10 @@ from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
 
-from chatgpt_wrapper.backend import Backend
-from chatgpt_wrapper.config import Config
-from chatgpt_wrapper.logger import Logger
-import chatgpt_wrapper.constants as constants
+from chatgpt_wrapper.core.backend import Backend
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.core.logger import Logger
+import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

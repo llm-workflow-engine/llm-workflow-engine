@@ -8,9 +8,9 @@ from rich.markdown import Markdown
 
 from sqlalchemy.exc import OperationalError
 
-from chatgpt_wrapper.openai.orm import Base, Orm
-from chatgpt_wrapper.logger import Logger
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.backends.openai.orm import Base, Orm
+from chatgpt_wrapper.core.logger import Logger
+from chatgpt_wrapper.core.config import Config
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

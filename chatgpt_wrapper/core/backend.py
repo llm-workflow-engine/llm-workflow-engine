@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from chatgpt_wrapper.config import Config
-from chatgpt_wrapper.logger import Logger
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.core.logger import Logger
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

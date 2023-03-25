@@ -2,7 +2,7 @@ import os
 import yaml
 import platform
 
-import chatgpt_wrapper.constants as constants
+import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

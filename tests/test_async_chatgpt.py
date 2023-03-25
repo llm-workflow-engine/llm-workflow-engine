@@ -2,7 +2,7 @@
 
 import asyncio
 from chatgpt_wrapper import AsyncChatGPT
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.core.config import Config
 
 async def main():
     config = Config()

@@ -6,13 +6,13 @@ import tiktoken
 
 from openai.error import OpenAIError
 
-from chatgpt_wrapper.backend import Backend
-from chatgpt_wrapper.config import Config
-from chatgpt_wrapper.logger import Logger
-import chatgpt_wrapper.constants as constants
-from chatgpt_wrapper.openai.user import UserManager
-from chatgpt_wrapper.openai.conversation import ConversationManager
-from chatgpt_wrapper.openai.message import MessageManager
+from chatgpt_wrapper.core.backend import Backend
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.core.logger import Logger
+import chatgpt_wrapper.core.constants as constants
+from chatgpt_wrapper.backends.openai.user import UserManager
+from chatgpt_wrapper.backends.openai.conversation import ConversationManager
+from chatgpt_wrapper.backends.openai.message import MessageManager
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

@@ -1,6 +1,6 @@
 import logging
 
-from chatgpt_wrapper.config import Config
+from chatgpt_wrapper.core.config import Config
 
 class Logger():
 

@@ -3,7 +3,7 @@ import datetime
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from chatgpt_wrapper.openai.orm import Manager, User
+from chatgpt_wrapper.backends.openai.orm import Manager, User
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

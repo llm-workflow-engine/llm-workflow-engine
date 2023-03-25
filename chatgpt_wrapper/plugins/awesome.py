@@ -3,8 +3,8 @@ import os
 import tempfile
 import urllib.request
 
-import chatgpt_wrapper.constants as constants
-from chatgpt_wrapper.plugin import Plugin
+import chatgpt_wrapper.core.constants as constants
+from chatgpt_wrapper.core.plugin import Plugin
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)

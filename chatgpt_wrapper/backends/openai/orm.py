@@ -10,9 +10,9 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from chatgpt_wrapper.config import Config
-from chatgpt_wrapper.logger import Logger
-import chatgpt_wrapper.constants as constants
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.core.logger import Logger
+import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.debug as debug
 if False:
     debug.console(None)
@@ -219,4 +219,3 @@ class Manager:
     def _handle_error(self, message):
         self.log.error(message)
         return False, None, message
-
