@@ -1,7 +1,5 @@
 from chatgpt_wrapper.core.plugin import Plugin
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
+import chatgpt_wrapper.core.util as util
 
 class Test(Plugin):
 
@@ -10,7 +8,7 @@ class Test(Plugin):
 
     def get_shell_completions(self, _base_shell_completions):
         commands = {}
-        commands[self.shell.command_with_leader('test')] = self.shell.list_to_completion_hash(['one', 'two', 'three'])
+        commands[util.command_with_leader('test')] = util.list_to_completion_hash(['one', 'two', 'three'])
         return commands
 
     async def do_test(self, arg):

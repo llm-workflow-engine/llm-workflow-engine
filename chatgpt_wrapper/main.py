@@ -9,10 +9,6 @@ from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.backends.browser.chatgpt import AsyncChatGPT
 from chatgpt_wrapper.backends.browser.repl import BrowserRepl
 from chatgpt_wrapper.backends.openai.repl import ApiRepl
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
-
 
 def main():
     asyncio.run(async_main())

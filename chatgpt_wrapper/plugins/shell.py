@@ -3,9 +3,7 @@ import platform
 import subprocess
 
 from chatgpt_wrapper.core.plugin import Plugin
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
+import chatgpt_wrapper.core.util as util
 
 class Shell(Plugin):
 
@@ -105,7 +103,7 @@ Return ONLY the command, no other explanation or text.
         """
         if not arg:
             return False, arg, "Argument is required"
-        self.shell._print_status_message(True, f"Fetching shell command for prompt: {arg}")
+        util.print_status_message(True, f"Fetching shell command for prompt: {arg}")
         success, command, user_message = await self.get_shell_command(arg)
         if not success:
             return success, command, user_message

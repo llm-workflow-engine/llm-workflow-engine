@@ -4,9 +4,6 @@ from langchain.agents.agent_toolkits import ZapierToolkit
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 from chatgpt_wrapper.core.plugin import Plugin
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 class Zap(Plugin):
 
@@ -16,11 +13,6 @@ class Zap(Plugin):
         self.zapier = ZapierNLAWrapper()
         self.toolkit = ZapierToolkit.from_zapier_nla_wrapper(self.zapier)
         self.agent = initialize_agent(self.toolkit.get_tools(), self.llm, agent="zero-shot-react-description", verbose=True)
-
-    # def get_shell_completions(self, _base_shell_completions):
-    #     commands = {}
-    #     commands[self.shell.command_with_leader('test')] = self.shell.list_to_completion_hash(['one', 'two', 'three'])
-    #     return commands
 
     async def do_zap(self, arg):
         """

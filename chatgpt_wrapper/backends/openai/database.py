@@ -11,9 +11,6 @@ from sqlalchemy.exc import OperationalError
 from chatgpt_wrapper.backends.openai.orm import Base, Orm
 from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.config import Config
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 DEFAULT_NUM_USERS = 5
 DEFAULT_NUM_CONVERSATIONS = 5

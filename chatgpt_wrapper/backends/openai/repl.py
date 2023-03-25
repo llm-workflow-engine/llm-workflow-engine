@@ -2,14 +2,12 @@ import getpass
 import email_validator
 
 import chatgpt_wrapper.core.constants as constants
+import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.core.repl import Repl
 from chatgpt_wrapper.backends.openai.database import Database
 from chatgpt_wrapper.backends.openai.orm import User
 from chatgpt_wrapper.backends.openai.user import UserManager
 from chatgpt_wrapper.backends.openai.api import AsyncOpenAIAPI
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'config',
@@ -27,7 +25,7 @@ class ApiRepl(Repl):
         self.logged_in_user = None
 
     def not_logged_in_disallowed_commands(self):
-        base_shell_commands = self.introspect_commands(Repl)
+        base_shell_commands = util.introspect_commands(Repl)
         disallowed_commands = [c for c in base_shell_commands if c not in ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS]
         return disallowed_commands
 
@@ -36,7 +34,7 @@ class ApiRepl(Repl):
             return False, None, "Must be logged in to execute %s%s" % (constants.COMMAND_LEADER, command)
 
     def configure_shell_commands(self):
-        self.commands = self.introspect_commands(__class__)
+        self.commands = util.introspect_commands(__class__)
 
     def get_custom_shell_completions(self):
         user_commands = [
@@ -55,21 +53,12 @@ class ApiRepl(Repl):
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
         return {
-            self.command_with_leader('model-temperature'): self.float_range_to_completions(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX),
-            self.command_with_leader('model-top-p'): self.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
-            self.command_with_leader('model-presence-penalty'): self.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
-            self.command_with_leader('model-frequency-penalty'): self.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
-            self.command_with_leader('model-system-message'): self.list_to_completion_hash(self.backend.get_system_message_aliases()),
+            util.command_with_leader('model-temperature'): util.float_range_to_completions(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX),
+            util.command_with_leader('model-top-p'): util.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
+            util.command_with_leader('model-presence-penalty'): util.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
+            util.command_with_leader('model-frequency-penalty'): util.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
+            util.command_with_leader('model-system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
         }
-
-    def float_range_to_completions(self, min_val, max_val):
-        range_list = []
-        num_steps = int((max_val - min_val) * 10)
-        for i in range(num_steps + 1):
-            val = round((min_val + (i / 10)), 1)
-            range_list.append(val)
-        completions = self.list_to_completion_hash(range_list)
-        return completions
 
     async def configure_backend(self):
         self.backend = AsyncOpenAIAPI(self.config)
@@ -123,9 +112,9 @@ class ApiRepl(Repl):
             assert conversation_id == "None" or int(conversation_id) > 0
             assert int(parent_message_id) > 0
         except Exception:
-            self._print_markdown("Invalid parameter to `context`.")
+            util.print_markdown("Invalid parameter to `context`.")
             return
-        self._print_markdown("* Loaded specified context.")
+        util.print_markdown("* Loaded specified context.")
         self.backend.conversation_id = (
             conversation_id if conversation_id != "None" else None
         )
@@ -187,7 +176,7 @@ class ApiRepl(Repl):
                 return self.login(user)
 
     def welcome_message(self):
-        self._print_markdown(
+        util.print_markdown(
 """
 # Welcome to the ChatGPT API shell!
 
@@ -199,10 +188,10 @@ Before you can start using the shell, you must create a new user.
 
     async def create_first_user(self):
         success, user, message = await self.do_user_register()
-        self._print_status_message(success, message)
+        util.print_status_message(success, message)
         if success:
             success, _user, message = self.login(user)
-            self._print_status_message(success, message)
+            util.print_status_message(success, message)
         else:
             await self.create_first_user()
 
@@ -260,7 +249,10 @@ Before you can start using the shell, you must create a new user.
             identifier = input("Enter username or email: ")
         success, user, message = self.user_management.get_by_username_or_email(identifier)
         if success:
-            return self.login(user)
+            if user:
+                return self.login(user)
+            else:
+                return False, user, message
         else:
             return success, user, message
 
@@ -312,7 +304,7 @@ Before you can start using the shell, you must create a new user.
 * Password: %s
 * Default model: %s
         """ % (user.username, user.email, "set" if user.password else "Not set", self.backend.available_models[user.default_model])
-        self._print_markdown(output)
+        util.print_markdown(output)
 
     async def do_user(self, username=None):
         """
@@ -330,7 +322,10 @@ Before you can start using the shell, you must create a new user.
         if username:
             success, user, message = self.user_management.get_by_username(username)
             if success:
-                return self.display_user(user)
+                if user:
+                    return self.display_user(user)
+                else:
+                    return False, user, message
             else:
                 return success, user, message
         elif self.logged_in_user:
@@ -348,12 +343,12 @@ Before you can start using the shell, you must create a new user.
         if success:
             user_list = ["* %s: %s (%s)" % (user.id, user.username, user.default_model) for user in users]
             user_list.insert(0, "# Users")
-            self._print_markdown("\n".join(user_list))
+            util.print_markdown("\n".join(user_list))
         else:
             return success, users, message
 
     def edit_user(self, user):
-        self._print_markdown(f"## Editing user: {user.username}")
+        util.print_markdown(f"## Editing user: {user.username}")
         username = input("New username (Press enter to skip): ").strip() or None
         email = input("New email (Press enter to skip): ").strip() or None
         if email:
@@ -374,7 +369,9 @@ Before you can start using the shell, you must create a new user.
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)
         if success:
-            self.backend.set_active_model(user.default_model)
+            self.rebuild_completions()
+            if self.logged_in_user.id == user.id:
+                self.backend.set_active_model(user.default_model)
         return success, user, user_message
 
     async def do_user_edit(self, username=None):
@@ -395,6 +392,8 @@ Before you can start using the shell, you must create a new user.
                 return success, user, message
             if user:
                 return self.edit_user(user)
+            else:
+                return False, user, message
         elif self.logged_in_user:
             return self.edit_user(self.logged_in_user)
         return False, "User not found."
@@ -429,13 +428,13 @@ Before you can start using the shell, you must create a new user.
                     self.rebuild_completions()
                 return success, user, user_message
         else:
-            return False, user, "User does not exist."
+            return False, user, message
 
     def adjust_model_setting(self, value_type, setting, value, min=None, max=None):
         if not self._is_logged_in():
             return False, None, "Not logged in."
         if value:
-            method = getattr(self, f"validate_{value_type}")
+            method = getattr(util, f"validate_{value_type}")
             value = method(value, min, max)
             if value is False:
                 return False, value, f"Invalid {setting}, must be float between {min} and {max}."
@@ -445,7 +444,7 @@ Before you can start using the shell, you must create a new user.
                 return True, value, f"{setting} set to {value}"
         else:
             value = getattr(self.backend, f"model_{setting}")
-            self._print_markdown(f"* Current {setting}: {value}")
+            util.print_markdown(f"* Current {setting}: {value}")
 
     async def do_model_temperature(self, temperature=None):
         """
@@ -560,4 +559,4 @@ Before you can start using the shell, you must create a new user.
             return self.adjust_model_setting("str", "system_message", system_message, constants.OPENAPI_MIN_SUBMISSION_TOKENS, self.backend.model_max_submission_tokens)
         else:
             output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.model_system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
-            self._print_markdown(output)
+            util.print_markdown(output)

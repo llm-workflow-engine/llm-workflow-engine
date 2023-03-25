@@ -1,3 +1,4 @@
+import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.backends.browser.chatgpt import AsyncChatGPT
 from chatgpt_wrapper.core.repl import Repl
 
@@ -7,7 +8,7 @@ class BrowserRepl(Repl):
     """
 
     def configure_shell_commands(self):
-        self.commands = self.introspect_commands(__class__)
+        self.commands = util.introspect_commands(__class__)
 
     async def configure_backend(self):
         self.backend = AsyncChatGPT(self.config)
@@ -30,7 +31,7 @@ class BrowserRepl(Repl):
             if "accessToken" in self.backend.session
             else "The session is not usable.  Try `install` mode."
         )
-        self._print_markdown(f"* Session information refreshed.  {usable}")
+        util.print_markdown(f"* Session information refreshed.  {usable}")
 
     async def cleanup(self):
         await self.backend.cleanup()

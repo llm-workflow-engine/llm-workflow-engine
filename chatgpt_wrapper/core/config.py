@@ -3,10 +3,6 @@ import yaml
 import platform
 
 import chatgpt_wrapper.core.constants as constants
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
-
 
 class Config:
     def __init__(self, config_dir=None, data_dir=None, profile=constants.DEFAULT_PROFILE, config={}):

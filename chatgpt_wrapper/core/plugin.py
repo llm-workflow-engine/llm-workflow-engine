@@ -2,9 +2,6 @@ from abc import ABC, abstractmethod
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 class PluginBase(ABC):
     def __init__(self, config=None):

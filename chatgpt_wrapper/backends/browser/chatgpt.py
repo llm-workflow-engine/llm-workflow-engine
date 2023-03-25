@@ -16,9 +16,6 @@ from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 import chatgpt_wrapper.core.constants as constants
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 GEN_TITLE_TIMEOUT = 5000
 

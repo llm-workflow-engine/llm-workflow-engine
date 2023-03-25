@@ -10,12 +10,10 @@ from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 import chatgpt_wrapper.core.constants as constants
+import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.backends.openai.user import UserManager
 from chatgpt_wrapper.backends.openai.conversation import ConversationManager
 from chatgpt_wrapper.backends.openai.message import MessageManager
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 class AsyncOpenAIAPI(Backend):
     def __init__(self, config=None, default_user_id=None):
@@ -331,7 +329,7 @@ class AsyncOpenAIAPI(Backend):
         if stripped_messages_count > 0:
             max_tokens_exceeded_warning = f"Conversation exceeded max submission tokens ({max_tokens}), stripped out {stripped_messages_count} oldest messages before sending, sent {token_count} tokens instead"
             self.log.warning(max_tokens_exceeded_warning)
-            self._print_status_message(False, max_tokens_exceeded_warning)
+            util.print_status_message(False, max_tokens_exceeded_warning)
         return messages
 
     def _prepare_ask_request(self, prompt, system_message=None):

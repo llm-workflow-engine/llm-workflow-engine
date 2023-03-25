@@ -1,12 +1,9 @@
 import importlib.util
 import os
-import sys
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
+import chatgpt_wrapper.core.util as util
 
 class PluginManager:
     def __init__(self, config=None, backend=None, search_path=None):
@@ -18,15 +15,11 @@ class PluginManager:
         self.plugin_list = config.get('plugins.enabled', [])
         self.load_plugins(self.plugin_list)
 
-    def get_package_root(self):
-        package_name = self.__class__.__module__.split('.')[0]
-        package_root = os.path.dirname(os.path.abspath(sys.modules[package_name].__file__))
-        self.log.debug(f"Package root: {package_root}")
-        return package_root
-
     def get_default_plugin_paths(self):
+        package_root = os.path.join(util.get_package_root(self), 'plugins')
+        self.log.debug(f"Package root: {package_root}")
         plugin_paths = [
-            os.path.join(self.get_package_root(), 'plugins'),
+            package_root,
             os.path.join(self.config.config_dir, 'plugins'),
             os.path.join(self.config.config_profile_dir, 'plugins'),
         ]

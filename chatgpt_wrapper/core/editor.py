@@ -1,11 +1,8 @@
 import os
-import tempfile
 import subprocess
 import platform
 
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
+import chatgpt_wrapper.core.util as util
 
 SYSTEM = platform.system()
 
@@ -39,20 +36,13 @@ def discover_editor():
         command_parts = [editor_path]
     return command_parts
 
-def open_temp_file(input_data='', suffix=None):
-    kwargs = {'suffix': f'.{suffix}'} if suffix else {}
-    _, filepath = tempfile.mkstemp(**kwargs)
-    with open(filepath, 'w') as f:
-        f.write(input_data)
-    return filepath
-
 def file_editor(filepath):
     command_parts = discover_editor()
     command_parts.append(filepath)
     subprocess.call(command_parts)
 
 def pipe_editor(input_data='', suffix=None):
-    filepath = open_temp_file(input_data, suffix)
+    filepath = util.open_temp_file(input_data, suffix)
     file_editor(filepath)
     with open(filepath, 'r') as f:
         output_data = f.read()

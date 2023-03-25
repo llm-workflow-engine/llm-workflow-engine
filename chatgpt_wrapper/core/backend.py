@@ -2,9 +2,6 @@ from abc import ABC, abstractmethod
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 from rich.console import Console
 
@@ -24,10 +21,6 @@ class Backend(ABC):
         self.console = Console()
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model'))
-
-    def _print_status_message(self, success, message):
-        self.console.print(message, style="bold green" if success else "bold red")
-        print("")
 
     def set_active_model(self, model=None):
         if model is None:

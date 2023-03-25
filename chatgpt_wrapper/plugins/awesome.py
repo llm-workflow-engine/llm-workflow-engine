@@ -4,10 +4,8 @@ import tempfile
 import urllib.request
 
 import chatgpt_wrapper.core.constants as constants
+import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.core.plugin import Plugin
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 PROMPTS_URI = "https://github.com/f/awesome-chatgpt-prompts/raw/main/prompts.csv"
 PROMPTS_TEMP_FILE = "awesome-prompts.csv"
@@ -23,7 +21,7 @@ class Awesome(Plugin):
     def get_shell_completions(self, _base_shell_completions):
         commands = {}
         help_keys = ['reload'] + list(self.loaded_prompts.keys())
-        commands[self.shell.command_with_leader('awesome')] = self.shell.list_to_completion_hash(help_keys)
+        commands[util.command_with_leader('awesome')] = util.list_to_completion_hash(help_keys)
         return commands
 
     async def do_awesome(self, arg):
@@ -43,7 +41,7 @@ class Awesome(Plugin):
         if not arg:
             return False, arg, "Argument is required"
         elif arg == 'reload':
-            self.shell._print_status_message(True, "Reloading Awesome ChatGPT Prompts")
+            util.print_status_message(True, "Reloading Awesome ChatGPT Prompts")
             self.delete_prompts()
             self.load_prompts()
             return True, None, "Awesome ChatGPT Prompts reloaded"
