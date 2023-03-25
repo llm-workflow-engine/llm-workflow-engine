@@ -4,21 +4,22 @@ import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
 from chatgpt_wrapper.backends.openai.orm import Manager, User
-import chatgpt_wrapper.debug as debug
-if False:
-    debug.console(None)
 
 class UserManager(Manager):
     def _hash_password(self, password):
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
         return hashed_password
 
+    def user_found_message(self, user):
+        found = "found" if user else "not found"
+        return f"User {found}."
+
     def get_by_user_id(self, user_id):
         try:
             user = self.orm.get_user(user_id)
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to get user: {str(e)}")
-        return True, user, "User found."
+        return True, user, self.user_found_message(user)
 
     def get_by_username(self, username):
         username = username.lower()
@@ -28,7 +29,7 @@ class UserManager(Manager):
             ).first()
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to get user: {str(e)}")
-        return True, user, "User found."
+        return True, user, self.user_found_message(user)
 
     def get_by_username_or_email(self, identifier):
         identifier = identifier.lower()
@@ -38,7 +39,7 @@ class UserManager(Manager):
             ).first()
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to get user: {str(e)}")
-        return True, user, "User found."
+        return True, user, self.user_found_message(user)
 
     def register(self, username, email, password, default_model='default', preferences={}):
         username = username.lower()
