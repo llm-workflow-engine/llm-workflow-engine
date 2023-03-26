@@ -374,20 +374,6 @@ else:
 - Test whether it is working using `pytest tests/integration/api_test.py`
 - See an example of interaction with api in `tests/integration/example_api_call.py`
 
-## Test suite
-
-The project uses [Pytest](https://docs.pytest.org).
-
-```
-pip install pytest pytest-asyncio
-```
-
-To run all tests:
-
-```
-pytest
-```
-
 ## Docker (experimental)
 
 Build a image for testing `chatgpt-wrapper` with following commands.
@@ -402,6 +388,20 @@ Then, visit http://localhost:6901/vnc.html with password `headless` and login Ch
 Then, turn back to terminal and enjoy the chat!
 
 ![chat](https://i.imgur.com/nRlzUzm.png)
+
+## Test suite
+
+The project uses [Pytest](https://docs.pytest.org).
+
+```
+pip install pytest pytest-asyncio
+```
+
+To run all tests:
+
+```
+pytest
+```
 
 ## Troubleshooting
 
