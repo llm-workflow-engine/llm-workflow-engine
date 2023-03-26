@@ -157,17 +157,17 @@ class Orm:
 
     def get_user(self, user_id):
         self.log.debug(f'Retrieving User with id {user_id}')
-        user = self.session.query(User).get(user_id)
+        user = self.session.get(User, user_id)
         return user
 
     def get_conversation(self, conversation_id):
         self.log.debug(f'Retrieving Conversation with id {conversation_id}')
-        conversation = self.session.query(Conversation).get(conversation_id)
+        conversation = self.session.get(Conversation, conversation_id)
         return conversation
 
     def get_message(self, message_id):
         self.log.debug(f'Retrieving Message with id {message_id}')
-        message = self.session.query(Message).get(message_id)
+        message = self.session.get(Message, message_id)
         return message
 
     def edit_user(self, user, **kwargs):
