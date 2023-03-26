@@ -93,8 +93,10 @@ def paste_from_clipboard():
     value = pyperclip.paste()
     return value
 
-def print_status_message(success, message):
-    console.print(message, style="bold green" if success else "bold red")
+def print_status_message(success, message, style=None):
+    if style is None:
+        style = "bold green" if success else "bold red"
+    console.print(message, style=style)
     print("")
 
 def print_markdown(output):
