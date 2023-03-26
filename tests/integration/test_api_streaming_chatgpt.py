@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
+import pytest
 import sys
 import asyncio
 from chatgpt_wrapper.backends.openai.api import AsyncOpenAIAPI
 from chatgpt_wrapper.core.config import Config
 
-async def main():
-    config = Config()
+@pytest.mark.asyncio
+async def test_async_api_streaming():
+    config = Config(profile='test')
+    config.set('backend', 'chatgpt-api')
     config.set('debug.log.enabled', True)
     gpt = AsyncOpenAIAPI(config)
     response = ""
@@ -19,5 +22,7 @@ async def main():
         sys.stdout.flush()
         response += chunk
     print("\n")
+    assert response
 
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(test_async_api_streaming())

@@ -370,8 +370,23 @@ else:
 ### Flask API (experimental)
 
 - Run `python chatgpt_wrapper/gpt_api.py --port 5000` (default port is 5000) to start the server
-- Test whether it is working using `python -m unittest tests/api_test.py`
-- See an example of interaction with api in `tests/example_api_call.py`
+- Install pytest: `pip install pytest`
+- Test whether it is working using `pytest tests/integration/api_test.py`
+- See an example of interaction with api in `tests/integration/example_api_call.py`
+
+## Test suite
+
+The project uses [Pytest](https://docs.pytest.org).
+
+```
+pip install pytest pytest-asyncio
+```
+
+To run all tests:
+
+```
+pytest
+```
 
 ## Docker (experimental)
 
