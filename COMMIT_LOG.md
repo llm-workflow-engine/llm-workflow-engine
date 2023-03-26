@@ -1,3 +1,17 @@
+### v0.7.0 - 25/03/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+Lots of file/class/function reorganization:
+
+* Shell usage should be unaffected
+* Basic use cases of Python module should be unaffected
+* More complex use cases of Python module will probably need code adjustments
+
+* **Sat Mar 25 2023:** abstract template functionality, abstract common functions to util module
+* **Sat Mar 25 2023:** user found/not found message helper
+* **Sat Mar 25 2023:** reorg file structure, group modules into core/backends
+
 ### v0.6.6 - 24/03/2023
 
 * **Fri Mar 24 2023:** add troubleshooting section to docs
