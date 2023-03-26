@@ -165,6 +165,7 @@ class ApiRepl(Repl):
     async def check_login(self):
         user_count = self.session.query(User).count()
         if user_count == 0:
+            util.print_status_message(True, "No users in database. Creating one...")
             self.welcome_message()
             await self.create_first_user()
         # Special case check: if there's only one user in the database, and
