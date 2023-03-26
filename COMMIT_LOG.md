@@ -1,3 +1,10 @@
+### v0.7.1 - 26/03/2023
+
+* **Sun Mar 26 2023:** per profile playwright sessions for browser backend
+* **Sun Mar 26 2023:** no password for test users
+* **Sun Mar 26 2023:** clean up errant `console` references, fixes #256
+* **Sun Mar 26 2023:** allow custom style for util.print_status_message()
+
 ### v0.7.0 - 25/03/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
