@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 
-from rich.console import Console
-
 class Backend(ABC):
     """
     Base class/interface for all backends.
@@ -18,7 +16,6 @@ class Backend(ABC):
         self.conversation_id = None
         self.conversation_title_set = None
         self.streaming = False
-        self.console = Console()
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model'))
 

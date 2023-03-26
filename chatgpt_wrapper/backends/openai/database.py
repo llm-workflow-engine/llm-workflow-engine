@@ -3,20 +3,16 @@
 import names
 import argparse
 
-from rich.console import Console
-from rich.markdown import Markdown
-
 from sqlalchemy.exc import OperationalError
 
 from chatgpt_wrapper.backends.openai.orm import Base, Orm
 from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.config import Config
+import chatgpt_wrapper.core.util as util
 
 DEFAULT_NUM_USERS = 5
 DEFAULT_NUM_CONVERSATIONS = 5
 DEFAULT_NUM_MESSAGES = 10
-
-console = Console()
 
 class Database:
 
@@ -39,15 +35,15 @@ class Database:
 
     def create_schema(self):
         if not self.schema_exists():
-            console.print(f"Creating database schema for: {self.orm.database}", style="bold green")
+            util.print_status_message(True, f"Creating database schema for: {self.orm.database}")
             Base.metadata.create_all(bind=self.orm.engine)
-            console.print("Database schema installed", style="bold green")
+            util.print_status_message(True, "Database schema installed")
 
     def remove_schema(self):
         if self.schema_exists():
-            console.print(f"Removing old database schema for: {self.orm.database}", style="bold red")
+            util.print_status_message(False, f"Removing old database schema for: {self.orm.database}")
             Base.metadata.drop_all(bind=self.orm.engine)
-            console.print("Removed old database schema", style="bold green")
+            util.print_status_message(True, "Removed old database schema")
 
 class DatabaseDevel(Database):
 
@@ -62,16 +58,16 @@ class DatabaseDevel(Database):
         self.print = args.print
 
     def create_test_data(self):
-        console.print("Creating users...", style="bold green")
+        util.print_status_message(True, "Creating users...")
         # Create Users
         for i in range(self.num_users):
             username = names.get_full_name().lower().replace(" ", ".")
             password = 'password'
             email = f'{username}@example.com'
             user = self.orm.add_user(username, password, email)
-            console.print(f"Created user: {user.username}", style="blue")
+            util.print_status_message(True, f"Created user: {user.username}", style="bold blue")
             # Create Conversations for each User
-            console.print(f"Creating {self.num_conversations} conversations and {self.num_messages} messages for: {user.username}...", style="white")
+            util.print_status_message(True, f"Creating {self.num_conversations} conversations and {self.num_messages} messages for: {user.username}...", style="white")
             for j in range(self.num_conversations):
                 title = f'Conversation {j+1} for User {i+1}'
                 conversation = self.orm.add_conversation(user, title)
@@ -92,13 +88,13 @@ class DatabaseDevel(Database):
                 output.append(f'### {conversation.title}, messages: {len(messages)}')
                 for message in messages:
                     output.append(f'* {message.role}: {message.message}')
-        console.print(Markdown("\n".join(output)))
+        util.print_markdown("\n".join(output))
 
     def run(self):
         if self.create:
             if self.schema_exists():
                 if self.force:
-                    console.print("Force specified", style="bold red")
+                    util.print_status_message(False, "Force specified")
                     self.remove_schema()
                     self.create_schema()
             else:
@@ -107,7 +103,7 @@ class DatabaseDevel(Database):
             if self.schema_exists():
                 self.create_test_data()
             else:
-                console.print("Cannot create test data, database not created, use --create to create it", style="bold red")
+                util.print_status_message(False, "Cannot create test data, database not created, use --create to create it")
         if self.print:
             self.print_data()
 
