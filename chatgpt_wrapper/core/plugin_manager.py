@@ -12,7 +12,7 @@ class PluginManager:
         self.backend = backend
         self.search_path = search_path if search_path else self.get_default_plugin_paths()
         self.plugins = {}
-        self.plugin_list = config.get('plugins.enabled', [])
+        self.plugin_list = config.get('plugins.enabled')
         self.load_plugins(self.plugin_list)
 
     def get_default_plugin_paths(self):
