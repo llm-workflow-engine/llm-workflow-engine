@@ -31,7 +31,7 @@ def create_application(name, config=None, timeout=60, proxy=None):
                 Some response.
         """
         prompt = request.get_data().decode("utf-8")
-        result = chatgpt.ask(prompt)
+        success, result, user_message = chatgpt.ask(prompt)
         return result
 
     @app.route("/conversations/new", methods=["POST"])
