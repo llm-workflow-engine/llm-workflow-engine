@@ -62,7 +62,7 @@ class DatabaseDevel(Database):
         # Create Users
         for i in range(self.num_users):
             username = names.get_full_name().lower().replace(" ", ".")
-            password = 'password'
+            password = None
             email = f'{username}@example.com'
             user = self.orm.add_user(username, password, email)
             util.print_status_message(True, f"Created user: {user.username}", style="bold blue")
