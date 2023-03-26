@@ -7,7 +7,6 @@ import datetime
 import uuid
 import re
 import shutil
-import tempfile
 from typing import Optional
 from playwright.async_api import async_playwright
 from playwright._impl._api_structures import ProxySettings
@@ -41,7 +40,7 @@ class AsyncChatGPT(Backend):
         self.new_conversation()
 
     def get_primary_profile_directory(self):
-        primary_profile = os.path.join(tempfile.gettempdir(), "playwright")
+        primary_profile = os.path.join(self.config.data_profile_dir, "playwright")
         return primary_profile
 
     async def create(self, timeout=60, proxy: Optional[ProxySettings] = None):
