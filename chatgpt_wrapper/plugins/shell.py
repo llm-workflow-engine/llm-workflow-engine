@@ -22,7 +22,7 @@ The command must accomplish this task:
 
 %s
 
-Return ONLY the command, no other explanation or text.
+Return ONLY the command, no other explanation, words, code highlighting, or text.
 """ % (shell, command)
         return prompt
 
