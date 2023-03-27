@@ -7,6 +7,9 @@ import chatgpt_wrapper.core.util as util
 
 class Shell(Plugin):
 
+    def default_config(self):
+        return {}
+
     def setup(self):
         self.log.info(f"Setting up shell plugin, running with backend: {self.backend.name}")
 

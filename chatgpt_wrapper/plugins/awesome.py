@@ -7,13 +7,22 @@ import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.core.plugin import Plugin
 
-PROMPTS_URI = "https://github.com/f/awesome-chatgpt-prompts/raw/main/prompts.csv"
-PROMPTS_TEMP_FILE = "awesome-prompts.csv"
+DEFAULT_PROMPTS_URI = "https://github.com/f/awesome-chatgpt-prompts/raw/main/prompts.csv"
+DEFAULT_PROMPTS_TEMP_FILENAME = "awesome-prompts.csv"
 
 class Awesome(Plugin):
 
+    def default_config(self):
+        return {
+            'prompts': {
+                'uri': DEFAULT_PROMPTS_URI,
+                'temp_filename': DEFAULT_PROMPTS_TEMP_FILENAME,
+            }
+        }
+
     def setup(self):
-        self.prompts_uri = PROMPTS_URI
+        self.prompts_uri = self.config.get('plugins.awesome.prompts.uri')
+        self.prompts_temp_filename = self.config.get('plugins.awesome.prompts.temp_filename')
         self.make_prompts_temp_file()
         self.reset_prompts()
         self.load_prompts()
@@ -57,7 +66,7 @@ class Awesome(Plugin):
         self.loaded_prompts = {}
 
     def make_prompts_temp_file(self):
-        self.prompts_temp_file = os.path.join(tempfile.gettempdir(), PROMPTS_TEMP_FILE)
+        self.prompts_temp_file = os.path.join(tempfile.gettempdir(), self.prompts_temp_filename)
         self.log.debug(f"Created prompts temp file: {self.prompts_temp_file}")
 
     def list_prompts(self):

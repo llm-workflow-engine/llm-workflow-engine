@@ -33,6 +33,14 @@ class PluginManager:
             else:
                 self.log.error(f"Plugin {plugin_name} not found in search path")
 
+    def merge_plugin_config(self, plugin_instance):
+        config_key = f"plugins.{plugin_instance.name}"
+        default_config = plugin_instance.default_config()
+        user_config = self.config.get(config_key) or {}
+        self.log.debug(f"Merging plugin {config_key} config, default: {default_config}, user: {user_config}")
+        plugin_config = util.merge_dicts(default_config, user_config)
+        self.config.set(config_key, plugin_config)
+
     def load_plugin(self, plugin_name):
         for path in self.search_path:
             plugin_file = os.path.join(path, plugin_name + '.py')
@@ -46,7 +54,9 @@ class PluginManager:
                     plugin_class_name = plugin_name.capitalize()
                     plugin_class = getattr(module, plugin_class_name)
                     plugin_instance = plugin_class(self.config)
+                    plugin_instance.set_name(plugin_name)
                     plugin_instance.set_backend(self.backend)
+                    self.merge_plugin_config(plugin_instance)
                     plugin_instance.setup()
                     return plugin_instance
                 except Exception as e:

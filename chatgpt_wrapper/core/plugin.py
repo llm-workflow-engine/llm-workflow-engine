@@ -12,6 +12,13 @@ class PluginBase(ABC):
     def setup(self):
         pass
 
+    @abstractmethod
+    def default_config(self):
+        pass
+
+    def set_name(self, name):
+        self.name = name
+
     def set_backend(self, backend):
         self.backend = backend
 

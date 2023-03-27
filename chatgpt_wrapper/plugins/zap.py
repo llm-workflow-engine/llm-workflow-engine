@@ -7,6 +7,9 @@ from chatgpt_wrapper.core.plugin import Plugin
 
 class Zap(Plugin):
 
+    def default_config(self):
+        return {}
+
     def setup(self):
         self.log.info(f"Setting up zap plugin, running with backend: {self.backend.name}")
         self.llm = OpenAI(temperature=0)
