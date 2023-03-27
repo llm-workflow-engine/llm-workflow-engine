@@ -89,7 +89,7 @@ class Config:
                 if key in config:
                     config = config[key]
                 else:
-                    return self.get(keys, constants.DEFAULT_CONFIG)
+                    return None
         return config
 
     def set(self, keys, value, transform=True):
