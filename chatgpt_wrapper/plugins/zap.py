@@ -8,14 +8,19 @@ from chatgpt_wrapper.core.plugin import Plugin
 class Zap(Plugin):
 
     def default_config(self):
-        return {}
+        return {
+            'agent': {
+                'verbose': True,
+            },
+        }
 
     def setup(self):
         self.log.info(f"Setting up zap plugin, running with backend: {self.backend.name}")
         self.llm = OpenAI(temperature=0)
         self.zapier = ZapierNLAWrapper()
         self.toolkit = ZapierToolkit.from_zapier_nla_wrapper(self.zapier)
-        self.agent = initialize_agent(self.toolkit.get_tools(), self.llm, agent="zero-shot-react-description", verbose=True)
+        self.agent_verbose = self.config.get('plugins.zap.agent.verbose')
+        self.agent = initialize_agent(self.toolkit.get_tools(), self.llm, agent="zero-shot-react-description", verbose=self.agent_verbose)
 
     async def do_zap(self, arg):
         """
@@ -35,7 +40,7 @@ class Zap(Plugin):
         if not arg:
             return False, arg, "Command is required"
         try:
-            self.agent.run(arg)
+            result = self.agent.run(arg)
         except ValueError as e:
             return False, arg, e
-        return True, arg, "Zap run completed"
+        return True, arg, result
