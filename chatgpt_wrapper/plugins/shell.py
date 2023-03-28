@@ -2,6 +2,8 @@ import os
 import platform
 import subprocess
 
+from langchain.schema import HumanMessage, SystemMessage
+
 from chatgpt_wrapper.core.plugin import Plugin
 import chatgpt_wrapper.core.util as util
 
@@ -33,7 +35,13 @@ The command must accomplish this task:
 
 Return ONLY the command, no other explanation, words, code highlighting, or text.
 """ % (shell, command)
-        return prompt
+
+        messages = [
+            SystemMessage(content="You are a helpful assistant that is very good at writing shell commands who thinks step by step."),
+            HumanMessage(content=prompt),
+        ]
+        return messages
+
 
     def get_default_shell(self) -> str:
         """
@@ -59,12 +67,12 @@ Return ONLY the command, no other explanation, words, code highlighting, or text
         else:
             raise NotImplementedError(f"Default shell detection not implemented for {os_name}")
 
-    async def get_shell_command(self, prompt):
+    def get_shell_command(self, prompt):
         shell = self.shell_path or self.get_default_shell()
-        final_prompt = self.build_prompt_to_command_prompt(shell, prompt)
-        self.log.debug(f"Fetching shell command with prompt: {final_prompt}")
-        success, command, user_message = await self.backend.ask(final_prompt)
-        return success, command, user_message
+        messages = self.build_prompt_to_command_prompt(shell, prompt)
+        self.log.debug(f"Fetching shell command with prompt: {prompt}")
+        success, result, user_message = self.query_llm(messages)
+        return success, result, user_message
 
     def execute_command(self, command: str) -> tuple:
         """
@@ -120,9 +128,9 @@ Return ONLY the command, no other explanation, words, code highlighting, or text
         if not arg:
             return False, arg, "Argument is required"
         util.print_status_message(True, f"Fetching shell command for prompt: {arg}")
-        success, command, user_message = await self.get_shell_command(arg)
+        success, result, message = self.get_shell_command(arg)
         if not success:
-            return success, command, user_message
-        return_code, stdout, stderr = self.execute_command(command)
+            return success, result, message
+        return_code, stdout, stderr = self.execute_command(message)
         output = self.format_output(stdout, stderr)
         return return_code == 0, arg, output
