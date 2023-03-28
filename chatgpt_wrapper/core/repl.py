@@ -113,6 +113,8 @@ class Repl():
         commands_with_leader = {}
         for command in self.all_commands:
             commands_with_leader[util.command_with_leader(command)] = None
+        config_args = ['edit'] + list(self.config.get().keys())
+        commands_with_leader[util.command_with_leader('config')] = util.list_to_completion_hash(config_args)
         commands_with_leader[util.command_with_leader('help')] = util.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
             commands_with_leader[util.command_with_leader(command)] = PathCompleter()
@@ -1000,13 +1002,7 @@ class Repl():
         message = template.render(**substitutions)
         return await self.do_editor(message)
 
-    async def do_config(self, _):
-        """
-        Show the current configuration
-
-        Examples:
-            {COMMAND}
-        """
+    def show_full_config(self):
         output = """
 # Backend configuration: %s
 # File configuration
@@ -1031,6 +1027,40 @@ class Repl():
 """ % (self.config.get('backend'), self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
+
+    def show_section_config(self, section, section_data):
+        config_data = yaml.dump(section_data, default_flow_style=False) if isinstance(section_data, dict) else section_data
+        output = """
+# Configuration section '%s':
+
+```
+%s
+```
+""" % (section, config_data)
+        util.print_markdown(output)
+
+    async def do_config(self, arg):
+        """
+        Show or edit the current configuration
+
+        Examples:
+            Show all: {COMMAND}
+            Show section: {COMMAND} backend
+            Edit config: {COMMAND} edit
+        """
+        if arg:
+            if arg == 'edit':
+                file_editor(self.config.config_file)
+                self.rebuild_completions()
+                return False, None, "Restart ChatGPT to apply changes"
+            else:
+                section_data = self.config.get(arg)
+                if section_data:
+                    return self.show_section_config(arg, section_data)
+                else:
+                    return False, arg, f"Configuration section {arg} does not exist"
+        else:
+            self.show_full_config()
 
     async def do_exit(self, _):
         """
