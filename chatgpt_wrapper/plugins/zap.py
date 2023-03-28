@@ -1,4 +1,3 @@
-from langchain.llms import OpenAI
 from langchain.agents import initialize_agent
 from langchain.agents.agent_toolkits import ZapierToolkit
 from langchain.utilities.zapier import ZapierNLAWrapper
@@ -16,11 +15,9 @@ class Zap(Plugin):
 
     def setup(self):
         self.log.info(f"Setting up zap plugin, running with backend: {self.backend.name}")
-        self.llm = OpenAI(temperature=0)
         self.zapier = ZapierNLAWrapper()
         self.toolkit = ZapierToolkit.from_zapier_nla_wrapper(self.zapier)
         self.agent_verbose = self.config.get('plugins.zap.agent.verbose')
-        self.agent = initialize_agent(self.toolkit.get_tools(), self.llm, agent="zero-shot-react-description", verbose=self.agent_verbose)
 
     async def do_zap(self, arg):
         """
@@ -40,7 +37,8 @@ class Zap(Plugin):
         if not arg:
             return False, arg, "Command is required"
         try:
-            result = self.agent.run(arg)
+            agent = initialize_agent(self.toolkit.get_tools(), self.make_llm(), agent="zero-shot-react-description", verbose=self.agent_verbose)
+            result = agent.run(arg)
         except ValueError as e:
             return False, arg, e
         return True, arg, result
