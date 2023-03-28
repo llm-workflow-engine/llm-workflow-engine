@@ -9,7 +9,6 @@ from prompt_toolkit.completion import PathCompleter
 
 from langchain.agents import create_json_agent
 from langchain.agents.agent_toolkits import JsonToolkit
-from langchain.llms.openai import OpenAI
 from langchain.tools.json.tool import JsonSpec
 
 from chatgpt_wrapper.core.plugin import Plugin
@@ -141,7 +140,6 @@ class DataQuery(Plugin):
     def setup(self):
         self.log.info(f"Setting up data query plugin, running with backend: {self.backend.name}")
         self.agent_verbose = self.config.get('plugins.database.agent.verbose')
-        self.llm = OpenAI(temperature=0)
         self.data_loader = DataLoader(self.config)
 
     def get_shell_completions(self, _base_shell_completions):
@@ -165,7 +163,7 @@ class DataQuery(Plugin):
         json_spec = JsonSpec(dict_=self.data, max_value_length=4000)
         json_toolkit = JsonToolkit(spec=json_spec)
         self.agent = create_json_agent(
-            llm=OpenAI(temperature=0),
+            llm=self.make_llm(),
             toolkit=json_toolkit,
             verbose=self.agent_verbose
         )

@@ -1,7 +1,6 @@
 from langchain.agents import create_sql_agent
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from langchain.sql_database import SQLDatabase
-from langchain.llms.openai import OpenAI
 
 from chatgpt_wrapper.core.plugin import Plugin
 import chatgpt_wrapper.core.util as util
@@ -24,7 +23,6 @@ class Database(Plugin):
         self.agent_verbose = self.config.get('plugins.database.agent.verbose')
         self.connection_string = None
         self.database = None
-        self.llm = OpenAI(temperature=0)
 
     def get_shell_completions(self, _base_shell_completions):
         commands = {}
@@ -37,7 +35,7 @@ class Database(Plugin):
         self.database = SQLDatabase.from_uri(self.connection_string)
         toolkit = SQLDatabaseToolkit(db=self.database)
         self.agent = create_sql_agent(
-            llm=self.llm,
+            llm=self.make_llm(),
             toolkit=toolkit,
             verbose=self.agent_verbose
         )
