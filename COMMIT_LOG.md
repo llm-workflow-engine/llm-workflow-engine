@@ -1,3 +1,23 @@
+### v0.7.2 - 28/03/2023
+
+* **Tue Mar 28 2023:** add support for .jsonl/.xml to data_query plugin
+* **Tue Mar 28 2023:** add config options to shell plugin
+* **Tue Mar 28 2023:** small logic improvements to database/data_query plugins
+* **Tue Mar 28 2023:** extend /config with edit/section args
+* **Mon Mar 27 2023:** add data_query plugin
+* **Mon Mar 27 2023:** more robust filename to class conversion
+* **Mon Mar 27 2023:** snake_to_class() util function
+* **Mon Mar 27 2023:** bump langchain required version
+* **Mon Mar 27 2023:** add database plugin
+* **Mon Mar 27 2023:** add agent:verbose config value to zap plugin
+* **Mon Mar 27 2023:** tighten up prompt template for generating shell commands
+* **Mon Mar 27 2023:** allow plugins/users to access configuration for plugins
+* **Mon Mar 27 2023:** return None on missing value in config.get()
+* **Sun Mar 26 2023:** add unit tests for util functions
+* **Sun Mar 26 2023:** reorg docs
+* **Sun Mar 26 2023:** convert to Pytest framework
+* **Sun Mar 26 2023:** fix SQLAlchemy deprecation warnings
+
 ### v0.7.1 - 26/03/2023
 
 * **Sun Mar 26 2023:** per profile playwright sessions for browser backend
