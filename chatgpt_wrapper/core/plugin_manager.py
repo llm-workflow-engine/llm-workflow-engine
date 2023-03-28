@@ -51,7 +51,7 @@ class PluginManager:
                     spec = importlib.util.spec_from_file_location(plugin_name, plugin_file)
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
-                    plugin_class_name = plugin_name.capitalize()
+                    plugin_class_name = util.snake_to_class(plugin_name)
                     plugin_class = getattr(module, plugin_class_name)
                     plugin_instance = plugin_class(self.config)
                     plugin_instance.set_name(plugin_name)
