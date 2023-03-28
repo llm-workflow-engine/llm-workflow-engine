@@ -8,10 +8,19 @@ import chatgpt_wrapper.core.util as util
 class Shell(Plugin):
 
     def default_config(self):
-        return {}
+        return {
+            'command': {
+                'confirm': True,
+            },
+            'shell': {
+                'path': None,
+            },
+        }
 
     def setup(self):
         self.log.info(f"Setting up shell plugin, running with backend: {self.backend.name}")
+        self.confirm_command = self.config.get('plugins.shell.command.confirm')
+        self.shell_path = self.config.get('plugins.shell.shell.path')
 
     def build_prompt_to_command_prompt(self, shell, command):
         shell = shell.strip()
@@ -51,7 +60,7 @@ Return ONLY the command, no other explanation, words, code highlighting, or text
             raise NotImplementedError(f"Default shell detection not implemented for {os_name}")
 
     async def get_shell_command(self, prompt):
-        shell = self.get_default_shell()
+        shell = self.shell_path or self.get_default_shell()
         final_prompt = self.build_prompt_to_command_prompt(shell, prompt)
         self.log.debug(f"Fetching shell command with prompt: {final_prompt}")
         success, command, user_message = await self.backend.ask(final_prompt)
@@ -68,8 +77,12 @@ Return ONLY the command, no other explanation, words, code highlighting, or text
         """
 
         print(f"Command: {command}")
-        confirmation = input("Do you want to execute this command? (y|yes / n|no) ")
-        if confirmation.lower() in ("y", "yes"):
+        if self.confirm_command:
+            confirmation = input("Do you want to execute this command? (y|yes / n|no) ")
+            confirmed = confirmation.lower() in ("y", "yes")
+        else:
+            confirmed = True
+        if confirmed:
             shell = self.get_default_shell()
             self.log.debug(f"Executing shell command in shell '{shell}': {command}")
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, executable=shell)
