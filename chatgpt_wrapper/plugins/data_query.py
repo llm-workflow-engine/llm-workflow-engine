@@ -1,9 +1,10 @@
+import os
 import csv
 import json
 import yaml
 import configparser
 import openpyxl
-import os
+import xml.etree.ElementTree as ET
 from prompt_toolkit.completion import PathCompleter
 
 from langchain.agents import create_json_agent
@@ -31,6 +32,8 @@ class DataLoader:
             return self.load_excel()
         elif self.file_extension == '.json':
             return self.load_json()
+        elif self.file_extension == '.jsonl':
+            return self.load_jsonl()
         elif self.file_extension == '.yaml':
             return self.load_yaml()
         elif self.file_extension == '.ini':
@@ -38,9 +41,7 @@ class DataLoader:
         elif self.file_extension == '.geojson':
             return self.load_geojson()
         elif self.file_extension == '.xml':
-            return False, None, "XML loading not supported."
-        elif self.file_extension == '.sql':
-            return False, None, "SQL loading not supported."
+            return self.load_xml()
         else:
             return False, None, "Unsupported file format."
 
@@ -74,6 +75,16 @@ class DataLoader:
         except Exception as e:
             return False, None, f"Error loading JSON file: {e}"
 
+    def load_jsonl(self):
+        try:
+            data = []
+            with open(self.filepath, 'r', encoding='utf-8') as jsonlfile:
+                for line in jsonlfile:
+                    data.append(json.loads(line))
+            return True, data, "JSONL file loaded successfully."
+        except Exception as e:
+            return False, None, f"Error loading JSONL file: {e}"
+
     def load_yaml(self):
         try:
             with open(self.filepath, 'r', encoding='utf-8') as yamlfile:
@@ -93,6 +104,30 @@ class DataLoader:
 
     def load_geojson(self):
         return self.load_json()  # GeoJSON is a subset of JSON
+
+    def load_xml(self):
+        try:
+            tree = ET.parse(self.filepath)
+            root = tree.getroot()
+
+            def xml_to_dict(node):
+                if len(node) == 0:
+                    return node.text if node.text else None
+                result = {}
+                for child in node:
+                    key = child.tag
+                    value = xml_to_dict(child)
+                    if key in result:
+                        if not isinstance(result[key], list):
+                            result[key] = [result[key]]
+                        result[key].append(value)
+                    else:
+                        result[key] = value
+                return result
+            data = xml_to_dict(root)
+            return True, data, "XML file loaded successfully."
+        except Exception as e:
+            return False, None, f"Error loading XML file: {e}"
 
 class DataQuery(Plugin):
 
@@ -119,11 +154,15 @@ class DataQuery(Plugin):
         success, data, user_message = self.data_loader.load(self.filepath)
         if success:
             self.data = data
+            # JsonSpec doesn't seem to allow a list at the top level,
+            # so wrap lists in a simple 'data' dict.
+            if isinstance(self.data, list):
+                self.data = {'data': self.data}
             self.log.debug(user_message)
         else:
             self.log.error(user_message)
-            return success, data, user_message
-        json_spec = JsonSpec(dict_=data, max_value_length=4000)
+            return success, self.data, user_message
+        json_spec = JsonSpec(dict_=self.data, max_value_length=4000)
         json_toolkit = JsonToolkit(spec=json_spec)
         self.agent = create_json_agent(
             llm=OpenAI(temperature=0),
@@ -146,7 +185,9 @@ class DataQuery(Plugin):
             .geojson: GeoJSON
             .ini: INI
             .json: JSON
+            .jsonl: JSONL
             .xls/xlsx: Excel
+            .xml: XML
             .yaml: YAML
 
         Caveats:
