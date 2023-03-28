@@ -42,6 +42,11 @@ class Database(Plugin):
             verbose=self.agent_verbose
         )
 
+    def disconnect(self):
+        self.connection_string = None
+        self.database = None
+        self.agent = None
+
     async def do_database(self, arg):
         """
         Send natural language commands to a database
@@ -72,10 +77,10 @@ class Database(Plugin):
             # TODO: Error handling on failed connect.
             return True, None, f"Database {self.connection_string} connected"
         if args[0] == 'disconnect':
-            return True, None, f"Database {self.connection_string} disconnected"
-            self.connection_string = None
-            self.database = None
-        if not self.database:
+            connection_string = self.connection_string
+            self.disconnect()
+            return True, None, f"Database {connection_string} disconnected"
+        if not self.agent:
             return False, None, "No database connected"
         try:
             result = self.agent.run(arg)

@@ -175,9 +175,10 @@ class DataQuery(Plugin):
             else:
                 return False, None, "File path is required"
         if args[0] == 'unload':
-            return True, None, f"File {self.filepath} unloaded"
+            filepath = self.filepath
             self.unload()
-        if not self.data:
+            return True, None, f"File {filepath} unloaded"
+        if not self.agent:
             return False, None, "No file loaded"
         try:
             result = self.agent.run(arg)
