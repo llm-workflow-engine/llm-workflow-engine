@@ -28,7 +28,7 @@ class DataLoader:
         self.file_extension = os.path.splitext(self.filepath)[1].lower()
         if self.file_extension == '.csv':
             return self.load_csv()
-        elif self.file_extension in ['.xls', '.xlsx']:
+        elif self.file_extension in ['.xlsx']:
             return self.load_excel()
         elif self.file_extension == '.json':
             return self.load_json()
@@ -186,7 +186,7 @@ class DataQuery(Plugin):
             .ini: INI
             .json: JSON
             .jsonl: JSONL
-            .xls/xlsx: Excel
+            .xlsx: Excel
             .xml: XML
             .yaml: YAML
 
