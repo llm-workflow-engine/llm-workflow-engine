@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import tempfile
 import platform
@@ -185,3 +186,14 @@ def get_package_root(obj):
 def snake_to_class(string):
     parts = string.split('_')
     return ''.join(word.title() for word in parts)
+
+def remove_and_create_dir(directory_path):
+    if os.path.exists(directory_path):
+        shutil.rmtree(directory_path)
+    os.makedirs(directory_path)
+
+def create_file(directory, filename, content=None):
+    file_path = os.path.join(directory, filename)
+    with open(file_path, 'w') as file:
+        if content:
+            file.write(content)
