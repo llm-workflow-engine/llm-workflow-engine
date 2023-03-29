@@ -8,6 +8,7 @@ What would you like to do?
 * [Install the wrapper](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
+* [Reference of CLI commands](#cliref)
 * [Troubleshoot common issues](#troubleshooting)
 * [Upgrade the wrapper](#upgrading)
 * [Using GPT4](#gpt4)
@@ -333,6 +334,37 @@ Once the interactive shell is running, you can see a list of all commands with:
 ```
 /help <command>
 ```
+
+
+## <a name="cliref"></a>Reference of CLI commands
+
+
+### /new
+
+Start a new conversation with the ChatGPT model. Each conversation is identified by an integer, starting from 1 and incrementing with each new conversation. Upon entering `/new`, the user is entered into the new conversation.
+
+
+### /ask
+
+Ask a question to ChatGPT within the current conversation. The user is prompted for input to be sent to the model. You need first call /new
+
+
+### /title 
+
+Allocates a title to the conversation that you are in.
+
+
+#### Example:
+
+```
+/title testing chatgpt
+
+```
+
+You need to be inside a conversation before change it title
+
+
+
 
 ### Python
 
