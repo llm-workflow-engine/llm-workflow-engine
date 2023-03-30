@@ -20,6 +20,14 @@ class Backend(ABC):
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model'))
 
+    @property
+    @abstractmethod
+    def llm_class(self):
+        pass
+
+    def set_llm_class(self, klass):
+        self.llm_class = klass
+
     def set_active_model(self, model=None):
         if model is None:
             self.model = None
@@ -50,7 +58,11 @@ class Backend(ABC):
 
     @abstractmethod
     def set_available_models(self):
-        raise NotImplementedError
+        pass
+
+    @abstractmethod
+    def set_llm_class(self):
+        pass
 
     @abstractmethod
     def conversation_data_to_messages(self, conversation_data):

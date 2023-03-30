@@ -30,12 +30,57 @@ class ChatGPT(Backend):
 
     def __init__(self, config=None):
         super().__init__(config)
+        self.llm_class = self._make_llm_class(self)
         self.play = None
         self.user_data_dir = None
         self.page = None
         self.browser = None
         self.session = None
         self.new_conversation()
+
+    def _make_llm_class(chatgpt):
+        class ChatGPTLLM(LLM):
+            def __init__(self):
+                self.chatgpt = chatgpt
+
+            def _call(self):
+                return self.chatgpt.ask()
+
+            async def _agenerate(
+                self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+            ) -> ChatResult:
+                message_dicts, params = self._create_message_dicts(messages, stop)
+                if self.streaming:
+                    inner_completion = ""
+                    role = "assistant"
+                    params["stream"] = True
+                    async for stream_resp in await acompletion_with_retry(
+                        self, messages=message_dicts, **params
+                    ):
+                        role = stream_resp["choices"][0]["delta"].get("role", role)
+                        token = stream_resp["choices"][0]["delta"].get("content", "")
+                        inner_completion += token
+                        if self.callback_manager.is_async:
+                            await self.callback_manager.on_llm_new_token(
+                                token,
+                                verbose=self.verbose,
+                            )
+                        else:
+                            self.callback_manager.on_llm_new_token(
+                                token,
+                                verbose=self.verbose,
+                            )
+                    message = _convert_dict_to_message(
+                        {"content": inner_completion, "role": role}
+                    )
+                    return ChatResult(generations=[ChatGeneration(message=message)])
+                else:
+                    response = await acompletion_with_retry(
+                        self, messages=message_dicts, **params
+                    )
+                    return self._create_chat_result(response)
+
+        return ChatGPTLLM
 
     def get_primary_profile_directory(self):
         primary_profile = os.path.join(self.config.data_profile_dir, "playwright")

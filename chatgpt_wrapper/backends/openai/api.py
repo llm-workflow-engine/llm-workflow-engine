@@ -5,6 +5,8 @@ import tiktoken
 
 from openai.error import OpenAIError
 
+from langchain.chat_models import ChatOpenAI
+
 from chatgpt_wrapper.core.backend import Backend
 import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
@@ -16,6 +18,7 @@ class OpenAIAPI(Backend):
     def __init__(self, config=None, default_user_id=None):
         super().__init__(config)
         self._configure_access_info()
+        self.llm_class = ChatOpenAI
         self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
