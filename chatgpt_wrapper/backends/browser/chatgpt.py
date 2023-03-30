@@ -465,7 +465,7 @@ class AsyncChatGPT(Backend):
 
             if full_event_message is not None:
                 chunk = full_event_message[len(last_event_msg):]
-                last_event_msg = full_event_message
+                self.message_clipboard = last_event_msg = full_event_message
                 yield chunk
 
             # if we saw the eof signal, this was the last event we

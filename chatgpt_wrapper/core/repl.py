@@ -6,6 +6,7 @@ import sys
 import shutil
 import signal
 import frontmatter
+import pyperclip
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -369,6 +370,19 @@ class Repl():
                 return False, None, result
         else:
             await self._delete_current_conversation()
+
+    async def do_copy(self, _):
+        """
+        Copy last conversation message to clipboard
+
+        Examples:
+            {COMMAND}
+        """
+        clipboard = self.backend.message_clipboard
+        if clipboard:
+            pyperclip.copy(clipboard)
+            return True, clipboard, "Copied last message to clipboard"
+        return False, None, "No message to copy"
 
     async def do_history(self, arg):
         """

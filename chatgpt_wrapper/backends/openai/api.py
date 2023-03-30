@@ -374,6 +374,7 @@ class AsyncOpenAIAPI(Backend):
                         self.log.debug(f"Stopped streaming response at {response['created']}, cause: {response['choices'][0]['finish_reason']}")
                     elif 'content' in delta:
                         response_message += delta['content']
+                        self.message_clipboard = response_message
                         yield delta['content']
         if not self.streaming:
             yield (
@@ -398,6 +399,7 @@ class AsyncOpenAIAPI(Backend):
         success, completion, message = await self._call_openai_non_streaming(messages, **model_customizations)
         if success:
             response_message = self._extract_completion_content(completion)
+            self.message_clipboard = response_message
             success, conversation, message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
             if success:
                 return self._handle_response(success, response_message, message)

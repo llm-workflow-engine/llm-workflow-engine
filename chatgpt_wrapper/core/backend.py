@@ -15,6 +15,7 @@ class Backend(ABC):
         self.parent_message_id = None
         self.conversation_id = None
         self.conversation_title_set = None
+        self.message_clipboard = None
         self.streaming = False
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model'))
@@ -29,6 +30,7 @@ class Backend(ABC):
         self.parent_message_id = None
         self.conversation_id = None
         self.conversation_title_set = None
+        self.message_clipboard = None
 
     def terminate_stream(self, _signal, _frame):
         self.log.info("Received signal to terminate stream")
