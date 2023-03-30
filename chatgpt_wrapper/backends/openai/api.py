@@ -205,7 +205,7 @@ class AsyncOpenAIAPI(Backend):
         messages.extend(new_messages)
         return messages
 
-    def create_new_converation_if_needed(self, conversation_id=None, title=None):
+    def create_new_conversation_if_needed(self, conversation_id=None, title=None):
         conversation_id = conversation_id or self.conversation_id
         if conversation_id:
             success, conversation, message = self.conversation.get_conversation(conversation_id)
@@ -219,7 +219,7 @@ class AsyncOpenAIAPI(Backend):
         return conversation
 
     def add_new_messages_to_conversation(self, conversation_id, new_messages, response_message, title=None):
-        conversation = self.create_new_converation_if_needed(conversation_id, title)
+        conversation = self.create_new_conversation_if_needed(conversation_id, title)
         for m in new_messages:
             success, message, user_message = self.message.add_message(conversation.id, m['role'], m['content'])
             if not success:
