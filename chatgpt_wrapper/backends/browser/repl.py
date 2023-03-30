@@ -13,7 +13,7 @@ class BrowserRepl(Repl):
     async def configure_backend(self):
         self.backend = AsyncChatGPT(self.config)
 
-    async def launch_backend(self):
+    async def launch_backend(self, interactive=True):
         await self.backend.create(timeout=90)
 
     async def do_session(self, _):

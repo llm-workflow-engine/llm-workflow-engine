@@ -156,11 +156,13 @@ async def async_main():
         await shell.do_config("")
         exit(0)
 
-    await shell.launch_backend()
 
     if len(args.params) > 0 and not command:
+        await shell.launch_backend(interactive=False)
         await shell.default(" ".join(args.params))
         exit(0)
+    else:
+        await shell.launch_backend()
 
     await shell.cmdloop()
     await shell.cleanup()

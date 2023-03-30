@@ -252,7 +252,7 @@ class Repl():
     async def configure_backend():
         raise NotImplementedError
 
-    async def launch_backend():
+    async def launch_backend(self, interactive=True):
         raise NotImplementedError
 
     async def setup(self):

@@ -67,8 +67,9 @@ class ApiRepl(Repl):
         self.user_management = UserManager(self.config)
         self.session = self.user_management.orm.session
 
-    async def launch_backend(self):
-        await self.check_login()
+    async def launch_backend(self, interactive=True):
+        if interactive:
+            await self.check_login()
 
     def get_user(self, user_id):
         user = self.session.get(User, user_id)
