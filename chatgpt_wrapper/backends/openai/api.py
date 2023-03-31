@@ -445,9 +445,12 @@ class OpenAIAPI:
 
     def ask(self, message, title=None):
         return self.async_run(self.async_openai_api.ask(message, title=title))
-
+    
     def get_conversation(self, id=None):
         return self.async_run(self.async_openai_api.get_conversation(id))
+    
+    def new_conversation(self)
+        return self.async_openai_api.new_converstaion()
 
     def delete_conversation(self, id=None):
         return self.async_run(self.async_openai_api.delete_conversation(id))
