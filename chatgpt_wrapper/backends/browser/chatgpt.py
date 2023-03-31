@@ -568,6 +568,9 @@ class ChatGPT:
     def get_conversation(self, uuid=None):
         return self.async_run(self.agpt.get_conversation(uuid))
 
+    def new_conversation(self):
+        return self.agpt.new_conversation()
+
     def delete_conversation(self, uuid=None):
         return self.async_run(self.agpt.delete_conversation(uuid))
 
