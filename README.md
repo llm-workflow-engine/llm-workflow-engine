@@ -500,6 +500,7 @@ success, response, message = bot.ask("Hello, world!")
 - [ChatGPT Reddit Bot](https://github.com/PopDaddyGames/ChatGPT-RedditBot)
 - [Smarty GPT](https://github.com/citiususc/Smarty-GPT/tree/v1.1.0)
 - [ChatGPTify](https://github.com/idilsulo/ChatGPTify)
+- [selection-to-chatgpt](https://github.com/collin-murphy/selection-to-chatgpt)
 
 ## Contributing
 
