@@ -38,10 +38,10 @@ document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER +
 
 class Repl():
     """
-    A shell interpreter that serves as a front end to the ChatGPT class
+    A shell interpreter that serves as a front end to the backend classes
     """
 
-    intro = "Provide a prompt for ChatGPT, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
+    intro = "Provide a prompt, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
     prompt = "> "
     prompt_prefix = ""
     doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
@@ -308,7 +308,7 @@ class Repl():
         """
         Toggle streaming mode
 
-        Streaming mode: streams the raw response from ChatGPT (no markdown rendering)
+        Streaming mode: streams the raw response (no markdown rendering)
         Non-streaming mode: Returns full response at completion (markdown rendering supported).
 
         Examples:
@@ -482,15 +482,21 @@ class Repl():
             Set conversation title using history ID: {COMMAND} 1
         """
         if arg:
-            success, conversations, message = self._fetch_history()
+            id = None
+            try:
+                id = int(arg)
+            except Exception:
+                pass
+            kwargs = {}
+            if id:
+                # TODO: History on browser backend is sometimes returning a few less items than asked for,
+                # pad it for now.
+                kwargs['limit'] = id + 5
+                # kwargs['limit'] = id
+            success, conversations, message = self._fetch_history(**kwargs)
             if success:
                 history_list = [c for c in conversations.values()]
                 conversation = None
-                id = None
-                try:
-                    id = int(arg)
-                except Exception:
-                    pass
                 if id:
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
@@ -498,13 +504,17 @@ class Repl():
                         return False, conversations, "Cannot set title on history item %d, does not exist" % id
                     new_title = input("Enter new title for '%s': " % conversation["title"] or constants.NO_TITLE_TEXT)
                 else:
-                    if self.backend.conversation_id in conversations:
-                        conversation = conversations[self.backend.conversation_id]
+                    if self.backend.conversation_id:
+                        if self.backend.conversation_id in conversations:
+                            conversation = conversations[self.backend.conversation_id]
+                        else:
+                            success, conversation_data, message = self.backend.get_conversation(self.backend.conversation_id)
+                            if not success:
+                                return success, conversation_data, message
+                            conversation = conversation_data['conversation']
+                        new_title = arg
                     else:
-                        success, conversation, message = self.backend.get_conversation(self.backend.conversation_id)
-                        if not success:
-                            return success, conversations, message
-                    new_title = arg
+                        return False, None, "Current conversation has no title, you must send information first"
                 # Browser backend doesn't return a full conversation object,
                 # so adjust and re-use the current one.
                 conversation['title'] = new_title
@@ -513,14 +523,11 @@ class Repl():
                 return success, conversations, message
         else:
             if self.backend.conversation_id:
-                success, conversations, message = self._fetch_history()
+                success, conversation_data, message = self.backend.get_conversation()
                 if success:
-                    if self.backend.conversation_id in conversations:
-                        util.print_markdown("* Title: %s" % conversations[self.backend.conversation_id]['title'] or constants.NO_TITLE_TEXT)
-                    else:
-                        return False, conversations, "Cannot load conversation title, not in history"
+                    util.print_markdown("* Title: %s" % conversation_data['conversation']['title'] or constants.NO_TITLE_TEXT)
                 else:
-                    return success, conversations, message
+                    return success, conversation_data, message
             else:
                 return False, None, "Current conversation has no title, you must send information first"
 
@@ -547,14 +554,20 @@ class Repl():
                 conversation_id = arg
                 title = arg
             else:
-                success, conversations, message = self._fetch_history()
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    return False, None, f"Invalid chat history item {arg}, must be in integer"
+                kwargs = {}
+                if id:
+                    # TODO: History on browser backend is sometimes returning a few less items than asked for,
+                    # pad it for now.
+                    kwargs['limit'] = id + 5
+                    # kwargs['limit'] = id
+                success, conversations, message = self._fetch_history(**kwargs)
                 if success:
                     history_list = [h for h in conversations.values()]
-                    id = None
-                    try:
-                        id = int(arg)
-                    except Exception:
-                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
                         title = conversation["title"] or constants.NO_TITLE_TEXT
@@ -602,14 +615,20 @@ class Repl():
                 conversation_id = arg
                 title = arg
             else:
-                success, conversations, message = self._fetch_history()
+                id = None
+                try:
+                    id = int(arg)
+                except Exception:
+                    return False, None, f"Invalid chat history item {arg}, must be in integer"
+                kwargs = {}
+                if id:
+                    # TODO: History on browser backend is sometimes returning a few less items than asked for,
+                    # pad it for now.
+                    kwargs['limit'] = id + 5
+                    # kwargs['limit'] = id
+                success, conversations, message = self._fetch_history(**kwargs)
                 if success:
                     history_list = [c for c in conversations.values()]
-                    id = None
-                    try:
-                        id = int(arg)
-                    except Exception:
-                        return False, conversations, f"Invalid chat history item {id}, must be in integer"
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
                         title = conversation["title"] or constants.NO_TITLE_TEXT
@@ -640,7 +659,7 @@ class Repl():
 
     def do_ask(self, line):
         """
-        Ask a question to ChatGPT
+        Ask a question
 
         It is purely optional.
 
@@ -682,7 +701,7 @@ class Repl():
         """
         Begin reading multi-line input
 
-        Allows for entering more complex multi-line input prior to sending it to ChatGPT.
+        Allows for entering more complex multi-line input prior to sending it.
 
         Examples:
             {COMMAND}
@@ -708,7 +727,7 @@ class Repl():
         """
         Open an editor for entering a command
 
-        When the editor is closed, the content is sent to ChatGPT.
+        When the editor is closed, the content is sent.
 
         Arguments:
             default_text: The default text to open the editor with
@@ -1068,7 +1087,7 @@ class Repl():
             if arg == 'edit':
                 file_editor(self.config.config_file)
                 self.rebuild_completions()
-                return False, None, "Restart ChatGPT to apply changes"
+                return False, None, "Restart to apply changes"
             else:
                 section_data = self.config.get(arg)
                 if section_data:
@@ -1080,7 +1099,7 @@ class Repl():
 
     def do_exit(self, _):
         """
-        Exit the ChatGPT shell
+        Exit the shell
 
         Examples:
             {COMMAND}
@@ -1089,7 +1108,7 @@ class Repl():
 
     def do_quit(self, _):
         """
-        Exit the ChatGPT shell
+        Exit the shell
 
         Examples:
             {COMMAND}
