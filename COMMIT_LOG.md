@@ -1,3 +1,32 @@
+### v0.8.0 - 01/04/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+* All async functionality has been removed
+  * Async functionality was determined to be overly complex and buggy for the common use cases in this project.
+  * If you were using any async Python modules, switch to their sync version, and consider implementing your own async wrapper or using multithreading if necessary.
+* Browser backend and ChatGPT module usage have been deprecated
+  * No support will be provided for ChatGPT module usage
+  * API backend is now the default
+  * Browser backend will remain for now, but may be removed in a future release
+
+#### Commit log
+
+* **Sat Apr 01 2023:** tweak config instructions
+* **Sat Apr 01 2023:** update docker entrypoint instructions
+* **Sat Apr 01 2023:** deprecate browser backend, ChatGPT module usage, default to API backend
+* **Sat Apr 01 2023:** make conversation_data_to_messages() consistent in browser backend
+* **Sat Apr 01 2023:** fix set_title(), cleanup get_history() on API backend
+* **Sat Apr 01 2023:** add helper func to convert SQLAlchemy objects to plain dicts
+* **Sat Apr 01 2023:** dynamically fetch history for older chats on switch/chat/title
+* **Fri Mar 31 2023:** completely rip out all async functionality
+* **Fri Mar 31 2023:** Add new_conversation to ChatGPT
+* **Thu Mar 30 2023:** add interactive arg to launch_backend(), fixes #265
+* **Thu Mar 30 2023:** add /copy command, fixes #264
+* **Wed Mar 29 2023:** fix broken template tests
+* **Wed Mar 29 2023:** add file/directory util functions
+* **Tue Mar 28 2023:** add LLM base methods for plugins to leverage
+
 ### v0.7.2 - 28/03/2023
 
 * **Tue Mar 28 2023:** add support for .jsonl/.xml to data_query plugin
