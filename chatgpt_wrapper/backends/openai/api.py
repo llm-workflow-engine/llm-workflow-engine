@@ -279,15 +279,16 @@ class OpenAIAPI(Backend):
         success, conversation, message = self.conversation.delete_conversation(conversation_id)
         return self._handle_response(success, conversation, message)
 
-    def set_title(self, title, conversation=None):
-        conversation = conversation if conversation else self.conversation.get_conversation(self.conversation_id)
-        success, conversation, message = self.conversation.edit_conversation_title(conversation, title)
-        return self._handle_response(success, conversation, message)
+    def set_title(self, title, conversation_id=None):
+        conversation_id = conversation_id if conversation_id else self.conversation_id
+        success, conversation, user_message = self.conversation.edit_conversation_title(conversation_id, title)
+        return self._handle_response(success, conversation, user_message)
 
-    def get_history(self, limit=20, offset=0):
-        success, conversations, message = self.conversation.get_conversations(self.current_user.id, limit=limit, offset=offset)
+    def get_history(self, limit=20, offset=0, user_id=None):
+        user_id = user_id if user_id else self.current_user.id
+        success, conversations, message = self.conversation.get_conversations(user_id, limit=limit, offset=offset)
         if success:
-            history = {m.id: vars(m) for m in conversations}
+            history = {m.id: self.conversation.orm.object_as_dict(m) for m in conversations}
             return success, history, message
         return self._handle_response(success, conversations, message)
 
@@ -298,8 +299,8 @@ class OpenAIAPI(Backend):
             success, messages, message = self.message.get_messages(id)
             if success:
                 conversation_data = {
-                    "conversation": vars(conversation),
-                    "messages": [vars(m) for m in messages],
+                    "conversation": self.conversation.orm.object_as_dict(conversation),
+                    "messages": [self.conversation.orm.object_as_dict(m) for m in messages],
                 }
                 return success, conversation_data, message
         return self._handle_response(success, conversation, message)
