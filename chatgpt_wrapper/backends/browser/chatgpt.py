@@ -247,7 +247,7 @@ class ChatGPT(Backend):
             self.log.warning("Failed to auto-generate title for new conversation")
 
     def conversation_data_to_messages(self, conversation_data):
-        mapping_dict = conversation_data['mapping'].values()
+        mapping_dict = conversation_data['messages'].values()
         messages = []
         parent_nodes = [item for item in mapping_dict if 'parent' not in item]
         mapping_dict = [item for item in mapping_dict if 'parent' in item]
@@ -326,8 +326,17 @@ class ChatGPT(Backend):
             url = f"https://chat.openai.com/backend-api/conversation/{uuid}"
             ok, json, response = self._api_get_request(url)
             if ok:
-                json['id'] = uuid
-                return ok, json, response
+                conversation_data = {
+                    'conversation': {
+                        'id': uuid,
+                        'title': json['title'],
+                        'created_time': datetime.datetime.fromtimestamp(int(json['create_time'])),
+                        'update_time': datetime.datetime.fromtimestamp(int(json['update_time'])),
+                        'current_node': json['current_node'],
+                    },
+                    'messages': json['mapping'],
+                }
+                return ok, conversation_data, response
             else:
                 return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
