@@ -1,20 +1,15 @@
 import argparse
 import os
 import sys
-import asyncio
 
 from chatgpt_wrapper.version import __version__
 import chatgpt_wrapper.core.constants as constants
 from chatgpt_wrapper.core.config import Config
-from chatgpt_wrapper.backends.browser.chatgpt import AsyncChatGPT
+from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
 from chatgpt_wrapper.backends.browser.repl import BrowserRepl
 from chatgpt_wrapper.backends.openai.repl import ApiRepl
 
 def main():
-    asyncio.run(async_main())
-
-
-async def async_main():
 
     dummy_config = Config()
     parser = argparse.ArgumentParser()
@@ -129,7 +124,7 @@ async def async_main():
     if backend == 'chatgpt-browser':
         if command == 'reinstall':
             print('Reinstalling...')
-            temp_backend = AsyncChatGPT(config)
+            temp_backend = ChatGPT(config)
             temp_backend.destroy_primary_profile()
             del temp_backend
         if command in ['install', 'reinstall']:
@@ -150,22 +145,22 @@ async def async_main():
         shell = ApiRepl(config)
     else:
         raise RuntimeError(f"Unknown backend: {backend}")
-    await shell.setup()
+    shell.setup()
 
     if command == 'config':
-        await shell.do_config("")
+        shell.do_config("")
         exit(0)
 
 
     if len(args.params) > 0 and not command:
-        await shell.launch_backend(interactive=False)
-        await shell.default(" ".join(args.params))
+        shell.launch_backend(interactive=False)
+        shell.default(" ".join(args.params))
         exit(0)
     else:
-        await shell.launch_backend()
+        shell.launch_backend()
 
-    await shell.cmdloop()
-    await shell.cleanup()
+    shell.cmdloop()
+    shell.cleanup()
 
 if __name__ == "__main__":
     main()

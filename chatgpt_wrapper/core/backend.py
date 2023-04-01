@@ -57,25 +57,25 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    async def delete_conversation(self, uuid=None):
+    def delete_conversation(self, uuid=None):
         pass
 
     @abstractmethod
-    async def set_title(self, title, conversation_id=None):
+    def set_title(self, title, conversation_id=None):
         pass
 
     @abstractmethod
-    async def get_history(self, limit=20, offset=0):
+    def get_history(self, limit=20, offset=0):
         pass
 
     @abstractmethod
-    async def get_conversation(self, uuid=None):
+    def get_conversation(self, uuid=None):
         pass
 
     @abstractmethod
-    async def ask_stream(self, prompt: str):
+    def ask_stream(self, prompt: str):
         pass
 
     @abstractmethod
-    async def ask(self, message: str):
+    def ask(self, message: str):
         pass

@@ -1,5 +1,4 @@
 import os
-import asyncio
 import threading
 import openai
 import tiktoken
@@ -7,15 +6,13 @@ import tiktoken
 from openai.error import OpenAIError
 
 from chatgpt_wrapper.core.backend import Backend
-from chatgpt_wrapper.core.config import Config
-from chatgpt_wrapper.core.logger import Logger
 import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.backends.openai.user import UserManager
 from chatgpt_wrapper.backends.openai.conversation import ConversationManager
 from chatgpt_wrapper.backends.openai.message import MessageManager
 
-class AsyncOpenAIAPI(Backend):
+class OpenAIAPI(Backend):
     def __init__(self, config=None, default_user_id=None):
         super().__init__(config)
         self._configure_access_info()
@@ -107,7 +104,7 @@ class AsyncOpenAIAPI(Backend):
         content = "".join([c.message.content for c in completion.choices])
         return content
 
-    async def gen_title_thread_async(self, conversation):
+    def gen_title_thread(self, conversation):
         self.log.info(f"Generating title for conversation {conversation.id}")
         # NOTE: This might need to be smarter in the future, but for now
         # it should be reasonable to assume that the second record is the
@@ -119,7 +116,7 @@ class AsyncOpenAIAPI(Backend):
                 self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
                 self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
             ]
-            success, completion, user_message = await self._call_openai_non_streaming(new_messages, temperature=0)
+            success, completion, user_message = self._call_openai_non_streaming(new_messages, temperature=0)
             if success:
                 title = self._extract_completion_content(completion)
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
@@ -128,11 +125,6 @@ class AsyncOpenAIAPI(Backend):
                     self.log.debug(f"Title saved for conversation {conversation.id}")
                     return
         self.log.info(f"Failed to generate title for conversation: {str(user_message)}")
-
-    def gen_title_thread(self, conversation):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.gen_title_thread_async(conversation))
 
     def gen_title(self, conversation):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
@@ -240,14 +232,14 @@ class AsyncOpenAIAPI(Backend):
         else:
             raise Exception(user_message)
 
-    async def _build_openai_chat_request(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None, stream=False):
+    def _build_openai_chat_request(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None, stream=False):
         temperature = self.model_temperature if temperature is None else temperature
         top_p = self.model_top_p if top_p is None else top_p
         presence_penalty = self.model_presence_penalty if presence_penalty is None else presence_penalty
         frequency_penalty = self.model_frequency_penalty if frequency_penalty is None else frequency_penalty
         self.log.debug(f"ChatCompletion.create with message count: {len(messages)}, model: {self.model}, temperature: {temperature}, top_p: {top_p}, presence_penalty: {presence_penalty}, frequency_penalty: {frequency_penalty}, stream: {stream})")
         try:
-            response = await openai.ChatCompletion.acreate(
+            response = openai.ChatCompletion.create(
                 model=self.model,
                 messages=messages,
                 temperature=temperature,
@@ -261,15 +253,15 @@ class AsyncOpenAIAPI(Backend):
             raise OpenAIError(e)
         return response
 
-    async def _call_openai_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
+    def _call_openai_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
         self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
-        response = await self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, stream=True)
-        async for chunk in response:
+        response = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, stream=True)
+        for chunk in response:
             yield chunk
 
-    async def _call_openai_non_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
+    def _call_openai_non_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
         self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
-        completion = await self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
+        completion = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
         return True, completion, "Retrieved response"
 
     def set_current_user(self, user=None):
@@ -282,24 +274,24 @@ class AsyncOpenAIAPI(Backend):
     def conversation_data_to_messages(self, conversation_data):
         return conversation_data['messages']
 
-    async def delete_conversation(self, conversation_id=None):
+    def delete_conversation(self, conversation_id=None):
         conversation_id = conversation_id if conversation_id else self.conversation_id
         success, conversation, message = self.conversation.delete_conversation(conversation_id)
         return self._handle_response(success, conversation, message)
 
-    async def set_title(self, title, conversation=None):
+    def set_title(self, title, conversation=None):
         conversation = conversation if conversation else self.conversation.get_conversation(self.conversation_id)
         success, conversation, message = self.conversation.edit_conversation_title(conversation, title)
         return self._handle_response(success, conversation, message)
 
-    async def get_history(self, limit=20, offset=0):
+    def get_history(self, limit=20, offset=0):
         success, conversations, message = self.conversation.get_conversations(self.current_user.id, limit=limit, offset=offset)
         if success:
             history = {m.id: vars(m) for m in conversations}
             return success, history, message
         return self._handle_response(success, conversations, message)
 
-    async def get_conversation(self, id=None):
+    def get_conversation(self, id=None):
         id = id if id else self.conversation_id
         success, conversation, message = self.conversation.get_conversation(id)
         if success:
@@ -355,13 +347,13 @@ class AsyncOpenAIAPI(Backend):
                 return True, response_message, "No current user, conversation not saved"
         return False, None, "Conversation not updated with new messages"
 
-    async def ask_stream(self, prompt, title=None, model_customizations={}):
+    def ask_stream(self, prompt, title=None, model_customizations={}):
         system_message, model_customizations = self.extract_system_message(model_customizations)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         response_message = ""
         # Streaming loop.
         self.streaming = True
-        async for response in self._call_openai_streaming(messages, **model_customizations):
+        for response in self._call_openai_streaming(messages, **model_customizations):
             if not self.streaming:
                 self.log.info("Request to interrupt streaming")
                 break
@@ -384,7 +376,7 @@ class AsyncOpenAIAPI(Backend):
         self.streaming = False
         self._ask_request_post(self.conversation_id, new_messages, response_message, title)
 
-    async def ask(self, prompt, title=None, model_customizations={}):
+    def ask(self, prompt, title=None, model_customizations={}):
         """
         Send a message to chatGPT and return the response.
 
@@ -396,7 +388,7 @@ class AsyncOpenAIAPI(Backend):
         """
         system_message, model_customizations = self.extract_system_message(model_customizations)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        success, completion, message = await self._call_openai_non_streaming(messages, **model_customizations)
+        success, completion, message = self._call_openai_non_streaming(messages, **model_customizations)
         if success:
             response_message = self._extract_completion_content(completion)
             self.message_clipboard = response_message
@@ -405,58 +397,3 @@ class AsyncOpenAIAPI(Backend):
                 return self._handle_response(success, response_message, message)
             return self._handle_response(success, conversation, message)
         return self._handle_response(success, completion, message)
-
-class OpenAIAPI:
-    def __init__(self, config=None, default_user_id=None):
-        self.config = config or Config()
-        self.log = Logger(self.__class__.__name__, self.config)
-        self.async_openai_api = AsyncOpenAIAPI(config, default_user_id)
-
-    def __getattr__(self, __name: str):
-        if hasattr(self.async_openai_api, __name):
-            return getattr(self.async_openai_api, __name)
-        else:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{__name}'")
-
-    def async_run(self, awaitable):
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(awaitable, loop)
-            return future.result()
-        else:
-            return loop.run_until_complete(awaitable)
-
-    def ask_stream(self, prompt, title=None):
-        def iter_over_async(ait):
-            loop = asyncio.get_event_loop()
-            ait = ait.__aiter__()
-            async def get_next():
-                try:
-                    obj = await ait.__anext__()
-                    return False, obj
-                except StopAsyncIteration:
-                    return True, None
-            while True:
-                done, obj = loop.run_until_complete(get_next())
-                if done:
-                    break
-                yield obj
-        yield from iter_over_async(self.async_openai_api.ask_stream(prompt, title=title))
-
-    def ask(self, message, title=None):
-        return self.async_run(self.async_openai_api.ask(message, title=title))
-
-    def get_conversation(self, id=None):
-        return self.async_run(self.async_openai_api.get_conversation(id))
-
-    def new_conversation(self):
-        return self.async_openai_api.new_conversation()
-
-    def delete_conversation(self, id=None):
-        return self.async_run(self.async_openai_api.delete_conversation(id))
-
-    def set_title(self, title, conversation_id=None):
-        return self.async_run(self.async_openai_api.set_title(title, conversation_id))
-
-    def get_history(self, limit=20, offset=0):
-        return self.async_run(self.async_openai_api.get_history(limit, offset))

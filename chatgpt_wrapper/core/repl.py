@@ -7,6 +7,8 @@ import shutil
 import signal
 import frontmatter
 import pyperclip
+import threading
+import queue
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -144,19 +146,19 @@ class Repl():
         })
         return style
 
-    async def run_template(self, template_name, substitutions={}):
+    def run_template(self, template_name, substitutions={}):
         message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
         self.log.info(f"Running template: {template_name}")
         print("")
         print(message)
-        return await self.default(message, **overrides)
+        return self.default(message, **overrides)
 
-    async def collect_template_variable_values(self, template_name, variables=[]):
+    def collect_template_variable_values(self, template_name, variables=[]):
         substitutions = {}
         builtin_variables = self.template_manager.template_builtin_variables()
         user_variables = list(set([v for v in variables if v not in builtin_variables]))
         if user_variables:
-            await self.do_template(template_name)
+            self.do_template(template_name)
             util.print_markdown("##### Enter variables:\n")
             self.log.debug(f"Collecting variable values for: {template_name}")
             for variable in user_variables:
@@ -249,14 +251,14 @@ class Repl():
         for plugin in self.plugins.values():
             plugin.set_shell(self)
 
-    async def configure_backend():
+    def configure_backend():
         raise NotImplementedError
 
-    async def launch_backend(self, interactive=True):
+    def launch_backend(self, interactive=True):
         raise NotImplementedError
 
-    async def setup(self):
-        await self.configure_backend()
+    def setup(self):
+        self.configure_backend()
         self.configure_plugins()
         self.template_manager.load_templates()
         self.configure_shell_commands()
@@ -264,45 +266,45 @@ class Repl():
         self.rebuild_completions()
         self._update_message_map()
 
-    async def cleanup(self):
+    def cleanup(self):
         pass
 
-    async def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
+    def _fetch_history(self, limit=constants.DEFAULT_HISTORY_LIMIT, offset=0):
         util.print_markdown("* Fetching conversation history...")
-        success, history, message = await self.backend.get_history(limit=limit, offset=offset)
+        success, history, message = self.backend.get_history(limit=limit, offset=offset)
         return success, history, message
 
-    async def _set_title(self, title, conversation=None):
+    def _set_title(self, title, conversation=None):
         util.print_markdown("* Setting title...")
-        success, _, message = await self.backend.set_title(title, conversation['id'])
+        success, _, message = self.backend.set_title(title, conversation['id'])
         if success:
             return success, conversation, f"Title set to: {conversation['title']}"
         else:
             return success, conversation, message
 
-    async def _delete_conversation(self, id, label=None):
+    def _delete_conversation(self, id, label=None):
         if id == self.backend.conversation_id:
-            await self._delete_current_conversation()
+            self._delete_current_conversation()
         else:
             label = label or id
             util.print_markdown("* Deleting conversation: %s" % label)
-            success, conversation, message = await self.backend.delete_conversation(id)
+            success, conversation, message = self.backend.delete_conversation(id)
             if success:
                 util.print_status_message(True, f"Deleted conversation: {label}")
             else:
                 util.print_status_message(False, f"Failed to deleted conversation: {label}, {message}")
 
-    async def _delete_current_conversation(self):
+    def _delete_current_conversation(self):
         util.print_markdown("* Deleting current conversation")
-        success, conversation, message = await self.backend.delete_conversation()
+        success, conversation, message = self.backend.delete_conversation()
         if success:
             util.print_status_message(True, "Deleted current conversation")
-            await self.do_new(None)
+            self.do_new(None)
         else:
             util.print_status_message(False, "Failed to delete current conversation")
 
 
-    async def do_stream(self, _):
+    def do_stream(self, _):
         """
         Toggle streaming mode
 
@@ -317,7 +319,7 @@ class Repl():
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
 
-    async def do_new(self, _):
+    def do_new(self, _):
         """
         Start a new conversation
 
@@ -329,7 +331,7 @@ class Repl():
         self._update_message_map()
         self._write_log_context()
 
-    async def do_delete(self, arg):
+    def do_delete(self, arg):
         """
         Delete one or more conversations
 
@@ -352,16 +354,16 @@ class Repl():
         if arg:
             result = util.parse_conversation_ids(arg)
             if isinstance(result, list):
-                success, conversations, message = await self._fetch_history()
+                success, conversations, message = self._fetch_history()
                 if success:
                     history_list = [c for c in conversations.values()]
                     for item in result:
                         if isinstance(item, str) and len(item) == 36:
-                            await self._delete_conversation(item)
+                            self._delete_conversation(item)
                         else:
                             if item <= len(history_list):
                                 conversation = history_list[item - 1]
-                                await self._delete_conversation(conversation['id'], conversation['title'])
+                                self._delete_conversation(conversation['id'], conversation['title'])
                             else:
                                 util.print_status_message(False, f"Cannont delete history item {item}, does not exist")
                 else:
@@ -369,9 +371,9 @@ class Repl():
             else:
                 return False, None, result
         else:
-            await self._delete_current_conversation()
+            self._delete_current_conversation()
 
-    async def do_copy(self, _):
+    def do_copy(self, _):
         """
         Copy last conversation message to clipboard
 
@@ -384,7 +386,7 @@ class Repl():
             return True, clipboard, "Copied last message to clipboard"
         return False, None, "No message to copy"
 
-    async def do_history(self, arg):
+    def do_history(self, arg):
         """
         Show recent conversation history
 
@@ -416,14 +418,14 @@ class Repl():
                     except ValueError:
                         util.print_markdown("* Invalid offset, must be an integer")
                         return
-        success, history, message = await self._fetch_history(limit=limit, offset=offset)
+        success, history, message = self._fetch_history(limit=limit, offset=offset)
         if success:
             history_list = [h for h in history.values()]
             util.print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)%s" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'] or constants.NO_TITLE_TEXT, h['id'], ' (✓)' if h['id'] == self.backend.conversation_id else '') for h in history_list]))
         else:
             return success, history, message
 
-    async def do_nav(self, arg):
+    def do_nav(self, arg):
         """
         Navigate to a past point in the conversation
 
@@ -465,7 +467,7 @@ class Repl():
             f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
         )
 
-    async def do_title(self, arg):
+    def do_title(self, arg):
         """
         Show or set title
 
@@ -480,7 +482,7 @@ class Repl():
             Set conversation title using history ID: {COMMAND} 1
         """
         if arg:
-            success, conversations, message = await self._fetch_history()
+            success, conversations, message = self._fetch_history()
             if success:
                 history_list = [c for c in conversations.values()]
                 conversation = None
@@ -499,19 +501,19 @@ class Repl():
                     if self.backend.conversation_id in conversations:
                         conversation = conversations[self.backend.conversation_id]
                     else:
-                        success, conversation, message = await self.backend.get_conversation(self.backend.conversation_id)
+                        success, conversation, message = self.backend.get_conversation(self.backend.conversation_id)
                         if not success:
                             return success, conversations, message
                     new_title = arg
                 # Browser backend doesn't return a full conversation object,
                 # so adjust and re-use the current one.
                 conversation['title'] = new_title
-                return await self._set_title(new_title, conversation)
+                return self._set_title(new_title, conversation)
             else:
                 return success, conversations, message
         else:
             if self.backend.conversation_id:
-                success, conversations, message = await self._fetch_history()
+                success, conversations, message = self._fetch_history()
                 if success:
                     if self.backend.conversation_id in conversations:
                         util.print_markdown("* Title: %s" % conversations[self.backend.conversation_id]['title'] or constants.NO_TITLE_TEXT)
@@ -522,7 +524,7 @@ class Repl():
             else:
                 return False, None, "Current conversation has no title, you must send information first"
 
-    async def do_chat(self, arg):
+    def do_chat(self, arg):
         """
         Retrieve chat content
 
@@ -545,7 +547,7 @@ class Repl():
                 conversation_id = arg
                 title = arg
             else:
-                success, conversations, message = await self._fetch_history()
+                success, conversations, message = self._fetch_history()
                 if success:
                     history_list = [h for h in conversations.values()]
                     id = None
@@ -567,7 +569,7 @@ class Repl():
                 return False, None, "Current conversation is empty, you must send information first"
         if conversation:
             conversation_id = conversation["id"]
-        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        success, conversation_data, message = self.backend.get_conversation(conversation_id)
         if success:
             if conversation_data:
                 messages = self.backend.conversation_data_to_messages(conversation_data)
@@ -579,7 +581,7 @@ class Repl():
         else:
             return success, conversation_data, message
 
-    async def do_switch(self, arg):
+    def do_switch(self, arg):
         """
         Switch to chat
 
@@ -600,7 +602,7 @@ class Repl():
                 conversation_id = arg
                 title = arg
             else:
-                success, conversations, message = await self._fetch_history()
+                success, conversations, message = self._fetch_history()
                 if success:
                     history_list = [c for c in conversations.values()]
                     id = None
@@ -621,7 +623,7 @@ class Repl():
             conversation_id = conversation["id"]
         if conversation_id == self.backend.conversation_id:
             return True, conversation, f"You are already in chat: {title}"
-        success, conversation_data, message = await self.backend.get_conversation(conversation_id)
+        success, conversation_data, message = self.backend.get_conversation(conversation_id)
         if success:
             if conversation_data:
                 messages = self.backend.conversation_data_to_messages(conversation_data)
@@ -636,7 +638,7 @@ class Repl():
         else:
             return success, conversation_data, message
 
-    async def do_ask(self, line):
+    def do_ask(self, line):
         """
         Ask a question to ChatGPT
 
@@ -645,9 +647,9 @@ class Repl():
         Examples:
             {COMMAND} what is 6+6 (is the same as 'what is 6+6')
         """
-        return await self.default(line)
+        return self.default(line)
 
-    async def default(self, line, title=None, model_customizations={}):
+    def default(self, line, title=None, model_customizations={}):
         # TODO: This signal is recognized on Windows, and calls the callback, but the entire
         # process is still killed.
         signal.signal(signal.SIGINT, self.catch_ctrl_c)
@@ -657,7 +659,7 @@ class Repl():
         if self.stream:
             response = ""
             first = True
-            async for chunk in self.backend.ask_stream(line, title=title, model_customizations=model_customizations):
+            for chunk in self.backend.ask_stream(line, title=title, model_customizations=model_customizations):
                 if first:
                     print("")
                     first = False
@@ -666,7 +668,7 @@ class Repl():
                 response += chunk
             print("\n")
         else:
-            success, response, message = await self.backend.ask(line, title=title, model_customizations=model_customizations)
+            success, response, message = self.backend.ask(line, title=title, model_customizations=model_customizations)
             if success:
                 print("")
                 util.print_markdown(response)
@@ -676,7 +678,7 @@ class Repl():
         self._write_log(line, response)
         self._update_message_map()
 
-    async def do_read(self, _):
+    def do_read(self, _):
         """
         Begin reading multi-line input
 
@@ -700,9 +702,9 @@ class Repl():
                 break
             prompt += line + "\n"
 
-        await self.default(prompt)
+        self.default(prompt)
 
-    async def do_editor(self, args):
+    def do_editor(self, args):
         """
         Open an editor for entering a command
 
@@ -717,9 +719,9 @@ class Repl():
         """
         output = pipe_editor(args, suffix='md')
         print(output)
-        await self.default(output)
+        self.default(output)
 
-    async def do_file(self, arg):
+    def do_file(self, arg):
         """
         Send a prompt read from the named file
 
@@ -734,7 +736,7 @@ class Repl():
         except Exception:
             util.print_markdown(f"Failed to read file '{arg}'")
             return
-        await self.default(fileprompt)
+        self.default(fileprompt)
 
     def _open_log(self, filename):
         try:
@@ -747,7 +749,7 @@ class Repl():
             return False
         return True
 
-    async def do_log(self, arg):
+    def do_log(self, arg):
         """
         Enable/disable logging to a file
 
@@ -765,7 +767,7 @@ class Repl():
             self.logfile = None
             util.print_markdown("* Logging is now disabled.")
 
-    async def do_context(self, arg):
+    def do_context(self, arg):
         """
         Load an old context from the log
 
@@ -790,7 +792,7 @@ class Repl():
         self._update_message_map()
         self._write_log_context()
 
-    async def do_model(self, arg):
+    def do_model(self, arg):
         """
         View or set the current LLM model
 
@@ -812,7 +814,7 @@ class Repl():
         else:
             return True, self.backend.model, f"Current model: {self.backend.model}"
 
-    async def do_templates(self, arg):
+    def do_templates(self, arg):
         """
         List available templates
 
@@ -845,7 +847,7 @@ class Repl():
                 templates.append(content)
         util.print_markdown("## Templates:\n\n%s" % "\n".join(templates))
 
-    async def do_template(self, template_name):
+    def do_template(self, template_name):
         """
         Display a template
 
@@ -865,7 +867,7 @@ class Repl():
             util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False))
         util.print_markdown(f"\n\n{source.content}")
 
-    async def do_template_edit(self, template_name):
+    def do_template_edit(self, template_name):
         """
         Create a new template, or edit an existing template
 
@@ -886,7 +888,7 @@ class Repl():
         self.template_manager.load_templates()
         self.rebuild_completions()
 
-    async def do_template_copy(self, template_names):
+    def do_template_copy(self, template_names):
         """
         Copies an existing template and saves it as a new template
 
@@ -912,7 +914,7 @@ class Repl():
         self.rebuild_completions()
         return True, template_names, f"Copied {old_name} to {new_name}"
 
-    async def do_template_delete(self, template_name):
+    def do_template_delete(self, template_name):
         """
         Deletes an existing template
 
@@ -936,7 +938,7 @@ class Repl():
         else:
             return False, template_name, "Deletion aborted"
 
-    async def do_template_run(self, template_name):
+    def do_template_run(self, template_name):
         """
         Run a template
 
@@ -953,9 +955,9 @@ class Repl():
             return success, template_name, user_message
         _, variables = self.template_manager.get_template_and_variables(template_name)
         substitutions = self.template_manager.process_template_builtin_variables(template_name, variables)
-        return await self.run_template(template_name, substitutions)
+        return self.run_template(template_name, substitutions)
 
-    async def do_template_prompt_run(self, template_name):
+    def do_template_prompt_run(self, template_name):
         """
         Prompt for template variable values, then run
 
@@ -972,10 +974,10 @@ class Repl():
         if not success:
             return success, template_name, user_message
         _, variables = self.template_manager.get_template_and_variables(template_name)
-        substitutions = await self.collect_template_variable_values(template_name, variables)
-        return await self.run_template(template_name, substitutions)
+        substitutions = self.collect_template_variable_values(template_name, variables)
+        return self.run_template(template_name, substitutions)
 
-    async def do_template_edit_run(self, template_name):
+    def do_template_edit_run(self, template_name):
         """
         Open a template for final editing, then run it
 
@@ -994,9 +996,9 @@ class Repl():
         template, variables = self.template_manager.get_template_and_variables(template_name)
         substitutions = self.template_manager.process_template_builtin_variables(template_name, variables)
         message = template.render(**substitutions)
-        return await self.do_editor(message)
+        return self.do_editor(message)
 
-    async def do_template_prompt_edit_run(self, template_name):
+    def do_template_prompt_edit_run(self, template_name):
         """
         Prompts for a value for each variable in the template, sustitutes the values
         in the template, opens an editor for final edits, and sends the final content
@@ -1012,9 +1014,9 @@ class Repl():
         if not success:
             return success, template_name, user_message
         template, variables = self.template_manager.get_template_and_variables(template_name)
-        substitutions = await self.collect_template_variable_values(template_name, variables)
+        substitutions = self.collect_template_variable_values(template_name, variables)
         message = template.render(**substitutions)
-        return await self.do_editor(message)
+        return self.do_editor(message)
 
     def show_full_config(self):
         output = """
@@ -1053,7 +1055,7 @@ class Repl():
 """ % (section, config_data)
         util.print_markdown(output)
 
-    async def do_config(self, arg):
+    def do_config(self, arg):
         """
         Show or edit the current configuration
 
@@ -1076,7 +1078,7 @@ class Repl():
         else:
             self.show_full_config()
 
-    async def do_exit(self, _):
+    def do_exit(self, _):
         """
         Exit the ChatGPT shell
 
@@ -1085,7 +1087,7 @@ class Repl():
         """
         pass
 
-    async def do_quit(self, _):
+    def do_quit(self, _):
         """
         Exit the ChatGPT shell
 
@@ -1105,7 +1107,7 @@ class Repl():
                 return method, plugin
         raise AttributeError(f"{do_command} method not found in any shell class")
 
-    async def run_command(self, command, argument):
+    def run_command(self, command, argument):
         command = util.dash_to_underscore(command)
         if command == 'help':
             self.help(argument)
@@ -1113,7 +1115,7 @@ class Repl():
             if command in self.commands:
                 method, obj = self.get_command_method(command)
                 try:
-                    response = await method(obj, argument)
+                    response = method(obj, argument)
                 except Exception as e:
                     print(repr(e))
                 else:
@@ -1121,16 +1123,31 @@ class Repl():
             else:
                 print(f'Unknown command: {command}')
 
-    async def cmdloop(self):
+    def cmdloop(self):
         print("")
         util.print_markdown("### %s" % self.intro)
         while True:
             self.set_user_prompt()
             try:
-                user_input = await self.prompt_session.prompt_async(
-                    self.prompt,
-                    completer=self.command_completer,
-                )
+                # This extra threading and queuing dance is necessary because
+                # the browser backend starts an event loop, and prompt_tookit
+                # barfs when it tries to start the application when an event
+                # loop is already running.
+                # Converting to prompt_async doesn't seem to help, because
+                # then Playwright complains that it needs to be run in an async
+                # context as well.
+                # Happy to accept a better solution to this promblem if it's
+                # presented.
+                user_input_queue = queue.Queue()
+                def prompt_session():
+                    user_input = self.prompt_session.prompt(
+                        self.prompt,
+                        completer=self.command_completer,
+                    )
+                    user_input_queue.put(user_input)
+                t = threading.Thread(target=prompt_session)
+                t.start()
+                user_input = user_input_queue.get()
             except KeyboardInterrupt:
                 continue  # Control-C pressed. Try again.
             except EOFError:
@@ -1145,5 +1162,5 @@ class Repl():
             if exec_prompt_pre_result:
                 util.output_response(exec_prompt_pre_result)
             else:
-                await self.run_command(command, argument)
+                self.run_command(command, argument)
         print('GoodBye!')

@@ -31,7 +31,7 @@ class Test(Plugin):
         commands[util.command_with_leader('test')] = util.list_to_completion_hash(['one', 'two', 'three'])
         return commands
 
-    async def do_test(self, arg):
+    def do_test(self, arg):
         """
         Test plugin command
 

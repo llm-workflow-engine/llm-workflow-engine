@@ -19,7 +19,7 @@ class Zap(Plugin):
         self.toolkit = ZapierToolkit.from_zapier_nla_wrapper(self.zapier)
         self.agent_verbose = self.config.get('plugins.zap.agent.verbose')
 
-    async def do_zap(self, arg):
+    def do_zap(self, arg):
         """
         Send natural language commands to Zapier actions
 

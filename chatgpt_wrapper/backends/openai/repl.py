@@ -7,7 +7,7 @@ from chatgpt_wrapper.core.repl import Repl
 from chatgpt_wrapper.backends.openai.database import Database
 from chatgpt_wrapper.backends.openai.orm import User
 from chatgpt_wrapper.backends.openai.user import UserManager
-from chatgpt_wrapper.backends.openai.api import AsyncOpenAIAPI
+from chatgpt_wrapper.backends.openai.api import OpenAIAPI
 
 ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'config',
@@ -60,16 +60,16 @@ class ApiRepl(Repl):
             util.command_with_leader('model-system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
         }
 
-    async def configure_backend(self):
-        self.backend = AsyncOpenAIAPI(self.config)
+    def configure_backend(self):
+        self.backend = OpenAIAPI(self.config)
         database = Database(self.config)
         database.create_schema()
         self.user_management = UserManager(self.config)
         self.session = self.user_management.orm.session
 
-    async def launch_backend(self, interactive=True):
+    def launch_backend(self, interactive=True):
         if interactive:
-            await self.check_login()
+            self.check_login()
 
     def get_user(self, user_id):
         user = self.session.get(User, user_id)
@@ -98,7 +98,7 @@ class ApiRepl(Repl):
         return True, default_model
 
     # Overriding default implementation because API should use UUIDs.
-    async def do_context(self, arg):
+    def do_context(self, arg):
         """
         Load an old context from the log
 
@@ -123,7 +123,7 @@ class ApiRepl(Repl):
         self._update_message_map()
         self._write_log_context()
 
-    async def do_user_register(self, username=None):
+    def do_user_register(self, username=None):
         """
         Register a new user
 
@@ -163,12 +163,12 @@ class ApiRepl(Repl):
         return success, user, user_message
 
 
-    async def check_login(self):
+    def check_login(self):
         user_count = self.session.query(User).count()
         if user_count == 0:
             util.print_status_message(False, "No users in database. Creating one...")
             self.welcome_message()
-            await self.create_first_user()
+            self.create_first_user()
         # Special case check: if there's only one user in the database, and
         # they have no password, log them in.
         elif user_count == 1:
@@ -187,14 +187,14 @@ Before you can start using the shell, you must create a new user.
 """
         )
 
-    async def create_first_user(self):
-        success, user, message = await self.do_user_register()
+    def create_first_user(self):
+        success, user, message = self.do_user_register()
         util.print_status_message(success, message)
         if success:
             success, _user, message = self.login(user)
             util.print_status_message(success, message)
         else:
-            await self.create_first_user()
+            self.create_first_user()
 
     def _build_shell_user_prefix(self):
         prompt_prefix = self.config.get("shell.prompt_prefix")
@@ -231,7 +231,7 @@ Before you can start using the shell, you must create a new user.
             self.backend.new_conversation()
         return success, user, message
 
-    async def do_user_login(self, identifier=None):
+    def do_user_login(self, identifier=None):
         """
         Login in as a user
 
@@ -257,7 +257,7 @@ Before you can start using the shell, you must create a new user.
         else:
             return success, user, message
 
-    async def do_login(self, identifier=None):
+    def do_login(self, identifier=None):
         """
         Alias of '{COMMAND_LEADER}user-login'
 
@@ -271,9 +271,9 @@ Before you can start using the shell, you must create a new user.
             {COMMAND} myusername
             {COMMAND} email@example.com
         """
-        return await self.do_user_login(identifier)
+        return self.do_user_login(identifier)
 
-    async def do_user_logout(self, _):
+    def do_user_logout(self, _):
         """
         Logout the current user.
 
@@ -286,7 +286,7 @@ Before you can start using the shell, you must create a new user.
         self.backend.set_current_user()
         return True, None, "Logout successful."
 
-    async def do_logout(self, _):
+    def do_logout(self, _):
         """
         Alias of '{COMMAND_LEADER}user-logout'
 
@@ -295,7 +295,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND}
         """
-        return await self.do_user_logout(None)
+        return self.do_user_logout(None)
 
     def display_user(self, user):
         output = """
@@ -307,7 +307,7 @@ Before you can start using the shell, you must create a new user.
         """ % (user.username, user.email, "set" if user.password else "Not set", self.backend.available_models[user.default_model])
         util.print_markdown(output)
 
-    async def do_user(self, username=None):
+    def do_user(self, username=None):
         """
         Show user information
 
@@ -333,7 +333,7 @@ Before you can start using the shell, you must create a new user.
             return self.display_user(self.logged_in_user)
         return False, None, "User not found."
 
-    async def do_users(self, _):
+    def do_users(self, _):
         """
         Show information for all users
 
@@ -375,7 +375,7 @@ Before you can start using the shell, you must create a new user.
                 self.backend.set_active_model(user.default_model)
         return success, user, user_message
 
-    async def do_user_edit(self, username=None):
+    def do_user_edit(self, username=None):
         """
         Edit the current user's information
 
@@ -399,7 +399,7 @@ Before you can start using the shell, you must create a new user.
             return self.edit_user(self.logged_in_user)
         return False, "User not found."
 
-    async def do_user_delete(self, username=None):
+    def do_user_delete(self, username=None):
         """
         Delete a user
 
@@ -447,7 +447,7 @@ Before you can start using the shell, you must create a new user.
             value = getattr(self.backend, f"model_{setting}")
             util.print_markdown(f"* Current {setting}: {value}")
 
-    async def do_model_temperature(self, temperature=None):
+    def do_model_temperature(self, temperature=None):
         """
         Adjust the temperature of the current model
 
@@ -467,7 +467,7 @@ Before you can start using the shell, you must create a new user.
         """
         return self.adjust_model_setting("float", "temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
 
-    async def do_model_top_p(self, top_p=None):
+    def do_model_top_p(self, top_p=None):
         """
         Adjust the top_p of the current model
 
@@ -488,7 +488,7 @@ Before you can start using the shell, you must create a new user.
         """
         return self.adjust_model_setting("float", "top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
 
-    async def do_model_presence_penalty(self, presence_penalty=None):
+    def do_model_presence_penalty(self, presence_penalty=None):
         """
         Adjust the presence penalty of the current model
 
@@ -505,7 +505,7 @@ Before you can start using the shell, you must create a new user.
         """
         return self.adjust_model_setting("float", "presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
 
-    async def do_model_frequency_penalty(self, frequency_penalty=None):
+    def do_model_frequency_penalty(self, frequency_penalty=None):
         """
         Adjust the frequency_penalty of the current model
 
@@ -521,7 +521,7 @@ Before you can start using the shell, you must create a new user.
         """
         return self.adjust_model_setting("float", "frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)
 
-    async def do_model_max_submission_tokens(self, max_submission_tokens=None):
+    def do_model_max_submission_tokens(self, max_submission_tokens=None):
         """
         The maximum number of tokens that can be submitted before older messages
         start getting cut off.
@@ -538,7 +538,7 @@ Before you can start using the shell, you must create a new user.
         """
         return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)
 
-    async def do_model_system_message(self, system_message=None):
+    def do_model_system_message(self, system_message=None):
         """
         Set the system message sent for conversations.
 

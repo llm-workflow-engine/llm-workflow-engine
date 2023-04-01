@@ -33,7 +33,7 @@ class Awesome(Plugin):
         commands[util.command_with_leader('awesome')] = util.list_to_completion_hash(help_keys)
         return commands
 
-    async def do_awesome(self, arg):
+    def do_awesome(self, arg):
         """
         Use a prompt from Awesome ChatGPT Prompts
 
@@ -58,7 +58,7 @@ class Awesome(Plugin):
             return False, None, "Awesome ChatGPT Prompts not loaded, try: %sawesome reload" % constants.COMMAND_LEADER
         elif arg not in self.loaded_prompts:
             return False, arg, f"Unknown Awesome ChatGPT Prompt: {arg}"
-        return await self.shell.do_editor(self.loaded_prompts[arg])
+        return self.shell.do_editor(self.loaded_prompts[arg])
 
     def reset_prompts(self):
         self.log.info("Resetting prompts")

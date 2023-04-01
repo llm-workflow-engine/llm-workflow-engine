@@ -174,7 +174,7 @@ class DataQuery(Plugin):
         self.agent = None
         self.data = None
 
-    async def do_data_query(self, arg):
+    def do_data_query(self, arg):
         """
         Send natural language commands to a loaded file of structured data.
 

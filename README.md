@@ -396,7 +396,7 @@ Then, turn back to terminal and enjoy the chat!
 The project uses [Pytest](https://docs.pytest.org).
 
 ```
-pip install pytest pytest-asyncio
+pip install pytest
 ```
 
 To run all tests:

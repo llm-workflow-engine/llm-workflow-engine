@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 import sys
-import asyncio
-from chatgpt_wrapper.backends.openai.api import AsyncOpenAIAPI
+import time
+from chatgpt_wrapper.backends.openai.api import OpenAIAPI
 from chatgpt_wrapper.core.config import Config
 import chatgpt_wrapper.core.util as util
 
 DEFAULT_PROMPT = 'Say three things about earth'
 
-async def main(prompt):
+def main(prompt):
     config = Config()
-    gpt = AsyncOpenAIAPI(config)
+    gpt = OpenAIAPI(config)
     temperatures = [t for t, _ in util.float_range_to_completions(0, 2).items()]
     temperatures_list = ", ".join(temperatures)
     temperatures = [float(t) for t in temperatures]
@@ -19,7 +19,7 @@ async def main(prompt):
         util.print_markdown(f"# Temperature: {temp}")
         first = True
         gpt.set_model_temperature(temp)
-        async for chunk in gpt.ask_stream(prompt):
+        for chunk in gpt.ask_stream(prompt):
             if first:
                 print("")
                 first = False
@@ -27,7 +27,8 @@ async def main(prompt):
             sys.stdout.flush()
         print("\n")
         # Work around rate limit if needed.
-        await asyncio.sleep(5)
+        time.sleep(5)
 
-prompt = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PROMPT
-asyncio.run(main(prompt))
+if __name__ == "__main__":
+    prompt = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PROMPT
+    main(prompt)

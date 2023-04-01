@@ -45,7 +45,7 @@ class Database(Plugin):
         self.database = None
         self.agent = None
 
-    async def do_database(self, arg):
+    def do_database(self, arg):
         """
         Send natural language commands to a database
 

@@ -10,6 +10,7 @@ def test_sync_chatgpt():
         config.set('browser.debug', True)
     config.set('debug.log.enabled', True)
     gpt = ChatGPT(config)
+    gpt.launch_browser()
     response1 = gpt.ask("Say, bot1!")
     print(response1)
     assert response1
