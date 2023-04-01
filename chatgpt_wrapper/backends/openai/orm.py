@@ -9,6 +9,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import inspect
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
@@ -104,6 +105,10 @@ class Orm:
         metadata = MetaData()
         metadata.reflect(bind=engine)
         return engine, metadata
+
+    def object_as_dict(self, obj):
+        return {c.key: getattr(obj, c.key)
+                for c in inspect(obj).mapper.column_attrs}
 
     def get_users(self, limit=None, offset=None):
         self.log.debug('Retrieving all Users')
