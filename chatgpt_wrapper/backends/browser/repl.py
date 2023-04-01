@@ -32,6 +32,3 @@ class BrowserRepl(Repl):
             else "The session is not usable.  Try `install` mode."
         )
         util.print_markdown(f"* Session information refreshed.  {usable}")
-
-    def cleanup(self):
-        self.backend.cleanup()

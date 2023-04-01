@@ -1,4 +1,5 @@
 import os
+import atexit
 import base64
 import json
 import time
@@ -68,6 +69,7 @@ class ChatGPT(Backend):
                 headless=headless,
                 proxy=proxy,
             )
+        atexit.register(self._shutdown)
 
         if len(self.browser.pages) > 0:
             self.page = self.browser.pages[0]
@@ -98,7 +100,8 @@ class ChatGPT(Backend):
 
     def cleanup(self):
         self.log.info("Cleaning up")
-        self.browser.close()
+        if self.browser:
+            self.browser.close()
         # remove the user data dir in case this is a second instance
         if self.user_data_dir:
             shutil.rmtree(self.user_data_dir)
