@@ -121,16 +121,9 @@ This will show all the current configuration settings, the most important ones f
 * **Config file:** The configuration file current being used
 * **Data dir:** The data storage directory
 
-Find the 'Config file' setting, and copy the [config.sample.yaml](/config.sample.yaml) there:
+To tweak the configuration for the current profile, see [Configuration](#configuration)
 
-On Linux:
-
- ```bash
-mkdir -p ~/.config/chatgpt-wrapper/profiles/default
-cp config.sample.yaml ~/.config/chatgpt-wrapper/profiles/default/config.yaml
-```
-
-Then edit the settings in that file to taste.  You'll want to make sure `backend` is set to `chatgpt-api` in order to use the API.
+You'll want to make sure `backend` is set to `chatgpt-api` (the default) in order to use the API.
 
 ##### Database configuration
 
@@ -215,12 +208,20 @@ the configuration file (called a 'profile'), and the current configuration.
 Configuration is optional, default values will be used if no configuration profile is
 provided. The default configuation settings can be seen in
 [config.sample.yaml](/config.sample.yaml) -- the file is commented with descriptions 
-of the settings.
+of the settings -- DON'T just copy this file as your configuration! Instead, use it as
+a reference to tweak the configuration to your liking.
 
 *NOTE:* Not all settings are available on all backends. See the example config for more information.
 
 Command line arguments overrride custom configuration settings, which override default
 configuration settings.
+
+### Editing the configuration for the current profile
+
+1. Start the program: `chatgpt`
+2. Open the profile's configuration file in an editor: `/config edit`
+3. Edit file to taste and save
+4. Restart the program
 
 ## Templates (alpha, subject to change)
 
@@ -389,14 +390,12 @@ Build a image for testing `chatgpt-wrapper` with following commands.
 
 ```bash
 docker-compose build && docker-compose up -d
-docker exec -it chatgpt-wrapper-container /bin/bash -c "chatgpt install"
+docker exec -it chatgpt-wrapper-container /bin/bash -c "chatgpt"
 ```
 
-Then, visit http://localhost:6901/vnc.html with password `headless` and login ChatGPT.
+Follow the instructions to create the first user.
 
-Then, turn back to terminal and enjoy the chat!
-
-![chat](https://i.imgur.com/nRlzUzm.png)
+Enjoy the chat!
 
 ## Test suite
 
