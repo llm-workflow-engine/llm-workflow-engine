@@ -23,7 +23,7 @@ def main():
     parser.add_argument(
         "params",
         nargs="*",
-        help="Use 'install' for install mode, 'config' to see current configuration, or provide a prompt for ChatGPT.",
+        help="Use 'install' for install mode, 'config' to see current configuration, or provide a prompt.",
     )
     parser.add_argument(
         "-c",

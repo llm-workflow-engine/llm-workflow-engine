@@ -5,7 +5,6 @@ from chatgpt_wrapper.core.config import Config
 
 def test_api_get_history():
     config = Config(profile='test')
-    config.set('backend', 'chatgpt-api')
     config.set('debug.log.enabled', True)
     gpt = OpenAIAPI(config, default_user_id=1)
     success, history, user_message = gpt.get_history(limit=3)

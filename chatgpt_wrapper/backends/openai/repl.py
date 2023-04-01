@@ -17,7 +17,7 @@ ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
 
 class ApiRepl(Repl):
     """
-    A shell interpreter that serves as a front end to the ChatGPT class
+    A shell interpreter that serves as a front end to the OpenAIAPI class
     """
 
     def __init__(self, config=None):

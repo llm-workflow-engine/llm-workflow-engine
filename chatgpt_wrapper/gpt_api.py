@@ -2,17 +2,18 @@ import argparse
 
 from flask import Flask, jsonify, request
 
-from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
+from chatgpt_wrapper.backends.openai.api import OpenAIAPI
 from chatgpt_wrapper.core.config import Config
 
 
 def create_application(name, config=None, timeout=60, proxy=None):
     config = config or Config()
+    config.set('debug.log.enabled', True)
+    gpt = OpenAIAPI(config)
     app = Flask(name)
-    chatgpt = ChatGPT(config, timeout, proxy)
 
-    def _error_handler(message):
-        return jsonify({"success": False, "error": str(message)}), 500
+    def _error_handler(message, status_code=500):
+        return jsonify({"success": False, "error": str(message)}), status_code
 
     @app.route("/conversations", methods=["POST"])
     def ask():
@@ -31,7 +32,7 @@ def create_application(name, config=None, timeout=60, proxy=None):
                 Some response.
         """
         prompt = request.get_data().decode("utf-8")
-        success, result, user_message = chatgpt.ask(prompt)
+        success, result, user_message = gpt.ask(prompt)
         return result
 
     @app.route("/conversations/new", methods=["POST"])
@@ -54,8 +55,8 @@ def create_application(name, config=None, timeout=60, proxy=None):
                     "error": "Failed to start new conversation"
                 }
         """
-        chatgpt.new_conversation()
-        return jsonify({"success": True, "parent_message_id": chatgpt.parent_message_id})
+        gpt.new_conversation()
+        return jsonify({"success": True, "parent_message_id": gpt.parent_message_id})
 
     @app.route("/conversations/<string:conversation_id>", methods=["DELETE"])
     def delete_conversation(conversation_id):
@@ -80,11 +81,11 @@ def create_application(name, config=None, timeout=60, proxy=None):
                     "error": "Failed to delete conversation"
                 }
         """
-        result = chatgpt.delete_conversation(conversation_id)
-        if result:
-            return jsonify(result)
+        success, result, user_message = gpt.delete_conversation(conversation_id)
+        if success:
+            return user_message
         else:
-            return _error_handler("Failed to delete conversation")
+            return _error_handler(user_message)
 
     @app.route("/conversations/<string:conversation_id>/set-title", methods=["PATCH"])
     def set_title(conversation_id):
@@ -117,19 +118,19 @@ def create_application(name, config=None, timeout=60, proxy=None):
         """
         json = request.get_json()
         title = json["title"]
-        result = chatgpt.set_title(title, conversation_id=conversation_id)
-        if result:
-            return jsonify(result)
+        success, conversation, user_message = gpt.set_title(title, conversation_id)
+        if success:
+            return jsonify(gpt.conversation.orm.object_as_dict(conversation))
         else:
             return _error_handler("Failed to set title")
 
-    @app.route("/history", methods=["GET"])
-    def get_history():
+    @app.route("/history/<int:user_id>", methods=["GET"])
+    def get_history(user_id):
         """
-        Retrieve conversation history.
+        Retrieve conversation history for a user.
 
         Path:
-            GET /history
+            GET /history/:user_id
 
         Query Parameters:
             limit (int, optional): The maximum number of conversations to return (default is 20).
@@ -153,7 +154,7 @@ def create_application(name, config=None, timeout=60, proxy=None):
         """
         limit = request.args.get("limit", 20)
         offset = request.args.get("offset", 0)
-        result = chatgpt.get_history(limit=limit, offset=offset)
+        success, result, user_message = gpt.get_history(limit=limit, offset=offset, user_id=user_id)
         if result:
             return jsonify(result)
         else:

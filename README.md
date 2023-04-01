@@ -18,13 +18,13 @@ What would you like to do?
 
 ## Highlights
 
-🤖 **Programmable ChatGPT**. The ChatGPT Wrapper lets you use the powerful ChatGPT/GPT4 bot in your _Python scripts_ or on the _command line_, making it easy to leverage its functionality into your projects.
+🤖 The ChatGPT Wrapper lets you use the powerful ChatGPT/GPT4 bot from the _command line.
 
 💬 **Runs in Shell**. You can call and interact with ChatGPT/GPT4 in the terminal.
 
 💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint (all supported models accessible by your OpenAI account)
 
-🐍 **Python API**. The ChatGPT Wrapper is a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
+🐍 **Python API**. The ChatGPT Wrapper also has a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
 
 🔌 **Simple plugin architecture**. Extend the wrapper with custom functionality (alpha)
 
@@ -48,7 +48,7 @@ See below for details on using ChatGPT as an API from Python.
 
 To use this repository, you need `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
 
-To use the 'chatgpt-api' backend, you need a database backend (SQLite by default, any configurable in SQLAlchemy allowed).
+To use the 'chatgpt-api' backend (the default), you need a database backend (SQLite by default, any configurable in SQLAlchemy allowed).
 
 ## Installation
 
@@ -87,42 +87,7 @@ pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 
 The wrapper works with several differnt backends to connect to the ChatGPT models, and installation is different for each backend.
 
-#### Playwright (browser-based)
-
-* Pros:
-  * Free or paid version available (as of this writing)
-  * Fairly easy to set up for non-technical users
-* Cons:
-  * Slow (runs a full browser session)
-  * Clunky authentication method
-  * No model customizations
-  * Third party controls your data
-
-Install a browser in playwright (if you haven't already). The program will use firefox by default.
-
-```
-playwright install firefox
-```
-
-Start up the program in `install` mode:
-
-```bash
-chatgpt install
-```
-
-This opens up a browser window. Log in to ChatGPT in the browser window, walk through all the intro screens, then exit program.
-
-```bash
-1> /exit
-```
-
-Restart the program without the `install` parameter to begin using it.
-
-```bash
-chatgpt
-```
-
-#### API (REST-based)
+#### API (REST-based): **DEFAULT**
 
 * Pros:
   * Fast (many operations run locally for speed)
@@ -201,6 +166,44 @@ Once you're logged in, you have full access to all commands.
 
 **IMPORTANT NOTE:** The user authorization system from the command line is 'admin party' -- meaning every logged in user has admin privileges, including editing and deleting other users.
 
+#### Playwright (browser-based): **DEPRECATED**
+
+This backend is deprecated, and may be removed in a future release.
+
+Support will not be provided for using the `ChatGPT` class of this backend directly.
+
+* Pros:
+  * Free or paid version available (as of this writing)
+  * Fairly easy to set up for non-technical users
+* Cons:
+  * Slow (runs a full browser session)
+  * Clunky authentication method
+  * No model customizations
+  * Third party controls your data
+
+Install a browser in playwright (if you haven't already). The program will use firefox by default.
+
+```
+playwright install firefox
+```
+
+Start up the program in `install` mode:
+
+```bash
+chatgpt install
+```
+
+This opens up a browser window. Log in to ChatGPT in the browser window, walk through all the intro screens, then exit program.
+
+```bash
+1> /exit
+```
+
+Restart the program without the `install` parameter to begin using it.
+
+```bash
+chatgpt
+```
 
 ## Configuration
 
@@ -336,12 +339,16 @@ Once the interactive shell is running, you can see a list of all commands with:
 
 ### Python
 
-To use the `ChatGPT` class as an API for talking to ChatGPT, create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
+**IMPORTANT:** Use of browser backend's `ChatGPT` class has been deprectated, no support will be provided for this usage.
+
+You can  use the API backend's `OpenAIAPI` class to interact directly with the chat LLM.
+
+Create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
-from chatgpt_wrapper import ChatGPT
+from chatgpt_wrapper import OpenAIAPI
 
-bot = ChatGPT()
+bot = OpenAIAPI()
 success, response, message = bot.ask("Hello, world!")
 if success:
     print(response)
@@ -349,19 +356,19 @@ else:
     raise RuntimeError(message)
 ```
 
-The say method takes a string argument representing the message to send to ChatGPT, and returns a string representing the response received from ChatGPT.
+The ask method takes a string argument representing the message to send to the API, and returns a string representing the response received.
 
-You may also stream the response as it comes in from ChatGPT in chunks using the `ask_stream` generator.
+You may also stream the response as it comes in from the API in chunks using the `ask_stream` generator.
 
 To pass custom configuration to ChatGPT, use the Config class:
 
 ```python
-from chatgpt_wrapper import ChatGPT
+from chatgpt_wrapper import OpenAIAPI
 from chatgpt_wrapper.core.config import Config
 
 config = Config()
 config.set('browser.debug', True)
-bot = ChatGPT(config)
+bot = OpenAIAPI(config)
 success, response, message = bot.ask("Hello, world!")
 if success:
     print(response)
@@ -443,13 +450,13 @@ git pull
 
 ### Backend notes
 
-#### Playwright (browser-based) backend
-
-To use GPT-4 with this backend, you must have a ChatGPT-Plus subscription.
-
 #### API backend
 
 To use GPT-4 with this backend, you must have been granted access to the model in your OpenAI account.
+
+#### Playwright (browser-based) backend: **DEPRECATED**
+
+To use GPT-4 with this backend, you must have a ChatGPT-Plus subscription.
 
 ### Using GPT-4
 
@@ -478,12 +485,12 @@ model: gpt4
 To use GPT-4 within your Python code, follow the template below:
 
 ```python
-from chatgpt_wrapper import ChatGPT
+from chatgpt_wrapper import OpenAIAPI
 from chatgpt_wrapper.core.config import Config
 
 config = Config()
 config.set('chat.model', 'gpt4')
-bot = ChatGPT(config)
+bot = OpenAIAPI(config)
 success, response, message = bot.ask("Hello, world!")
 ```
 

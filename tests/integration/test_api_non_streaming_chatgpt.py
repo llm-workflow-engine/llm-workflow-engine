@@ -5,7 +5,6 @@ from chatgpt_wrapper.core.config import Config
 
 def test_api_non_streaming():
     config = Config(profile='test')
-    config.set('backend', 'chatgpt-api')
     config.set('debug.log.enabled', True)
     gpt = OpenAIAPI(config)
     success, response, user_message = gpt.ask("Say hello!")
