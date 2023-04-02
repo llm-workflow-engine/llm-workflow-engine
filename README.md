@@ -108,22 +108,7 @@ export OPENAI_API_KEY=<API_KEY>
 
 Windows users, see [here](https://www.computerhope.com/issues/ch000549.htm) for how to edit environment variables.
 
-Run the program with the 'config' command:
-
-```bash
-chatgpt config
-```
-
-This will show all the current configuration settings, the most important ones for installation are:
-
-* **Config dir:** Where configuration files are stored
-* **Current profile:** (shown in the 'Profile configuration' section)
-* **Config file:** The configuration file current being used
-* **Data dir:** The data storage directory
-
 To tweak the configuration for the current profile, see [Configuration](#configuration)
-
-You'll want to make sure `backend` is set to `chatgpt-api` (the default) in order to use the API.
 
 ##### Database configuration
 
@@ -174,6 +159,14 @@ Support will not be provided for using the `ChatGPT` class of this backend direc
   * No model customizations
   * Third party controls your data
 
+In your profile configuration file, you'll want to make sure the backend is set to the following in order to use the browser backend:
+
+```yaml
+backend: 'chatgpt-browser'
+```
+
+To tweak the configuration for the current profile, see [Configuration](#configuration)
+
 Install a browser in playwright (if you haven't already). The program will use firefox by default.
 
 ```
@@ -200,10 +193,20 @@ chatgpt
 
 ## Configuration
 
-From a running `chatgpt` instance, execute `/config` to view the current configuration.
+Run the program with the 'config' command:
 
-The output will show the location of the configuration directory, the name of
-the configuration file (called a 'profile'), and the current configuration.
+```bash
+chatgpt config
+```
+
+This will show all the current configuration settings, the most important ones for installation are:
+
+* **Config dir:** Where configuration files are stored
+* **Current profile:** (shown in the 'Profile configuration' section)
+* **Config file:** The configuration file current being used
+* **Data dir:** The data storage directory
+
+From a running `chatgpt` instance, execute `/config` to view the current configuration.
 
 Configuration is optional, default values will be used if no configuration profile is
 provided. The default configuation settings can be seen in
