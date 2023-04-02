@@ -10,7 +10,7 @@
 # Backend settings.
 ##########################################################
 # The backend the shell should use, one of: chatgpt-browser, chatgpt-api
-backend: chatgpt-browser
+backend: chatgpt-api
 # The database connection string, in a format SQLAlchemy understands.
 # DO NOT USE THE LINE AS IT IS WRITTEN BELOW, IT ONLY ILLUSTRATES THE DEFAULT LOCATION.
 # database: sqlite:////home/[username]/.local/share/chatgpt-wrapper/profiles/default/storage.db
@@ -94,6 +94,8 @@ plugins:
     # Core plugins, see README for more details.
     #- test
     - awesome
+    #- database
+    #- data_query
     #- shell
     #- zap
 
