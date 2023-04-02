@@ -248,7 +248,7 @@ class OpenAIAPI(Backend):
             'frequency_penalty': frequency_penalty,
         }
         if stream:
-            args.update(self.streaming_args())
+            args.update(self.streaming_args(interrupt_handler=True))
         llm = self.make_llm(args)
         messages = [_convert_dict_to_message(m) for m in messages]
         return llm, messages

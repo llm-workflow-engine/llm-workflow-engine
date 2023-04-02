@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -11,6 +12,15 @@ class VerboseStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     def always_verbose(self) -> bool:
         """Whether to call verbose callbacks even if verbose is False."""
         return True
+
+def make_interrupt_streaming_callback_handler(backend):
+    class InterruptStreamingCallbackHandler(VerboseStreamingStdOutCallbackHandler):
+        def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+            if not backend.streaming:
+                message = "Request to interrupt streaming"
+                backend.log.info(message)
+                raise EOFError(message)
+    return InterruptStreamingCallbackHandler()
 
 class Backend(ABC):
     """
@@ -26,6 +36,7 @@ class Backend(ABC):
         self.conversation_title_set = None
         self.message_clipboard = None
         self.streaming = False
+        self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model'))
 
@@ -45,10 +56,15 @@ class Backend(ABC):
             # ]
         }
 
-    def streaming_args(self):
+    def streaming_args(self, interrupt_handler=False):
+        calback_handlers = [
+            VerboseStreamingStdOutCallbackHandler(),
+        ]
+        if interrupt_handler:
+            calback_handlers.append(self.interrupt_streaming_callback_handler)
         args = {
             'streaming': True,
-            'callback_manager': CallbackManager([VerboseStreamingStdOutCallbackHandler()]),
+            'callback_manager': CallbackManager(calback_handlers),
         }
         return args
 
