@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from langchain.chat_models import ChatOpenAI
-
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 
@@ -30,24 +28,8 @@ class PluginBase(ABC):
     def get_shell_completions(self, _base_shell_completions):
         pass
 
-    def get_default_llm_args(self):
-        return {
-            'temperature': 0,
-            'model_name': self.backend.model,
-            # TODO: This used to work on the deprecated OpenAIChat class, but now no longer works.
-            # 'prefix_messages': [
-            #     {
-            #         'role': 'system',
-            #         'content': 'You are a helpful assistant that is very good at problem solving who thinks step by step.',
-            #     },
-            # ]
-        }
-
     def make_llm(self, args={}):
-        final_args = self.get_default_llm_args()
-        final_args.update(args)
-        llm = ChatOpenAI(**final_args)
-        return llm
+        return self.backend.make_llm(args)
 
     def query_llm(self, messages):
         llm = self.make_llm()

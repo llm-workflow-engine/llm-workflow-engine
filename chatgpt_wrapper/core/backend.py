@@ -1,7 +1,16 @@
 from abc import ABC, abstractmethod
 
+from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
+
+class VerboseStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
+    @property
+    def always_verbose(self) -> bool:
+        """Whether to call verbose callbacks even if verbose is False."""
+        return True
 
 class Backend(ABC):
     """
@@ -20,13 +29,34 @@ class Backend(ABC):
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model'))
 
-    @property
-    @abstractmethod
-    def llm_class(self):
-        pass
-
     def set_llm_class(self, klass):
         self.llm_class = klass
+
+    def get_default_llm_args(self):
+        return {
+            'temperature': 0,
+            'model_name': self.model,
+            # TODO: This used to work on the deprecated OpenAIChat class, but now no longer works.
+            # 'prefix_messages': [
+            #     {
+            #         'role': 'system',
+            #         'content': 'You are a helpful assistant that is very good at problem solving who thinks step by step.',
+            #     },
+            # ]
+        }
+
+    def streaming_args(self):
+        args = {
+            'streaming': True,
+            'callback_manager': CallbackManager([VerboseStreamingStdOutCallbackHandler()]),
+        }
+        return args
+
+    def make_llm(self, args={}):
+        final_args = self.get_default_llm_args()
+        final_args.update(args)
+        llm = self.llm_class(**final_args)
+        return llm
 
     def set_active_model(self, model=None):
         if model is None:
@@ -58,10 +88,6 @@ class Backend(ABC):
 
     @abstractmethod
     def set_available_models(self):
-        pass
-
-    @abstractmethod
-    def set_llm_class(self):
         pass
 
     @abstractmethod
