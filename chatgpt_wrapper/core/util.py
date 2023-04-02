@@ -1,6 +1,7 @@
 import os
 import shutil
 import sys
+from datetime import datetime
 import tempfile
 import platform
 import pyperclip
@@ -197,3 +198,7 @@ def create_file(directory, filename, content=None):
     with open(file_path, 'w') as file:
         if content:
             file.write(content)
+
+def current_datetime():
+    now = datetime.now()
+    return now
