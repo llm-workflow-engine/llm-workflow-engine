@@ -7,14 +7,64 @@ import datetime
 import uuid
 import re
 import shutil
-from typing import Optional
+from typing import Optional, List
 from playwright.sync_api import sync_playwright
 from playwright._impl._api_structures import ProxySettings
+
+from pydantic_computed import Computed, computed
+from langchain.chat_models.base import BaseChatModel
+from langchain.schema import (
+    ChatGeneration,
+    ChatResult,
+)
+from langchain.chat_models.openai import _convert_dict_to_message
 
 from chatgpt_wrapper.core.backend import Backend
 import chatgpt_wrapper.core.constants as constants
 
 GEN_TITLE_TIMEOUT = 5000
+
+def make_llm_class(klass):
+    class ChatGPTLLM(BaseChatModel):
+        streaming: bool = False
+        model_name: str = "gpt-3.5-turbo"
+        temperature: float = 0.7
+        verbose: bool = False
+        chatgpt: Computed[ChatGPT]
+
+        @computed('chatgpt')
+        def set_chatgpt(**kwargs):
+            return klass
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            model_name = kwargs.get("model_name")
+            if model_name:
+                self.model_name = model_name
+
+        def _agenerate(self):
+            pass
+
+        def _generate(
+            self, prompt: str, stop: Optional[List[str]] = None
+        ) -> ChatResult:
+            inner_completion = ""
+            role = "assistant"
+            for token in self.chatgpt._ask_stream(prompt):
+                inner_completion += token
+                if self.streaming:
+                    self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+            message = _convert_dict_to_message(
+                {"content": inner_completion, "role": role}
+            )
+            generation = ChatGeneration(message=message)
+            llm_output = {"model_name": self.model_name}
+            return ChatResult(generations=[generation], llm_output=llm_output)
+
+    return ChatGPTLLM
 
 class ChatGPT(Backend):
     """
@@ -30,57 +80,14 @@ class ChatGPT(Backend):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.llm_class = self._make_llm_class(self)
         self.play = None
         self.user_data_dir = None
         self.page = None
         self.browser = None
         self.session = None
+        self.set_llm_class(make_llm_class(self))
         self.new_conversation()
 
-    def _make_llm_class(chatgpt):
-        class ChatGPTLLM(LLM):
-            def __init__(self):
-                self.chatgpt = chatgpt
-
-            def _call(self):
-                return self.chatgpt.ask()
-
-            async def _agenerate(
-                self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-            ) -> ChatResult:
-                message_dicts, params = self._create_message_dicts(messages, stop)
-                if self.streaming:
-                    inner_completion = ""
-                    role = "assistant"
-                    params["stream"] = True
-                    async for stream_resp in await acompletion_with_retry(
-                        self, messages=message_dicts, **params
-                    ):
-                        role = stream_resp["choices"][0]["delta"].get("role", role)
-                        token = stream_resp["choices"][0]["delta"].get("content", "")
-                        inner_completion += token
-                        if self.callback_manager.is_async:
-                            await self.callback_manager.on_llm_new_token(
-                                token,
-                                verbose=self.verbose,
-                            )
-                        else:
-                            self.callback_manager.on_llm_new_token(
-                                token,
-                                verbose=self.verbose,
-                            )
-                    message = _convert_dict_to_message(
-                        {"content": inner_completion, "role": role}
-                    )
-                    return ChatResult(generations=[ChatGeneration(message=message)])
-                else:
-                    response = await acompletion_with_retry(
-                        self, messages=message_dicts, **params
-                    )
-                    return self._create_chat_result(response)
-
-        return ChatGPTLLM
 
     def get_primary_profile_directory(self):
         primary_profile = os.path.join(self.config.data_profile_dir, "playwright")
@@ -388,7 +395,7 @@ class ChatGPT(Backend):
             else:
                 return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
-    def ask_stream(self, prompt, title=None, model_customizations={}):
+    def _ask_stream(self, prompt, title=None, model_customizations={}):
         if self.session is None:
             self.refresh_session()
 
@@ -559,11 +566,30 @@ class ChatGPT(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        response = list([i for i in self.ask_stream(message, title=title)])
-        if len(response) == 0:
-            return False, response, "Unusable response produced, maybe login session expired. Try 'pkill firefox' and 'chatgpt install'"
-        else:
-            return True, ''.join(response), "Response received"
+        llm = self.make_llm()
+        try:
+            response = llm(message)
+        except ValueError as e:
+            return False, message, e
+        return True, response.content, "Response received"
+
+    def ask_stream(self, message, title=None, model_customizations={}):
+        """
+        Send a message to chatGPT and stream the response.
+
+        Args:
+            message (str): The message to send.
+
+        Returns:
+            str: The response received from OpenAI.
+        """
+        args = self.streaming_args()
+        llm = self.make_llm(args)
+        try:
+            response = llm(message)
+        except ValueError as e:
+            return False, message, e
+        return True, response.content, "Response received"
 
     def new_conversation(self):
         super().new_conversation()
