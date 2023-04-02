@@ -5,7 +5,7 @@ import tiktoken
 
 from openai.error import OpenAIError
 
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models.openai import ChatOpenAI, _convert_dict_to_message
 
 from chatgpt_wrapper.core.backend import Backend
 import chatgpt_wrapper.core.constants as constants
@@ -18,12 +18,12 @@ class OpenAIAPI(Backend):
     def __init__(self, config=None, default_user_id=None):
         super().__init__(config)
         self._configure_access_info()
-        self.llm_class = ChatOpenAI
         self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
         self.current_user = None
         self.conversation_tokens = 0
+        self.set_llm_class(ChatOpenAI)
         self.set_model_system_message()
         self.set_model_temperature(self.config.get('chat.model_customizations.temperature'))
         self.set_model_top_p(self.config.get('chat.model_customizations.top_p'))
@@ -103,9 +103,8 @@ class OpenAIAPI(Backend):
                 system_message = aliases[system_message]
         return system_message, model_customizations
 
-    def _extract_completion_content(self, completion):
-        content = "".join([c.message.content for c in completion.choices])
-        return content
+    def _extract_message_content(self, message):
+        return message.content
 
     def gen_title_thread(self, conversation):
         self.log.info(f"Generating title for conversation {conversation.id}")
@@ -121,7 +120,7 @@ class OpenAIAPI(Backend):
             ]
             success, completion, user_message = self._call_openai_non_streaming(new_messages, temperature=0)
             if success:
-                title = self._extract_completion_content(completion)
+                title = self._extract_message_content(completion)
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
                 success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
                 if success:
@@ -241,31 +240,36 @@ class OpenAIAPI(Backend):
         presence_penalty = self.model_presence_penalty if presence_penalty is None else presence_penalty
         frequency_penalty = self.model_frequency_penalty if frequency_penalty is None else frequency_penalty
         self.log.debug(f"ChatCompletion.create with message count: {len(messages)}, model: {self.model}, temperature: {temperature}, top_p: {top_p}, presence_penalty: {presence_penalty}, frequency_penalty: {frequency_penalty}, stream: {stream})")
-        try:
-            response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=messages,
-                temperature=temperature,
-                top_p=top_p,
-                presence_penalty=presence_penalty,
-                frequency_penalty=frequency_penalty,
-                stream=stream,
-            )
-        except OpenAIError as e:
-            self.log.error(f"OpenAIError: {e}")
-            raise OpenAIError(e)
-        return response
+        args = {
+            'model_name': self.model,
+            'temperature': temperature,
+            'top_p': top_p,
+            'presence_penalty': presence_penalty,
+            'frequency_penalty': frequency_penalty,
+        }
+        if stream:
+            args.update(self.streaming_args())
+        llm = self.make_llm(args)
+        messages = [_convert_dict_to_message(m) for m in messages]
+        return llm, messages
 
     def _call_openai_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
         self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
-        response = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, stream=True)
-        for chunk in response:
-            yield chunk
+        llm, messages = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, stream=True)
+        try:
+            response = llm(messages)
+        except ValueError as e:
+            return False, messages, e
+        return True, response, "Response received"
 
     def _call_openai_non_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
         self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
-        completion = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
-        return True, completion, "Retrieved response"
+        llm, messages = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
+        try:
+            response = llm(messages)
+        except ValueError as e:
+            return False, messages, e
+        return True, response, "Response received"
 
     def set_current_user(self, user=None):
         self.current_user = user
@@ -354,31 +358,25 @@ class OpenAIAPI(Backend):
     def ask_stream(self, prompt, title=None, model_customizations={}):
         system_message, model_customizations = self.extract_system_message(model_customizations)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        response_message = ""
         # Streaming loop.
         self.streaming = True
-        for response in self._call_openai_streaming(messages, **model_customizations):
+        #    if not self.streaming:
+        #        self.log.info("Request to interrupt streaming")
+        #        break
+        self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
+        success, response_obj, user_message = self._call_openai_streaming(messages, **model_customizations)
+        if success:
+            self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
+            response_message = self._extract_message_content(response_obj)
+            self.message_clipboard = response_message
             if not self.streaming:
-                self.log.info("Request to interrupt streaming")
-                break
-            if 'choices' in response:
-                for choice in response['choices']:
-                    delta = choice['delta']
-                    if 'role' in delta and delta['role'] == 'assistant':
-                        self.log.debug(f"Started streaming response at {response['created']}")
-                    elif len(delta) == 0:
-                        self.log.debug(f"Stopped streaming response at {response['created']}, cause: {response['choices'][0]['finish_reason']}")
-                    elif 'content' in delta:
-                        response_message += delta['content']
-                        self.message_clipboard = response_message
-                        yield delta['content']
-        if not self.streaming:
-            yield (
-                "\nGeneration stopped\n"
-            )
+                util.print_status_message(False, "Generation stopped")
+            success, response_obj, user_message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
+            if success:
+                response_obj = response_message
         # End streaming loop.
         self.streaming = False
-        self._ask_request_post(self.conversation_id, new_messages, response_message, title)
+        return self._handle_response(success, response_obj, user_message)
 
     def ask(self, prompt, title=None, model_customizations={}):
         """
@@ -392,12 +390,12 @@ class OpenAIAPI(Backend):
         """
         system_message, model_customizations = self.extract_system_message(model_customizations)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        success, completion, message = self._call_openai_non_streaming(messages, **model_customizations)
+        success, response, user_message = self._call_openai_non_streaming(messages, **model_customizations)
         if success:
-            response_message = self._extract_completion_content(completion)
+            response_message = self._extract_message_content(response)
             self.message_clipboard = response_message
-            success, conversation, message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
+            success, conversation, user_message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
             if success:
-                return self._handle_response(success, response_message, message)
-            return self._handle_response(success, conversation, message)
-        return self._handle_response(success, completion, message)
+                return self._handle_response(success, response_message, user_message)
+            return self._handle_response(success, conversation, user_message)
+        return self._handle_response(success, response, user_message)
