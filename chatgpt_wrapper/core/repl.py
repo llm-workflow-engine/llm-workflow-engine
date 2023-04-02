@@ -676,23 +676,18 @@ class Repl():
             return
 
         if self.stream:
-            response = ""
-            first = True
-            for chunk in self.backend.ask_stream(line, title=title, model_customizations=model_customizations):
-                if first:
-                    print("")
-                    first = False
-                print(chunk, end="")
-                sys.stdout.flush()
-                response += chunk
+            print("")
+            success, response, user_message = self.backend.ask_stream(line, title=title, model_customizations=model_customizations)
             print("\n")
+            if not success:
+                return success, response, user_message
         else:
-            success, response, message = self.backend.ask(line, title=title, model_customizations=model_customizations)
+            success, response, user_message = self.backend.ask(line, title=title, model_customizations=model_customizations)
             if success:
                 print("")
                 util.print_markdown(response)
             else:
-                return success, response, message
+                return success, response, user_message
 
         self._write_log(line, response)
         self._update_message_map()
