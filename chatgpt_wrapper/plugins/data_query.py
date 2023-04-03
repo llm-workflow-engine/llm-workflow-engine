@@ -130,6 +130,11 @@ class DataLoader:
 
 class DataQuery(Plugin):
 
+    def incompatible_backends(self):
+        return [
+            'chatgpt-browser',
+        ]
+
     def default_config(self):
         return {
             'agent': {

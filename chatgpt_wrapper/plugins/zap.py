@@ -6,6 +6,11 @@ from chatgpt_wrapper.core.plugin import Plugin
 
 class Zap(Plugin):
 
+    def incompatible_backends(self):
+        return [
+            'chatgpt-browser',
+        ]
+
     def default_config(self):
         return {
             'agent': {

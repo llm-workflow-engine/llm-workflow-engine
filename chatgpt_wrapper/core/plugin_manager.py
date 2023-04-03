@@ -56,6 +56,9 @@ class PluginManager:
                     plugin_instance = plugin_class(self.config)
                     plugin_instance.set_name(plugin_name)
                     plugin_instance.set_backend(self.backend)
+                    if self.backend.name in plugin_instance.incompatible_backends():
+                        self.log.error(f"Plugin {plugin_name} is incompatible with backend {self.backend.name}, remove it from configuration")
+                        continue
                     self.merge_plugin_config(plugin_instance)
                     plugin_instance.setup()
                     return plugin_instance

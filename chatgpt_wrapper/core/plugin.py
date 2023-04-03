@@ -28,6 +28,9 @@ class PluginBase(ABC):
     def get_shell_completions(self, _base_shell_completions):
         pass
 
+    def incompatible_backends(self):
+        return []
+
     def make_llm(self, args={}):
         return self.backend.make_llm(args)
 

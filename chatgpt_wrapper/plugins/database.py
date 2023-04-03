@@ -7,6 +7,11 @@ import chatgpt_wrapper.core.util as util
 
 class Database(Plugin):
 
+    def incompatible_backends(self):
+        return [
+            'chatgpt-browser',
+        ]
+
     def default_config(self):
         return {
             'database': {
