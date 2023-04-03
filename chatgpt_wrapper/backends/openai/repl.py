@@ -196,7 +196,9 @@ Before you can start using the shell, you must create a new user.
         else:
             self.create_first_user()
 
-    def _build_shell_user_prefix(self):
+    def build_shell_user_prefix(self):
+        if not self.logged_in_user:
+            return ''
         prompt_prefix = self.config.get("shell.prompt_prefix")
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
@@ -208,14 +210,6 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
         return f"{prompt_prefix} "
-
-    def set_user_prompt(self, user=None):
-        if self.logged_in_user:
-            prefix = self._build_shell_user_prefix()
-        else:
-            prefix = ''
-        self._set_prompt_prefix(prefix)
-        self._set_prompt()
 
     def login(self, user):
         if user.password:

@@ -16,6 +16,9 @@ class BrowserRepl(Repl):
     def launch_backend(self, interactive=True):
         self.backend.launch_browser()
 
+    def build_shell_user_prefix(self):
+        return f"{self.backend.model} "
+
     def do_session(self, _):
         """
         Refresh session information

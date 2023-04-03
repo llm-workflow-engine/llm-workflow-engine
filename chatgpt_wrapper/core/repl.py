@@ -242,8 +242,13 @@ class Repl():
             )
             self.logfile.flush()
 
-    def set_user_prompt(self):
-        pass
+    def build_shell_user_prefix(self):
+        return ''
+
+    def set_user_prompt(self, user=None):
+        prefix = self.build_shell_user_prefix()
+        self._set_prompt_prefix(prefix)
+        self._set_prompt()
 
     def configure_plugins(self):
         self.plugin_manager = PluginManager(self.config, self.backend)
