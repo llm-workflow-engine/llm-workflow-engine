@@ -29,10 +29,9 @@ class OpenAIAPI(Backend):
         self.set_model_max_submission_tokens(self.config.get('chat.model_customizations.max_submission_tokens'))
         if default_user_id is not None:
             success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
-            if success:
-                self.set_current_user(user)
-            else:
+            if not success:
                 raise Exception(user_message)
+            self.set_current_user(user)
 
     def _configure_access_info(self):
         self.openai = openai
@@ -217,20 +216,18 @@ class OpenAIAPI(Backend):
             if not success:
                 raise Exception(user_message)
         success, last_message, user_message = self.message.add_message(conversation.id, 'assistant', response_message)
-        if success:
-            tokens = self.conversation_token_count()
-            self.conversation_tokens = tokens
-        else:
+        if not success:
             raise Exception(user_message)
+        tokens = self.conversation_token_count()
+        self.conversation_tokens = tokens
         return conversation, last_message
 
     def add_message(self, role, message, conversation_id=None):
         conversation_id = conversation_id or self.conversation_id
         success, message, user_message = self.message.add_message(conversation_id, role, message)
-        if success:
-            return message
-        else:
+        if not success:
             raise Exception(user_message)
+        return message
 
     def _build_openai_chat_request(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None, stream=False):
         temperature = self.model_temperature if temperature is None else temperature
