@@ -6,6 +6,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
+from chatgpt_wrapper.core import util
 
 class VerboseStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     @property
@@ -17,6 +18,7 @@ def make_interrupt_streaming_callback_handler(backend):
     class InterruptStreamingCallbackHandler(VerboseStreamingStdOutCallbackHandler):
         def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
             if not backend.streaming:
+                util.print_status_message(False, "\n\nWARNING:\nStream interruption on the API backend is not currently working properly, and may not properly store information on an interrupted stream.\nIf you'd like to help fix this error, see https://github.com/mmabrouk/chatgpt-wrapper/issues/274")
                 message = "Request to interrupt streaming"
                 backend.log.info(message)
                 raise EOFError(message)
