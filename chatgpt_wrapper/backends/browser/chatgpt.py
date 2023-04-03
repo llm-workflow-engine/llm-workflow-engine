@@ -20,6 +20,7 @@ from langchain.schema import (
 from langchain.chat_models.openai import _convert_dict_to_message
 
 from chatgpt_wrapper.core.backend import Backend
+from chatgpt_wrapper.core import util
 import chatgpt_wrapper.core.constants as constants
 
 GEN_TITLE_TIMEOUT = 5000
@@ -93,10 +94,7 @@ class ChatGPT(Backend):
         primary_profile = os.path.join(self.config.data_profile_dir, "playwright")
         return primary_profile
 
-    def launch_browser(self, timeout=60, proxy: Optional[ProxySettings] = None):
-        primary_profile = self.get_primary_profile_directory()
-        self.streaming = False
-        self.play = sync_playwright().start()
+    def launch_browser_context(self, user_data_dir):
         browser = self.config.get('browser.provider')
         headless = not self.config.get('browser.debug')
         try:
@@ -104,23 +102,27 @@ class ChatGPT(Backend):
         except Exception:
             print(f"Browser {browser} is invalid, falling back on firefox")
             playbrowser = self.play.firefox
+        self.browser = playbrowser.launch_persistent_context(
+            user_data_dir=user_data_dir,
+            headless=headless,
+            proxy=self.browser_proxy,
+            handle_sigint=False,
+        )
+
+    def launch_browser(self, timeout=60, proxy: Optional[ProxySettings] = None):
+        primary_profile = self.get_primary_profile_directory()
+        self.streaming = False
+        self.browser_proxy = proxy
+        self.play = sync_playwright().start()
         try:
-            self.browser = playbrowser.launch_persistent_context(
-                user_data_dir=primary_profile,
-                headless=headless,
-                proxy=proxy,
-            )
+            self.launch_browser_context(primary_profile)
         except Exception:
             self.user_data_dir = f"{primary_profile}-{str(uuid.uuid4())}"
             message = f"Unable to launch browser from primary profile, trying alternate profile {self.user_data_dir}"
             print(message)
             self.log.warning(message)
             shutil.copytree(primary_profile, self.user_data_dir, ignore=shutil.ignore_patterns("lock"))
-            self.browser = playbrowser.launch_persistent_context(
-                user_data_dir=self.user_data_dir,
-                headless=headless,
-                proxy=proxy,
-            )
+            self.launch_browser_context(self.user_data_dir)
         atexit.register(self._shutdown)
 
         if len(self.browser.pages) > 0:
@@ -547,6 +549,7 @@ class ChatGPT(Backend):
 
     def interrupt_stream(self):
         self.log.info("Interrupting stream")
+        util.print_status_message(False, "\n\nWARNING:\nStream interruption on the browser backend is not currently working properly, and may require force closing the process.\nIf you'd like to help fix this error, see https://github.com/mmabrouk/chatgpt-wrapper/issues/274")
         code = (
             """
             const interrupt_div = document.createElement('DIV');
