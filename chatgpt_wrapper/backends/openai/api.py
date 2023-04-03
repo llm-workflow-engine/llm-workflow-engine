@@ -61,7 +61,7 @@ class OpenAIAPI(Backend):
             raise Exception(f"Unable to get token encoding for model {model}: {str(e)}")
         return encoding
 
-    def num_tokens_from_messages(self, messages, encoding=None):
+    def get_num_tokens_from_messages(self, messages, encoding=None):
         if not encoding:
             encoding = self.get_token_encoding()
         """Returns the number of tokens used by a list of messages."""
@@ -77,16 +77,16 @@ class OpenAIAPI(Backend):
 
     def switch_to_conversation(self, conversation_id, parent_message_id):
         super().switch_to_conversation(conversation_id, parent_message_id)
-        tokens = self.conversation_token_count(conversation_id)
+        tokens = self.get_conversation_token_count(conversation_id)
         self.conversation_tokens = tokens
 
-    def conversation_token_count(self, conversation_id=None):
+    def get_conversation_token_count(self, conversation_id=None):
         conversation_id = conversation_id or self.conversation_id
         success, old_messages, user_message = self.message.get_messages(conversation_id)
         if not success:
             raise Exception(user_message)
         token_messages = self.prepare_prompt_messsage_context(old_messages)
-        tokens = self.num_tokens_from_messages(token_messages)
+        tokens = self.get_num_tokens_from_messages(token_messages)
         return tokens
 
     def extract_system_message(self, model_customizations):
@@ -218,7 +218,7 @@ class OpenAIAPI(Backend):
         success, last_message, user_message = self.message.add_message(conversation.id, 'assistant', response_message)
         if not success:
             raise Exception(user_message)
-        tokens = self.conversation_token_count()
+        tokens = self.get_conversation_token_count()
         self.conversation_tokens = tokens
         return conversation, last_message
 
@@ -310,10 +310,10 @@ class OpenAIAPI(Backend):
         stripped_messages_count = 0
         while token_count > max_tokens and len(messages) > 1:
             message = messages.pop(0)
-            token_count = self.num_tokens_from_messages(messages)
+            token_count = self.get_num_tokens_from_messages(messages)
             self.log.debug(f"Stripping message: {message['role']}, {message['content']} -- new token count: {token_count}")
             stripped_messages_count += 1
-        token_count = self.num_tokens_from_messages(messages)
+        token_count = self.get_num_tokens_from_messages(messages)
         if token_count > max_tokens:
             raise Exception(f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}")
         if stripped_messages_count > 0:
@@ -325,7 +325,7 @@ class OpenAIAPI(Backend):
     def _prepare_ask_request(self, prompt, system_message=None):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id, system_message=system_message)
         messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
-        tokens = self.num_tokens_from_messages(messages)
+        tokens = self.get_num_tokens_from_messages(messages)
         self.conversation_tokens = tokens
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.model_max_submission_tokens)
         return new_messages, messages
