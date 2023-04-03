@@ -7,11 +7,12 @@ def test_api_non_streaming():
     config = Config(profile='test')
     config.set('debug.log.enabled', True)
     gpt = OpenAIAPI(config)
-    success, response, user_message = gpt.ask("Say hello!")
+    success, response, _user_message = gpt.ask("Say hello!")
     if success:
         print("\nRESPONSE:\n")
         print(response)
     assert success
+    assert isinstance(response, str)
 
 if __name__ == '__main__':
     test_api_non_streaming()
