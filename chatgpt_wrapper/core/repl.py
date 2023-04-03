@@ -1147,30 +1147,36 @@ class Repl():
         util.print_markdown("### %s" % self.intro)
         while True:
             self.set_user_prompt()
-            try:
-                # This extra threading and queuing dance is necessary because
-                # the browser backend starts an event loop, and prompt_tookit
-                # barfs when it tries to start the application when an event
-                # loop is already running.
-                # Converting to prompt_async doesn't seem to help, because
-                # then Playwright complains that it needs to be run in an async
-                # context as well.
-                # Happy to accept a better solution to this promblem if it's
-                # presented.
-                user_input_queue = queue.Queue()
-                def prompt_session():
+            # This extra threading and queuing dance is necessary because
+            # the browser backend starts an event loop, and prompt_tookit
+            # barfs when it tries to start the application when an event
+            # loop is already running.
+            # Converting to prompt_async doesn't seem to help, because
+            # then Playwright complains that it needs to be run in an async
+            # context as well.
+            # Happy to accept a better solution to this promblem if it's
+            # presented.
+            user_input_queue = queue.Queue()
+            def prompt_session():
+                user_input = None
+                try:
                     user_input = self.prompt_session.prompt(
                         self.prompt,
                         completer=self.command_completer,
                     )
+                except KeyboardInterrupt:
+                    user_input_queue.put(KeyboardInterrupt)
+                except EOFError:
+                    user_input_queue.put(EOFError)
+                if user_input is not None:
                     user_input_queue.put(user_input)
-                t = threading.Thread(target=prompt_session)
-                t.start()
-                user_input = user_input_queue.get()
-            except KeyboardInterrupt:
-                continue  # Control-C pressed. Try again.
-            except EOFError:
-                break  # Control-D pressed.
+            t = threading.Thread(target=prompt_session)
+            t.start()
+            user_input = user_input_queue.get()
+            if user_input is KeyboardInterrupt:
+                continue
+            elif user_input is EOFError:
+                break
             try:
                 command, argument = util.parse_shell_input(user_input)
             except (NoInputError, LegacyCommandLeaderError):
