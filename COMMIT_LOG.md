@@ -1,3 +1,19 @@
+### v0.8.1 - 03/04/2023
+
+* **Mon Apr 03 2023:** add support for listing incompatible backends in plugins
+* **Mon Apr 03 2023:** abstract prompt prefixing for REPLS, add model prefix for browser backend
+* **Mon Apr 03 2023:** add warning message for broken stream interruption on API backend
+* **Mon Apr 03 2023:** abstract launching browser context, add warning streaming not working properly on browser backend
+* **Sun Apr 02 2023:** support interrupting streaming on API backend
+* **Sun Apr 02 2023:** add current datatime util function
+* **Sun Apr 02 2023:** convert backends to use langchain custom chat LLM
+* **Sun Apr 02 2023:** move LLM class/object creation methods to base backend class
+* **Mon Apr 03 2023:** fix ctrl-c/ctrl-d functionality with prompt thread
+* **Sat Apr 01 2023:** reorg install section
+* **Sat Apr 01 2023:** update doc for backend installation
+* **Sat Apr 01 2023:** update sample config
+* **Sat Apr 01 2023:** register cleanup function for browser backend
+
 ### v0.8.0 - 01/04/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
