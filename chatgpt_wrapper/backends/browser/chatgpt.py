@@ -14,6 +14,7 @@ from playwright._impl._api_structures import ProxySettings
 from pydantic_computed import Computed, computed
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
+    BaseMessage,
     ChatGeneration,
     ChatResult,
 )
@@ -47,11 +48,17 @@ def make_llm_class(klass):
             pass
 
         def _generate(
-            self, prompt: str, stop: Optional[List[str]] = None
+            self, messages: any, stop: Optional[List[str]] = None
         ) -> ChatResult:
+            prompts = []
+            if isinstance(messages, str):
+                messages = [messages]
+            for message in messages:
+                content = message.content if isinstance(message, BaseMessage) else message
+                prompts.append(content)
             inner_completion = ""
             role = "assistant"
-            for token in self.chatgpt._ask_stream(prompt):
+            for token in self.chatgpt._ask_stream("\n\n".join(prompts)):
                 inner_completion += token
                 if self.streaming:
                     self.callback_manager.on_llm_new_token(
