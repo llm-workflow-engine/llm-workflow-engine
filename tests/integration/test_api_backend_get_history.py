@@ -3,7 +3,7 @@
 from chatgpt_wrapper.backends.openai.api import OpenAIAPI
 from chatgpt_wrapper.core.config import Config
 
-def test_api_get_history():
+def test_api_backend_get_history():
     config = Config(profile='test')
     config.set('debug.log.enabled', True)
     gpt = OpenAIAPI(config, default_user_id=1)
@@ -15,4 +15,4 @@ def test_api_get_history():
     assert success
 
 if __name__ == '__main__':
-    test_api_get_history()
+    test_api_backend_get_history()

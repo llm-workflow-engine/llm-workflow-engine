@@ -3,7 +3,7 @@
 from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
 from chatgpt_wrapper.core.config import Config
 
-def test_sync_chatgpt():
+def test_browser_backend_non_streaming():
     config = Config(profile='test')
     config.set('backend', 'browser')
     if __name__ == '__main__':
@@ -16,4 +16,4 @@ def test_sync_chatgpt():
     assert response1
 
 if __name__ == '__main__':
-    test_sync_chatgpt()
+    test_browser_backend_non_streaming()
