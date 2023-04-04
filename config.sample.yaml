@@ -32,6 +32,9 @@ shell:
   # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
   # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation
   prompt_prefix: ($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL
+  # Full path to the file that stores a history of commands in the shell.
+  # Set to false to disable storing history.
+  history_file: /tmp/repl_history.log
 
 ##########################################################
 # Browser settings.

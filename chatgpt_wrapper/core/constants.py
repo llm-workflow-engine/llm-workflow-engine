@@ -55,6 +55,7 @@ DEFAULT_CONFIG = {
     'backend': 'chatgpt-api',
     'shell': {
         'prompt_prefix': '($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL',
+        'history_file': '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep),
     },
     'database': None,
     'browser': {
@@ -104,7 +105,6 @@ DEFAULT_CONFIG = {
 COMMAND_LEADER = '/'
 LEGACY_COMMAND_LEADER = '!'
 DEFAULT_COMMAND = 'ask'
-COMMAND_HISTORY_FILE = '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep)
 DEFAULT_HISTORY_LIMIT = 20
 SHELL_ONE_SHOT_COMMANDS = [
     'install',

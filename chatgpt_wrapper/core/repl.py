@@ -57,7 +57,7 @@ class Repl():
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.template_manager = TemplateManager(self.config)
-        self.history = self.get_history()
+        self.history = self.get_shell_history()
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
             history=self.history,
@@ -134,8 +134,10 @@ class Repl():
         completions = self.get_plugin_shell_completions(completions)
         self.command_completer = NestedCompleter.from_nested_dict(completions)
 
-    def get_history(self):
-        return FileHistory(constants.COMMAND_HISTORY_FILE)
+    def get_shell_history(self):
+        history_file = self.config.get('shell.history_file')
+        if history_file:
+            return FileHistory(history_file)
 
     def get_styles(self):
         style = Style.from_dict({
