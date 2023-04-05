@@ -1,3 +1,8 @@
+### v0.8.2 - 05/04/2023
+
+* **Wed Apr 05 2023:** enable console/file debugging for --debug arg, print backtrace on command exceptionn when --debug enabled
+* **Tue Apr 04 2023:** add shell.history_file config option
+
 ### v0.8.1 - 03/04/2023
 
 * **Mon Apr 03 2023:** add support for listing incompatible backends in plugins
