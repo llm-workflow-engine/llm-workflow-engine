@@ -186,11 +186,11 @@ class Repl():
             doc = method.__doc__
             if doc:
                 doc = doc.replace("{COMMAND}", "%s%s" % (constants.COMMAND_LEADER, command))
-                for sub in constants.HELP_TOKEN_VARIBALE_SUBSTITUTIONS:
+                for sub in constants.HELP_TOKEN_VARIABLE_SUBSTITUTIONS:
                     try:
                         const_value = getattr(constants, sub)
                     except AttributeError:
-                        raise AttributeError(f"'{sub}' in HELP_TOKEN_VARIBALE_SUBSTITUTIONS is not a valid constant")
+                        raise AttributeError(f"'{sub}' in HELP_TOKEN_VARIABLE_SUBSTITUTIONS is not a valid constant")
                     doc = doc.replace("{%s}" % sub, str(const_value))
                 return textwrap.dedent(doc)
 

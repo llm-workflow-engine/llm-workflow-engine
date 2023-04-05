@@ -187,7 +187,7 @@ class ChatGPT(Backend):
         In this way, we can pass the browser check.
 
         Args:
-            timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 10.
+            timeout (int, optional): Timeout waiting for the refresh in seconds. Defaults to 15.
         """
         self.log.info("Refreshing session...")
         self.page.goto("https://chat.openai.com/api/auth/session")

@@ -116,7 +116,7 @@ SHELL_ONE_SHOT_COMMANDS = [
 NO_TITLE_TEXT = "No title"
 # These are the variables in this file that are available for substitution in
 # help messages.
-HELP_TOKEN_VARIBALE_SUBSTITUTIONS = [
+HELP_TOKEN_VARIABLE_SUBSTITUTIONS = [
     'COMMAND_LEADER',
     'DEFAULT_HISTORY_LIMIT',
     'SYSTEM_MESSAGE_DEFAULT',
