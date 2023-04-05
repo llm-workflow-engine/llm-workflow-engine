@@ -3,6 +3,7 @@ import textwrap
 import yaml
 import os
 import sys
+import traceback
 import shutil
 import signal
 import frontmatter
@@ -56,6 +57,7 @@ class Repl():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
+        self.debug = self.config.get('log.console.level').lower() == 'debug'
         self.template_manager = TemplateManager(self.config)
         self.history = self.get_shell_history()
         self.style = self.get_styles()
@@ -1139,6 +1141,8 @@ class Repl():
                     response = method(obj, argument)
                 except Exception as e:
                     print(repr(e))
+                    if self.debug:
+                        traceback.print_exc()
                 else:
                     util.output_response(response)
             else:

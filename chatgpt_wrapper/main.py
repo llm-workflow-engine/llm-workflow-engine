@@ -113,6 +113,9 @@ def main():
         config.set('browser.provider', args.browser)
     if args.debug:
         config.set('browser.debug', True)
+        config.set('log.console.level', 'debug')
+        config.set('debug.log.enabled', True)
+        config.set('debug.log.level', 'debug')
     if args.model is not None:
         config.set('chat.model', args.model)
 
