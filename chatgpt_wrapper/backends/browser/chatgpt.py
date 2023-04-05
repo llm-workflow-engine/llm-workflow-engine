@@ -181,7 +181,7 @@ class ChatGPT(Backend):
 """ % (self.model)
         return output
 
-    def refresh_session(self, timeout=15):
+    def refresh_session(self, timeout=10):
         """Refresh session, by redirecting the *page* to /api/auth/session rather than a simple xhr request.
 
         In this way, we can pass the browser check.
