@@ -88,7 +88,7 @@ DEFAULT_CONFIG = {
     },
     'plugins': {
         'enabled': [
-            'awesome',
+            'echo',
         ],
     },
     'debug': {

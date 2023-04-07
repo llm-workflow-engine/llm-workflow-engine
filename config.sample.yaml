@@ -95,8 +95,8 @@ log:
 plugins:
   enabled:
     # Core plugins, see README for more details.
-    #- test
-    - awesome
+    - echo
+    #- awesome
     #- database
     #- data_query
     #- shell
