@@ -211,17 +211,18 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
         return f"{prompt_prefix} "
 
+    def set_logged_in_user(self, user=None):
+        self.logged_in_user = user
+        self.backend.set_current_user(user)
+
     def login(self, user):
         if user.password:
             password = getpass.getpass(prompt='Enter password: ')
             success, user, message = self.user_management.login(user.username, password)
-            if success:
-                self.logged_in_user = user
         else:
-            self.logged_in_user = user
-            self.backend.set_current_user(user)
             success, user, message = True, user, "Login successful."
         if success:
+            self.set_logged_in_user(user)
             self.backend.new_conversation()
         return success, user, message
 
@@ -276,8 +277,7 @@ Before you can start using the shell, you must create a new user.
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
-        self.logged_in_user = None
-        self.backend.set_current_user()
+        self.set_logged_in_user()
         return True, None, "Logout successful."
 
     def do_logout(self, _):
