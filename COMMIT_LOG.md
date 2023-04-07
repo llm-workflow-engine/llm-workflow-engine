@@ -1,3 +1,8 @@
+### v0.8.3 - 07/04/2023
+
+* **Fri Apr 07 2023:** properly set user object in all login scenarios, fixes #260, fixes #262
+* **Thu Apr 06 2023:** sync docs
+
 ### v0.8.2 - 05/04/2023
 
 * **Wed Apr 05 2023:** enable console/file debugging for --debug arg, print backtrace on command exceptionn when --debug enabled
