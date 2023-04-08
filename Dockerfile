@@ -1,5 +1,7 @@
 FROM accetto/ubuntu-vnc-xfce-python-g3:vscode-firefox
 
+ENV PYTHONPATH=/src:$PYTHONPATH
+
 USER root
 
 # Pkgs for default database
