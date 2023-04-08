@@ -62,6 +62,9 @@ DEFAULT_CONFIG = {
         'provider': 'firefox',
         'debug': False,
     },
+    'model': {
+        'provider': 'openai',
+    },
     'chat': {
         'model': 'default',
         'model_customizations': {

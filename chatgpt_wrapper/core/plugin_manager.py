@@ -30,6 +30,11 @@ class PluginManager:
         ]
         return plugin_paths
 
+    def inject_plugin(self, plugin_name, plugin_class):
+        plugin_instance = plugin_class(self.config)
+        self.setup_plugin(plugin_name, plugin_instance)
+        self.plugins[plugin_name] = plugin_instance
+
     def load_plugins(self, plugin_list):
         for plugin_name in plugin_list:
             plugin_instance = self.load_plugin(plugin_name)
