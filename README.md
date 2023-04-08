@@ -134,6 +134,16 @@ Once you're logged in, you have full access to all commands.
 
 **IMPORTANT NOTE:** The user authorization system from the command line is 'admin party' -- meaning every logged in user has admin privileges, including editing and deleting other users.
 
+##### Setting the default model
+
+The default model used when communicating with the LLM service is configured per user.
+
+To change the default model for a user:
+
+* Log in as the user
+* Run `/user-edit`
+* Step through the settings, including the one to set the default model
+
 #### Playwright (browser-based): **DEPRECATED**
 
 This backend is deprecated, and may be removed in a future release.
