@@ -63,7 +63,7 @@ DEFAULT_CONFIG = {
         'debug': False,
     },
     'model': {
-        'provider': 'openai',
+        'provider': 'provider_chat_openai',
     },
     'chat': {
         'model': 'default',

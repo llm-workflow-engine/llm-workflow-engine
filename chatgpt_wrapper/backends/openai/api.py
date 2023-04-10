@@ -1,6 +1,4 @@
-import os
 import threading
-import openai
 import tiktoken
 
 from langchain.chat_models.openai import _convert_dict_to_message
@@ -8,7 +6,6 @@ from langchain.chat_models.openai import _convert_dict_to_message
 from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.provider_manager import ProviderManager
 from chatgpt_wrapper.core.plugin_manager import PluginManager
-from chatgpt_wrapper.backends.openai.openai_provider import OpenAIProvider
 import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.backends.openai.user import UserManager
@@ -18,14 +15,13 @@ from chatgpt_wrapper.backends.openai.message import MessageManager
 class OpenAIAPI(Backend):
     def __init__(self, config=None, default_user_id=None):
         super().__init__(config)
-        self._configure_access_info()
         self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
         self.provider = None
         self.current_user = None
         self.conversation_tokens = 0
-        self.plugin_manager = self.configure_plugin_manager()
+        self.plugin_manager = PluginManager(self.config, self)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.set_provider(self.config.get('model.provider'))
         self.set_model_system_message()
@@ -40,11 +36,6 @@ class OpenAIAPI(Backend):
                 raise Exception(user_message)
             self.set_current_user(user)
 
-    def configure_plugin_manager(self):
-        plugin_manager = PluginManager(self.config, self)
-        plugin_manager.inject_plugin('openai', OpenAIProvider)
-        return plugin_manager
-
     def set_provider(self, provider):
         if self.provider != provider:
             success, llm_class, user_message = self.provider_manager.load_provider(provider)
@@ -52,18 +43,6 @@ class OpenAIAPI(Backend):
                 self.provider = provider
                 self.set_llm_class(llm_class)
             return success, llm_class, user_message
-
-    def _configure_access_info(self):
-        self.openai = openai
-        profile_prefix = f"PROFILE_{self.config.profile.upper()}"
-        self.openai.organization = os.getenv(f"{profile_prefix}_OPENAI_ORG_ID")
-        if not self.openai.organization:
-            self.openai.organization = os.getenv("OPENAI_ORG_ID")
-        self.openai.api_key = os.getenv(f"{profile_prefix}_OPENAI_API_KEY")
-        if not self.openai.api_key:
-            self.openai.api_key = os.getenv("OPENAI_API_KEY")
-        if not self.openai.api_key:
-            raise ValueError(f"{profile_prefix}_OPENAI_API_KEY or OPENAI_API_KEY environment variable must be set")
 
     def _handle_response(self, success, obj, message):
         if not success:

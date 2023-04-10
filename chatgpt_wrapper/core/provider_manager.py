@@ -10,7 +10,7 @@ class ProviderManager:
         self.provider_plugins = self.get_provider_plugins()
 
     def get_provider_plugins(self):
-        provider_plugins = {k: v for (k, v) in self.plugin_manager.get_plugins().items() if getattr(v, "llm_factory", None)}
+        provider_plugins = {k: v for (k, v) in self.plugin_manager.get_plugins().items() if v.plugin_type == 'provider'}
         return provider_plugins
 
     def load_provider(self, provider: str):
