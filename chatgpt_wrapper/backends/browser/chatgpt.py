@@ -21,6 +21,7 @@ from langchain.schema import (
 from langchain.chat_models.openai import _convert_dict_to_message
 
 from chatgpt_wrapper.core.backend import Backend
+from chatgpt_wrapper.core.plugin_manager import PluginManager
 from chatgpt_wrapper.core import util
 import chatgpt_wrapper.core.constants as constants
 
@@ -81,6 +82,7 @@ class ChatGPT(Backend):
     order to provide an open API to ChatGPT.
     """
 
+    name = "chatgpt-browser"
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     interrupt_div_id = "chatgpt-wrapper-conversation-stream-data-interrupt"
@@ -93,6 +95,7 @@ class ChatGPT(Backend):
         self.page = None
         self.browser = None
         self.session = None
+        self.plugin_manager = PluginManager(self.config, self)
         self.set_llm_class(make_llm_class(self))
         self.new_conversation()
 
@@ -167,9 +170,6 @@ class ChatGPT(Backend):
         if self.user_data_dir:
             shutil.rmtree(self.user_data_dir)
         self.play.stop()
-
-    def get_backend_name(self):
-        return "chatgpt-browser"
 
     def set_available_models(self):
         self.available_models = constants.RENDER_MODELS

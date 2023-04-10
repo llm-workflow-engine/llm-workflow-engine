@@ -12,7 +12,14 @@ from chatgpt_wrapper.backends.openai.user import UserManager
 from chatgpt_wrapper.backends.openai.conversation import ConversationManager
 from chatgpt_wrapper.backends.openai.message import MessageManager
 
+ADDITIONAL_PLUGINS = [
+    'provider_chat_openai',
+]
+
 class OpenAIAPI(Backend):
+
+    name = "chatgpt-api"
+
     def __init__(self, config=None, default_user_id=None):
         super().__init__(config)
         self.user_manager = UserManager(self.config)
@@ -21,7 +28,7 @@ class OpenAIAPI(Backend):
         self.provider = None
         self.current_user = None
         self.conversation_tokens = 0
-        self.plugin_manager = PluginManager(self.config, self)
+        self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.set_provider(self.config.get('model.provider'))
         self.set_model_system_message()
@@ -126,9 +133,6 @@ class OpenAIAPI(Backend):
     def gen_title(self, conversation):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
-
-    def get_backend_name(self):
-        return "chatgpt-api"
 
     def set_available_models(self):
         self.available_models = constants.OPENAPI_CHAT_RENDER_MODELS

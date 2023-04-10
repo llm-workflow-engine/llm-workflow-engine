@@ -30,7 +30,6 @@ class Backend(ABC):
     """
 
     def __init__(self, config=None):
-        self.name = self.get_backend_name()
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.parent_message_id = None
@@ -99,10 +98,6 @@ class Backend(ABC):
 
     def get_runtime_config(self):
         return ""
-
-    @abstractmethod
-    def get_backend_name(self):
-        pass
 
     @abstractmethod
     def set_available_models(self):

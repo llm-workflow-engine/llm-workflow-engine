@@ -255,7 +255,7 @@ class Repl():
         self._set_prompt()
 
     def configure_plugins(self):
-        self.plugin_manager = PluginManager(self.config, self.backend)
+        self.plugin_manager = self.backend.plugin_manager
         self.plugins = self.plugin_manager.get_plugins()
         for plugin in self.plugins.values():
             plugin.set_shell(self)
@@ -1063,7 +1063,7 @@ class Repl():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.config.get('backend'), self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
 
