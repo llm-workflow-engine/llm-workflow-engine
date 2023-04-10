@@ -7,19 +7,16 @@ from chatgpt_wrapper.core.logger import Logger
 import chatgpt_wrapper.core.util as util
 
 PLUGIN_PREFIX = "chatgpt_wrapper_"
-PLUGINS_ALWAYS_ENABLED = [
-    'provider_chat_openai',
-]
 
 class PluginManager:
-    def __init__(self, config=None, backend=None, search_path=None):
+    def __init__(self, config=None, backend=None, search_path=None, additional_plugins=[]):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.backend = backend
         self.search_path = search_path if search_path else self.get_default_plugin_paths()
         self.plugins = {}
         self.package_plugins = {}
-        self.plugin_list = list(set(config.get('plugins.enabled') + PLUGINS_ALWAYS_ENABLED))
+        self.plugin_list = list(set(config.get('plugins.enabled') + additional_plugins))
         self.load_package_plugins(self.plugin_list)
         self.load_plugins(self.plugin_list)
 
