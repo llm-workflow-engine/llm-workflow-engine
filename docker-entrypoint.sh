@@ -5,4 +5,4 @@ echo '2) Follow the instructions to create the first user'
 echo '3) Have a nice chat'
 
 # python # just holding
-python chatgpt_wrapper/gpt_api.py
+# python chatgpt_wrapper/gpt_api.py

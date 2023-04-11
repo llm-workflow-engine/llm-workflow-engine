@@ -399,7 +399,11 @@ else:
 
 ## Docker (experimental)
 
-Build a image for testing `chatgpt-wrapper` with following commands.
+Build a docker image for testing `chatgpt-wrapper`:
+
+Make sure your OpenAI key has been exported into your host environment as `OPENAI_API_KEY`
+
+Run the following commands:
 
 ```bash
 docker-compose build && docker-compose up -d
