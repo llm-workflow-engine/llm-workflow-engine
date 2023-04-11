@@ -11,6 +11,7 @@ services:
       - ./tmp:/tmp
     environment:
       - VNC_RESOLUTION=1600x900
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - 6901:6901 # Just for logging in with noVNC
       - 5000:5000 # Flask port
