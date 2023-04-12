@@ -32,6 +32,8 @@ class Backend(ABC):
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
+        self.provider_name = None
+        self.provider = None
         self.parent_message_id = None
         self.conversation_id = None
         self.conversation_title_set = None
@@ -43,19 +45,6 @@ class Backend(ABC):
 
     def set_llm_class(self, klass):
         self.llm_class = klass
-
-    def get_default_llm_args(self):
-        return {
-            'temperature': 0,
-            'model_name': self.model,
-            # TODO: This used to work on the deprecated OpenAIChat class, but now no longer works.
-            # 'prefix_messages': [
-            #     {
-            #         'role': 'system',
-            #         'content': 'You are a helpful assistant that is very good at problem solving who thinks step by step.',
-            #     },
-            # ]
-        }
 
     def streaming_args(self, interrupt_handler=False):
         calback_handlers = [
@@ -69,10 +58,8 @@ class Backend(ABC):
         }
         return args
 
-    def make_llm(self, args={}):
-        final_args = self.get_default_llm_args()
-        final_args.update(args)
-        llm = self.llm_class(**final_args)
+    def make_llm(self, customizations=None):
+        llm = self.provider.make_llm(customizations)
         return llm
 
     def set_active_model(self, model=None):

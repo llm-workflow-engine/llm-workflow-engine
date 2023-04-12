@@ -7,73 +7,23 @@ import datetime
 import uuid
 import re
 import shutil
-from typing import Optional, List
 from playwright.sync_api import sync_playwright
 from playwright._impl._api_structures import ProxySettings
 
-from pydantic_computed import Computed, computed
-from langchain.chat_models.base import BaseChatModel
-from langchain.schema import (
-    BaseMessage,
-    ChatGeneration,
-    ChatResult,
-)
-from langchain.chat_models.openai import _convert_dict_to_message
+from typing import Optional
 
 from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.plugin_manager import PluginManager
+from chatgpt_wrapper.core.provider_manager import ProviderManager
 from chatgpt_wrapper.core import util
 import chatgpt_wrapper.core.constants as constants
 
 GEN_TITLE_TIMEOUT = 5000
 
-def make_llm_class(klass):
-    class ChatGPTLLM(BaseChatModel):
-        streaming: bool = False
-        model_name: str = "gpt-3.5-turbo"
-        temperature: float = 0.7
-        verbose: bool = False
-        chatgpt: Computed[ChatGPT]
-
-        @computed('chatgpt')
-        def set_chatgpt(**kwargs):
-            return klass
-
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            model_name = kwargs.get("model_name")
-            if model_name:
-                self.model_name = model_name
-
-        def _agenerate(self):
-            pass
-
-        def _generate(
-            self, messages: any, stop: Optional[List[str]] = None
-        ) -> ChatResult:
-            prompts = []
-            if isinstance(messages, str):
-                messages = [messages]
-            for message in messages:
-                content = message.content if isinstance(message, BaseMessage) else message
-                prompts.append(content)
-            inner_completion = ""
-            role = "assistant"
-            for token in self.chatgpt._ask_stream("\n\n".join(prompts)):
-                inner_completion += token
-                if self.streaming:
-                    self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
-            message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
-            )
-            generation = ChatGeneration(message=message)
-            llm_output = {"model_name": self.model_name}
-            return ChatResult(generations=[generation], llm_output=llm_output)
-
-    return ChatGPTLLM
+PROVIDER_BROWSER = "provider_chatgpt_browser"
+ADDITIONAL_PLUGINS = [
+    PROVIDER_BROWSER,
+]
 
 class ChatGPT(Backend):
     """
@@ -95,10 +45,17 @@ class ChatGPT(Backend):
         self.page = None
         self.browser = None
         self.session = None
-        self.plugin_manager = PluginManager(self.config, self)
-        self.set_llm_class(make_llm_class(self))
+        self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
+        self.provider_manager = ProviderManager(self.config, self.plugin_manager)
+        self.set_provider()
         self.new_conversation()
 
+    def set_provider(self):
+        success, provider, user_message = self.provider_manager.load_provider(PROVIDER_BROWSER)
+        if success:
+            self.provider_name = PROVIDER_BROWSER
+            self.provider = provider
+        return success, provider, user_message
 
     def get_primary_profile_directory(self):
         primary_profile = os.path.join(self.config.data_profile_dir, "playwright")

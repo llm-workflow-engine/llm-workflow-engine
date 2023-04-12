@@ -1,3 +1,5 @@
+import copy
+
 from abc import abstractmethod
 
 from chatgpt_wrapper.core.plugin import Plugin
@@ -62,7 +64,7 @@ class PresetValue:
 
 class ProviderBase(Plugin):
 
-    def __init__(self, config=None, customizations=None):
+    def __init__(self, config=None):
         super().__init__(config)
         self.set_customizations(self.default_customizations())
 
@@ -143,6 +145,14 @@ class ProviderBase(Plugin):
 
     def get_shell_completions(self, base_shell_completions):
         base_shell_completions[util.command_with_leader('model')] = self.customizations_to_completions()
+
+    def make_llm(self, customizations=None):
+        final_customizations = copy.deepcopy(self.customizations)
+        if customizations:
+            final_customizations.update(customizations)
+        llm_class = self.llm_factory()
+        llm = llm_class(**final_customizations)
+        return llm
 
 class Provider(ProviderBase):
 

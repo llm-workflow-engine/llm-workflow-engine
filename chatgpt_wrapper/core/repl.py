@@ -123,7 +123,6 @@ class Repl():
         commands_with_leader[util.command_with_leader('help')] = util.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
             commands_with_leader[util.command_with_leader(command)] = PathCompleter()
-        commands_with_leader[util.command_with_leader('model')] = util.list_to_completion_hash(self.backend.available_models.keys())
         template_completions = util.list_to_completion_hash(self.template_manager.templates)
         template_commands = [c for c in self.dashed_commands if c.startswith('template') and c != 'templates']
         for command in template_commands:

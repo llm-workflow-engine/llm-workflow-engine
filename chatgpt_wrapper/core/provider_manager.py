@@ -13,22 +13,15 @@ class ProviderManager:
         provider_plugins = {k: v for (k, v) in self.plugin_manager.get_plugins().items() if v.plugin_type == 'provider'}
         return provider_plugins
 
-    def load_provider(self, provider: str):
+    def load_provider(self, provider_name: str):
         try:
-            self.log.debug(f"Attempting to load provider: {provider}")
-            provider_instance = self.provider_plugins[provider]
-            self.log.debug(f"Found provider: {provider_instance.__class__.__name__}")
+            self.log.debug(f"Attempting to load provider: {provider_name}")
+            provider = self.provider_plugins[provider_name]
+            self.log.debug(f"Found provider: {provider.__class__.__name__}")
         except KeyError:
-            message = f"Provider {provider} not found in provider_plugins."
+            message = f"Provider {provider_name} not found in provider_plugins."
             self.log.error(message)
             return False, None, message
-        try:
-            self.log.debug(f"Calling llm_factory method on provider {provider_instance.__class__.__name__}")
-            llm_class = provider_instance.llm_factory()
-            message = f"Successfully loaded provider: {provider}"
-            self.log.info(message)
-            return True, llm_class, message
-        except Exception as e:
-            message = f"Error while loading provider {provider}: {str(e)}"
-            self.log.error(message)
-            return False, None, message
+        message = f"Successfully loaded provider: {provider_name}"
+        self.log.info(message)
+        return True, provider, message

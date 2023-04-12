@@ -25,7 +25,6 @@ class OpenAIAPI(Backend):
         self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
-        self.provider = None
         self.current_user = None
         self.conversation_tokens = 0
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
@@ -43,13 +42,15 @@ class OpenAIAPI(Backend):
                 raise Exception(user_message)
             self.set_current_user(user)
 
-    def set_provider(self, provider):
-        if self.provider != provider:
-            success, llm_class, user_message = self.provider_manager.load_provider(provider)
+    def set_provider(self, provider_name, customizations=None):
+        if self.provider_name != provider_name:
+            success, provider, user_message = self.provider_manager.load_provider(provider_name)
             if success:
+                self.provider_name = provider_name
                 self.provider = provider
-                self.set_llm_class(llm_class)
-            return success, llm_class, user_message
+                if customizations:
+                    self.provider.set_customizations(customizations)
+            return success, provider, user_message
 
     def _handle_response(self, success, obj, message):
         if not success:
