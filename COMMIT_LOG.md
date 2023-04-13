@@ -1,3 +1,7 @@
+### v0.8.4 - 07/13/2023
+
+* **Thu Apr 13 2023:** fix changed ChatGPT Backend API - handle TZ added to the create_time, fixes #287
+
 ### v0.8.3 - 07/04/2023
 
 * **Fri Apr 07 2023:** properly set user object in all login scenarios, fixes #260, fixes #262
