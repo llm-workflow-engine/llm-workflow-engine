@@ -14,3 +14,4 @@ PyYAML
 rich
 sqlalchemy
 tiktoken
+python-dateutil

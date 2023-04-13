@@ -430,7 +430,7 @@ class Repl():
         success, history, message = self._fetch_history(limit=limit, offset=offset)
         if success:
             history_list = [h for h in history.values()]
-            util.print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)%s" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'] or constants.NO_TITLE_TEXT, h['id'], ' (✓)' if h['id'] == self.backend.conversation_id else '') for h in history_list]))
+            util.print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)%s" % (h['create_time'].strftime("%Y-%m-%d %H:%M"), h['title'] or constants.NO_TITLE_TEXT, h['id'], ' (✓)' if h['id'] == self.backend.conversation_id else '') for h in history_list]))
         else:
             return success, history, message
 

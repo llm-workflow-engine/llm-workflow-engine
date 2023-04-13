@@ -10,6 +10,7 @@ import shutil
 from typing import Optional, List
 from playwright.sync_api import sync_playwright
 from playwright._impl._api_structures import ProxySettings
+from dateutil.parser import parse
 
 from pydantic_computed import Computed, computed
 from langchain.chat_models.base import BaseChatModel
@@ -375,8 +376,7 @@ class ChatGPT(Backend):
         if ok:
             history = {}
             for item in json["items"]:
-                item['created_time'] = datetime.datetime.strptime(item['create_time'], "%Y-%m-%dT%H:%M:%S.%f")
-                del item['create_time']
+                item['create_time'] = parse(item['create_time'])
                 history[item["id"]] = item
             return ok, history, "Retrieved history"
         else:
