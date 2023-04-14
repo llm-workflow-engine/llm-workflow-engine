@@ -53,7 +53,7 @@ CONFIG_PROFILES_DIR = 'profiles'
 DEFAULT_CONFIG = {
     'backend': 'chatgpt-api',
     'shell': {
-        'prompt_prefix': '($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL',
+        'prompt_prefix': '($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL',
         'history_file': '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep),
     },
     'database': None,
@@ -65,6 +65,7 @@ DEFAULT_CONFIG = {
         'provider': 'provider_chat_openai',
     },
     'chat': {
+        # TODO: This is not abstracted across backends.
         'model': 'default',
         'model_customizations': {
             'temperature': OPENAPI_DEFAULT_TEMPERATURE,

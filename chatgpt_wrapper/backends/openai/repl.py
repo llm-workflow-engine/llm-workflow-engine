@@ -53,7 +53,7 @@ class ApiRepl(Repl):
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
         return {
-            util.command_with_leader('model-system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
+            util.command_with_leader('system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
         }
 
     def configure_backend(self):
@@ -200,9 +200,6 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", str(self.backend.model_temperature))
-        prompt_prefix = prompt_prefix.replace("$TOP_P", str(self.backend.model_top_p))
-        prompt_prefix = prompt_prefix.replace("$PRESENCE_PENALTY", str(self.backend.model_presence_penalty))
-        prompt_prefix = prompt_prefix.replace("$FREQUENCY_PENALTY", str(self.backend.model_frequency_penalty))
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
         return f"{prompt_prefix} "
@@ -422,8 +419,6 @@ Before you can start using the shell, you must create a new user.
             return False, user, message
 
     def adjust_model_setting(self, value_type, setting, value, min=None, max=None):
-        if not self._is_logged_in():
-            return False, None, "Not logged in."
         if value:
             method = getattr(util, f"validate_{value_type}")
             value = method(value, min, max)
@@ -452,11 +447,14 @@ Before you can start using the shell, you must create a new user.
             {COMMAND}
             {COMMAND} {SYSTEM_MESSAGE_DEFAULT}
         """
+        if not self._is_logged_in():
+            return False, None, "Not logged in."
         aliases = self.backend.get_system_message_aliases()
         if system_message:
             if system_message in aliases:
                 system_message = aliases[system_message]
-            return self.adjust_model_setting("str", "system_message", system_message, constants.OPENAPI_MIN_SUBMISSION_TOKENS, self.backend.model_max_submission_tokens)
+            self.backend.set_system_message(system_message)
+            return True, system_message, f"System message set to: {system_message}"
         else:
-            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.model_system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
+            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
             util.print_markdown(output)

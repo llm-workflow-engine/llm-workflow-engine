@@ -30,11 +30,8 @@ class OpenAIAPI(Backend):
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.set_provider(self.config.get('model.provider'))
-        self.set_model_system_message()
+        self.set_system_message()
         self.set_model_temperature(self.config.get('chat.model_customizations.temperature'))
-        self.set_model_top_p(self.config.get('chat.model_customizations.top_p'))
-        self.set_model_presence_penalty(self.config.get('chat.model_customizations.presence_penalty'))
-        self.set_model_frequency_penalty(self.config.get('chat.model_customizations.frequency_penalty'))
         self.set_model_max_submission_tokens(self.config.get('chat.model_customizations.max_submission_tokens'))
         if default_user_id is not None:
             success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
@@ -138,35 +135,19 @@ class OpenAIAPI(Backend):
     def set_available_models(self):
         self.available_models = constants.OPENAPI_CHAT_RENDER_MODELS
 
-    def set_model_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
-        self.model_system_message = message
+    def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
+        self.system_message = message
 
     def set_model_temperature(self, temperature=constants.OPENAPI_DEFAULT_TEMPERATURE):
         self.model_temperature = temperature
-
-    def set_model_top_p(self, top_p=constants.OPENAPI_DEFAULT_TOP_P):
-        self.model_top_p = top_p
-
-    def set_model_presence_penalty(self, presence_penalty=constants.OPENAPI_DEFAULT_PRESENCE_PENALTY):
-        self.model_presence_penalty = presence_penalty
-
-    def set_model_frequency_penalty(self, frequency_penalty=constants.OPENAPI_DEFAULT_FREQUENCY_PENALTY):
-        self.model_frequency_penalty = frequency_penalty
 
     def set_model_max_submission_tokens(self, max_submission_tokens=constants.OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS):
         self.model_max_submission_tokens = max_submission_tokens
 
     def get_runtime_config(self):
         output = """
-* Model customizations:
-  * Model: %s
-  * Temperature: %s
-  * top_p: %s
-  * Presence penalty: %s
-  * Frequency penalty: %s
-  * Max submission tokens: %s
-  * System message: %s
-""" % (self.model, self.model_temperature, self.model_top_p, self.model_presence_penalty, self.model_frequency_penalty, self.model_max_submission_tokens, self.model_system_message)
+* System message: %s
+""" % (self.system_message)
         return output
 
     def get_system_message_aliases(self):
@@ -189,7 +170,7 @@ class OpenAIAPI(Backend):
             if not success:
                 raise Exception(message)
         if len(old_messages) == 0:
-            system_message = system_message or self.model_system_message
+            system_message = system_message or self.system_message
             new_messages.append(self.build_openai_message('system', system_message))
         new_messages.append(self.build_openai_message('user', prompt))
         return old_messages, new_messages
@@ -233,6 +214,7 @@ class OpenAIAPI(Backend):
         return message
 
     def _build_openai_chat_request(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None, stream=False):
+        # TODO: Needs to be refactored for LLM class.
         temperature = self.model_temperature if temperature is None else temperature
         top_p = self.model_top_p if top_p is None else top_p
         presence_penalty = self.model_presence_penalty if presence_penalty is None else presence_penalty
