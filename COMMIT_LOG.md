@@ -1,3 +1,15 @@
+### v0.8.4 - 13/04/2023
+
+* **Thu Apr 13 2023:** loosen up timestamp string for conversion, fixes #287
+* **Tue Apr 11 2023:** Get Docker container working, clarify documentation, fixes #268, fixes #276, fixes #281
+* **Tue Apr 11 2023:** clean up browser integration test
+* **Sat Apr 08 2023:** clarify API backed model is set per user, fixes #283
+* **Sat Apr 08 2023:** provide empty config if config file is empty, fixes #282
+* **Fri Apr 07 2023:** enable echo plugin by default, remove awesome plugin as default
+* **Fri Apr 07 2023:** move test plugin to echo
+* **Fri Apr 07 2023:** fix syntax error in setup script, fixes #280
+* **Fri Apr 07 2023:** add support for plugin packages
+
 ### v0.8.3 - 07/04/2023
 
 * **Fri Apr 07 2023:** properly set user object in all login scenarios, fixes #260, fixes #262
