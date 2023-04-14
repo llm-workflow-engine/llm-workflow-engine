@@ -375,7 +375,8 @@ class ChatGPT(Backend):
         if ok:
             history = {}
             for item in json["items"]:
-                item['created_time'] = datetime.datetime.strptime(item['create_time'], "%Y-%m-%dT%H:%M:%S.%f")
+                create_time = item['create_time'].split('.')[0]
+                item['created_time'] = datetime.datetime.strptime(create_time, "%Y-%m-%dT%H:%M:%S")
                 del item['create_time']
                 history[item["id"]] = item
             return ok, history, "Retrieved history"
