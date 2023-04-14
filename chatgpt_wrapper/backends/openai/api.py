@@ -58,7 +58,7 @@ class OpenAIAPI(Backend):
         return success, obj, message
 
     def get_token_encoding(self, model="gpt-3.5-turbo"):
-        if model not in self.available_models.values():
+        if model not in self.available_models:
             raise NotImplementedError("Unsupported engine {self.engine}")
         try:
             encoding = tiktoken.encoding_for_model(model)

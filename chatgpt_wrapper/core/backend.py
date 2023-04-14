@@ -63,10 +63,7 @@ class Backend(ABC):
         return llm
 
     def set_active_model(self, model=None):
-        if model is None:
-            self.model = None
-        else:
-            self.model = self.available_models[model]
+        self.model = model
 
     def new_conversation(self):
         self.parent_message_id = None

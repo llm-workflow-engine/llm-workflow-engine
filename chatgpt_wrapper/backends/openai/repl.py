@@ -53,10 +53,6 @@ class ApiRepl(Repl):
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
         return {
-            util.command_with_leader('model-temperature'): util.float_range_to_completions(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX),
-            util.command_with_leader('model-top-p'): util.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
-            util.command_with_leader('model-presence-penalty'): util.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
-            util.command_with_leader('model-frequency-penalty'): util.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
             util.command_with_leader('model-system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
         }
 
@@ -86,7 +82,7 @@ class ApiRepl(Repl):
             return False, f"Invalid email: {e}"
 
     def select_model(self, allow_empty=False):
-        models = list(self.backend.available_models.keys())
+        models = list(self.backend.available_models)
         for i, model in enumerate(models):
             print(f"{i + 1}. {model}")
         selected_model = input("Choose a default model: ").strip() or None
@@ -441,98 +437,7 @@ Before you can start using the shell, you must create a new user.
             value = getattr(self.backend, f"model_{setting}")
             util.print_markdown(f"* Current {setting}: {value}")
 
-    def do_model_temperature(self, temperature=None):
-        """
-        Adjust the temperature of the current model
-
-        What sampling temperature to use.
-
-        Higher values like 0.8 will make the output more random, while lower values
-        like 0.2 will make it more focused and deterministic.
-
-        Recommend altering this or top_p but not both.
-
-        Arguments:
-            temperature: Float between {OPENAPI_TEMPERATURE_MIN} and {OPENAPI_TEMPERATURE_MAX}, default: {OPENAPI_DEFAULT_TEMPERATURE}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_TEMPERATURE_MAX}
-        """
-        return self.adjust_model_setting("float", "temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
-
-    def do_model_top_p(self, top_p=None):
-        """
-        Adjust the top_p of the current model
-
-        An alternative to sampling with temperature.
-
-        Nucleus sampling, where the model considers the results of the tokens with
-        top_p probability mass. So 0.1 means only the tokens comprising the top 10%
-        probability mass are considered.
-
-        Recommend altering this or temperature but not both.
-
-        Arguments:
-            top_p: Float between {OPENAPI_TOP_P_MIN} and {OPENAPI_TOP_P_MAX}, default: {OPENAPI_DEFAULT_TOP_P}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_TOP_P_MAX}
-        """
-        return self.adjust_model_setting("float", "top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
-
-    def do_model_presence_penalty(self, presence_penalty=None):
-        """
-        Adjust the presence penalty of the current model
-
-        The presence penalty penalizes new tokens based on whether they appear in the
-        text so far. Positive values increase the model's likelihood to talk about new
-        topics.
-
-        Arguments:
-            presence_penalty: Float between {OPENAPI_PRESENCE_PENALTY_MIN} and {OPENAPI_PRESENCE_PENALTY_MAX}, default: {OPENAPI_DEFAULT_PRESENCE_PENALTY}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_PRESENCE_PENALTY_MAX}
-        """
-        return self.adjust_model_setting("float", "presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
-
-    def do_model_frequency_penalty(self, frequency_penalty=None):
-        """
-        Adjust the frequency_penalty of the current model
-
-        The frequency penalty penalizes new tokens based on their frequency in the
-        text so far. Positive values can help prevent the model from repeating itself.
-
-        Arguments:
-            frequency_penalty: Float between {OPENAPI_FREQUENCY_PENALTY_MIN} and {OPENAPI_FREQUENCY_PENALTY_MAX}, default: {OPENAPI_DEFAULT_FREQUENCY_PENALTY}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_FREQUENCY_PENALTY_MAX}
-        """
-        return self.adjust_model_setting("float", "frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)
-
-    def do_model_max_submission_tokens(self, max_submission_tokens=None):
-        """
-        The maximum number of tokens that can be submitted before older messages
-        start getting cut off.
-
-        Current max tokens for both submission and reply are {OPENAPI_MAX_TOKENS}, so the current
-        default will still allow for a short reply from the model.
-
-        Arguments:
-            max_submission_tokens: Integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and {OPENAPI_MAX_TOKENS}, default: {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
-        """
-        return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)
-
-    def do_model_system_message(self, system_message=None):
+    def do_system_message(self, system_message=None):
         """
         Set the system message sent for conversations.
 

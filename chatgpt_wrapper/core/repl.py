@@ -3,6 +3,7 @@ import textwrap
 import yaml
 import os
 import sys
+import copy
 import traceback
 import shutil
 import signal
@@ -25,7 +26,6 @@ from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.error import NoInputError, LegacyCommandLeaderError
 from chatgpt_wrapper.core.editor import file_editor, pipe_editor
 from chatgpt_wrapper.core.template import TemplateManager
-from chatgpt_wrapper.core.plugin_manager import PluginManager
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -33,7 +33,7 @@ from chatgpt_wrapper.core.plugin_manager import PluginManager
 # to start commands with a special character.
 # It would also be possible to subclass NesteredCompleter and override
 # the get_completions() method, but that feels more brittle.
-document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
+document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\.\s]+)")
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
@@ -816,25 +816,39 @@ class Repl():
 
     def do_model(self, arg):
         """
-        View or set the current LLM model
+        View or set attributes on the current LLM model
 
         Arguments:
-            model_name: The name of the model to set
-            With no arguments, view currently set model
+            path: The attribute path to view or set
+            value: The value to set the attribute to
+            With no arguments, view current set model attributes
 
         Examples:
             {COMMAND}
-            {COMMAND} default
+            {COMMAND} temperature
+            {COMMAND} temperature 1.1
         """
         if arg:
-            model_names = self.backend.available_models.keys()
-            if arg in model_names:
-                self.backend.set_active_model(arg)
-                return True, self.backend.model, f"Current model updated to: {self.backend.model}"
-            else:
-                return False, arg, "Invalid model, must be one of: %s" % ", ".join(model_names)
+            try:
+                path, value, *rest = arg.split()
+                if rest:
+                    return False, arg, "Too many parameters, should be 'path value'"
+                success, value, user_message = self.backend.provider.set_customization_value(path, value)
+                return success, value, user_message
+            except ValueError:
+                success, value, user_message = self.backend.provider.get_customization_value(arg)
+                if success:
+                    if isinstance(value, dict):
+                        util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(value, default_flow_style=False))
+                    else:
+                        util.print_markdown(f"* {arg} = {value}")
+                else:
+                    return success, value, user_message
         else:
-            return True, self.backend.model, f"Current model: {self.backend.model}"
+            customizations = copy.deepcopy(self.backend.provider.customizations)
+            model_name = customizations.pop("model_name", "unknown")
+            provider_name = self.backend.provider_name[9:]
+            util.print_markdown("## Provider: %s, model: %s\n\n```yaml\n%s\n```" % (provider_name, model_name, yaml.dump(customizations, default_flow_style=False)))
 
     def do_templates(self, arg):
         """

@@ -111,6 +111,18 @@ class ProviderBase(Plugin):
                 break
         return False, None, f"Invalid key {key}."
 
+    def get_customization_value(self, keys):
+        if isinstance(keys, str):
+            keys = keys.split('.')
+        customizations = self.customizations.copy()
+        while keys:
+            key = keys.pop(0)
+            if key in customizations:
+                customizations = customizations[key]
+                if not isinstance(customizations, dict):
+                    return True, customizations, f"Found key {key}"
+        return False, None, f"Invalid key {key}."
+
     def set_customization_value(self, keys, new_value):
         if isinstance(keys, str):
             keys = keys.split('.')
@@ -131,16 +143,27 @@ class ProviderBase(Plugin):
         self.customizations = customizations
 
     def customizations_to_completions(self):
-        completions = {}
-        for key, value in self.customization_config().items():
-            if value == dict:
-                continue
-            elif isinstance(value, dict):
-                completions[key] = self.customizations_to_completions(value)
-            elif isinstance(value, object):
-                completions[key] = value.completions
-            else:
-                completions[key] = value
+        def dict_to_completions(completions, items, prefix=[], is_dict=False):
+            for key, value in items.items():
+                full_key = '.'.join(prefix + [key])
+                if value == dict:
+                    completions[full_key] = {}
+                elif isinstance(value, dict):
+                    prefix.append(key)
+                    completions[full_key] = None
+                    for k, v in value.items():
+                        dict_key = "%s.%s" % (full_key, k)
+                        if isinstance(v, PresetValue):
+                            completions[dict_key] = v.completions
+                        else:
+                            completions[dict_key] = None
+                    dict_to_completions(completions, value, prefix, is_dict)
+                elif isinstance(value, PresetValue):
+                    completions[full_key] = value.completions
+                else:
+                    completions[full_key] = value
+            return completions
+        completions = dict_to_completions({}, self.customization_config())
         return completions
 
     def get_shell_completions(self, base_shell_completions):
