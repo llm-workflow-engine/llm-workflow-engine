@@ -68,6 +68,8 @@ class Repl():
             # auto_suggest=AutoSuggestFromHistory(),
             style=self.style,
         )
+        # TODO: This needs to be refactored to deal with streaming being on the provider class now.
+        # Probably by storing a default streaming setting, and using that to build initial LLM classes.
         self.stream = self.config.get('chat.streaming')
         self._set_logging()
         self._setup_signal_handlers()
@@ -834,6 +836,9 @@ class Repl():
                 if rest:
                     return False, arg, "Too many parameters, should be 'path value'"
                 success, value, user_message = self.backend.provider.set_customization_value(path, value)
+                if success:
+                    model_name = value.get("model_name", "unknown")
+                    self.backend.model = model_name
                 return success, value, user_message
             except ValueError:
                 success, value, user_message = self.backend.provider.get_customization_value(arg)
@@ -848,7 +853,8 @@ class Repl():
             customizations = copy.deepcopy(self.backend.provider.customizations)
             model_name = customizations.pop("model_name", "unknown")
             provider_name = self.backend.provider_name[9:]
-            util.print_markdown("## Provider: %s, model: %s\n\n```yaml\n%s\n```" % (provider_name, model_name, yaml.dump(customizations, default_flow_style=False)))
+            customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
+            util.print_markdown("## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data))
 
     def do_templates(self, arg):
         """

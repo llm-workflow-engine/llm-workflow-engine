@@ -66,7 +66,6 @@ class ProviderBase(Plugin):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.set_customizations(self.default_customizations())
 
     @property
     def plugin_type(self):
@@ -78,7 +77,7 @@ class ProviderBase(Plugin):
         ]
 
     def setup(self):
-        pass
+        self.set_customizations(self.default_customizations())
 
     def default_config(self):
         return {}
@@ -88,6 +87,10 @@ class ProviderBase(Plugin):
         llm = llm_class()
         llm_defaults = llm.dict()
         custom_config = self.customization_config()
+        # TODO: This feels hacky, but currently needed to pass in the initial
+        # model configuration.
+        if 'model_name' in llm_defaults:
+            llm_defaults['model_name'] = self.backend.model
         defaults = {k: v for k, v in llm_defaults.items() if k in custom_config}
         return defaults
 

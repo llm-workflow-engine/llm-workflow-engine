@@ -50,6 +50,9 @@ class ChatGPT(Backend):
         self.set_provider()
         self.new_conversation()
 
+    def default_model(self):
+        return constants.BROWSER_BACKEND_DEFAULT_MODEL
+
     def set_provider(self):
         success, provider, user_message = self.provider_manager.load_provider(PROVIDER_BROWSER)
         if success:
@@ -253,7 +256,7 @@ class ChatGPT(Backend):
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": self.model,
+            "model": self.available_models['default'],
         }
         ok = False
         try:
@@ -384,7 +387,7 @@ class ChatGPT(Backend):
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": self.model,
+            "model": self.available_models[self.model],
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",

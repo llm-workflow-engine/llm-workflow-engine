@@ -39,6 +39,9 @@ class OpenAIAPI(Backend):
                 raise Exception(user_message)
             self.set_current_user(user)
 
+    def default_model(self):
+        return constants.OPENAI_BACKEND_DEFAULT_MODEL
+
     def set_provider(self, provider_name, customizations=None):
         if self.provider_name != provider_name:
             success, provider, user_message = self.provider_manager.load_provider(provider_name)
@@ -253,10 +256,6 @@ class OpenAIAPI(Backend):
 
     def set_current_user(self, user=None):
         self.current_user = user
-        if self.current_user:
-            self.set_active_model(self.current_user.default_model)
-        else:
-            self.set_active_model()
 
     def conversation_data_to_messages(self, conversation_data):
         return conversation_data['messages']

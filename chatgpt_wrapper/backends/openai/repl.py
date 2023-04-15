@@ -358,8 +358,6 @@ Before you can start using the shell, you must create a new user.
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)
         if success:
             self.rebuild_completions()
-            if self.logged_in_user.id == user.id:
-                self.backend.set_active_model(user.default_model)
         return success, user, user_message
 
     def do_user_edit(self, username=None):

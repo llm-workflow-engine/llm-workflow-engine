@@ -75,8 +75,3 @@ class ProviderChatgptBrowser(Provider):
         return {
             'model_name': PresetValue(str, options=constants.RENDER_MODELS.keys()),
         }
-
-    def default_customizations(self):
-        return {
-            'model_name': 'default',
-        }

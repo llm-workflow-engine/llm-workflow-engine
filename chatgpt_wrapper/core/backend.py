@@ -41,7 +41,7 @@ class Backend(ABC):
         self.streaming = False
         self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
         self.set_available_models()
-        self.set_active_model(self.config.get('chat.model'))
+        self.set_active_model(self.config.get('chat.model') or self.default_model())
 
     def set_llm_class(self, klass):
         self.llm_class = klass
@@ -82,6 +82,10 @@ class Backend(ABC):
 
     def get_runtime_config(self):
         return ""
+
+    @abstractmethod
+    def default_model(self):
+        pass
 
     @abstractmethod
     def set_available_models(self):

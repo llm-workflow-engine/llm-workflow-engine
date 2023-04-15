@@ -4,13 +4,14 @@ import os
 import tempfile
 
 # Backend speciifc constants
+BROWSER_BACKEND_DEFAULT_MODEL = "default"
 RENDER_MODELS = {
     "default": "text-davinci-002-render-sha",
     "legacy-paid": "text-davinci-002-render-paid",
     "legacy-free": "text-davinci-002-render",
-    "gpt4": "gpt-4"
+    "gpt-4": "gpt-4"
 }
-
+OPENAI_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
 OPENAPI_CHAT_RENDER_MODELS = {
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-0301",
@@ -65,8 +66,9 @@ DEFAULT_CONFIG = {
         'provider': 'provider_chat_openai',
     },
     'chat': {
-        # TODO: This is not abstracted across backends.
-        'model': 'default',
+        # This is not abstracted across backends, so the backend takes care of setting it
+        # if not currently set.
+        'model': None,
         'model_customizations': {
             'temperature': OPENAPI_DEFAULT_TEMPERATURE,
             'top_p': OPENAPI_DEFAULT_TOP_P,
