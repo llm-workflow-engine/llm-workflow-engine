@@ -124,11 +124,14 @@ class ChatGPT(Backend):
 
     def cleanup(self):
         self.log.info("Cleaning up")
-        if self.browser:
+        if self.browser and self.browser.pages:
+            self.log.debug("Closing browser context")
             self.browser.close()
         # remove the user data dir in case this is a second instance
         if self.user_data_dir:
+            self.log.info(f"Removing user data dir: {self.user_data_dir}")
             shutil.rmtree(self.user_data_dir)
+        self.log.debug("Closing Playwright")
         self.play.stop()
 
     def set_available_models(self):
