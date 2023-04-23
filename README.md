@@ -464,23 +464,39 @@ git pull
 
 ## GPT4
 
-### Backend notes
-
-#### API backend
+### API backend
 
 To use GPT-4 with this backend, you must have been granted access to the model in your OpenAI account.
 
-#### Playwright (browser-based) backend: **DEPRECATED**
+NOTE: If you have not been granted access, you'll probably see an error like this:
+
+```
+InvalidRequestError(message='The model: `gpt-4` does not exist', param=None, code='model_not_found', http_status=404, request_id=None)
+```
+
+There is nothing this project can do to fix the error for you -- contact OpenAI and request GPT-4 access.
+
+Follow one of the methods below to utilize GPT-4 in this backend:
+
+##### Method 1: Set the default user model
+
+See [Setting the default model](#setting-the-default-model) above.
+
+##### Method 2: Dynamically switch
+
+From within the shell, execute this command:
+
+```
+/model gpt4
+```
+
+### Playwright (browser-based) backend: **DEPRECATED**
 
 To use GPT-4 with this backend, you must have a ChatGPT-Plus subscription.
 
-### Using GPT-4
+Follow one of the methods below to utilize GPT-4 in this backend:
 
-#### From the shell
-
-Follow one of the methods below to utilize GPT-4 in the shell:
-
-##### Method 1: Run the command
+##### Method 1: Command line argument
 
 Enter the following command in your shell:
 
@@ -493,10 +509,25 @@ chatgpt --model=gpt4
 Update your `config.yaml` file to include the following line:
 
 ```
-model: gpt4
+chat:
+  model: gpt4
 ```
 
-#### Via Python module
+Then start the program normally:
+
+```
+chatgpt
+```
+
+##### Method 3: Dynamically switch
+
+From within the shell, execute this command:
+
+```
+/model gpt4
+```
+
+### Python module
 
 To use GPT-4 within your Python code, follow the template below:
 
