@@ -199,7 +199,10 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
-        prompt_prefix = prompt_prefix.replace("$TEMPERATURE", str(self.backend.model_temperature))
+        success, temperature, user_message = self.backend.provider.get_customization_value('temperature')
+        if not success:
+            temperature = 'N/A'
+        prompt_prefix = prompt_prefix.replace("$TEMPERATURE", str(temperature))
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
         return f"{prompt_prefix} "

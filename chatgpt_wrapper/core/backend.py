@@ -43,9 +43,6 @@ class Backend(ABC):
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model') or self.default_model())
 
-    def set_llm_class(self, klass):
-        self.llm_class = klass
-
     def streaming_args(self, interrupt_handler=False):
         calback_handlers = [
             VerboseStreamingStdOutCallbackHandler(),
@@ -53,7 +50,6 @@ class Backend(ABC):
         if interrupt_handler:
             calback_handlers.append(self.interrupt_streaming_callback_handler)
         args = {
-            'streaming': True,
             'callback_manager': CallbackManager(calback_handlers),
         }
         return args

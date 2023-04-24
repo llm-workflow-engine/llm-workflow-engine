@@ -183,6 +183,10 @@ class ProviderBase(Plugin):
 class Provider(ProviderBase):
 
     @abstractmethod
+    def max_submission_tokens(self):
+        pass
+
+    @abstractmethod
     def llm_factory(self):
         pass
 

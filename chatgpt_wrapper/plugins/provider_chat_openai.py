@@ -5,6 +5,10 @@ from chatgpt_wrapper.core import constants
 
 class ProviderChatOpenai(Provider):
 
+    # TODO: Logic for different models
+    def max_submission_tokens(self):
+        return 4096
+
     def llm_factory(self):
         return ChatOpenAI
 

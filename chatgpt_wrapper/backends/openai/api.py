@@ -1,3 +1,4 @@
+import json
 import threading
 import tiktoken
 
@@ -30,9 +31,9 @@ class OpenAIAPI(Backend):
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.set_provider(self.config.get('model.provider'))
+        self.llm = self.make_llm()
+        self.set_model_max_submission_tokens()
         self.set_system_message()
-        self.set_model_temperature(self.config.get('chat.model_customizations.temperature'))
-        self.set_model_max_submission_tokens(self.config.get('chat.model_customizations.max_submission_tokens'))
         if default_user_id is not None:
             success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
             if not success:
@@ -121,7 +122,7 @@ class OpenAIAPI(Backend):
                 self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
                 self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
             ]
-            success, completion, user_message = self._call_openai_non_streaming(new_messages, temperature=0)
+            success, completion, user_message = self._call_openai_non_streaming(new_messages, {'temperature': 0})
             if success:
                 title = self._extract_message_content(completion)
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
@@ -144,8 +145,8 @@ class OpenAIAPI(Backend):
     def set_model_temperature(self, temperature=constants.OPENAPI_DEFAULT_TEMPERATURE):
         self.model_temperature = temperature
 
-    def set_model_max_submission_tokens(self, max_submission_tokens=constants.OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS):
-        self.model_max_submission_tokens = max_submission_tokens
+    def set_model_max_submission_tokens(self, max_submission_tokens=None):
+        self.model_max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()
 
     def get_runtime_config(self):
         output = """
@@ -216,38 +217,30 @@ class OpenAIAPI(Backend):
             raise Exception(user_message)
         return message
 
-    def _build_openai_chat_request(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None, stream=False):
-        # TODO: Needs to be refactored for LLM class.
-        temperature = self.model_temperature if temperature is None else temperature
-        top_p = self.model_top_p if top_p is None else top_p
-        presence_penalty = self.model_presence_penalty if presence_penalty is None else presence_penalty
-        frequency_penalty = self.model_frequency_penalty if frequency_penalty is None else frequency_penalty
-        self.log.debug(f"ChatCompletion.create with message count: {len(messages)}, model: {self.model}, temperature: {temperature}, top_p: {top_p}, presence_penalty: {presence_penalty}, frequency_penalty: {frequency_penalty}, stream: {stream})")
-        args = {
-            'model_name': self.model,
-            'temperature': temperature,
-            'top_p': top_p,
-            'presence_penalty': presence_penalty,
-            'frequency_penalty': frequency_penalty,
-        }
-        if stream:
-            args.update(self.streaming_args(interrupt_handler=True))
-        llm = self.make_llm(args)
+    def _build_openai_chat_request(self, messages, customizations={}):
+        if self.streaming:
+            customizations.update(self.streaming_args(interrupt_handler=True))
+        self.llm = self.make_llm(customizations)
+        # TODO: More elegant way to do this, probably on provider.
+        model_configuration = {k: str(v) for k, v in dict(self.llm).items()}
+        self.log.debug(f"LLM request with message count: {len(messages)}, model configuration: {json.dumps(model_configuration)}")
         messages = [_convert_dict_to_message(m) for m in messages]
-        return llm, messages
+        return self.llm, messages
 
-    def _call_openai_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
+    def _call_openai_streaming(self, messages, customizations={}):
         self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
-        llm, messages = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty, stream=True)
+        # TODO: Needs to be moved to the provider.
+        customizations.update({'streaming': True})
+        llm, messages = self._build_openai_chat_request(messages, customizations)
         try:
             response = llm(messages)
         except ValueError as e:
             return False, messages, e
         return True, response, "Response received"
 
-    def _call_openai_non_streaming(self, messages, temperature=None, top_p=None, presence_penalty=None, frequency_penalty=None):
+    def _call_openai_non_streaming(self, messages, customizations={}):
         self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
-        llm, messages = self._build_openai_chat_request(messages, temperature=temperature, top_p=top_p, presence_penalty=presence_penalty, frequency_penalty=frequency_penalty)
+        llm, messages = self._build_openai_chat_request(messages, customizations)
         try:
             response = llm(messages)
         except ValueError as e:
