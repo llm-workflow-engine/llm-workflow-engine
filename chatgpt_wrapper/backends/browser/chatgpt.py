@@ -124,6 +124,9 @@ class ChatGPT(Backend):
 
     def cleanup(self):
         self.log.info("Cleaning up")
+        if self.page and not self.page.is_closed():
+            self.log.debug("Closing browser page")
+            self.page.close()
         if self.browser and self.browser.pages:
             self.log.debug("Closing browser context")
             self.browser.close()
