@@ -53,6 +53,11 @@ class OpenAIAPI(Backend):
                     self.provider.set_customizations(customizations)
             return success, provider, user_message
 
+    def set_model(self, model_name):
+        success, customizations, user_message = super().set_model(model_name)
+        self.set_model_max_submission_tokens()
+        return success, customizations, user_message
+
     def _handle_response(self, success, obj, message):
         if not success:
             self.log.error(message)
@@ -122,7 +127,7 @@ class OpenAIAPI(Backend):
                 self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
                 self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
             ]
-            success, completion, user_message = self._call_openai_non_streaming(new_messages, {'temperature': 0})
+            success, completion, user_message = self._call_openai_non_streaming(new_messages, {'model_name': constants.OPENAI_BACKEND_DEFAULT_MODEL, 'temperature': 0})
             if success:
                 title = self._extract_message_content(completion)
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
@@ -141,9 +146,6 @@ class OpenAIAPI(Backend):
 
     def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
         self.system_message = message
-
-    def set_model_temperature(self, temperature=constants.OPENAPI_DEFAULT_TEMPERATURE):
-        self.model_temperature = temperature
 
     def set_model_max_submission_tokens(self, max_submission_tokens=None):
         self.model_max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()

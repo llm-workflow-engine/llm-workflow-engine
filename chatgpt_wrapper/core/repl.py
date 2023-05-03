@@ -835,7 +835,10 @@ class Repl():
                 path, value, *rest = arg.split()
                 if rest:
                     return False, arg, "Too many parameters, should be 'path value'"
-                success, value, user_message = self.backend.provider.set_customization_value(path, value)
+                if path == 'model_name':
+                    success, value, user_message = self.backend.set_model(value)
+                else:
+                    success, value, user_message = self.backend.provider.set_customization_value(path, value)
                 if success:
                     model_name = value.get("model_name", "unknown")
                     self.backend.model = model_name

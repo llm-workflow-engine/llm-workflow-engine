@@ -5,9 +5,31 @@ from chatgpt_wrapper.core import constants
 
 class ProviderChatOpenai(Provider):
 
-    # TODO: Logic for different models
-    def max_submission_tokens(self):
-        return 4096
+    @property
+    def capabilities(self):
+        return {
+            'streaming': True,
+            'models': {
+                'gpt-3.5-turbo': {
+                    'max_tokens': 4096,
+                },
+                'gpt-3.5-turbo-0301': {
+                    'max_tokens': 4096,
+                },
+                'gpt-4': {
+                    'max_tokens': 8192,
+                },
+                'gpt-4-0314': {
+                    'max_tokens': 8192,
+                },
+                'gpt-4-32k': {
+                    'max_tokens': 32768,
+                },
+                'gpt-4-32k-0314': {
+                    'max_tokens': 32768,
+                },
+            }
+        }
 
     def llm_factory(self):
         return ChatOpenAI

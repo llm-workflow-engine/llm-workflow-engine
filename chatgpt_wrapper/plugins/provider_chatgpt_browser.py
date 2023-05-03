@@ -16,7 +16,7 @@ from chatgpt_wrapper.core import constants
 def make_llm_class(klass):
     class ChatGPTLLM(BaseChatModel):
         streaming: bool = False
-        model_name: str = "gpt-3.5-turbo"
+        model_name: str = constants.BROWSER_BACKEND_DEFAULT_MODEL
         temperature: float = 0.7
         verbose: bool = False
         chatgpt: Computed[ChatGPT]
@@ -68,14 +68,32 @@ class ProviderChatgptBrowser(Provider):
             'chatgpt-api',
         ]
 
-    # TODO: Logic for different models
-    def max_submission_tokens(self):
-        return 4096
+    @property
+    def capabilities(self):
+        return {
+            'streaming': True,
+            # max_tokens is not supported in this backend.
+            'models': {
+                'text-davinci-002-render-sha': {
+                    'max_tokens': None,
+                },
+                'text-davinci-002-render-paid': {
+                    'max_tokens': None,
+                },
+                'text-davinci-002-render': {
+                    'max_tokens': None,
+                },
+                'gpt-4': {
+                    'max_tokens': None,
+                },
+            }
+        }
+
 
     def llm_factory(self):
         return make_llm_class(self.backend)
 
     def customization_config(self):
         return {
-            'model_name': PresetValue(str, options=constants.RENDER_MODELS.keys()),
+            'model_name': PresetValue(str, options=constants.BROWSER_RENDER_MODELS),
         }

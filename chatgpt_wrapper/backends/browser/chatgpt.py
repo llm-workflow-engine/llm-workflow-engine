@@ -138,7 +138,7 @@ class ChatGPT(Backend):
         self.play.stop()
 
     def set_available_models(self):
-        self.available_models = constants.RENDER_MODELS
+        self.available_models = constants.BROWSER_RENDER_MODELS
 
     def get_runtime_config(self):
         output = """
@@ -262,7 +262,7 @@ class ChatGPT(Backend):
         url = f"https://chat.openai.com/backend-api/conversation/gen_title/{self.conversation_id}"
         data = {
             "message_id": self.parent_message_id,
-            "model": self.available_models['default'],
+            "model": "text-davinci-002-render-sha",
         }
         ok = False
         try:
@@ -393,7 +393,7 @@ class ChatGPT(Backend):
                     "content": {"content_type": "text", "parts": [prompt]},
                 }
             ],
-            "model": self.available_models[self.model],
+            "model": self.model,
             "conversation_id": self.conversation_id,
             "parent_message_id": self.parent_message_id,
             "action": "next",

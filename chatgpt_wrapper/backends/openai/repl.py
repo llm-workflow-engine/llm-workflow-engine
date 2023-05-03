@@ -81,8 +81,9 @@ class ApiRepl(Repl):
         except email_validator.EmailNotValidError as e:
             return False, f"Invalid email: {e}"
 
+    # TODO: Replace this with select_prefix
     def select_model(self, allow_empty=False):
-        models = list(self.backend.available_models)
+        models = self.backend.available_models
         for i, model in enumerate(models):
             print(f"{i + 1}. {model}")
         selected_model = input("Choose a default model: ").strip() or None
@@ -128,7 +129,6 @@ class ApiRepl(Repl):
         You will also be prompted for:
             email: Optional, valid email
             password: Optional, if given will be required for login
-            default_model: Required, the default AI model to use for this user
 
         Arguments:
             username: The username of the new user
@@ -199,13 +199,17 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
-        success, temperature, user_message = self.backend.provider.get_customization_value('temperature')
-        if not success:
-            temperature = 'N/A'
-        prompt_prefix = prompt_prefix.replace("$TEMPERATURE", str(temperature))
+        prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
         return f"{prompt_prefix} "
+
+    def get_model_temperature(self):
+        temperature = 'N/A'
+        success, temperature, _user_message = self.backend.provider.get_customization_value('temperature')
+        if success:
+            temperature = temperature
+        return str(temperature)
 
     def set_logged_in_user(self, user=None):
         self.logged_in_user = user
@@ -293,8 +297,7 @@ Before you can start using the shell, you must create a new user.
 
 * Email: %s
 * Password: %s
-* Default model: %s
-        """ % (user.username, user.email, "set" if user.password else "Not set", self.backend.available_models[user.default_model])
+        """ % (user.username, user.email, "set" if user.password else "Not set")
         util.print_markdown(output)
 
     def do_user(self, username=None):
@@ -332,7 +335,7 @@ Before you can start using the shell, you must create a new user.
         """
         success, users, message = self.user_management.get_users()
         if success:
-            user_list = ["* %s: %s (%s)" % (user.id, user.username, user.default_model) for user in users]
+            user_list = ["* %s: %s" % (user.id, user.username) for user in users]
             user_list.insert(0, "# Users")
             util.print_markdown("\n".join(user_list))
         else:
@@ -347,15 +350,16 @@ Before you can start using the shell, you must create a new user.
             if not success:
                 return False, email, message
         password = getpass.getpass(prompt='New password (Press enter to skip): ') or None
-        success, default_model = self.select_model(True)
-        if not success:
-            return False, default_model, "Invalid default model."
+        # TODO: Replace with select_prefix.
+        # success, default_model = self.select_model(True)
+        # if not success:
+        #     return False, default_model, "Invalid default model."
 
         kwargs = {
             "username": username,
             "email": email,
             "password": password,
-            "default_model": default_model,
+            # "default_model": default_model,
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)

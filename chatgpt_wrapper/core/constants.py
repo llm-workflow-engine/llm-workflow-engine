@@ -4,22 +4,22 @@ import os
 import tempfile
 
 # Backend speciifc constants
-BROWSER_BACKEND_DEFAULT_MODEL = "default"
-RENDER_MODELS = {
-    "default": "text-davinci-002-render-sha",
-    "legacy-paid": "text-davinci-002-render-paid",
-    "legacy-free": "text-davinci-002-render",
-    "gpt-4": "gpt-4"
-}
+BROWSER_BACKEND_DEFAULT_MODEL = "text-davinci-002-render-sha"
+BROWSER_RENDER_MODELS = [
+    "text-davinci-002-render-sha",
+    "text-davinci-002-render-paid",
+    "text-davinci-002-render",
+    "gpt-4",
+]
 OPENAI_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
-OPENAPI_CHAT_RENDER_MODELS = {
+OPENAPI_CHAT_RENDER_MODELS = [
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-0301",
     "gpt-4",
     "gpt-4-0314",
     "gpt-4-32k",
     "gpt-4-32k-0314",
-}
+]
 
 SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
 SYSTEM_MESSAGE_PROGRAMMER = "You are an expert programmer, who responds to questions with brief examples in code."

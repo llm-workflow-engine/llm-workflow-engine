@@ -3,6 +3,7 @@ import copy
 from abc import abstractmethod
 
 from chatgpt_wrapper.core.plugin import Plugin
+from chatgpt_wrapper.core import constants
 from chatgpt_wrapper.core import util
 
 class PresetValue:
@@ -169,6 +170,17 @@ class ProviderBase(Plugin):
         completions = dict_to_completions({}, self.customization_config())
         return completions
 
+    def get_model(self):
+        success, model_name, user_message = self.get_customization_value('model_name')
+        if success:
+            return model_name
+
+    def set_model(self, model_name):
+        if model_name in self.capabilities['models']:
+            return self.set_customization_value('model_name', model_name)
+        else:
+            return False, None, f"Invalid model {model_name}"
+
     def get_shell_completions(self, base_shell_completions):
         base_shell_completions[util.command_with_leader('model')] = self.customizations_to_completions()
 
@@ -180,10 +192,17 @@ class ProviderBase(Plugin):
         llm = llm_class(**final_customizations)
         return llm
 
+    def max_submission_tokens(self):
+        model_name = self.get_model()
+        if model_name and model_name in self.capabilities['models']:
+            return self.capabilities['models'][model_name]['max_tokens']
+        return constants.OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS
+
 class Provider(ProviderBase):
 
+    @property
     @abstractmethod
-    def max_submission_tokens(self):
+    def capabilities(self):
         pass
 
     @abstractmethod
