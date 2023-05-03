@@ -1,7 +1,7 @@
 email-validator
 Flask
 Jinja2
-langchain>=0.0.123
+langchain>=0.0.123,<=0.0.137
 names
 openai>=0.27.2
 openpyxl
