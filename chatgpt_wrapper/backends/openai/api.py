@@ -58,7 +58,7 @@ class OpenAIAPI(Backend):
                     if not success:
                         return success, customizations, customization_message
             self.llm = self.make_llm()
-            self.set_model(self.llm.model_name)
+            self.set_model(getattr(self.llm, self.provider.model_property_name))
         return success, provider, user_message
 
     def set_model(self, model_name):

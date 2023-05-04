@@ -52,6 +52,7 @@ class ApiRepl(Repl):
             for command in user_commands:
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
+        self.base_shell_completions[util.command_with_leader('model')] = self.backend.provider.customizations_to_completions()
         provider_completions = {}
         for _name, provider in self.backend.get_providers().items():
             provider_models = util.list_to_completion_hash(provider.capabilities['models'].keys()) if 'models' in provider.capabilities else None
@@ -490,7 +491,11 @@ Before you can start using the shell, you must create a new user.
                     return False, arg, "Too many parameters, should be 'provider model_name'"
                 customizations = {'model_name': model_name}
             except ValueError:
+                provider = arg
                 customizations = None
-            return self.backend.set_provider(provider, customizations)
+            success, provider, user_message = self.backend.set_provider(provider, customizations)
+            if success:
+                self.rebuild_completions()
+            return success, provider, user_message
         else:
             return self.do_model('')

@@ -75,6 +75,14 @@ class ProviderBase(Plugin):
     def plugin_type(self):
         return 'provider'
 
+    @property
+    def model_property_name(self):
+        return 'model_name'
+
+    @property
+    def default_model(self):
+        return None
+
     def incompatible_backends(self):
         return [
             'chatgpt-browser',
@@ -91,11 +99,9 @@ class ProviderBase(Plugin):
         llm = llm_class()
         llm_defaults = llm.dict()
         custom_config = self.customization_config()
-        # TODO: This feels hacky, but currently needed to pass in the initial
-        # model configuration.
-        if 'model_name' in llm_defaults:
-            llm_defaults['model_name'] = self.backend.model
         defaults = {k: v for k, v in llm_defaults.items() if k in custom_config}
+        if self.default_model:
+            defaults[self.model_property_name] = self.default_model
         return defaults
 
     def calculate_customization_value(self, orig_keys, new_value):
@@ -174,18 +180,15 @@ class ProviderBase(Plugin):
         return completions
 
     def get_model(self):
-        success, model_name, user_message = self.get_customization_value('model_name')
+        success, model_name, user_message = self.get_customization_value(self.model_property_name)
         if success:
             return model_name
 
     def set_model(self, model_name):
         if model_name in self.capabilities['models']:
-            return self.set_customization_value('model_name', model_name)
+            return self.set_customization_value(self.model_property_name, model_name)
         else:
             return False, None, f"Invalid model {model_name}"
-
-    def get_shell_completions(self, base_shell_completions):
-        base_shell_completions[util.command_with_leader('model')] = self.customizations_to_completions()
 
     def make_llm(self, customizations=None):
         final_customizations = copy.deepcopy(self.customizations)
