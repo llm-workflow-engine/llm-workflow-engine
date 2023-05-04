@@ -3,6 +3,8 @@
 import os
 import tempfile
 
+PROVIDER_PREFIX = 'provider_'
+
 # Backend speciifc constants
 BROWSER_BACKEND_DEFAULT_MODEL = "text-davinci-002-render-sha"
 BROWSER_RENDER_MODELS = [
