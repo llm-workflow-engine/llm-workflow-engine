@@ -59,8 +59,8 @@ class Backend(ABC):
         return llm
 
     def set_model(self, model_name):
-        return self.provider.set_model(model_name)
         self.model = model_name
+        return self.provider.set_model(model_name)
 
     # TODO: This needs to die.
     def set_active_model(self, model=None):
