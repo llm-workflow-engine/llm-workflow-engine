@@ -4,6 +4,16 @@ import yaml
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 
+def parse_preset_dict(content):
+    metadata = {}
+    customizations = {}
+    for key, value in content.items():
+        if key.startswith('_'):
+            metadata[key[1:]] = value
+        else:
+            customizations[key] = value
+    return metadata, customizations
+
 class PresetManager():
     """
     Manage presets.
@@ -38,7 +48,7 @@ class PresetManager():
 
     def load_presets(self):
         self.log.debug("Loading presets from dirs: %s" % ", ".join(self.preset_dirs))
-        self.presets = []
+        self.presets = {}
         try:
             for preset_dir in self.preset_dirs:
                 if os.path.exists(preset_dir) and os.path.isdir(preset_dir):
@@ -52,13 +62,7 @@ class PresetManager():
                             except Exception as e:
                                 self.log.error(f"Error loading YAML file '{file_name}': {e}")
                                 continue
-                            metadata = {}
-                            customizations = {}
-                            for key, value in content.items():
-                                if key.startswith('_'):
-                                    metadata[key[1:]] = value
-                                else:
-                                    customizations[key] = value
+                            metadata, customizations = parse_preset_dict(content)
                             preset_name = file_name[:-5]  # Remove '.yaml' extension
                             self.presets[preset_name] = (metadata, customizations)
                             self.log.info(f"Successfully loaded preset: {preset_name}")
@@ -86,5 +90,20 @@ class PresetManager():
             return True, file_path, message
         except Exception as e:
             message = f"An error occurred while saving preset '{preset_name}': {e}"
+            self.log.error(message)
+            return False, None, message
+
+    def delete_preset(self, preset_name, preset_dir=None):
+        try:
+            if preset_dir is None:
+                preset_dir = self.preset_dirs[-1]
+            preset_name = f"{preset_name}.yaml" if not preset_name.endswith('.yaml') else preset_name
+            file_path = os.path.join(preset_dir, preset_name)
+            os.remove(file_path)
+            message = f"Successfully deleted preset '{preset_name}' from '{file_path}'"
+            self.log.info(message)
+            return True, preset_name, message
+        except Exception as e:
+            message = f"An error occurred while deleting preset '{preset_name}': {e}"
             self.log.error(message)
             return False, None, message

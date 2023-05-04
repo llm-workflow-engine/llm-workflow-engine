@@ -2,6 +2,18 @@ from langchain.chat_models.openai import ChatOpenAI
 
 from chatgpt_wrapper.core.provider import Provider, PresetValue
 
+class CustomChatOpenAI(ChatOpenAI):
+    @property
+    def _llm_type(self):
+        """Return type of llm."""
+        return "chat_openai"
+
+    def dict(self, **kwargs):
+        """Return a dictionary of the LLM."""
+        starter_dict = dict(self._identifying_params)
+        starter_dict["_type"] = self._llm_type
+        return starter_dict
+
 class ProviderChatOpenai(Provider):
 
     @property
@@ -31,7 +43,7 @@ class ProviderChatOpenai(Provider):
         }
 
     def llm_factory(self):
-        return ChatOpenAI
+        return CustomChatOpenAI
 
     def customization_config(self):
         return {

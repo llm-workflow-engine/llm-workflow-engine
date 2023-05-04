@@ -12,6 +12,7 @@ import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.backends.openai.user import UserManager
 from chatgpt_wrapper.backends.openai.conversation import ConversationManager
 from chatgpt_wrapper.backends.openai.message import MessageManager
+from chatgpt_wrapper.core.preset_manager import parse_preset_dict
 
 ADDITIONAL_PLUGINS = [
     'provider_chat_openai',
@@ -44,9 +45,9 @@ class OpenAIAPI(Backend):
     def get_providers(self):
         return self.provider_manager.get_provider_plugins()
 
-    def set_provider(self, provider_name, customizations=None):
+    def set_provider(self, provider_name, customizations=None, reset=False):
         provider_full_name = self.provider_manager.full_name(provider_name)
-        if self.provider_name == provider_full_name:
+        if self.provider_name == provider_full_name and not reset:
             return False, None, f"Provider {provider_name} already set"
         success, provider, user_message = self.provider_manager.load_provider(provider_full_name)
         if success:
@@ -57,6 +58,8 @@ class OpenAIAPI(Backend):
                     success, customizations, customization_message = self.provider.set_customization_value(key, value)
                     if not success:
                         return success, customizations, customization_message
+            if not customizations or 'streaming' not in customizations:
+                self.set_provider_streaming()
             self.llm = self.make_llm()
             self.set_model(getattr(self.llm, self.provider.model_property_name))
         return success, provider, user_message
@@ -65,6 +68,13 @@ class OpenAIAPI(Backend):
         success, customizations, user_message = super().set_model(model_name)
         self.set_model_max_submission_tokens()
         return success, customizations, user_message
+
+    def make_preset(self):
+        metadata, customizations = parse_preset_dict(self.provider.customizations)
+        return metadata, customizations
+
+    def activate_preset(self, metadata, customizations):
+        return self.set_provider(metadata['type'], customizations, reset=True)
 
     def _handle_response(self, success, obj, message):
         if not success:

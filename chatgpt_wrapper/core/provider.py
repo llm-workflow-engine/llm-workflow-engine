@@ -39,10 +39,12 @@ class PresetValue:
             self.completions['None'] = None
 
     def cast(self, value):
-        if value == 'None':
+        if value == 'None' or value is None:
             return True, None, None
         if self.value_type == bool:
-            if value.lower() in ['true', 't', '1']:
+            if isinstance(value, bool):
+                return True, value, None
+            elif value.lower() in ['true', 't', '1']:
                 return True, True, None
             elif value.lower() in ['false', 'f', '0']:
                 return True, False, None
@@ -102,6 +104,7 @@ class ProviderBase(Plugin):
         defaults = {k: v for k, v in llm_defaults.items() if k in custom_config}
         if self.default_model:
             defaults[self.model_property_name] = self.default_model
+        defaults['_type'] = llm_defaults['_type']
         return defaults
 
     def calculate_customization_value(self, orig_keys, new_value):
@@ -189,6 +192,9 @@ class ProviderBase(Plugin):
             return self.set_customization_value(self.model_property_name, model_name)
         else:
             return False, None, f"Invalid model {model_name}"
+
+    def can_stream(self):
+        return 'streaming' in self.capabilities and self.capabilities['streaming']
 
     def make_llm(self, customizations=None):
         final_customizations = copy.deepcopy(self.customizations)

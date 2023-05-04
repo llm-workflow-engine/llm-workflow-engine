@@ -38,10 +38,17 @@ class Backend(ABC):
         self.conversation_id = None
         self.conversation_title_set = None
         self.message_clipboard = None
+        self.stream = False
         self.streaming = False
         self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
         self.set_available_models()
         self.set_active_model(self.config.get('chat.model') or self.default_model())
+
+    def set_provider_streaming(self, stream=None):
+        if self.provider.can_stream():
+            if stream is not None:
+                self.stream = stream
+            self.provider.set_customization_value('streaming', self.stream)
 
     def streaming_args(self, interrupt_handler=False):
         calback_handlers = [

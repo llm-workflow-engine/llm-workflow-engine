@@ -1,4 +1,5 @@
 import getpass
+import yaml
 import email_validator
 
 import chatgpt_wrapper.core.constants as constants
@@ -57,10 +58,14 @@ class ApiRepl(Repl):
         for _name, provider in self.backend.get_providers().items():
             provider_models = util.list_to_completion_hash(provider.capabilities['models'].keys()) if 'models' in provider.capabilities else None
             provider_completions[provider.display_name()] = provider_models
-        return {
+        final_completions = {
             util.command_with_leader('system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
             util.command_with_leader('provider'): provider_completions,
         }
+        preset_keys = self.preset_manager.presets.keys()
+        for subcmd in ['save', 'load', 'delete', 'show']:
+            final_completions[util.command_with_leader(f"preset-{subcmd}")] = util.list_to_completion_hash(preset_keys) if preset_keys else None
+        return final_completions
 
     def configure_backend(self):
         self.backend = OpenAIAPI(self.config)
@@ -500,3 +505,115 @@ Before you can start using the shell, you must create a new user.
             return success, provider, user_message
         else:
             return self.do_model('')
+
+    def do_presets(self, arg):
+        """
+        List available presets
+
+        Preset are pre-configured provider/model configurations that can be stored and loaded for convenience.
+
+        They are located in the 'presets' directory in the following locations:
+
+            - The main configuration directory
+            - The profile configuration directory
+
+        See {COMMAND_LEADER}config for current locations.
+
+        Arguments:
+            filter_string: Optional. If provided, only presets with a name or description containing the filter string will be shown.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} filterstring
+        """
+        self.preset_manager.load_presets()
+        self.rebuild_completions()
+        presets = []
+        for preset_name, data in self.preset_manager.presets.items():
+            metadata, _customizations = data
+            content = f"* **{preset_name}**"
+            if 'description' in metadata:
+                content += f": *{metadata['description']}*"
+            if not arg or arg.lower() in content.lower():
+                presets.append(content)
+        util.print_markdown("## Presets:\n\n%s" % "\n".join(presets))
+
+    def do_preset_show(self, preset_name):
+        """
+        Display a preset
+
+        Arguments:
+            preset_name: Required. The name of the preset
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+        if not success:
+            return success, preset, user_message
+        metadata, customizations = preset
+        util.print_markdown(f"\n## Preset '{preset_name}'")
+        util.print_markdown("### Model customizations\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False))
+        util.print_markdown("### Metadata\n```yaml\n%s\n```" % yaml.dump(metadata, default_flow_style=False))
+
+    def do_preset_save(self, args):
+        """
+        Create a new preset, or update an existing preset
+
+        Arguments:
+            preset_name: Required. The name of the preset
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        if not args:
+            return False, args, "No preset name specified"
+        metadata, customizations = self.backend.make_preset()
+        preset_name, *rest = args.split()
+        description = " ".join(rest) if rest else None
+        if description:
+            metadata['description'] = description
+        success, file_path, user_message = self.preset_manager.save_preset(preset_name, metadata, customizations)
+        if success:
+            self.preset_manager.load_presets()
+            self.rebuild_completions()
+        return success, file_path, user_message
+
+    def do_preset_load(self, preset_name):
+        """
+        Load an existing preset
+
+        This activates the provider and model customizations stored in the preset as the current
+        configuration.
+
+        Arguments:
+            preset_name: Required. The name of the preset to load.
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+        if not success:
+            return success, preset, user_message
+        metadata, customizations = preset
+        success, _, user_message = self.backend.activate_preset(metadata, customizations)
+        return success, preset, user_message
+
+    def do_preset_delete(self, preset_name):
+        """
+        Deletes an existing preset
+
+        Arguments:
+            preset_name: Required. The name of the preset to delete
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+        if not success:
+            return success, preset, user_message
+        success, preset_name, user_message = self.preset_manager.delete_preset(preset_name)
+        if success:
+            self.preset_manager.load_presets()
+            self.rebuild_completions()
+        return success, preset_name, user_message

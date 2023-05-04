@@ -26,6 +26,7 @@ from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.error import NoInputError, LegacyCommandLeaderError
 from chatgpt_wrapper.core.editor import file_editor, pipe_editor
 from chatgpt_wrapper.core.template import TemplateManager
+from chatgpt_wrapper.core.preset_manager import PresetManager
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -68,6 +69,7 @@ class Repl():
             # auto_suggest=AutoSuggestFromHistory(),
             style=self.style,
         )
+        self.preset_manager = PresetManager(self.config)
         # TODO: This needs to be refactored to deal with streaming being on the provider class now.
         # Probably by storing a default streaming setting, and using that to build initial LLM classes.
         self.stream = self.config.get('chat.streaming')
@@ -270,6 +272,7 @@ class Repl():
     def setup(self):
         self.configure_backend()
         self.configure_plugins()
+        self.backend.set_provider_streaming(self.stream)
         self.template_manager.load_templates()
         self.configure_shell_commands()
         self.configure_commands()
@@ -324,7 +327,10 @@ class Repl():
         Examples:
             {COMMAND}
         """
+        if not self.backend.provider.can_stream():
+            return False, None, f"{self.backend.provider.name} does not support streaming"
         self.stream = not self.stream
+        self.backend.set_provider_streaming(self.stream)
         util.print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
@@ -854,6 +860,7 @@ class Repl():
                     return success, value, user_message
         else:
             customizations = copy.deepcopy(self.backend.provider.customizations)
+            customizations = {k: v for k, v in customizations.items() if k != '_type'}
             model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
             provider_name = self.backend.provider.display_name()
             customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
@@ -1074,6 +1081,7 @@ class Repl():
 * Data dir: %s
 * Data profile dir: %s
 * Templates dirs: %s
+* Presets dirs: %s
 
 # Profile '%s' configuration:
 
@@ -1085,7 +1093,7 @@ class Repl():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), ", ".join(self.preset_manager.preset_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
 
