@@ -52,8 +52,13 @@ class ApiRepl(Repl):
             for command in user_commands:
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
+        provider_completions = {}
+        for _name, provider in self.backend.get_providers().items():
+            provider_models = util.list_to_completion_hash(provider.capabilities['models'].keys()) if 'models' in provider.capabilities else None
+            provider_completions[provider.display_name()] = provider_models
         return {
             util.command_with_leader('system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
+            util.command_with_leader('provider'): provider_completions,
         }
 
     def configure_backend(self):
@@ -463,3 +468,29 @@ Before you can start using the shell, you must create a new user.
         else:
             output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
             util.print_markdown(output)
+
+    def do_provider(self, arg):
+        """
+        View or set the current LLM provider
+
+        Arguments:
+            provider: The name of the provider to set.
+            model_name: Optional. The model to initialize the provider with.
+            With no arguments, view current set model attributes
+
+        Examples:
+            {COMMAND}
+            {COMMAND} chat_openai
+            {COMMAND} chat_openai gpt-4
+        """
+        if arg:
+            try:
+                provider, model_name, *rest = arg.split()
+                if rest:
+                    return False, arg, "Too many parameters, should be 'provider model_name'"
+                customizations = {'model_name': model_name}
+            except ValueError:
+                customizations = None
+            return self.backend.set_provider(provider, customizations)
+        else:
+            return self.do_model('')
