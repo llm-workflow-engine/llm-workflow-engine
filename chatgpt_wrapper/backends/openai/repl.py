@@ -489,12 +489,13 @@ Before you can start using the shell, you must create a new user.
                 provider, model_name, *rest = arg.split()
                 if rest:
                     return False, arg, "Too many parameters, should be 'provider model_name'"
-                customizations = {'model_name': model_name}
             except ValueError:
                 provider = arg
-                customizations = None
-            success, provider, user_message = self.backend.set_provider(provider, customizations)
+                model_name = None
+            success, provider, user_message = self.backend.set_provider(provider)
             if success:
+                if model_name:
+                    self.backend.set_model(model_name)
                 self.rebuild_completions()
             return success, provider, user_message
         else:

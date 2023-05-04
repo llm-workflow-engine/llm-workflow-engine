@@ -835,12 +835,12 @@ class Repl():
                 path, value, *rest = arg.split()
                 if rest:
                     return False, arg, "Too many parameters, should be 'path value'"
-                if path == 'model_name':
+                if path == self.backend.provider.model_property_name:
                     success, value, user_message = self.backend.set_model(value)
                 else:
                     success, value, user_message = self.backend.provider.set_customization_value(path, value)
                 if success:
-                    model_name = value.get("model_name", "unknown")
+                    model_name = value.get(self.backend.provider.model_property_name, "unknown")
                     self.backend.model = model_name
                 return success, value, user_message
             except ValueError:
@@ -854,7 +854,7 @@ class Repl():
                     return success, value, user_message
         else:
             customizations = copy.deepcopy(self.backend.provider.customizations)
-            model_name = customizations.pop("model_name", "unknown")
+            model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
             provider_name = self.backend.provider.display_name()
             customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
             util.print_markdown("## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data))
