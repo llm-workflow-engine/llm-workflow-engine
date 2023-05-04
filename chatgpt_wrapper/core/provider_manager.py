@@ -1,5 +1,6 @@
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
+from chatgpt_wrapper.core import constants
 from chatgpt_wrapper.core.plugin_manager import PluginManager
 
 class ProviderManager:
@@ -13,10 +14,15 @@ class ProviderManager:
         provider_plugins = {k: v for (k, v) in self.plugin_manager.get_plugins().items() if v.plugin_type == 'provider'}
         return provider_plugins
 
+    def full_name(self, name):
+        if name[:9] != constants.PROVIDER_PREFIX:
+            name = f"{constants.PROVIDER_PREFIX}{name}"
+        return name
+
     def load_provider(self, provider_name: str):
         try:
             self.log.debug(f"Attempting to load provider: {provider_name}")
-            provider = self.provider_plugins[provider_name]
+            provider = self.provider_plugins[self.full_name(provider_name)]
             self.log.debug(f"Found provider: {provider.__class__.__name__}")
         except KeyError:
             message = f"Provider {provider_name} not found in provider_plugins."

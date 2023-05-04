@@ -855,7 +855,7 @@ class Repl():
         else:
             customizations = copy.deepcopy(self.backend.provider.customizations)
             model_name = customizations.pop("model_name", "unknown")
-            provider_name = self.backend.provider_name[9:]
+            provider_name = self.backend.provider.display_name()
             customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
             util.print_markdown("## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data))
 
