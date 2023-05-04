@@ -31,8 +31,6 @@ class OpenAIAPI(Backend):
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.set_provider(self.config.get('model.provider'))
-        self.llm = self.make_llm()
-        self.set_model_max_submission_tokens()
         self.set_system_message()
         if default_user_id is not None:
             success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
@@ -43,15 +41,25 @@ class OpenAIAPI(Backend):
     def default_model(self):
         return constants.OPENAI_BACKEND_DEFAULT_MODEL
 
+    def get_providers(self):
+        return self.provider_manager.get_provider_plugins()
+
     def set_provider(self, provider_name, customizations=None):
-        if self.provider_name != provider_name:
-            success, provider, user_message = self.provider_manager.load_provider(provider_name)
-            if success:
-                self.provider_name = provider_name
-                self.provider = provider
-                if customizations:
-                    self.provider.set_customizations(customizations)
-            return success, provider, user_message
+        provider_full_name = self.provider_manager.full_name(provider_name)
+        if self.provider_name == provider_full_name:
+            return False, None, f"Provider {provider_name} already set"
+        success, provider, user_message = self.provider_manager.load_provider(provider_full_name)
+        if success:
+            self.provider_name = provider_full_name
+            self.provider = provider
+            if isinstance(customizations, dict):
+                for key, value in customizations.items():
+                    success, customizations, customization_message = self.provider.set_customization_value(key, value)
+                    if not success:
+                        return success, customizations, customization_message
+            self.llm = self.make_llm()
+            self.set_model(self.llm.model_name)
+        return success, provider, user_message
 
     def set_model(self, model_name):
         success, customizations, user_message = super().set_model(model_name)
