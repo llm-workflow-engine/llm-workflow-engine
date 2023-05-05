@@ -155,6 +155,10 @@ class ProviderBase(Plugin):
             customizations = customizations.setdefault(key, {})
         customizations[keys[-1]] = value
 
+    def get_customizations(self):
+        customizations = {k: v for k, v in self.customizations.items() if k != '_type'}
+        return customizations
+
     def set_customizations(self, customizations):
         self.customizations = customizations
 
@@ -196,10 +200,9 @@ class ProviderBase(Plugin):
     def can_stream(self):
         return 'streaming' in self.capabilities and self.capabilities['streaming']
 
-    def make_llm(self, customizations=None):
-        final_customizations = copy.deepcopy(self.customizations)
-        if customizations:
-            final_customizations.update(customizations)
+    def make_llm(self, customizations={}):
+        final_customizations = self.get_customizations()
+        final_customizations.update(customizations)
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
         return llm

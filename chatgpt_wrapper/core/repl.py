@@ -859,8 +859,7 @@ class Repl():
                 else:
                     return success, value, user_message
         else:
-            customizations = copy.deepcopy(self.backend.provider.customizations)
-            customizations = {k: v for k, v in customizations.items() if k != '_type'}
+            customizations = self.backend.provider.get_customizations()
             model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
             provider_name = self.backend.provider.display_name()
             customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
