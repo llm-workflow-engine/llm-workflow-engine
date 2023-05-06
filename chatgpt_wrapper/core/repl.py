@@ -3,7 +3,6 @@ import textwrap
 import yaml
 import os
 import sys
-import copy
 import traceback
 import shutil
 import signal
@@ -52,7 +51,6 @@ class Repl():
     prompt_number = 0
     chatgpt = None
     message_map = {}
-    stream = False
     logfile = None
 
     def __init__(self, config=None):
@@ -70,11 +68,12 @@ class Repl():
             style=self.style,
         )
         self.preset_manager = PresetManager(self.config)
-        # TODO: This needs to be refactored to deal with streaming being on the provider class now.
-        # Probably by storing a default streaming setting, and using that to build initial LLM classes.
-        self.stream = self.config.get('chat.streaming')
         self._set_logging()
         self._setup_signal_handlers()
+
+    @property
+    def stream(self):
+        return self.backend.stream
 
     def terminate_stream(self, _signal, _frame):
         self.backend.terminate_stream(_signal, _frame)
@@ -272,7 +271,7 @@ class Repl():
     def setup(self):
         self.configure_backend()
         self.configure_plugins()
-        self.backend.set_provider_streaming(self.stream)
+        self.backend.set_provider_streaming(self.config.get('chat.streaming'))
         self.template_manager.load_templates()
         self.configure_shell_commands()
         self.configure_commands()
@@ -329,8 +328,7 @@ class Repl():
         """
         if not self.backend.provider.can_stream():
             return False, None, f"{self.backend.provider.name} does not support streaming"
-        self.stream = not self.stream
-        self.backend.set_provider_streaming(self.stream)
+        self.backend.set_provider_streaming(not self.stream)
         util.print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
