@@ -211,12 +211,12 @@ class ProviderBase(Plugin):
         return self.prepare_messages_for_llm_last_message
 
     def prepare_messages_for_llm_last_message(self, messages):
-        messages = [messages[-1]['content']]
+        messages = messages[-1]['content']
         return messages
 
     def prepare_messages_for_llm_stuff_messages(self, messages):
         messages = [m['content'] for m in messages]
-        return messages
+        return "\n\n".join(messages)
 
     def prepare_messages_for_llm_chat(self, messages):
         messages = [_convert_dict_to_message(m) for m in messages]
