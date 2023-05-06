@@ -1,8 +1,10 @@
+cohere>=4.3.1
 email-validator
 Flask
 Jinja2
-langchain>=0.0.123,<=0.0.137
+langchain>=0.0.160
 names
+numexpr>=2.8.4
 openai>=0.27.2
 openpyxl
 playwright
@@ -12,5 +14,5 @@ pyperclip
 python-frontmatter
 PyYAML
 rich
-sqlalchemy
+sqlalchemy>=2
 tiktoken
