@@ -691,7 +691,7 @@ class Repl():
         if not line:
             return
 
-        if self.stream:
+        if self.backend.should_stream():
             print("")
             success, response, user_message = self.backend.ask_stream(line, title=title, model_customizations=model_customizations)
             print("\n")

@@ -50,6 +50,10 @@ class Backend(ABC):
                 self.stream = stream
             self.provider.set_customization_value('streaming', self.stream)
 
+    def should_stream(self):
+        customizations = self.provider.get_customizations()
+        return customizations.get('streaming', False)
+
     def streaming_args(self, interrupt_handler=False):
         calback_handlers = [
             VerboseStreamingStdOutCallbackHandler(),
