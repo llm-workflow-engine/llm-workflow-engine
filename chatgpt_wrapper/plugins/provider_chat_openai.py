@@ -42,6 +42,9 @@ class ProviderChatOpenai(Provider):
             }
         }
 
+    def prepare_messages_method(self):
+        return self.prepare_messages_for_llm_chat
+
     def llm_factory(self):
         return CustomChatOpenAI
 

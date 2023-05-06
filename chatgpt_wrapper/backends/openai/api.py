@@ -2,7 +2,8 @@ import json
 import threading
 import tiktoken
 
-from langchain.chat_models.openai import _convert_dict_to_message
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.schema import BaseMessage
 
 from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.provider_manager import ProviderManager
@@ -131,7 +132,9 @@ class OpenAIAPI(Backend):
         return system_message, model_customizations
 
     def _extract_message_content(self, message):
-        return message.content
+        if isinstance(message, BaseMessage):
+            return message.content
+        return str(message)
 
     def gen_title_thread(self, conversation):
         self.log.info(f"Generating title for conversation {conversation.id}")
@@ -145,14 +148,18 @@ class OpenAIAPI(Backend):
                 self.build_openai_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
                 self.build_openai_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
             ]
-            success, completion, user_message = self._call_openai_non_streaming(new_messages, {'model_name': constants.OPENAI_BACKEND_DEFAULT_MODEL, 'temperature': 0})
-            if success:
-                title = self._extract_message_content(completion)
+            new_messages = self.provider.prepare_messages_for_llm_chat(new_messages)
+            llm = ChatOpenAI(model_name=constants.OPENAI_BACKEND_DEFAULT_MODEL, temperature=0)
+            try:
+                result = llm(new_messages)
+                title = self._extract_message_content(result)
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
                 success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
                 if success:
                     self.log.debug(f"Title saved for conversation {conversation.id}")
                     return
+            except ValueError as e:
+                return False, new_messages, e
         self.log.info(f"Failed to generate title for conversation: {str(user_message)}")
 
     def gen_title(self, conversation):
@@ -244,7 +251,7 @@ class OpenAIAPI(Backend):
         # TODO: More elegant way to do this, probably on provider.
         model_configuration = {k: str(v) for k, v in dict(self.llm).items()}
         self.log.debug(f"LLM request with message count: {len(messages)}, model configuration: {json.dumps(model_configuration)}")
-        messages = [_convert_dict_to_message(m) for m in messages]
+        messages = self.provider.prepare_messages_for_llm(messages)
         return self.llm, messages
 
     def _call_openai_streaming(self, messages, customizations={}):

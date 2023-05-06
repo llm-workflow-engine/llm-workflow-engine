@@ -1,6 +1,6 @@
-import copy
-
 from abc import abstractmethod
+
+from langchain.chat_models.openai import _convert_dict_to_message
 
 from chatgpt_wrapper.core.plugin import Plugin
 from chatgpt_wrapper.core import constants
@@ -206,6 +206,26 @@ class ProviderBase(Plugin):
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
         return llm
+
+    def prepare_messages_method(self):
+        return self.prepare_messages_for_llm_last_message
+
+    def prepare_messages_for_llm_last_message(self, messages):
+        messages = [messages[-1]['content']]
+        return messages
+
+    def prepare_messages_for_llm_stuff_messages(self, messages):
+        messages = [m['content'] for m in messages]
+        return messages
+
+    def prepare_messages_for_llm_chat(self, messages):
+        messages = [_convert_dict_to_message(m) for m in messages]
+        return messages
+
+    def prepare_messages_for_llm(self, messages):
+        method = self.prepare_messages_method()
+        messages = method(messages)
+        return messages
 
     def max_submission_tokens(self):
         model_name = self.get_model()
