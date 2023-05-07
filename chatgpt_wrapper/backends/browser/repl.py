@@ -2,13 +2,6 @@ import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
 from chatgpt_wrapper.core.repl import Repl
 
-BROWSER_RENDER_MODELS_MAP = {
-    "text-davinci-002-render-sha": "default",
-    "text-davinci-002-render-paid": "legacy-paid",
-    "text-davinci-002-render": "legacy-free",
-    "gpt-4": "gpt-4",
-}
-
 class BrowserRepl(Repl):
     """
     A shell interpreter that serves as a front end to the ChatGPT class
@@ -24,7 +17,7 @@ class BrowserRepl(Repl):
         self.backend.launch_browser()
 
     def build_shell_user_prefix(self):
-        return f"{BROWSER_RENDER_MODELS_MAP[self.backend.model]} "
+        return f"{self.backend.model} "
 
     def do_session(self, _):
         """

@@ -46,7 +46,7 @@ class TemplateManager():
     def extract_template_run_overrides(self, metadata):
         override_keys = [
             'title',
-            'model_customizations',
+            'request_overrides',
         ]
         builtin_keys = [
             'description',

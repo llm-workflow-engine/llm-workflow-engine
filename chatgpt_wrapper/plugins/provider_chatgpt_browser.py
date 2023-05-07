@@ -11,12 +11,13 @@ from langchain.chat_models.openai import _convert_dict_to_message
 
 from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
 from chatgpt_wrapper.core.provider import Provider, PresetValue
-from chatgpt_wrapper.core import constants
+
+BROWSER_BACKEND_DEFAULT_MODEL = "text-davinci-002-render-sha"
 
 def make_llm_class(klass):
     class ChatGPTLLM(BaseChatModel):
         streaming: bool = False
-        model_name: str = constants.BROWSER_BACKEND_DEFAULT_MODEL
+        model_name: str = BROWSER_BACKEND_DEFAULT_MODEL
         temperature: float = 0.7
         verbose: bool = False
         chatgpt: Computed[ChatGPT]
@@ -89,11 +90,14 @@ class ProviderChatgptBrowser(Provider):
             }
         }
 
+    @property
+    def default_model(self):
+        return BROWSER_BACKEND_DEFAULT_MODEL
 
     def llm_factory(self):
         return make_llm_class(self.backend)
 
     def customization_config(self):
         return {
-            'model_name': PresetValue(str, options=constants.BROWSER_RENDER_MODELS),
+            'model_name': PresetValue(str, options=self.available_models),
         }

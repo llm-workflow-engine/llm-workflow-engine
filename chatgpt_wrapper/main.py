@@ -102,7 +102,7 @@ def main():
 
     if args.database is not None:
         config.set('database', args.database)
-    config.set('chat.streaming', args.stream)
+    config.set('model.streaming', args.stream)
     if args.log is not None:
         config.set('chat.log.enabled', True)
         config.set('chat.log.filepath', args.log)

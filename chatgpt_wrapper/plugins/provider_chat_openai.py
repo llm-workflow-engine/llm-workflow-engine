@@ -1,6 +1,7 @@
 from langchain.chat_models.openai import ChatOpenAI
 
 from chatgpt_wrapper.core.provider import Provider, PresetValue
+from chatgpt_wrapper.core import constants
 
 class CustomChatOpenAI(ChatOpenAI):
     @property
@@ -42,6 +43,10 @@ class ProviderChatOpenai(Provider):
             }
         }
 
+    @property
+    def default_model(self):
+        return constants.OPENAI_BACKEND_DEFAULT_MODEL
+
     def prepare_messages_method(self):
         return self.prepare_messages_for_llm_chat
 
@@ -51,7 +56,7 @@ class ProviderChatOpenai(Provider):
     def customization_config(self):
         return {
             'verbose': PresetValue(bool),
-            'model_name': PresetValue(str, options=self.capabilities['models'].keys()),
+            'model_name': PresetValue(str, options=self.available_models),
             'temperature': PresetValue(float, min_value=0.0, max_value=2.0),
             'model_kwargs': dict,
             'openai_api_key': PresetValue(str, include_none=True, private=True),

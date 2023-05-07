@@ -25,7 +25,6 @@ from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.error import NoInputError, LegacyCommandLeaderError
 from chatgpt_wrapper.core.editor import file_editor, pipe_editor
 from chatgpt_wrapper.core.template import TemplateManager
-from chatgpt_wrapper.core.preset_manager import PresetManager
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -67,7 +66,6 @@ class Repl():
             # auto_suggest=AutoSuggestFromHistory(),
             style=self.style,
         )
-        self.preset_manager = PresetManager(self.config)
         self._set_logging()
         self._setup_signal_handlers()
 
@@ -271,7 +269,7 @@ class Repl():
     def setup(self):
         self.configure_backend()
         self.configure_plugins()
-        self.backend.set_provider_streaming(self.config.get('chat.streaming'))
+        self.backend.set_provider_streaming(self.config.get('model.streaming'))
         self.template_manager.load_templates()
         self.configure_shell_commands()
         self.configure_commands()
@@ -682,7 +680,7 @@ class Repl():
         """
         return self.default(line)
 
-    def default(self, line, title=None, model_customizations={}):
+    def default(self, line, title=None, request_overrides={}):
         # TODO: This signal is recognized on Windows, and calls the callback, but the entire
         # process is still killed.
         signal.signal(signal.SIGINT, self.catch_ctrl_c)
@@ -691,12 +689,12 @@ class Repl():
 
         if self.backend.should_stream():
             print("")
-            success, response, user_message = self.backend.ask_stream(line, title=title, model_customizations=model_customizations)
+            success, response, user_message = self.backend.ask_stream(line, title=title, request_overrides=request_overrides)
             print("\n")
             if not success:
                 return success, response, user_message
         else:
-            success, response, user_message = self.backend.ask(line, title=title, model_customizations=model_customizations)
+            success, response, user_message = self.backend.ask(line, title=title, request_overrides=request_overrides)
             if success:
                 print("")
                 util.print_markdown(response)
@@ -1090,7 +1088,7 @@ class Repl():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), ", ".join(self.preset_manager.preset_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), ", ".join(self.backend.preset_manager.preset_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
 

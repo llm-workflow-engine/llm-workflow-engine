@@ -62,7 +62,7 @@ class ApiRepl(Repl):
             util.command_with_leader('system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
             util.command_with_leader('provider'): provider_completions,
         }
-        preset_keys = self.preset_manager.presets.keys()
+        preset_keys = self.backend.preset_manager.presets.keys()
         for subcmd in ['save', 'load', 'delete', 'show']:
             final_completions[util.command_with_leader(f"preset-{subcmd}")] = util.list_to_completion_hash(preset_keys) if preset_keys else None
         return final_completions
@@ -526,10 +526,10 @@ Before you can start using the shell, you must create a new user.
             {COMMAND}
             {COMMAND} filterstring
         """
-        self.preset_manager.load_presets()
+        self.backend.preset_manager.load_presets()
         self.rebuild_completions()
         presets = []
-        for preset_name, data in self.preset_manager.presets.items():
+        for preset_name, data in self.backend.preset_manager.presets.items():
             metadata, _customizations = data
             content = f"* **{preset_name}**"
             if 'description' in metadata:
@@ -548,7 +548,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND} mypreset
         """
-        success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+        success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
@@ -573,9 +573,9 @@ Before you can start using the shell, you must create a new user.
         description = " ".join(rest) if rest else None
         if description:
             metadata['description'] = description
-        success, file_path, user_message = self.preset_manager.save_preset(preset_name, metadata, customizations)
+        success, file_path, user_message = self.backend.preset_manager.save_preset(preset_name, metadata, customizations)
         if success:
-            self.preset_manager.load_presets()
+            self.backend.preset_manager.load_presets()
             self.rebuild_completions()
         return success, file_path, user_message
 
@@ -592,7 +592,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND} mypreset
         """
-        success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+        success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
@@ -609,11 +609,11 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND} mypreset
         """
-        success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+        success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
-        success, preset_name, user_message = self.preset_manager.delete_preset(preset_name)
+        success, preset_name, user_message = self.backend.preset_manager.delete_preset(preset_name)
         if success:
-            self.preset_manager.load_presets()
+            self.backend.preset_manager.load_presets()
             self.rebuild_completions()
         return success, preset_name, user_message

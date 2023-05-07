@@ -6,22 +6,7 @@ import tempfile
 PROVIDER_PREFIX = 'provider_'
 
 # Backend speciifc constants
-BROWSER_BACKEND_DEFAULT_MODEL = "text-davinci-002-render-sha"
-BROWSER_RENDER_MODELS = [
-    "text-davinci-002-render-sha",
-    "text-davinci-002-render-paid",
-    "text-davinci-002-render",
-    "gpt-4",
-]
 OPENAI_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
-OPENAPI_CHAT_RENDER_MODELS = [
-    "gpt-3.5-turbo",
-    "gpt-3.5-turbo-0301",
-    "gpt-4",
-    "gpt-4-0314",
-    "gpt-4-32k",
-    "gpt-4-32k-0314",
-]
 
 SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
 SYSTEM_MESSAGE_PROGRAMMER = "You are an expert programmer, who responds to questions with brief examples in code."
@@ -31,22 +16,6 @@ DEFAULT_TITLE_GENERATION_USER_PROMPT = 'Write a title for this content:'
 OPENAPI_MAX_TOKENS = 4096
 OPENAPI_MIN_SUBMISSION_TOKENS = 1
 OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS = 4000
-
-OPENAPI_DEFAULT_TEMPERATURE = 0.9
-OPENAPI_TEMPERATURE_MIN = 0
-OPENAPI_TEMPERATURE_MAX = 2
-
-OPENAPI_DEFAULT_TOP_P = 1
-OPENAPI_TOP_P_MIN = 0
-OPENAPI_TOP_P_MAX = 1
-
-OPENAPI_DEFAULT_PRESENCE_PENALTY = 0.6
-OPENAPI_PRESENCE_PENALTY_MIN = -2
-OPENAPI_PRESENCE_PENALTY_MAX = 2
-
-OPENAPI_DEFAULT_FREQUENCY_PENALTY = 0
-OPENAPI_FREQUENCY_PENALTY_MIN = -2
-OPENAPI_FREQUENCY_PENALTY_MAX = 2
 
 # Config specific constants.
 DEFAULT_PROFILE = 'default'
@@ -65,23 +34,13 @@ DEFAULT_CONFIG = {
         'debug': False,
     },
     'model': {
-        'provider': 'provider_chat_openai',
+        'default_preset': None,
+        'streaming': False,
+        'system_message': {
+            'programmer': SYSTEM_MESSAGE_PROGRAMMER,
+        },
     },
     'chat': {
-        # This is not abstracted across backends, so the backend takes care of setting it
-        # if not currently set.
-        'model': None,
-        'model_customizations': {
-            'temperature': OPENAPI_DEFAULT_TEMPERATURE,
-            'top_p': OPENAPI_DEFAULT_TOP_P,
-            'presence_penalty': OPENAPI_DEFAULT_PRESENCE_PENALTY,
-            'frequency_penalty': OPENAPI_DEFAULT_FREQUENCY_PENALTY,
-            'max_submission_tokens': OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS,
-            'system_message': {
-                'programmer': SYSTEM_MESSAGE_PROGRAMMER,
-            },
-        },
-        'streaming': False,
         'log': {
             'enabled': False,
             'filepath': 'chatgpt.log',
@@ -130,16 +89,4 @@ HELP_TOKEN_VARIABLE_SUBSTITUTIONS = [
     'OPENAPI_MAX_TOKENS',
     'OPENAPI_MIN_SUBMISSION_TOKENS',
     'OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS',
-    'OPENAPI_DEFAULT_TEMPERATURE',
-    'OPENAPI_TEMPERATURE_MIN',
-    'OPENAPI_TEMPERATURE_MAX',
-    'OPENAPI_DEFAULT_TOP_P',
-    'OPENAPI_TOP_P_MIN',
-    'OPENAPI_TOP_P_MAX',
-    'OPENAPI_DEFAULT_PRESENCE_PENALTY',
-    'OPENAPI_PRESENCE_PENALTY_MIN',
-    'OPENAPI_PRESENCE_PENALTY_MAX',
-    'OPENAPI_DEFAULT_FREQUENCY_PENALTY',
-    'OPENAPI_FREQUENCY_PENALTY_MIN',
-    'OPENAPI_FREQUENCY_PENALTY_MAX',
 ]

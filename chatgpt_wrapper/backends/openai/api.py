@@ -32,7 +32,8 @@ class OpenAIAPI(Backend):
         self.conversation_tokens = 0
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
-        self.set_provider(self.config.get('model.provider'))
+        self.init_provider()
+        self.set_available_models()
         self.set_system_message()
         if default_user_id is not None:
             success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
@@ -45,6 +46,18 @@ class OpenAIAPI(Backend):
 
     def get_providers(self):
         return self.provider_manager.get_provider_plugins()
+
+    def init_provider(self):
+        default_preset = self.config.get('model.default_preset')
+        if default_preset:
+            success, preset, user_message = self.preset_manager.ensure_preset(default_preset)
+            if success:
+                metadata, customizations = preset
+                success, _, user_message = self.activate_preset(metadata, customizations)
+                if success:
+                    return
+            util.print_status_message(False, f"Failed to load default preset {default_preset}: {user_message}")
+        self.set_provider('provider_chat_openai')
 
     def set_provider(self, provider_name, customizations=None, reset=False):
         provider_full_name = self.provider_manager.full_name(provider_name)
@@ -121,15 +134,14 @@ class OpenAIAPI(Backend):
         tokens = self.get_num_tokens_from_messages(token_messages)
         return tokens
 
-    def extract_system_message(self, model_customizations):
+    def extract_system_message(self, request_overrides):
         system_message = None
-        if 'system_message' in model_customizations:
-            system_message = model_customizations['system_message']
-            del model_customizations['system_message']
+        if 'system_message' in request_overrides:
+            system_message = request_overrides.pop('system_message')
             aliases = self.get_system_message_aliases()
             if system_message in aliases:
                 system_message = aliases[system_message]
-        return system_message, model_customizations
+        return system_message, request_overrides
 
     def _extract_message_content(self, message):
         if isinstance(message, BaseMessage):
@@ -166,9 +178,6 @@ class OpenAIAPI(Backend):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
-    def set_available_models(self):
-        self.available_models = constants.OPENAPI_CHAT_RENDER_MODELS
-
     def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
         self.system_message = message
 
@@ -182,7 +191,7 @@ class OpenAIAPI(Backend):
         return output
 
     def get_system_message_aliases(self):
-        aliases = self.config.get('chat.model_customizations.system_message')
+        aliases = self.config.get('model.system_message')
         aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
         return aliases
 
@@ -354,8 +363,8 @@ class OpenAIAPI(Backend):
                 return True, response_message, "No current user, conversation not saved"
         return False, None, "Conversation not updated with new messages"
 
-    def ask_stream(self, prompt, title=None, model_customizations={}):
-        system_message, model_customizations = self.extract_system_message(model_customizations)
+    def ask_stream(self, prompt, title=None, request_overrides={}):
+        system_message, request_overrides = self.extract_system_message(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         # Streaming loop.
         self.streaming = True
@@ -363,7 +372,7 @@ class OpenAIAPI(Backend):
         #        self.log.info("Request to interrupt streaming")
         #        break
         self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
-        success, response_obj, user_message = self._call_openai_streaming(messages, **model_customizations)
+        success, response_obj, user_message = self._call_openai_streaming(messages, **request_overrides)
         if success:
             self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
             response_message = self._extract_message_content(response_obj)
@@ -377,7 +386,7 @@ class OpenAIAPI(Backend):
         self.streaming = False
         return self._handle_response(success, response_obj, user_message)
 
-    def ask(self, prompt, title=None, model_customizations={}):
+    def ask(self, prompt, title=None, request_overrides={}):
         """
         Send a message to chatGPT and return the response.
 
@@ -387,9 +396,9 @@ class OpenAIAPI(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        system_message, model_customizations = self.extract_system_message(model_customizations)
+        system_message, request_overrides = self.extract_system_message(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        success, response, user_message = self._call_openai_non_streaming(messages, **model_customizations)
+        success, response, user_message = self._call_openai_non_streaming(messages, **request_overrides)
         if success:
             response_message = self._extract_message_content(response)
             self.message_clipboard = response_message

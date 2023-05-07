@@ -82,8 +82,8 @@ class ProviderBase(Plugin):
         return 'model_name'
 
     @property
-    def default_model(self):
-        return None
+    def available_models(self):
+        return self.capabilities['models'].keys()
 
     def incompatible_backends(self):
         return [
@@ -238,6 +238,11 @@ class Provider(ProviderBase):
     @property
     @abstractmethod
     def capabilities(self):
+        pass
+
+    @property
+    @abstractmethod
+    def default_model(self):
         pass
 
     @abstractmethod

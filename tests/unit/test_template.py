@@ -82,12 +82,12 @@ def test_extract_template_run_overrides(template_manager):
     metadata = {
         'title': 'Test Title',
         'description': 'Test Description',
-        'model_customizations': {'option': 'value'},
+        'request_overrides': {'option': 'value'},
         'custom': 'Custom Value'
     }
     metadata, overrides = template_manager.extract_template_run_overrides(metadata)
     assert metadata == {'custom': 'Custom Value'}
-    assert overrides == {'title': 'Test Title', 'model_customizations': {'option': 'value'}}
+    assert overrides == {'title': 'Test Title', 'request_overrides': {'option': 'value'}}
 
 
 def test_build_message_from_template(template_manager):

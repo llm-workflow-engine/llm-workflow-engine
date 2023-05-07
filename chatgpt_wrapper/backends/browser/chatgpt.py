@@ -16,7 +16,6 @@ from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.plugin_manager import PluginManager
 from chatgpt_wrapper.core.provider_manager import ProviderManager
 from chatgpt_wrapper.core import util
-import chatgpt_wrapper.core.constants as constants
 
 GEN_TITLE_TIMEOUT = 5000
 
@@ -48,10 +47,18 @@ class ChatGPT(Backend):
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.set_provider()
+        self.set_available_models()
+        self.init_model()
         self.new_conversation()
 
-    def default_model(self):
-        return constants.BROWSER_BACKEND_DEFAULT_MODEL
+    def init_model(self):
+        default_preset = self.config.get('model.default_preset')
+        if default_preset:
+            success, new_value, user_message = self.set_model(default_preset)
+            if success:
+                return
+            util.print_status_message(False, f"Failed to load default preset {default_preset}: {user_message}")
+        self.set_model(self.provider.default_model)
 
     def set_provider(self):
         success, provider, user_message = self.provider_manager.load_provider(PROVIDER_BROWSER)
@@ -136,9 +143,6 @@ class ChatGPT(Backend):
             shutil.rmtree(self.user_data_dir)
         self.log.debug("Closing Playwright")
         self.play.stop()
-
-    def set_available_models(self):
-        self.available_models = constants.BROWSER_RENDER_MODELS
 
     def get_runtime_config(self):
         output = """
@@ -371,7 +375,7 @@ class ChatGPT(Backend):
             else:
                 return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
-    def _ask_stream(self, prompt, title=None, model_customizations={}):
+    def _ask_stream(self, prompt, title=None, request_overrides={}):
         if self.session is None:
             self.refresh_session()
 
@@ -533,7 +537,7 @@ class ChatGPT(Backend):
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         self.page.evaluate(code)
 
-    def ask(self, message, title=None, model_customizations={}):
+    def ask(self, message, title=None, request_overrides={}):
         """
         Send a message to chatGPT and return the response.
 
@@ -550,7 +554,7 @@ class ChatGPT(Backend):
             return False, message, e
         return True, response.content, "Response received"
 
-    def ask_stream(self, message, title=None, model_customizations={}):
+    def ask_stream(self, message, title=None, request_overrides={}):
         """
         Send a message to chatGPT and stream the response.
 

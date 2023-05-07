@@ -2,15 +2,13 @@ from langchain.llms import Cohere
 
 from chatgpt_wrapper.core.provider import Provider, PresetValue
 
+COHERE_DEFAULT_MODEL = "base-light"
+
 class ProviderCohere(Provider):
 
     @property
     def model_property_name(self):
         return 'model'
-
-    @property
-    def default_model(self):
-        return 'base-light'
 
     @property
     def capabilities(self):
@@ -38,12 +36,16 @@ class ProviderCohere(Provider):
             }
         }
 
+    @property
+    def default_model(self):
+        return COHERE_DEFAULT_MODEL
+
     def llm_factory(self):
         return Cohere
 
     def customization_config(self):
         return {
-            'model': PresetValue(str, options=self.capabilities['models'].keys()),
+            'model': PresetValue(str, options=self.available_models),
             'max_tokens': PresetValue(int, include_none=True),
             'temperature': PresetValue(float, min_value=0.0, max_value=5.0),
             'k': PresetValue(int, 0, 500),
