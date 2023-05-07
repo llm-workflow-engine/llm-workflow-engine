@@ -1,3 +1,4 @@
+ai21>=1.0.5
 cohere>=4.3.1
 email-validator
 Flask
