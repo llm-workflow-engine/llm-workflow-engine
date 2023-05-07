@@ -88,7 +88,8 @@ class OpenAIAPI(Backend):
                 success, provider, user_message = self.provider_manager.load_provider(metadata['type'])
                 if success:
                     self.override_provider = provider
-                    if self.streaming:
+                    if self.should_stream():
+                        customizations.update({'streaming': True})
                         customizations.update(self.streaming_args(interrupt_handler=True))
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
                     message = f"Set override LLM based on preset {preset_name}"
