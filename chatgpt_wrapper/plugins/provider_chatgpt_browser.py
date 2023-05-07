@@ -85,19 +85,14 @@ class ProviderChatgptBrowser(Provider):
     def capabilities(self):
         return {
             'streaming': True,
-            # max_tokens is not supported in this backend.
             'models': {
                 'text-davinci-002-render-sha': {
-                    'max_tokens': None,
                 },
                 'text-davinci-002-render-paid': {
-                    'max_tokens': None,
                 },
                 'text-davinci-002-render': {
-                    'max_tokens': None,
                 },
                 'gpt-4': {
-                    'max_tokens': None,
                 },
             }
         }

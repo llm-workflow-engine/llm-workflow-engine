@@ -21,6 +21,7 @@ class ProviderChatOpenai(Provider):
     def capabilities(self):
         return {
             'streaming': True,
+            'chat': True,
             'models': {
                 'gpt-3.5-turbo': {
                     'max_tokens': 4096,

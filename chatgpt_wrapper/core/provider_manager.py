@@ -31,3 +31,9 @@ class ProviderManager:
         message = f"Successfully loaded provider: {provider_name}"
         self.log.info(message)
         return True, provider, message
+
+    def get_provider_from_model(self, model_name):
+        for provider in self.provider_plugins.values():
+            if model_name in provider.available_models:
+                return provider
+        return None

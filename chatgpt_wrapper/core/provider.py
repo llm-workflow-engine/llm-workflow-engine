@@ -83,7 +83,7 @@ class ProviderBase(Plugin):
 
     @property
     def available_models(self):
-        return self.capabilities['models'].keys()
+        return self.get_capability('models', {}).keys()
 
     def incompatible_backends(self):
         return [
@@ -186,19 +186,24 @@ class ProviderBase(Plugin):
         completions = dict_to_completions({}, self.customization_config())
         return completions
 
+    def get_capability(self, capability, default=False):
+        return self.capabilities[capability] if capability in self.capabilities else default
+
     def get_model(self):
         success, model_name, user_message = self.get_customization_value(self.model_property_name)
         if success:
             return model_name
 
     def set_model(self, model_name):
-        if model_name in self.capabilities['models']:
+        models = self.get_capability('models', {})
+        validate_models = self.get_capability('validate_models', True)
+        if model_name in models or not validate_models:
             return self.set_customization_value(self.model_property_name, model_name)
         else:
             return False, None, f"Invalid model {model_name}"
 
     def can_stream(self):
-        return 'streaming' in self.capabilities and self.capabilities['streaming']
+        return self.get_capability('streaming')
 
     def make_llm(self, customizations={}):
         final_customizations = self.get_customizations()
@@ -228,9 +233,10 @@ class ProviderBase(Plugin):
         return messages
 
     def max_submission_tokens(self):
+        models = self.get_capability('models', {})
         model_name = self.get_model()
-        if model_name and model_name in self.capabilities['models']:
-            return self.capabilities['models'][model_name]['max_tokens']
+        if model_name and model_name in models and 'max_tokens' in models[model_name]:
+            return models[model_name]['max_tokens']
         return constants.OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS
 
 class Provider(ProviderBase):

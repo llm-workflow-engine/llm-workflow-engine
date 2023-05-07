@@ -13,7 +13,6 @@ class ProviderCohere(Provider):
     @property
     def capabilities(self):
         return {
-            'streaming': True,
             'models': {
                 'base': {
                     'max_tokens': 2048,

@@ -29,12 +29,12 @@ class OpenAIAPI(Backend):
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
         self.current_user = None
-        self.conversation_tokens = 0
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.init_provider()
         self.set_available_models()
         self.set_system_message()
+        self.set_conversation_tokens(0)
         if default_user_id is not None:
             success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
             if not success:
@@ -76,8 +76,9 @@ class OpenAIAPI(Backend):
         return success, provider, user_message
 
     def set_model(self, model_name):
+        self.log.debug(f"Setting model to: {model_name}")
         success, customizations, user_message = super().set_model(model_name)
-        self.set_model_max_submission_tokens()
+        self.set_max_submission_tokens(force=True)
         return success, customizations, user_message
 
     def make_preset(self):
@@ -117,10 +118,33 @@ class OpenAIAPI(Backend):
         num_tokens += 2  # every reply is primed with <im_start>assistant
         return num_tokens
 
+    def set_conversation_tokens(self, tokens):
+        if self.conversation_id is None:
+            provider = self.provider
+        else:
+            success, conversation, user_message = self.conversation.get_conversation(self.conversation_id)
+            if not success:
+                raise ValueError(user_message)
+            provider = self.provider_manager.get_provider_from_model(conversation.model)
+        if provider is not None and provider.get_capability('chat'):
+            self.conversation_tokens = tokens
+        else:
+            self.conversation_tokens = None
+
     def switch_to_conversation(self, conversation_id, parent_message_id):
         super().switch_to_conversation(conversation_id, parent_message_id)
+        success, conversation, user_message = self.conversation.get_conversation(self.conversation_id)
+        if not success:
+            raise ValueError(user_message)
+        provider = self.provider_manager.get_provider_from_model(conversation.model)
+        if provider is None:
+            util.print_status_message(False, f"Unable to switch to conversation to initial model {conversation.model}, using current model")
+        else:
+            success, provider, _user_message = self.set_provider(provider.name)
+            if success:
+                self.set_model(conversation.model)
         tokens = self.get_conversation_token_count(conversation_id)
-        self.conversation_tokens = tokens
+        self.set_conversation_tokens(tokens)
 
     def get_conversation_token_count(self, conversation_id=None):
         conversation_id = conversation_id or self.conversation_id
@@ -162,6 +186,7 @@ class OpenAIAPI(Backend):
             try:
                 result = llm(new_messages)
                 title = self._extract_message_content(result)
+                title = title.replace("\n", ", ").strip()
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
                 success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
                 if success:
@@ -178,8 +203,12 @@ class OpenAIAPI(Backend):
     def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
         self.system_message = message
 
-    def set_model_max_submission_tokens(self, max_submission_tokens=None):
-        self.model_max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()
+    def set_max_submission_tokens(self, max_submission_tokens=None, force=False):
+        chat = self.provider.get_capability('chat')
+        if chat or force:
+            self.max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()
+            return True, self.max_submission_tokens, f"Max submission tokens set to {self.max_submission_tokens}"
+        return False, None, "Setting max submission tokens not supported for this provider"
 
     def get_runtime_config(self):
         output = """
@@ -240,7 +269,7 @@ class OpenAIAPI(Backend):
         if not success:
             raise Exception(user_message)
         tokens = self.get_conversation_token_count()
-        self.conversation_tokens = tokens
+        self.set_conversation_tokens(tokens)
         return conversation, last_message
 
     def add_message(self, role, message, conversation_id=None):
@@ -319,30 +348,31 @@ class OpenAIAPI(Backend):
 
     def new_conversation(self):
         super().new_conversation()
-        self.conversation_tokens = 0
+        self.set_conversation_tokens(0)
 
     def _strip_out_messages_over_max_tokens(self, messages, token_count, max_tokens):
-        stripped_messages_count = 0
-        while token_count > max_tokens and len(messages) > 1:
-            message = messages.pop(0)
+        if token_count is not None:
+            stripped_messages_count = 0
+            while token_count > max_tokens and len(messages) > 1:
+                message = messages.pop(0)
+                token_count = self.get_num_tokens_from_messages(messages)
+                self.log.debug(f"Stripping message: {message['role']}, {message['content']} -- new token count: {token_count}")
+                stripped_messages_count += 1
             token_count = self.get_num_tokens_from_messages(messages)
-            self.log.debug(f"Stripping message: {message['role']}, {message['content']} -- new token count: {token_count}")
-            stripped_messages_count += 1
-        token_count = self.get_num_tokens_from_messages(messages)
-        if token_count > max_tokens:
-            raise Exception(f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}")
-        if stripped_messages_count > 0:
-            max_tokens_exceeded_warning = f"Conversation exceeded max submission tokens ({max_tokens}), stripped out {stripped_messages_count} oldest messages before sending, sent {token_count} tokens instead"
-            self.log.warning(max_tokens_exceeded_warning)
-            util.print_status_message(False, max_tokens_exceeded_warning)
+            if token_count > max_tokens:
+                raise Exception(f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}")
+            if stripped_messages_count > 0:
+                max_tokens_exceeded_warning = f"Conversation exceeded max submission tokens ({max_tokens}), stripped out {stripped_messages_count} oldest messages before sending, sent {token_count} tokens instead"
+                self.log.warning(max_tokens_exceeded_warning)
+                util.print_status_message(False, max_tokens_exceeded_warning)
         return messages
 
     def _prepare_ask_request(self, prompt, system_message=None):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id, system_message=system_message)
         messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
         tokens = self.get_num_tokens_from_messages(messages)
-        self.conversation_tokens = tokens
-        messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.model_max_submission_tokens)
+        self.set_conversation_tokens(tokens)
+        messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
         return new_messages, messages
 
     def _ask_request_post(self, conversation_id, new_messages, response_message, title=None):

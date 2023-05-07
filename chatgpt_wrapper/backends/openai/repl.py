@@ -56,7 +56,7 @@ class ApiRepl(Repl):
         self.base_shell_completions[util.command_with_leader('model')] = self.backend.provider.customizations_to_completions()
         provider_completions = {}
         for _name, provider in self.backend.get_providers().items():
-            provider_models = util.list_to_completion_hash(provider.capabilities['models'].keys()) if 'models' in provider.capabilities else None
+            provider_models = util.list_to_completion_hash(provider.available_models) if provider.available_models else None
             provider_completions[provider.display_name()] = provider_models
         final_completions = {
             util.command_with_leader('system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
@@ -211,8 +211,9 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())
-        prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
-        prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
+        prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens))
+        conversation_tokens = "" if self.backend.conversation_tokens is None else str(self.backend.conversation_tokens)
+        prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", conversation_tokens)
         return f"{prompt_prefix} "
 
     def get_model_temperature(self):
@@ -434,18 +435,23 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, user, message
 
-    def adjust_model_setting(self, value_type, setting, value, min=None, max=None):
+    def get_set_backend_setting(self, value_type, setting, value, min=None, max=None):
         if value:
             method = getattr(util, f"validate_{value_type}")
             value = method(value, min, max)
             if value is False:
-                return False, value, f"Invalid {setting}, must be float between {min} and {max}."
+                valid_range = []
+                if min is not None:
+                    valid_range.append(f"greater than or equal to {min}")
+                if max is not None:
+                    valid_range.append(f"less than or equal to {max}")
+                range_description = ": " + ", ".join(valid_range) if len(valid_range) > 0 else ""
+                return False, value, f"Invalid {setting}, must be {value_type}{range_description}."
             else:
-                method = getattr(self.backend, f"set_model_{setting}")
-                method(value)
-                return True, value, f"{setting} set to {value}"
+                method = getattr(self.backend, f"set_{setting}")
+                return method(value)
         else:
-            value = getattr(self.backend, f"model_{setting}")
+            value = getattr(self.backend, setting)
             util.print_markdown(f"* Current {setting}: {value}")
 
     def do_system_message(self, system_message=None):
@@ -474,6 +480,29 @@ Before you can start using the shell, you must create a new user.
         else:
             output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
             util.print_markdown(output)
+
+    def do_max_submission_tokens(self, max_submission_tokens=None):
+        """
+        The maximum number of tokens that can be submitted to the model.
+
+        For chat-based providers, this will be used to truncate earlier messages in the
+        conversation to keep the total number of tokens within the set value.
+
+        For non-chat-based providers, this value can only be viewed, if available.
+
+        If the provider configuration specifies a max tokens value for a model, it will
+        be used. Otherwise, a default value of {OPENAPI_MAX_TOKENS} will be used.
+
+        Arguments:
+            max_submission_tokens: An integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and the
+                                   maximum value a model can accept. (chat providers only)
+            With no arguments, view the current max submission tokens.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} 256
+        """
+        return self.get_set_backend_setting("int", "max_submission_tokens", max_submission_tokens, min=constants.OPENAPI_MIN_SUBMISSION_TOKENS)
 
     def do_provider(self, arg):
         """
