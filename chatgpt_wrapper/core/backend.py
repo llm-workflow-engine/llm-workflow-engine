@@ -95,14 +95,6 @@ class Backend(ABC):
         return ""
 
     @abstractmethod
-    def default_model(self):
-        pass
-
-    @abstractmethod
-    def set_available_models(self):
-        pass
-
-    @abstractmethod
     def conversation_data_to_messages(self, conversation_data):
         pass
 

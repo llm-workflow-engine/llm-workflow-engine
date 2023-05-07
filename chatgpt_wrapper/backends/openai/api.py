@@ -41,9 +41,6 @@ class OpenAIAPI(Backend):
                 raise Exception(user_message)
             self.set_current_user(user)
 
-    def default_model(self):
-        return constants.OPENAI_BACKEND_DEFAULT_MODEL
-
     def get_providers(self):
         return self.provider_manager.get_provider_plugins()
 
