@@ -29,6 +29,8 @@ class OpenAIAPI(Backend):
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
         self.current_user = None
+        self.override_provider = None
+        self.override_llm = None
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.init_provider()
@@ -47,12 +49,9 @@ class OpenAIAPI(Backend):
     def init_provider(self):
         default_preset = self.config.get('model.default_preset')
         if default_preset:
-            success, preset, user_message = self.preset_manager.ensure_preset(default_preset)
+            success, preset, user_message = self.activate_preset(default_preset)
             if success:
-                metadata, customizations = preset
-                success, _, user_message = self.activate_preset(metadata, customizations)
-                if success:
-                    return
+                return
             util.print_status_message(False, f"Failed to load default preset {default_preset}: {user_message}")
         self.set_provider('provider_chat_openai')
 
@@ -81,12 +80,40 @@ class OpenAIAPI(Backend):
         self.set_max_submission_tokens(force=True)
         return success, customizations, user_message
 
+    def set_override_llm(self, preset_name=None):
+        if preset_name:
+            success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+            if success:
+                metadata, customizations = preset
+                success, provider, user_message = self.provider_manager.load_provider(metadata['type'])
+                if success:
+                    self.override_provider = provider
+                    if self.streaming:
+                        customizations.update(self.streaming_args(interrupt_handler=True))
+                    self.override_llm = provider.make_llm(customizations, use_defaults=True)
+                    message = f"Set override LLM based on preset {preset_name}"
+                    self.log.debug(message)
+                    return True, self.override_llm, message
+            return False, None, user_message
+        else:
+            self.override_provider = None
+            self.override_llm = None
+            message = "Unset override LLM"
+            self.log.debug(message)
+            return True, None, message
+
+
     def make_preset(self):
         metadata, customizations = parse_preset_dict(self.provider.customizations)
         return metadata, customizations
 
-    def activate_preset(self, metadata, customizations):
-        return self.set_provider(metadata['type'], customizations, reset=True)
+    def activate_preset(self, preset_name):
+        success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
+        if not success:
+            return success, preset, user_message
+        metadata, customizations = preset
+        success, provider, user_message = self.set_provider(metadata['type'], customizations, reset=True)
+        return success, preset, user_message
 
     def _handle_response(self, success, obj, message):
         if not success:
@@ -140,7 +167,7 @@ class OpenAIAPI(Backend):
         if provider is None:
             util.print_status_message(False, f"Unable to switch to conversation to initial model {conversation.model}, using current model")
         else:
-            success, provider, _user_message = self.set_provider(provider.name)
+            success, provider, _user_message = self.set_provider(provider.name, reset=True)
             if success:
                 self.set_model(conversation.model)
         tokens = self.get_conversation_token_count(conversation_id)
@@ -253,7 +280,10 @@ class OpenAIAPI(Backend):
             if not success:
                 raise Exception(message)
         else:
-            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title, model=self.model)
+            llm = self.override_llm or self.llm
+            provider = self.override_provider or self.provider
+            model_name = getattr(llm, provider.model_property_name)
+            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title, model=model_name)
             if not success:
                 raise Exception(message)
         self.conversation_id = conversation.id
@@ -282,12 +312,14 @@ class OpenAIAPI(Backend):
     def _build_openai_chat_request(self, messages, customizations={}):
         if self.streaming:
             customizations.update(self.streaming_args(interrupt_handler=True))
-        self.llm = self.make_llm(customizations)
+        llm = self.override_llm or self.make_llm(customizations)
+        if not self.override_llm:
+            self.llm = llm
         # TODO: More elegant way to do this, probably on provider.
-        model_configuration = {k: str(v) for k, v in dict(self.llm).items()}
+        model_configuration = {k: str(v) for k, v in dict(llm).items()}
         self.log.debug(f"LLM request with message count: {len(messages)}, model configuration: {json.dumps(model_configuration)}")
         messages = self.provider.prepare_messages_for_llm(messages)
-        return self.llm, messages
+        return llm, messages
 
     def _call_openai_streaming(self, messages, customizations={}):
         self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
@@ -399,7 +431,7 @@ class OpenAIAPI(Backend):
         #        self.log.info("Request to interrupt streaming")
         #        break
         self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
-        success, response_obj, user_message = self._call_openai_streaming(messages, **request_overrides)
+        success, response_obj, user_message = self._call_openai_streaming(messages, request_overrides)
         if success:
             self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
             response_message = self._extract_message_content(response_obj)
@@ -425,7 +457,7 @@ class OpenAIAPI(Backend):
         """
         system_message, request_overrides = self.extract_system_message(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        success, response, user_message = self._call_openai_non_streaming(messages, **request_overrides)
+        success, response, user_message = self._call_openai_non_streaming(messages, request_overrides)
         if success:
             response_message = self._extract_message_content(response)
             self.message_clipboard = response_message

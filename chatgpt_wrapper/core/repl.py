@@ -152,10 +152,21 @@ class Repl():
 
     def run_template(self, template_name, substitutions={}):
         message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
+        preset_name = None
+        if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
+            preset_name = overrides['request_overrides'].pop('preset')
+            success, llm, user_message = self.backend.set_override_llm(preset_name)
+            if success:
+                self.log.info(f"Switching to preset '{preset_name}' for template: {template_name}")
+            else:
+                return success, llm, user_message
         self.log.info(f"Running template: {template_name}")
         print("")
         print(message)
-        return self.default(message, **overrides)
+        response = self.default(message, **overrides)
+        if preset_name:
+            self.backend.set_override_llm()
+        return response
 
     def collect_template_variable_values(self, template_name, variables=[]):
         substitutions = {}

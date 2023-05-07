@@ -621,12 +621,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND} mypreset
         """
-        success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
-        if not success:
-            return success, preset, user_message
-        metadata, customizations = preset
-        success, _, user_message = self.backend.activate_preset(metadata, customizations)
-        return success, preset, user_message
+        return self.backend.activate_preset(preset_name)
 
     def do_preset_delete(self, preset_name):
         """

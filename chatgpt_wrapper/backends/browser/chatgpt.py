@@ -46,6 +46,8 @@ class ChatGPT(Backend):
         self.page = None
         self.browser = None
         self.session = None
+        self.original_model = None
+        self.override_llm = None
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.set_provider()
@@ -68,6 +70,28 @@ class ChatGPT(Backend):
             self.provider_name = PROVIDER_BROWSER
             self.provider = provider
         return success, provider, user_message
+
+    def set_override_llm(self, preset_name=None):
+        if preset_name:
+            if preset_name not in self.provider.available_models:
+                return False, None, f"Preset {preset_name} not an available model"
+            customizations = {'model_name': preset_name}
+            if self.should_stream():
+                customizations.update({'streaming': True})
+                customizations.update(self.streaming_args(interrupt_handler=True))
+            self.override_llm = self.provider.make_llm(customizations, use_defaults=True)
+            self.original_model = self.model
+            self.model = preset_name
+            message = f"Set override LLM based on preset {preset_name}"
+            self.log.debug(message)
+            return True, self.override_llm, message
+        else:
+            self.override_llm = None
+            self.model = self.original_model
+            self.original_model = None
+            message = "Unset override LLM"
+            self.log.debug(message)
+            return True, None, message
 
     def get_primary_profile_directory(self):
         primary_profile = os.path.join(self.config.data_profile_dir, "playwright")
@@ -550,7 +574,7 @@ class ChatGPT(Backend):
             str: The response received from OpenAI.
         """
         customizations = self.provider.get_customizations()
-        llm = self.make_llm(customizations)
+        llm = self.override_llm or self.make_llm(customizations)
         try:
             response = llm([HumanMessage(content=message)])
         except ValueError as e:
@@ -569,7 +593,7 @@ class ChatGPT(Backend):
         """
         customizations = self.provider.get_customizations()
         customizations.update(self.streaming_args(interrupt_handler=True))
-        llm = self.make_llm(customizations)
+        llm = self.override_llm or self.make_llm(customizations)
         try:
             response = llm([HumanMessage(content=message)])
         except ValueError as e:

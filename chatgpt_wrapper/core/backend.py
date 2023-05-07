@@ -115,6 +115,10 @@ class Backend(ABC):
         pass
 
     @abstractmethod
+    def set_override_llm(self, preset_name=None):
+        pass
+
+    @abstractmethod
     def ask_stream(self, prompt: str):
         pass
 
