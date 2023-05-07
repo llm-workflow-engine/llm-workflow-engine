@@ -12,6 +12,8 @@ from playwright._impl._api_structures import ProxySettings
 
 from typing import Optional
 
+from langchain.schema import HumanMessage
+
 from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.plugin_manager import PluginManager
 from chatgpt_wrapper.core.provider_manager import ProviderManager
@@ -547,9 +549,10 @@ class ChatGPT(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        llm = self.make_llm()
+        customizations = self.provider.get_customizations()
+        llm = self.make_llm(customizations)
         try:
-            response = llm(message)
+            response = llm([HumanMessage(content=message)])
         except ValueError as e:
             return False, message, e
         return True, response.content, "Response received"
@@ -564,10 +567,11 @@ class ChatGPT(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        args = self.streaming_args()
-        llm = self.make_llm(args)
+        customizations = self.provider.get_customizations()
+        customizations.update(self.streaming_args(interrupt_handler=True))
+        llm = self.make_llm(customizations)
         try:
-            response = llm(message)
+            response = llm([HumanMessage(content=message)])
         except ValueError as e:
             return False, message, e
         return True, response.content, "Response received"

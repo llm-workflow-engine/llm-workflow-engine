@@ -10,6 +10,10 @@ class BrowserRepl(Repl):
     def configure_shell_commands(self):
         self.commands = util.introspect_commands(__class__)
 
+    def get_custom_shell_completions(self):
+        self.base_shell_completions[util.command_with_leader('model')] = self.backend.provider.customizations_to_completions()
+        return {}
+
     def configure_backend(self):
         self.backend = ChatGPT(self.config)
 

@@ -22,6 +22,17 @@ def make_llm_class(klass):
         verbose: bool = False
         chatgpt: Computed[ChatGPT]
 
+        @property
+        def _llm_type(self):
+            """Return type of llm."""
+            return "chatgpt_browser"
+
+        def dict(self, **kwargs):
+            """Return a dictionary of the LLM."""
+            starter_dict = dict({'model_name': self.model_name, 'streaming': self.streaming})
+            starter_dict["_type"] = self._llm_type
+            return starter_dict
+
         @computed('chatgpt')
         def set_chatgpt(**kwargs):
             return klass
@@ -36,7 +47,7 @@ def make_llm_class(klass):
             pass
 
         def _generate(
-            self, messages: any, stop: Optional[List[str]] = None
+            self, messages: any, stop: Optional[List[str]] = None, run_manager=None
         ) -> ChatResult:
             prompts = []
             if isinstance(messages, str):
@@ -49,10 +60,11 @@ def make_llm_class(klass):
             for token in self.chatgpt._ask_stream("\n\n".join(prompts)):
                 inner_completion += token
                 if self.streaming:
-                    self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            token,
+                            verbose=self.verbose,
+                        )
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
@@ -100,4 +112,5 @@ class ProviderChatgptBrowser(Provider):
     def customization_config(self):
         return {
             'model_name': PresetValue(str, options=self.available_models),
+            'streaming': PresetValue(bool),
         }
