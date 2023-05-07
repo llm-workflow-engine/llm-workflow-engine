@@ -77,12 +77,13 @@ class PresetManager():
             return False, None, message
 
     def save_preset(self, preset_name, metadata, customizations, preset_dir=None):
+        metadata['name'] = preset_name
+        preset_data = {f"_{key}": value for key, value in metadata.items()}
+        preset_data.update(customizations)
+        if preset_dir is None:
+            preset_dir = self.preset_dirs[-1]
+        file_path = os.path.join(preset_dir, f"{preset_name}.yaml")
         try:
-            preset_data = {f"_{key}": value for key, value in metadata.items()}
-            preset_data.update(customizations)
-            if preset_dir is None:
-                preset_dir = self.preset_dirs[-1]
-            file_path = os.path.join(preset_dir, f"{preset_name}.yaml")
             with open(file_path, 'w') as file:
                 yaml.safe_dump(preset_data, file, default_flow_style=False)
             message = f"Successfully saved preset '{preset_name}' to '{file_path}'"
