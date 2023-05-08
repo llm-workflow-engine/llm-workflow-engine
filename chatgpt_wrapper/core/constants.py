@@ -6,7 +6,7 @@ import tempfile
 PROVIDER_PREFIX = 'provider_'
 
 # Backend speciifc constants
-OPENAI_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
+API_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
 
 SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
 SYSTEM_MESSAGE_PROGRAMMER = "You are an expert programmer, who responds to questions with brief examples in code."

@@ -46,7 +46,7 @@ class ProviderChatOpenai(Provider):
 
     @property
     def default_model(self):
-        return constants.OPENAI_BACKEND_DEFAULT_MODEL
+        return constants.API_BACKEND_DEFAULT_MODEL
 
     def prepare_messages_method(self):
         return self.prepare_messages_for_llm_chat
