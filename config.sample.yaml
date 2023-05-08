@@ -26,12 +26,9 @@ shell:
   # - $MODEL: The LLM model name
   # - $NEWLINE: Insert a newline
   # - $TEMPERATURE: The current temperature
-  # - $TOP_P: The current top_p
-  # - $PRESENCE_PENALTY: The current presence penalty
-  # - $FREQUENCY_PENALTY: The current frequency penalty
   # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
-  # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation
-  prompt_prefix: ($TEMPERATURE/$TOP_P/$PRESENCE_PENALTY/$FREQUENCY_PENALTY/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL
+  # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation (only supported for chat models)
+  prompt_prefix: ($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL
   # Full path to the file that stores a history of commands in the shell.
   # Set to false to disable storing history.
   history_file: /tmp/repl_history.log
@@ -56,9 +53,12 @@ model:
   # See '/help presets' for more information.
   default_preset: null
   # If true, responses will be streamed in real time (no markdown formatting).
+  # By default, streaming is enabled in the REPL for supported providers, and
+  # disabled otherwise.
   streaming: true
   # Configure aliases to switch between system messages, key is alias, value is message.
   # NOTE: This setting only works on the following backend: chatgpt-api
+  # NOTE: This setting is only active for chat models.
   # See '/help system_message' for more information.
   system_message:
     programmer: "You are an expert programmer, who responds to questions with brief examples in code."
@@ -101,6 +101,11 @@ plugins:
     #- data_query
     #- shell
     #- zap
+    # Core provider plugins, see README for more details.
+    #- provider_ai21
+    #- provider_cohere
+    #- provider_huggingface_hub
+    #- provider_openai
 
 ##########################################################
 # Debug settings.
