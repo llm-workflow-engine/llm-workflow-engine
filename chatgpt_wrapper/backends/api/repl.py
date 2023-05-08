@@ -504,6 +504,17 @@ Before you can start using the shell, you must create a new user.
         """
         return self.get_set_backend_setting("int", "max_submission_tokens", max_submission_tokens, min=constants.OPENAPI_MIN_SUBMISSION_TOKENS)
 
+    def do_providers(self, arg):
+        """
+        List currently enabled providers
+
+        Examples:
+            {COMMAND}
+        """
+        self.rebuild_completions()
+        provider_plugins = [f"* {provider.display_name()}" for provider in self.backend.provider_manager.provider_plugins.values()]
+        util.print_markdown("## Providers:\n\n%s" % "\n".join(sorted(provider_plugins)))
+
     def do_provider(self, arg):
         """
         View or set the current LLM provider
@@ -565,7 +576,7 @@ Before you can start using the shell, you must create a new user.
                 content += f": *{metadata['description']}*"
             if not arg or arg.lower() in content.lower():
                 presets.append(content)
-        util.print_markdown("## Presets:\n\n%s" % "\n".join(presets))
+        util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(presets)))
 
     def do_preset_show(self, preset_name):
         """

@@ -903,7 +903,7 @@ class Repl():
                 content += f": *{source.metadata['description']}*"
             if not arg or arg.lower() in content.lower():
                 templates.append(content)
-        util.print_markdown("## Templates:\n\n%s" % "\n".join(templates))
+        util.print_markdown("## Templates:\n\n%s" % "\n".join(sorted(templates)))
 
     def do_template(self, template_name):
         """
