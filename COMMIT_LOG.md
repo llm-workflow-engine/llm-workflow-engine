@@ -1,3 +1,57 @@
+### v0.9.0 - 08/05/2023
+
+* **Mon May 08 2023:** update documentation for presets/providers
+* **Mon May 08 2023:** add /providers command to list providers, sort presets/templates
+* **Mon May 08 2023:** update example config
+* **Mon May 08 2023:** enhance browser backend test, add wait arg
+* **Mon May 08 2023:** convert all direct API calls in browser backend to use injected XHR requests
+* **Mon May 08 2023:** function/var renames for clarity
+* **Mon May 08 2023:** update pip package description
+* **Mon May 08 2023:** rename classes for clarity
+* **Sun May 07 2023:** add commented list of openai codex models
+* **Sun May 07 2023:** add huggingface_hub provider
+* **Sun May 07 2023:** add openai provider
+* **Sun May 07 2023:** add AI21 provider
+* **Sun May 07 2023:** update CLI args, remove model, add preset
+* **Sun May 07 2023:** fix streaming on override LLM
+* **Sun May 07 2023:** custom LLM override functionality, allow override using preset in templates
+* **Sun May 07 2023:** include name in preset metadata
+* **Sun May 07 2023:** re-add max-submission-tokens, abstract for multiple providers, enhance error message for get_set_backend_setting(), add get_capability() method to provider class, discover provider from model, use when switching conversations, remove errant streaming capabilitiy from cohere provider
+* **Sat May 06 2023:** update sample config
+* **Sat May 06 2023:** move preset_manager to backend, refactor init model to init with default preset, remove dead constants, model_customizations -> request_overrides, refactor config setting locations
+* **Sat May 06 2023:** strings instead of arrays for non-chat LLM messages
+* **Sat May 06 2023:** upgrade langchain/sqlalchemy, cohere dep
+* **Sat May 06 2023:** abstract title generation, message preparation/extraction
+* **Sat May 06 2023:** REPL stream references backend stream setting
+* **Fri May 05 2023:** should_stream() for backend, look at streaming setting directly
+* **Thu May 04 2023:** add get_customizations() method, scrubs metadata
+* **Thu May 04 2023:** working presets, fix streaming in API backend
+* **Wed May 03 2023:** add cohere plugin
+* **Wed May 03 2023:** rebuild completions on provider change, start abstracting model property name
+* **Wed May 03 2023:** /provider command to switch providers
+* **Wed May 03 2023:** more robust provider loading
+* **Wed May 03 2023:** add PROVIDER_PREFIX constant
+* **Wed May 03 2023:** display/full name management for providers
+* **Wed May 03 2023:** refactor model handling, get/set models
+* **Wed May 03 2023:** restrict langchain version, fixes #296
+* **Tue Apr 25 2023:** check for and close browser page in cleanup()
+* **Mon Apr 24 2023:** basic working API backend implementation with ChatOpenAI
+* **Sun Apr 23 2023:** clarify instructions for GPT-4 use
+* **Sat Apr 22 2023:** check for existing browser pages before closing context, add more debugging to cleanp()
+* **Thu Apr 13 2023:** rip out model specific commands, refactor do_model, fix model completions
+* **Thu Apr 13 2023:** loosen up timestamp string for conversion, fixes #287
+* **Wed Apr 12 2023:** move llm creation into provider class, move browser backend provider to plugin
+* **Wed Apr 12 2023:** initial preset manager
+* **Tue Apr 11 2023:** make api key/org private
+* **Tue Apr 11 2023:** PresetValue class, functionality to set model customizations
+* **Tue Apr 11 2023:** Get Docker container working, clarify documentation, fixes #268, fixes #276, fixes #281
+* **Tue Apr 11 2023:** clean up browser integration test
+* **Tue Apr 11 2023:** speed up zap plugin loading
+* **Mon Apr 10 2023:** move plugin manager instantiation to backends
+* **Mon Apr 10 2023:** support passing list of additional plugins to plugin manager
+* **Mon Apr 10 2023:** add provider base class, move chat_openai provider plugin
+* **Sat Apr 08 2023:** initial provider manager implementation
+
 ### v0.8.4 - 13/04/2023
 
 * **Thu Apr 13 2023:** loosen up timestamp string for conversion, fixes #287
