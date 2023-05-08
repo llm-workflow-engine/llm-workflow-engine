@@ -1,13 +1,14 @@
 import getpass
+import yaml
 import email_validator
 
 import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.core.repl import Repl
-from chatgpt_wrapper.backends.openai.database import Database
-from chatgpt_wrapper.backends.openai.orm import User
-from chatgpt_wrapper.backends.openai.user import UserManager
-from chatgpt_wrapper.backends.openai.api import OpenAIAPI
+from chatgpt_wrapper.backends.api.database import Database
+from chatgpt_wrapper.backends.api.orm import User
+from chatgpt_wrapper.backends.api.user import UserManager
+from chatgpt_wrapper.backends.api.backend import ApiBackend
 
 ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'config',
@@ -17,7 +18,7 @@ ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
 
 class ApiRepl(Repl):
     """
-    A shell interpreter that serves as a front end to the OpenAIAPI class
+    A shell interpreter that serves as a front end to the ApiBackend class
     """
 
     def __init__(self, config=None):
@@ -52,16 +53,22 @@ class ApiRepl(Repl):
             for command in user_commands:
                 # Overwriting the commands directly, as merging still includes deleted users.
                 self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
-        return {
-            util.command_with_leader('model-temperature'): util.float_range_to_completions(constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX),
-            util.command_with_leader('model-top-p'): util.float_range_to_completions(constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX),
-            util.command_with_leader('model-presence-penalty'): util.float_range_to_completions(constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX),
-            util.command_with_leader('model-frequency-penalty'): util.float_range_to_completions(constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX),
-            util.command_with_leader('model-system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
+        self.base_shell_completions[util.command_with_leader('model')] = self.backend.provider.customizations_to_completions()
+        provider_completions = {}
+        for _name, provider in self.backend.get_providers().items():
+            provider_models = util.list_to_completion_hash(provider.available_models) if provider.available_models else None
+            provider_completions[provider.display_name()] = provider_models
+        final_completions = {
+            util.command_with_leader('system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
+            util.command_with_leader('provider'): provider_completions,
         }
+        preset_keys = self.backend.preset_manager.presets.keys()
+        for subcmd in ['save', 'load', 'delete', 'show']:
+            final_completions[util.command_with_leader(f"preset-{subcmd}")] = util.list_to_completion_hash(preset_keys) if preset_keys else None
+        return final_completions
 
     def configure_backend(self):
-        self.backend = OpenAIAPI(self.config)
+        self.backend = ApiBackend(self.config)
         database = Database(self.config)
         database.create_schema()
         self.user_management = UserManager(self.config)
@@ -85,8 +92,9 @@ class ApiRepl(Repl):
         except email_validator.EmailNotValidError as e:
             return False, f"Invalid email: {e}"
 
+    # TODO: Replace this with select_prefix
     def select_model(self, allow_empty=False):
-        models = list(self.backend.available_models.keys())
+        models = self.backend.available_models
         for i, model in enumerate(models):
             print(f"{i + 1}. {model}")
         selected_model = input("Choose a default model: ").strip() or None
@@ -132,7 +140,6 @@ class ApiRepl(Repl):
         You will also be prompted for:
             email: Optional, valid email
             password: Optional, if given will be required for login
-            default_model: Required, the default AI model to use for this user
 
         Arguments:
             username: The username of the new user
@@ -203,13 +210,18 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
-        prompt_prefix = prompt_prefix.replace("$TEMPERATURE", str(self.backend.model_temperature))
-        prompt_prefix = prompt_prefix.replace("$TOP_P", str(self.backend.model_top_p))
-        prompt_prefix = prompt_prefix.replace("$PRESENCE_PENALTY", str(self.backend.model_presence_penalty))
-        prompt_prefix = prompt_prefix.replace("$FREQUENCY_PENALTY", str(self.backend.model_frequency_penalty))
-        prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.model_max_submission_tokens))
-        prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", str(self.backend.conversation_tokens))
+        prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())
+        prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens))
+        conversation_tokens = "" if self.backend.conversation_tokens is None else str(self.backend.conversation_tokens)
+        prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", conversation_tokens)
         return f"{prompt_prefix} "
+
+    def get_model_temperature(self):
+        temperature = 'N/A'
+        success, temperature, _user_message = self.backend.provider.get_customization_value('temperature')
+        if success:
+            temperature = temperature
+        return str(temperature)
 
     def set_logged_in_user(self, user=None):
         self.logged_in_user = user
@@ -297,8 +309,7 @@ Before you can start using the shell, you must create a new user.
 
 * Email: %s
 * Password: %s
-* Default model: %s
-        """ % (user.username, user.email, "set" if user.password else "Not set", self.backend.available_models[user.default_model])
+        """ % (user.username, user.email, "set" if user.password else "Not set")
         util.print_markdown(output)
 
     def do_user(self, username=None):
@@ -336,7 +347,7 @@ Before you can start using the shell, you must create a new user.
         """
         success, users, message = self.user_management.get_users()
         if success:
-            user_list = ["* %s: %s (%s)" % (user.id, user.username, user.default_model) for user in users]
+            user_list = ["* %s: %s" % (user.id, user.username) for user in users]
             user_list.insert(0, "# Users")
             util.print_markdown("\n".join(user_list))
         else:
@@ -351,22 +362,21 @@ Before you can start using the shell, you must create a new user.
             if not success:
                 return False, email, message
         password = getpass.getpass(prompt='New password (Press enter to skip): ') or None
-        success, default_model = self.select_model(True)
-        if not success:
-            return False, default_model, "Invalid default model."
+        # TODO: Replace with select_prefix.
+        # success, default_model = self.select_model(True)
+        # if not success:
+        #     return False, default_model, "Invalid default model."
 
         kwargs = {
             "username": username,
             "email": email,
             "password": password,
-            "default_model": default_model,
+            # "default_model": default_model,
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)
         if success:
             self.rebuild_completions()
-            if self.logged_in_user.id == user.id:
-                self.backend.set_active_model(user.default_model)
         return success, user, user_message
 
     def do_user_edit(self, username=None):
@@ -425,114 +435,26 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, user, message
 
-    def adjust_model_setting(self, value_type, setting, value, min=None, max=None):
-        if not self._is_logged_in():
-            return False, None, "Not logged in."
+    def get_set_backend_setting(self, value_type, setting, value, min=None, max=None):
         if value:
             method = getattr(util, f"validate_{value_type}")
             value = method(value, min, max)
             if value is False:
-                return False, value, f"Invalid {setting}, must be float between {min} and {max}."
+                valid_range = []
+                if min is not None:
+                    valid_range.append(f"greater than or equal to {min}")
+                if max is not None:
+                    valid_range.append(f"less than or equal to {max}")
+                range_description = ": " + ", ".join(valid_range) if len(valid_range) > 0 else ""
+                return False, value, f"Invalid {setting}, must be {value_type}{range_description}."
             else:
-                method = getattr(self.backend, f"set_model_{setting}")
-                method(value)
-                return True, value, f"{setting} set to {value}"
+                method = getattr(self.backend, f"set_{setting}")
+                return method(value)
         else:
-            value = getattr(self.backend, f"model_{setting}")
+            value = getattr(self.backend, setting)
             util.print_markdown(f"* Current {setting}: {value}")
 
-    def do_model_temperature(self, temperature=None):
-        """
-        Adjust the temperature of the current model
-
-        What sampling temperature to use.
-
-        Higher values like 0.8 will make the output more random, while lower values
-        like 0.2 will make it more focused and deterministic.
-
-        Recommend altering this or top_p but not both.
-
-        Arguments:
-            temperature: Float between {OPENAPI_TEMPERATURE_MIN} and {OPENAPI_TEMPERATURE_MAX}, default: {OPENAPI_DEFAULT_TEMPERATURE}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_TEMPERATURE_MAX}
-        """
-        return self.adjust_model_setting("float", "temperature", temperature, constants.OPENAPI_TEMPERATURE_MIN, constants.OPENAPI_TEMPERATURE_MAX)
-
-    def do_model_top_p(self, top_p=None):
-        """
-        Adjust the top_p of the current model
-
-        An alternative to sampling with temperature.
-
-        Nucleus sampling, where the model considers the results of the tokens with
-        top_p probability mass. So 0.1 means only the tokens comprising the top 10%
-        probability mass are considered.
-
-        Recommend altering this or temperature but not both.
-
-        Arguments:
-            top_p: Float between {OPENAPI_TOP_P_MIN} and {OPENAPI_TOP_P_MAX}, default: {OPENAPI_DEFAULT_TOP_P}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_TOP_P_MAX}
-        """
-        return self.adjust_model_setting("float", "top_p", top_p, constants.OPENAPI_TOP_P_MIN, constants.OPENAPI_TOP_P_MAX)
-
-    def do_model_presence_penalty(self, presence_penalty=None):
-        """
-        Adjust the presence penalty of the current model
-
-        The presence penalty penalizes new tokens based on whether they appear in the
-        text so far. Positive values increase the model's likelihood to talk about new
-        topics.
-
-        Arguments:
-            presence_penalty: Float between {OPENAPI_PRESENCE_PENALTY_MIN} and {OPENAPI_PRESENCE_PENALTY_MAX}, default: {OPENAPI_DEFAULT_PRESENCE_PENALTY}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_PRESENCE_PENALTY_MAX}
-        """
-        return self.adjust_model_setting("float", "presence_penalty", presence_penalty, constants.OPENAPI_PRESENCE_PENALTY_MIN, constants.OPENAPI_PRESENCE_PENALTY_MAX)
-
-    def do_model_frequency_penalty(self, frequency_penalty=None):
-        """
-        Adjust the frequency_penalty of the current model
-
-        The frequency penalty penalizes new tokens based on their frequency in the
-        text so far. Positive values can help prevent the model from repeating itself.
-
-        Arguments:
-            frequency_penalty: Float between {OPENAPI_FREQUENCY_PENALTY_MIN} and {OPENAPI_FREQUENCY_PENALTY_MAX}, default: {OPENAPI_DEFAULT_FREQUENCY_PENALTY}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_FREQUENCY_PENALTY_MAX}
-        """
-        return self.adjust_model_setting("float", "frequency_penalty", frequency_penalty, constants.OPENAPI_FREQUENCY_PENALTY_MIN, constants.OPENAPI_FREQUENCY_PENALTY_MAX)
-
-    def do_model_max_submission_tokens(self, max_submission_tokens=None):
-        """
-        The maximum number of tokens that can be submitted before older messages
-        start getting cut off.
-
-        Current max tokens for both submission and reply are {OPENAPI_MAX_TOKENS}, so the current
-        default will still allow for a short reply from the model.
-
-        Arguments:
-            max_submission_tokens: Integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and {OPENAPI_MAX_TOKENS}, default: {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
-
-        Examples:
-            {COMMAND}
-            {COMMAND} {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS}
-        """
-        return self.adjust_model_setting("int", "max_submission_tokens", max_submission_tokens, constants.OPENAPI_MIN_SUBMISSION_TOKENS, constants.OPENAPI_MAX_TOKENS)
-
-    def do_model_system_message(self, system_message=None):
+    def do_system_message(self, system_message=None):
         """
         Set the system message sent for conversations.
 
@@ -547,11 +469,186 @@ Before you can start using the shell, you must create a new user.
             {COMMAND}
             {COMMAND} {SYSTEM_MESSAGE_DEFAULT}
         """
+        if not self._is_logged_in():
+            return False, None, "Not logged in."
         aliases = self.backend.get_system_message_aliases()
         if system_message:
             if system_message in aliases:
                 system_message = aliases[system_message]
-            return self.adjust_model_setting("str", "system_message", system_message, constants.OPENAPI_MIN_SUBMISSION_TOKENS, self.backend.model_max_submission_tokens)
+            self.backend.set_system_message(system_message)
+            return True, system_message, f"System message set to: {system_message}"
         else:
-            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.model_system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
+            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
             util.print_markdown(output)
+
+    def do_max_submission_tokens(self, max_submission_tokens=None):
+        """
+        The maximum number of tokens that can be submitted to the model.
+
+        For chat-based providers, this will be used to truncate earlier messages in the
+        conversation to keep the total number of tokens within the set value.
+
+        For non-chat-based providers, this value can only be viewed, if available.
+
+        If the provider configuration specifies a max tokens value for a model, it will
+        be used. Otherwise, a default value of {OPENAPI_MAX_TOKENS} will be used.
+
+        Arguments:
+            max_submission_tokens: An integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and the
+                                   maximum value a model can accept. (chat providers only)
+            With no arguments, view the current max submission tokens.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} 256
+        """
+        return self.get_set_backend_setting("int", "max_submission_tokens", max_submission_tokens, min=constants.OPENAPI_MIN_SUBMISSION_TOKENS)
+
+    def do_providers(self, arg):
+        """
+        List currently enabled providers
+
+        Examples:
+            {COMMAND}
+        """
+        self.rebuild_completions()
+        provider_plugins = [f"* {provider.display_name()}" for provider in self.backend.provider_manager.provider_plugins.values()]
+        util.print_markdown("## Providers:\n\n%s" % "\n".join(sorted(provider_plugins)))
+
+    def do_provider(self, arg):
+        """
+        View or set the current LLM provider
+
+        Arguments:
+            provider: The name of the provider to set.
+            model_name: Optional. The model to initialize the provider with.
+            With no arguments, view current set model attributes
+
+        Examples:
+            {COMMAND}
+            {COMMAND} chat_openai
+            {COMMAND} chat_openai gpt-4
+        """
+        if arg:
+            try:
+                provider, model_name, *rest = arg.split()
+                if rest:
+                    return False, arg, "Too many parameters, should be 'provider model_name'"
+            except ValueError:
+                provider = arg
+                model_name = None
+            success, provider, user_message = self.backend.set_provider(provider)
+            if success:
+                if model_name:
+                    self.backend.set_model(model_name)
+                self.rebuild_completions()
+            return success, provider, user_message
+        else:
+            return self.do_model('')
+
+    def do_presets(self, arg):
+        """
+        List available presets
+
+        Preset are pre-configured provider/model configurations that can be stored and loaded for convenience.
+
+        They are located in the 'presets' directory in the following locations:
+
+            - The main configuration directory
+            - The profile configuration directory
+
+        See {COMMAND_LEADER}config for current locations.
+
+        Arguments:
+            filter_string: Optional. If provided, only presets with a name or description containing the filter string will be shown.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} filterstring
+        """
+        self.backend.preset_manager.load_presets()
+        self.rebuild_completions()
+        presets = []
+        for preset_name, data in self.backend.preset_manager.presets.items():
+            metadata, _customizations = data
+            content = f"* **{preset_name}**"
+            if 'description' in metadata:
+                content += f": *{metadata['description']}*"
+            if not arg or arg.lower() in content.lower():
+                presets.append(content)
+        util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(presets)))
+
+    def do_preset_show(self, preset_name):
+        """
+        Display a preset
+
+        Arguments:
+            preset_name: Required. The name of the preset
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
+        if not success:
+            return success, preset, user_message
+        metadata, customizations = preset
+        util.print_markdown(f"\n## Preset '{preset_name}'")
+        util.print_markdown("### Model customizations\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False))
+        util.print_markdown("### Metadata\n```yaml\n%s\n```" % yaml.dump(metadata, default_flow_style=False))
+
+    def do_preset_save(self, args):
+        """
+        Create a new preset, or update an existing preset
+
+        Arguments:
+            preset_name: Required. The name of the preset
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        if not args:
+            return False, args, "No preset name specified"
+        metadata, customizations = self.backend.make_preset()
+        preset_name, *rest = args.split()
+        description = " ".join(rest) if rest else None
+        if description:
+            metadata['description'] = description
+        success, file_path, user_message = self.backend.preset_manager.save_preset(preset_name, metadata, customizations)
+        if success:
+            self.backend.preset_manager.load_presets()
+            self.rebuild_completions()
+        return success, file_path, user_message
+
+    def do_preset_load(self, preset_name):
+        """
+        Load an existing preset
+
+        This activates the provider and model customizations stored in the preset as the current
+        configuration.
+
+        Arguments:
+            preset_name: Required. The name of the preset to load.
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        return self.backend.activate_preset(preset_name)
+
+    def do_preset_delete(self, preset_name):
+        """
+        Deletes an existing preset
+
+        Arguments:
+            preset_name: Required. The name of the preset to delete
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
+        if not success:
+            return success, preset, user_message
+        success, preset_name, user_message = self.backend.preset_manager.delete_preset(preset_name)
+        if success:
+            self.backend.preset_manager.load_presets()
+            self.rebuild_completions()
+        return success, preset_name, user_message

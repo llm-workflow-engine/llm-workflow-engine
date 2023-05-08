@@ -3,7 +3,7 @@ import datetime
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from chatgpt_wrapper.backends.openai.orm import Manager, User
+from chatgpt_wrapper.backends.api.orm import Manager, User
 
 class UserManager(Manager):
     def _hash_password(self, password):

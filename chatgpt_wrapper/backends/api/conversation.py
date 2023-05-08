@@ -1,6 +1,6 @@
 from sqlalchemy.exc import SQLAlchemyError
 
-from chatgpt_wrapper.backends.openai.orm import Manager
+from chatgpt_wrapper.backends.api.orm import Manager
 
 class ConversationManager(Manager):
     def get_conversations(self, user_id, limit=None, offset=None, order_desc=True):

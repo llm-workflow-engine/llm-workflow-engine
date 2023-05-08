@@ -2,7 +2,7 @@
 
 import sys
 import time
-from chatgpt_wrapper.backends.openai.api import OpenAIAPI
+from chatgpt_wrapper import ApiBackend
 from chatgpt_wrapper.core.config import Config
 import chatgpt_wrapper.core.util as util
 
@@ -10,7 +10,7 @@ DEFAULT_PROMPT = 'Say three things about earth'
 
 def main(prompt):
     config = Config()
-    gpt = OpenAIAPI(config)
+    gpt = ApiBackend(config)
     temperatures = [t for t, _ in util.float_range_to_completions(0, 2).items()]
     temperatures_list = ", ".join(temperatures)
     temperatures = [float(t) for t in temperatures]

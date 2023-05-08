@@ -9,14 +9,14 @@ import chatgpt_wrapper.core.util as util
 PLUGIN_PREFIX = "chatgpt_wrapper_"
 
 class PluginManager:
-    def __init__(self, config=None, backend=None, search_path=None):
+    def __init__(self, config=None, backend=None, search_path=None, additional_plugins=[]):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.backend = backend
         self.search_path = search_path if search_path else self.get_default_plugin_paths()
         self.plugins = {}
         self.package_plugins = {}
-        self.plugin_list = config.get('plugins.enabled')
+        self.plugin_list = list(set(config.get('plugins.enabled') + additional_plugins))
         self.load_package_plugins(self.plugin_list)
         self.load_plugins(self.plugin_list)
 
@@ -29,6 +29,11 @@ class PluginManager:
             os.path.join(self.config.config_profile_dir, 'plugins'),
         ]
         return plugin_paths
+
+    def inject_plugin(self, plugin_name, plugin_class):
+        plugin_instance = plugin_class(self.config)
+        self.setup_plugin(plugin_name, plugin_instance)
+        self.plugins[plugin_name] = plugin_instance
 
     def load_plugins(self, plugin_list):
         for plugin_name in plugin_list:

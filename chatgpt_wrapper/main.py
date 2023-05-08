@@ -5,9 +5,9 @@ import sys
 from chatgpt_wrapper.version import __version__
 import chatgpt_wrapper.core.constants as constants
 from chatgpt_wrapper.core.config import Config
-from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
+from chatgpt_wrapper.backends.browser.backend import BrowserBackend
 from chatgpt_wrapper.backends.browser.repl import BrowserRepl
-from chatgpt_wrapper.backends.openai.repl import ApiRepl
+from chatgpt_wrapper.backends.api.repl import ApiRepl
 
 def main():
 
@@ -72,11 +72,11 @@ def main():
         help="set preferred browser; 'firefox' 'chromium' or 'webkit'",
     )
     parser.add_argument(
-        "-m",
-        "--model",
-        choices=['default', 'legacy-paid', 'legacy-free', 'gpt4'],
+        "-r",
+        "--preset",
+        metavar="PRESET",
         action="store",
-        help="set preferred model",
+        help="Preset to use on startup",
     )
 
     parser.add_argument(
@@ -102,7 +102,7 @@ def main():
 
     if args.database is not None:
         config.set('database', args.database)
-    config.set('chat.streaming', args.stream)
+    config.set('model.streaming', args.stream)
     if args.log is not None:
         config.set('chat.log.enabled', True)
         config.set('chat.log.filepath', args.log)
@@ -116,8 +116,8 @@ def main():
         config.set('log.console.level', 'debug')
         config.set('debug.log.enabled', True)
         config.set('debug.log.level', 'debug')
-    if args.model is not None:
-        config.set('chat.model', args.model)
+    if args.preset is not None:
+        config.set('model.default_preset', args.preset)
 
     command = None
     if len(args.params) == 1 and args.params[0] in constants.SHELL_ONE_SHOT_COMMANDS:
@@ -127,7 +127,7 @@ def main():
     if backend == 'chatgpt-browser':
         if command == 'reinstall':
             print('Reinstalling...')
-            temp_backend = ChatGPT(config)
+            temp_backend = BrowserBackend(config)
             temp_backend.destroy_primary_profile()
             del temp_backend
         if command in ['install', 'reinstall']:

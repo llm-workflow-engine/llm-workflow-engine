@@ -1,7 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 
-from chatgpt_wrapper.backends.openai.orm import Manager, Message
-from chatgpt_wrapper.backends.openai.conversation import ConversationManager
+from chatgpt_wrapper.backends.api.orm import Manager, Message
+from chatgpt_wrapper.backends.api.conversation import ConversationManager
 
 class MessageManager(Manager):
     def __init__(self, config=None):

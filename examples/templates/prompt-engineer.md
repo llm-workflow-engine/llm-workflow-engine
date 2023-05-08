@@ -3,7 +3,7 @@
 platform: ChatGPT
 title: Prompt Engineering session
 description: Prompt Engineering session
-model_customizations:
+request_overrides:
   system_message: You are an expert artificial intelligence prompt engineer, with the ability to assist users in iteratively improving prompts.
 ---
 

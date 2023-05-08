@@ -25,7 +25,6 @@ from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.error import NoInputError, LegacyCommandLeaderError
 from chatgpt_wrapper.core.editor import file_editor, pipe_editor
 from chatgpt_wrapper.core.template import TemplateManager
-from chatgpt_wrapper.core.plugin_manager import PluginManager
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -33,7 +32,7 @@ from chatgpt_wrapper.core.plugin_manager import PluginManager
 # to start commands with a special character.
 # It would also be possible to subclass NesteredCompleter and override
 # the get_completions() method, but that feels more brittle.
-document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\s]+)")
+document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\.\s]+)")
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
@@ -51,7 +50,6 @@ class Repl():
     prompt_number = 0
     chatgpt = None
     message_map = {}
-    stream = False
     logfile = None
 
     def __init__(self, config=None):
@@ -68,9 +66,12 @@ class Repl():
             # auto_suggest=AutoSuggestFromHistory(),
             style=self.style,
         )
-        self.stream = self.config.get('chat.streaming')
         self._set_logging()
         self._setup_signal_handlers()
+
+    @property
+    def stream(self):
+        return self.backend.stream
 
     def terminate_stream(self, _signal, _frame):
         self.backend.terminate_stream(_signal, _frame)
@@ -123,7 +124,6 @@ class Repl():
         commands_with_leader[util.command_with_leader('help')] = util.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
             commands_with_leader[util.command_with_leader(command)] = PathCompleter()
-        commands_with_leader[util.command_with_leader('model')] = util.list_to_completion_hash(self.backend.available_models.keys())
         template_completions = util.list_to_completion_hash(self.template_manager.templates)
         template_commands = [c for c in self.dashed_commands if c.startswith('template') and c != 'templates']
         for command in template_commands:
@@ -152,10 +152,21 @@ class Repl():
 
     def run_template(self, template_name, substitutions={}):
         message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
+        preset_name = None
+        if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
+            preset_name = overrides['request_overrides'].pop('preset')
+            success, llm, user_message = self.backend.set_override_llm(preset_name)
+            if success:
+                self.log.info(f"Switching to preset '{preset_name}' for template: {template_name}")
+            else:
+                return success, llm, user_message
         self.log.info(f"Running template: {template_name}")
         print("")
         print(message)
-        return self.default(message, **overrides)
+        response = self.default(message, **overrides)
+        if preset_name:
+            self.backend.set_override_llm()
+        return response
 
     def collect_template_variable_values(self, template_name, variables=[]):
         substitutions = {}
@@ -255,7 +266,7 @@ class Repl():
         self._set_prompt()
 
     def configure_plugins(self):
-        self.plugin_manager = PluginManager(self.config, self.backend)
+        self.plugin_manager = self.backend.plugin_manager
         self.plugins = self.plugin_manager.get_plugins()
         for plugin in self.plugins.values():
             plugin.set_shell(self)
@@ -269,6 +280,7 @@ class Repl():
     def setup(self):
         self.configure_backend()
         self.configure_plugins()
+        self.backend.set_provider_streaming(self.config.get('model.streaming'))
         self.template_manager.load_templates()
         self.configure_shell_commands()
         self.configure_commands()
@@ -323,7 +335,9 @@ class Repl():
         Examples:
             {COMMAND}
         """
-        self.stream = not self.stream
+        if not self.backend.provider.can_stream():
+            return False, None, f"{self.backend.provider.name} does not support streaming"
+        self.backend.set_provider_streaming(not self.stream)
         util.print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
@@ -677,21 +691,21 @@ class Repl():
         """
         return self.default(line)
 
-    def default(self, line, title=None, model_customizations={}):
+    def default(self, line, title=None, request_overrides={}):
         # TODO: This signal is recognized on Windows, and calls the callback, but the entire
         # process is still killed.
         signal.signal(signal.SIGINT, self.catch_ctrl_c)
         if not line:
             return
 
-        if self.stream:
+        if self.backend.should_stream():
             print("")
-            success, response, user_message = self.backend.ask_stream(line, title=title, model_customizations=model_customizations)
+            success, response, user_message = self.backend.ask_stream(line, title=title, request_overrides=request_overrides)
             print("\n")
             if not success:
                 return success, response, user_message
         else:
-            success, response, user_message = self.backend.ask(line, title=title, model_customizations=model_customizations)
+            success, response, user_message = self.backend.ask(line, title=title, request_overrides=request_overrides)
             if success:
                 print("")
                 util.print_markdown(response)
@@ -817,25 +831,46 @@ class Repl():
 
     def do_model(self, arg):
         """
-        View or set the current LLM model
+        View or set attributes on the current LLM model
 
         Arguments:
-            model_name: The name of the model to set
-            With no arguments, view currently set model
+            path: The attribute path to view or set
+            value: The value to set the attribute to
+            With no arguments, view current set model attributes
 
         Examples:
             {COMMAND}
-            {COMMAND} default
+            {COMMAND} temperature
+            {COMMAND} temperature 1.1
         """
         if arg:
-            model_names = self.backend.available_models.keys()
-            if arg in model_names:
-                self.backend.set_active_model(arg)
-                return True, self.backend.model, f"Current model updated to: {self.backend.model}"
-            else:
-                return False, arg, "Invalid model, must be one of: %s" % ", ".join(model_names)
+            try:
+                path, value, *rest = arg.split()
+                if rest:
+                    return False, arg, "Too many parameters, should be 'path value'"
+                if path == self.backend.provider.model_property_name:
+                    success, value, user_message = self.backend.set_model(value)
+                else:
+                    success, value, user_message = self.backend.provider.set_customization_value(path, value)
+                if success:
+                    model_name = value.get(self.backend.provider.model_property_name, "unknown")
+                    self.backend.model = model_name
+                return success, value, user_message
+            except ValueError:
+                success, value, user_message = self.backend.provider.get_customization_value(arg)
+                if success:
+                    if isinstance(value, dict):
+                        util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(value, default_flow_style=False))
+                    else:
+                        util.print_markdown(f"* {arg} = {value}")
+                else:
+                    return success, value, user_message
         else:
-            return True, self.backend.model, f"Current model: {self.backend.model}"
+            customizations = self.backend.provider.get_customizations()
+            model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
+            provider_name = self.backend.provider.display_name()
+            customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
+            util.print_markdown("## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data))
 
     def do_templates(self, arg):
         """
@@ -868,7 +903,7 @@ class Repl():
                 content += f": *{source.metadata['description']}*"
             if not arg or arg.lower() in content.lower():
                 templates.append(content)
-        util.print_markdown("## Templates:\n\n%s" % "\n".join(templates))
+        util.print_markdown("## Templates:\n\n%s" % "\n".join(sorted(templates)))
 
     def do_template(self, template_name):
         """
@@ -1052,6 +1087,7 @@ class Repl():
 * Data dir: %s
 * Data profile dir: %s
 * Templates dirs: %s
+* Presets dirs: %s
 
 # Profile '%s' configuration:
 
@@ -1063,7 +1099,7 @@ class Repl():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.config.get('backend'), self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), ", ".join(self.backend.preset_manager.preset_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
 
