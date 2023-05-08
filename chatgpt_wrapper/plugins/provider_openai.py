@@ -28,6 +28,19 @@ class ProviderOpenai(Provider):
                 'text-davinci-003': {
                     'max_tokens': 2049,
                 },
+                # NOTE: It appears OpenAI discontinued these models.
+                # 'code-davinci-002': {
+                #     'max_tokens': 8001,
+                # },
+                # 'code-davinci-001': {
+                #     'max_tokens': 8001,
+                # },
+                # 'code-cushman-002': {
+                #     'max_tokens': 2048,
+                # },
+                # 'code-cushman-001': {
+                #     'max_tokens': 2048,
+                # },
             }
         }
 
