@@ -1,5 +1,55 @@
 ### v0.9.0 - 08/05/2023
 
+This is a substantial rewrite to add support for multiple providers and management of preset configurations.
+
+New features are documented in the README.
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+##### Configuration
+
+* Removed the following values from `shell.prompt_prefix`:
+  * `$TOP_P`
+  * `$PRESENCE_PENALTY`
+  * `$FREQUENCY_PENALTY`
+* Removed `chat.model` configuration setting.
+* Removed `chat.model_customizations` configuration setting.
+* Added a new `model` configuration hash, with the following new attributes:
+  * `default_preset`
+* Moved `chat.model_customizations.system_message` configuration setting to `model.system_message`
+* Moved `chat.streaming` configuration setting to `model.streaming`
+
+##### CLI use
+
+* `--model` command line argument has been removed
+* `--preset` command line argument has been added
+* Saving/editing a default model per user in the API backend has been removed
+* `/model` command has been rewritten. See `/help model` for more information
+* Removed the following commands:
+  * `/model-temperature`: Now set under `/model temperature`
+  * `/model-top-p`: Now set under `/model model_kwargs`
+  * `/model-presence-penalty`: Now set under `/model model_kwargs`
+  * `/model-frequency-penalty`: Now set under `/model model_kwargs`
+* Renamed the following commands:
+  * `/model-system-message` to `/system-message`
+
+##### Templates
+
+* Special `model_customizations` variable has been renamed to `request_overrides`, and functionality has changed. See the `Templates` section in the README for more info.
+
+##### Python module use
+
+* API backend modules location changed to `backends/api`
+* API backend file location changed to `backends/api/backend.py`
+* API backend class `OpenAIAPI` renamed to `ApiBackend`
+* Removed the following abstract methods from the base `Backend` class:
+  * `get_backend_name`
+  * `set_available_models`
+* Added the following abstract methods to the base `Backend` class:
+  * `set_override_llm`
+
+#### Commit log
+
 * **Mon May 08 2023:** update documentation for presets/providers
 * **Mon May 08 2023:** add /providers command to list providers, sort presets/templates
 * **Mon May 08 2023:** update example config
