@@ -2,6 +2,8 @@ import os
 import atexit
 import base64
 import json
+import random
+import string
 import time
 import datetime
 import uuid
@@ -151,7 +153,7 @@ class BrowserBackend(Backend):
         self.page.goto("https://chat.openai.com/")
 
     def _handle_error(self, obj, response, message):
-        full_message = f"{message}: {response.status} {response.status_text}"
+        full_message = f"{message}: {obj.error} {obj.message}, full response: {response}"
         self.log.error(full_message)
         return False, obj, full_message
 
@@ -234,32 +236,97 @@ class BrowserBackend(Backend):
     def _api_request_build_headers(self, custom_headers={}):
         headers = {
             "Authorization": f"Bearer {self.session['accessToken']}",
+            "Content-Type": "application/json",
         }
         headers.update(custom_headers)
         return headers
 
     def _process_api_response(self, url, response, method="GET"):
-        self.log.debug(f"{method} {url} response, OK: {response.ok}, TEXT: {response.text()}")
-        json = None
-        if response.ok:
-            try:
-                json = response.json()
-            except json.JSONDecodeError:
-                pass
-        if not response.ok or not json:
-            self.log.debug(f"{response.status} {response.status_text} {response.headers}")
-        return response.ok, json, response
+        self.log.debug(f"{method} {url}, JSON: {response}")
+        if not response or 'error' in response:
+            if not response:
+                response = {"error": "unknown", "message": "Could not parse JSON response"}
+            message = f"API response errror: {response['error']} {response['message']}"
+            self.log.error(message)
+            return False, response, message
+        return True, response, "API request successful"
+
+    def _api_xhr_request(self, method, url, query_params={}, data={}, headers={}, timeout=None):
+        self.log.debug(f"Starting XHR request with METHOD: {method}, URL: {url}, QUERY_PARAMS: {query_params}, DATA: {data}, HEADERS: {headers}, TIMEOUT: {timeout}")
+        random_fn_name = ''.join(random.choices(string.ascii_letters, k=20))
+        js_function = f"""
+        async function (method, url, query_params, data, headers, timeout) {{
+            console.debug('Starting {random_fn_name} with method:', method, 'url:', url, 'query_params:', query_params, 'data:', data, 'headers:', headers, 'timeout:', timeout);
+            const final_url = new URL(url);
+            final_url.search = new URLSearchParams(query_params).toString();
+            return new Promise((resolve, reject) => {{
+                const xhr = new XMLHttpRequest();
+                xhr.open(method, final_url, true);
+                console.debug('Opened XHR request, method:', method, 'final_url:', final_url);
+                for (const [key, value] of Object.entries(headers)) {{
+                    console.debug('Setting header:', key, '=', value);
+                    xhr.setRequestHeader(key, value);
+                }}
+                if (timeout !== null) {{
+                    console.debug('Setting timeout:', timeout);
+                    xhr.timeout = timeout * 1000;
+                }}
+                xhr.onload = function() {{
+                    if (xhr.status >= 200 && xhr.status < 400) {{
+                        console.debug('XHR request succeeded with status:', xhr.status, 'response:', xhr.responseText);
+                        resolve(JSON.parse(xhr.responseText));
+                    }} else {{
+                        console.error('XHR request failed with status:', xhr.status, 'statusText:', xhr.statusText);
+                        reject({{error: xhr.status, message: xhr.statusText}});
+                    }}
+                }};
+                xhr.onerror = function() {{
+                    console.error('XHR request encountered an error with status:', xhr.status, 'statusText:', xhr.statusText);
+                    reject({{error: xhr.status, message: xhr.statusText}});
+                }};
+                xhr.ontimeout = function() {{
+                    console.error('XHR request timed out with status:', xhr.status);
+                    reject({{error: xhr.status, message: 'Request timed out'}});
+                }};
+                if (['PATCH', 'POST'].includes(method)) {{
+                    console.debug('Sending PATCH/POST request with data:', JSON.stringify(data));
+                    xhr.send(JSON.stringify(data));
+                }} else {{
+                    console.debug('Sending GET/DELETE request');
+                    xhr.send();
+                }}
+            }});
+        }}
+        """
+        # Wrap the Javascript function definition in an IIFE
+        js_function_iife = f"""
+        (function() {{
+            window.{random_fn_name} = {js_function};
+        }})();
+        """
+        self.log.debug(f"Generated global JS function {random_fn_name}: {js_function_iife}")
+        self.page.evaluate(js_function_iife)
+
+        js_script = f'(async () => {{ return await window.{random_fn_name}("{method}", "{url}", {json.dumps(query_params)}, {json.dumps(data)}, {json.dumps(headers)}, {timeout if timeout is not None else "null"}); }})()'
+        self.log.debug(f"Generated script to execute global JS function {random_fn_name}: {js_script}")
+        result = self.page.evaluate(js_script)
+
+        js_script = f'delete window.{random_fn_name}'
+        self.log.debug(f"Generated script to delete global JS function {random_fn_name}: {js_script}")
+        self.page.evaluate(js_script)
+
+        return result
 
     def _api_get_request(self, url, query_params={}, custom_headers={}, timeout=None):
         headers = self._api_request_build_headers(custom_headers)
         kwargs = {
             "headers": headers,
-            "params": query_params,
+            "query_params": query_params,
         }
         if timeout:
             kwargs["timeout"] = timeout
         self.log.debug(f"GET {url} request, query params: {query_params}, headers: {headers}")
-        response = self.page.request.get(url, **kwargs)
+        response = self._api_xhr_request('GET', url, **kwargs)
         return self._process_api_response(url, response)
 
     def _api_post_request(self, url, data={}, custom_headers={}, timeout=None):
@@ -271,7 +338,7 @@ class BrowserBackend(Backend):
         if timeout:
             kwargs["timeout"] = timeout
         self.log.debug(f"POST {url} request, data: {data}, headers: {headers}")
-        response = self.page.request.post(url, **kwargs)
+        response = self._api_xhr_request('POST', url, **kwargs)
         return self._process_api_response(url, response, method="POST")
 
     def _api_patch_request(self, url, data={}, custom_headers={}, timeout=None):
@@ -283,7 +350,7 @@ class BrowserBackend(Backend):
         if timeout:
             kwargs["timeout"] = timeout
         self.log.debug(f"PATCH {url} request, data: {data}, headers: {headers}")
-        response = self.page.request.patch(url, **kwargs)
+        response = self._api_xhr_request('PATCH', url, **kwargs)
         return self._process_api_response(url, response, method="PATCH")
 
     def _gen_title(self):
