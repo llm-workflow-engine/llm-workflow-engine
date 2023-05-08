@@ -18,7 +18,7 @@ setup(
     version=version,
     author="Mahmoud Mabrouk",
     author_email="mahmoudmabrouk.mail@gmail.com",
-    description="A simple Python class for interacting with OpenAI's chatGPT using Playwright",
+    description="CLI wrapper around common LLMs, with a focus on OpenAI's models",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mmabrouk/chatgpt-wrapper",
