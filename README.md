@@ -504,6 +504,10 @@ It's possible that:
 
 ## Upgrading:
 
+**IMPORTANT:** This project is still in pre-release, and breaking changes are happening regularly.
+
+**Before you upgrade and before you file any issues related to upgrading, refer to the `Breaking Changes` section for all releases since your last upgrade.**
+
 ### Via pip
 
 Until an official release exists, you'll need to uninstall and reinstall:
