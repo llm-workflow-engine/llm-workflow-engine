@@ -2,6 +2,7 @@ ai21>=1.0.5
 cohere>=4.3.1
 email-validator
 Flask
+huggingface-hub>=0.13.2
 Jinja2
 langchain>=0.0.160
 names
