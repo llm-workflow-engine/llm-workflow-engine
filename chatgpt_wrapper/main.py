@@ -5,9 +5,9 @@ import sys
 from chatgpt_wrapper.version import __version__
 import chatgpt_wrapper.core.constants as constants
 from chatgpt_wrapper.core.config import Config
-from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
+from chatgpt_wrapper.backends.browser.backend import BrowserBackend
 from chatgpt_wrapper.backends.browser.repl import BrowserRepl
-from chatgpt_wrapper.backends.openai.repl import ApiRepl
+from chatgpt_wrapper.backends.api.repl import ApiRepl
 
 def main():
 
@@ -127,7 +127,7 @@ def main():
     if backend == 'chatgpt-browser':
         if command == 'reinstall':
             print('Reinstalling...')
-            temp_backend = ChatGPT(config)
+            temp_backend = BrowserBackend(config)
             temp_backend.destroy_primary_profile()
             del temp_backend
         if command in ['install', 'reinstall']:

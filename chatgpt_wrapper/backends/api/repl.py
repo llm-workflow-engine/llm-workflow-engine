@@ -5,10 +5,10 @@ import email_validator
 import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.core.repl import Repl
-from chatgpt_wrapper.backends.openai.database import Database
-from chatgpt_wrapper.backends.openai.orm import User
-from chatgpt_wrapper.backends.openai.user import UserManager
-from chatgpt_wrapper.backends.openai.api import OpenAIAPI
+from chatgpt_wrapper.backends.api.database import Database
+from chatgpt_wrapper.backends.api.orm import User
+from chatgpt_wrapper.backends.api.user import UserManager
+from chatgpt_wrapper.backends.api.backend import ApiBackend
 
 ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'config',
@@ -18,7 +18,7 @@ ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
 
 class ApiRepl(Repl):
     """
-    A shell interpreter that serves as a front end to the OpenAIAPI class
+    A shell interpreter that serves as a front end to the ApiBackend class
     """
 
     def __init__(self, config=None):
@@ -68,7 +68,7 @@ class ApiRepl(Repl):
         return final_completions
 
     def configure_backend(self):
-        self.backend = OpenAIAPI(self.config)
+        self.backend = ApiBackend(self.config)
         database = Database(self.config)
         database.create_schema()
         self.user_management = UserManager(self.config)

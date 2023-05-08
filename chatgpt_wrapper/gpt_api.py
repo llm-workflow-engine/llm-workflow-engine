@@ -2,14 +2,14 @@ import argparse
 
 from flask import Flask, jsonify, request
 
-from chatgpt_wrapper.backends.openai.api import OpenAIAPI
+from chatgpt_wrapper import ApiBackend
 from chatgpt_wrapper.core.config import Config
 
 
 def create_application(name, config=None, timeout=60, proxy=None):
     config = config or Config()
     config.set('debug.log.enabled', True)
-    gpt = OpenAIAPI(config)
+    gpt = ApiBackend(config)
     app = Flask(name)
 
     def _error_handler(message, status_code=500):

@@ -5,7 +5,7 @@ import argparse
 
 from sqlalchemy.exc import OperationalError
 
-from chatgpt_wrapper.backends.openai.orm import Base, Orm
+from chatgpt_wrapper.backends.api.orm import Base, Orm
 from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.config import Config
 import chatgpt_wrapper.core.util as util

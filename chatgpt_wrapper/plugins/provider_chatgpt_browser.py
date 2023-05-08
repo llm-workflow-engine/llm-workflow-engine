@@ -9,18 +9,18 @@ from langchain.schema import (
 )
 from langchain.chat_models.openai import _convert_dict_to_message
 
-from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
+from chatgpt_wrapper.backends.browser.backend import BrowserBackend
 from chatgpt_wrapper.core.provider import Provider, PresetValue
 
 BROWSER_BACKEND_DEFAULT_MODEL = "text-davinci-002-render-sha"
 
 def make_llm_class(klass):
-    class ChatGPTLLM(BaseChatModel):
+    class BrowserBackendLLM(BaseChatModel):
         streaming: bool = False
         model_name: str = BROWSER_BACKEND_DEFAULT_MODEL
         temperature: float = 0.7
         verbose: bool = False
-        chatgpt: Computed[ChatGPT]
+        browser_backend: Computed[BrowserBackend]
 
         @property
         def _llm_type(self):
@@ -33,8 +33,8 @@ def make_llm_class(klass):
             starter_dict["_type"] = self._llm_type
             return starter_dict
 
-        @computed('chatgpt')
-        def set_chatgpt(**kwargs):
+        @computed('browser_backend')
+        def set_browser_backend(**kwargs):
             return klass
 
         def __init__(self, **kwargs):
@@ -57,7 +57,7 @@ def make_llm_class(klass):
                 prompts.append(content)
             inner_completion = ""
             role = "assistant"
-            for token in self.chatgpt._ask_stream("\n\n".join(prompts)):
+            for token in self.browser_backend._ask_stream("\n\n".join(prompts)):
                 inner_completion += token
                 if self.streaming:
                     if run_manager:
@@ -72,7 +72,7 @@ def make_llm_class(klass):
             llm_output = {"model_name": self.model_name}
             return ChatResult(generations=[generation], llm_output=llm_output)
 
-    return ChatGPTLLM
+    return BrowserBackendLLM
 
 class ProviderChatgptBrowser(Provider):
 

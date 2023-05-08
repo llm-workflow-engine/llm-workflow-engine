@@ -26,7 +26,7 @@ ADDITIONAL_PLUGINS = [
     PROVIDER_BROWSER,
 ]
 
-class ChatGPT(Backend):
+class BrowserBackend(Backend):
     """
     A ChatGPT interface that uses Playwright to run a browser,
     and interacts with that browser to communicate with ChatGPT in

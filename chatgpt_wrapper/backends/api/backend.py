@@ -10,16 +10,16 @@ from chatgpt_wrapper.core.provider_manager import ProviderManager
 from chatgpt_wrapper.core.plugin_manager import PluginManager
 import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
-from chatgpt_wrapper.backends.openai.user import UserManager
-from chatgpt_wrapper.backends.openai.conversation import ConversationManager
-from chatgpt_wrapper.backends.openai.message import MessageManager
+from chatgpt_wrapper.backends.api.user import UserManager
+from chatgpt_wrapper.backends.api.conversation import ConversationManager
+from chatgpt_wrapper.backends.api.message import MessageManager
 from chatgpt_wrapper.core.preset_manager import parse_preset_dict
 
 ADDITIONAL_PLUGINS = [
     'provider_chat_openai',
 ]
 
-class OpenAIAPI(Backend):
+class ApiBackend(Backend):
 
     name = "chatgpt-api"
 

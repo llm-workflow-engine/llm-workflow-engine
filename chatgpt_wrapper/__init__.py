@@ -1,1 +1,1 @@
-from chatgpt_wrapper.backends.openai.api import OpenAIAPI
+from chatgpt_wrapper.backends.api.backend import ApiBackend

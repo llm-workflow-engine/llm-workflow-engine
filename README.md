@@ -355,14 +355,14 @@ Once the interactive shell is running, you can see a list of all commands with:
 
 **IMPORTANT:** Use of browser backend's `ChatGPT` class has been deprectated, no support will be provided for this usage.
 
-You can  use the API backend's `OpenAIAPI` class to interact directly with the chat LLM.
+You can  use the API backend's `ApiBackend` class to interact directly with the chat LLM.
 
 Create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
-from chatgpt_wrapper import OpenAIAPI
+from chatgpt_wrapper import ApiBackend
 
-bot = OpenAIAPI()
+bot = ApiBackend()
 success, response, message = bot.ask("Hello, world!")
 if success:
     print(response)
@@ -377,12 +377,12 @@ You may also stream the response as it comes in from the API in chunks using the
 To pass custom configuration to ChatGPT, use the Config class:
 
 ```python
-from chatgpt_wrapper import OpenAIAPI
+from chatgpt_wrapper import ApiBackend
 from chatgpt_wrapper.core.config import Config
 
 config = Config()
 config.set('browser.debug', True)
-bot = OpenAIAPI(config)
+bot = ApiBackend(config)
 success, response, message = bot.ask("Hello, world!")
 if success:
     print(response)
@@ -532,12 +532,12 @@ From within the shell, execute this command:
 To use GPT-4 within your Python code, follow the template below:
 
 ```python
-from chatgpt_wrapper import OpenAIAPI
+from chatgpt_wrapper import ApiBackend
 from chatgpt_wrapper.core.config import Config
 
 config = Config()
 config.set('chat.model', 'gpt4')
-bot = OpenAIAPI(config)
+bot = ApiBackend(config)
 success, response, message = bot.ask("Hello, world!")
 ```
 

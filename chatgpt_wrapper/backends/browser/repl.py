@@ -1,10 +1,10 @@
 import chatgpt_wrapper.core.util as util
-from chatgpt_wrapper.backends.browser.chatgpt import ChatGPT
+from chatgpt_wrapper.backends.browser.backend import BrowserBackend
 from chatgpt_wrapper.core.repl import Repl
 
 class BrowserRepl(Repl):
     """
-    A shell interpreter that serves as a front end to the ChatGPT class
+    A shell interpreter that serves as a front end to the BrowserBackend class
     """
 
     def configure_shell_commands(self):
@@ -15,7 +15,7 @@ class BrowserRepl(Repl):
         return {}
 
     def configure_backend(self):
-        self.backend = ChatGPT(self.config)
+        self.backend = BrowserBackend(self.config)
 
     def launch_backend(self, interactive=True):
         self.backend.launch_browser()
