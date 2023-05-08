@@ -18,15 +18,17 @@ What would you like to do?
 
 ## Highlights
 
-🤖 The ChatGPT Wrapper lets you use the powerful ChatGPT/GPT4 bot from the _command line.
+🤖 The ChatGPT Wrapper lets you use the powerful ChatGPT/GPT4 bot from the **command line**.
 
 💬 **Runs in Shell**. You can call and interact with ChatGPT/GPT4 in the terminal.
 
 💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint (all supported models accessible by your OpenAI account)
 
-🐍 **Python API**. The ChatGPT Wrapper also has a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
+🔌 **Simple plugin architecture**. Extend the wrapper with custom functionality
 
-🔌 **Simple plugin architecture**. Extend the wrapper with custom functionality (alpha)
+🗣 **Supports multiple LLM providers**. Provider plugins allow interacting with other LLMs (GPT-3, Cohere, Hugginface, etc.)
+
+🐍 **Python API**. The ChatGPT Wrapper also has a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
 
 🐳 **Docker image**. The ChatGPT Wrapper is also available as a docker image. (experimental)
 
@@ -134,16 +136,6 @@ Once you're logged in, you have full access to all commands.
 
 **IMPORTANT NOTE:** The user authorization system from the command line is 'admin party' -- meaning every logged in user has admin privileges, including editing and deleting other users.
 
-##### Setting the default model
-
-The default model used when communicating with the LLM service is configured per user.
-
-To change the default model for a user:
-
-* Log in as the user
-* Run `/user-edit`
-* Step through the settings, including the one to set the default model
-
 #### Playwright (browser-based): **DEPRECATED**
 
 This backend is deprecated, and may be removed in a future release.
@@ -236,7 +228,41 @@ configuration settings.
 3. Edit file to taste and save
 4. Restart the program
 
-## Templates (alpha, subject to change)
+## Configuring model properties
+
+To change the properties of a particular LLM model, use the `/model` command:
+
+```
+/model model_name gpt-3.5-turbo
+/model temperature 1.0
+```
+
+The `/model` command works within the models of the currently loaded provider.
+
+NOTE: The attributes that a particular model accepts are beyond the scope of this 
+document. While some attributes can be displayed via command completion in the
+shell, you are advissed to consult the API documentation for the specific provider
+for a full list of available attributes and their values.
+
+## Presets
+
+Presets allow you to conveniently manage various provider/model configurations.
+
+To save an existing configuration as a preset:
+
+```
+/preset-save mypresetname
+```
+
+Later, to load that configuration for use:
+
+```
+/preset-load mypresetname
+```
+
+See `/help` for the various other preset commands.
+
+## Templates
 
 The wrapper comes with a full template management system.
 
@@ -265,11 +291,13 @@ These front matter attributes have special functionality:
 
 * title: Sets the title of new conversations to this value
 * description: Displayed in the output of `/templates`
-* model_customizations: A hash of model customizations to apply when the template is run (see `/config` for available model customizations)
+* request_overrides: A hash of model customizations to apply when the template is run:
+  * preset: An existing preset for the provider/model configuration to use when running
+            the template (see [Presets](#presets))
 
 All other attributes will be passed to the template as variable substitutions.
 
-## Plugins (alpha, subject to change)
+## Plugins
 
 ### Using plugins
 
@@ -296,6 +324,35 @@ All other attributes will be passed to the template as variable substitutions.
 * **shell:** Transform natural language into a shell command, and optionally execute it **WARNING: POTENTIALLY DANGEROUS -- YOU ARE RESPONSIBLE FOR VALIDATING THE COMMAND RETURNED BY THE LLM, AND THE OUTCOME OF ITS EXECUTION.**
 * **zap:** Send natural language commands to Zapier actions: [https://nla.zapier.com/get-started/](https://nla.zapier.com/get-started/)
 
+### Provider plugins (alpha, subject to change):
+
+**NOTE:** Most provider plugins are *not* chat-based, and instead return a single response to any text input.
+These inputs and responses are still managed as 'conversations' for storage purposes, using the same storage
+mechanism the chat-based providers use.
+
+#### Supported providers
+
+**NOTE:** While these provider integrations are working, none have been well-tested yet.
+
+* **provider_ai21:** Access to [AI21](https://docs.ai21.com/docs/jurassic-2-models) models
+* **provider_cohere:** Access to [Cohere](https://docs.cohere.com/docs/models) models
+* **provider_huggingface_hub:** Access to [Huggingface Hub](https://huggingface.co/models) models
+* **provider_openai:** Access to non-chat [OpenAI](https://platform.openai.com/docs/models) models (GPT-3, etc.)
+
+#### Usage
+
+To enable a supported provider, add it to `plugins.enabled` list in your configuration.
+
+```yaml
+plugins:
+  enabled:
+    - provider_openai
+```
+
+See `/help providers` for a list of currently enabled providers.
+
+See `/help provider` for how to switch providers/models on the fly.
+
 ### Writing plugins
 
 There is currently no developer documentation for writing plugins.
@@ -308,6 +365,8 @@ Currently, plugins for the shell can only add new commands. An instantiated plug
 * `self.log`: The instantiated Logger object
 * `self.backend`: The instantiated backend
 * `self.shell`: The instantiated shell
+
+To write new provider plugins, investigate the existing provider plugins as examples.
 
 ## Tutorials:
 
@@ -478,16 +537,31 @@ There is nothing this project can do to fix the error for you -- contact OpenAI 
 
 Follow one of the methods below to utilize GPT-4 in this backend:
 
-##### Method 1: Set the default user model
+##### Method 1: Set a default preset configured with GPT-4
 
-See [Setting the default model](#setting-the-default-model) above.
+See [Presets](#presets) above to configure a preset using GPT-4
+
+Add the preset as the default preset on startup:
+
+```yaml
+# This assumes you created a preset named 'gpt-4'
+model:
+  default_preset: gpt-4
+
+```
 
 ##### Method 2: Dynamically switch
 
 From within the shell, execute this command:
 
 ```
-/model gpt4
+/model model_name gpt-4
+```
+
+...or... if you're not currently using the 'chat_openai' provider:
+
+```
+/provider chat_openai gpt-4
 ```
 
 ### Playwright (browser-based) backend: **DEPRECATED**
