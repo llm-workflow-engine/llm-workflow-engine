@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+# TODO: Uncomment after https://github.com/hwchase17/langchain/pull/4403 is fixed.
+# from langchain.callbacks.manager import CallbackManager, StreamInterruption
+# TODO: Remove after https://github.com/hwchase17/langchain/pull/4403 is fixed.
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
@@ -22,6 +25,9 @@ def make_interrupt_streaming_callback_handler(backend):
                 util.print_status_message(False, "\n\nWARNING:\nStream interruption on the API backend is not currently working properly, and may not properly store information on an interrupted stream.\nIf you'd like to help fix this error, see https://github.com/mmabrouk/chatgpt-wrapper/issues/274")
                 message = "Request to interrupt streaming"
                 backend.log.info(message)
+                # TODO: Uncomment after https://github.com/hwchase17/langchain/pull/4403 is fixed.
+                # raise StreamInterruption(message)
+                # TODO: Remove after https://github.com/hwchase17/langchain/pull/4403 is fixed.
                 raise EOFError(message)
     return InterruptStreamingCallbackHandler()
 
