@@ -9,6 +9,7 @@ from chatgpt_wrapper.core.plugin import Plugin
 
 DEFAULT_PROMPTS_URI = "https://github.com/f/awesome-chatgpt-prompts/raw/main/prompts.csv"
 DEFAULT_PROMPTS_TEMP_FILENAME = "awesome-prompts.csv"
+DEFAULT_TIMEOUT = 5
 
 class Awesome(Plugin):
 
@@ -80,7 +81,7 @@ class Awesome(Plugin):
             return
         self.log.info(f"Downloading prompts from {self.prompts_uri}")
         try:
-            with urllib.request.urlopen(self.prompts_uri) as response:
+            with urllib.request.urlopen(self.prompts_uri, timeout=DEFAULT_TIMEOUT) as response:
                 data = response.read()
         except Exception as e:
             self.log.error(f"Error downloading prompts file: {e}")
