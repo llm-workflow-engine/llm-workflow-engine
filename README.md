@@ -248,6 +248,12 @@ for a full list of available attributes and their values.
 
 Presets allow you to conveniently manage various provider/model configurations.
 
+As you use the CLI, you can execute a combination of `/provider` and `/model`
+commands to set up a provider/model configuration to your liking.
+
+Once you have the configuration set up, you can 'capture' it by saving it as a
+preset.
+
 To save an existing configuration as a preset:
 
 ```
@@ -545,7 +551,7 @@ Follow one of the methods below to utilize GPT-4 in this backend:
 
 See [Presets](#presets) above to configure a preset using GPT-4
 
-Add the preset as the default preset on startup:
+Add the preset to the config file as the default preset on startup:
 
 ```yaml
 # This assumes you created a preset named 'gpt-4'
