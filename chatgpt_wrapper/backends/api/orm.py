@@ -30,7 +30,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=True)
     email = Column(String, unique=True, nullable=True)
-    default_model = Column(String, nullable=False)
+    default_preset = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
     last_login_time = Column(DateTime, nullable=True)
     preferences = Column(JSON, nullable=False)
@@ -130,9 +130,9 @@ class Orm:
         messages = query.all()
         return messages
 
-    def add_user(self, username, password, email, default_model="default", preferences={}):
+    def add_user(self, username, password, email, default_preset="", preferences={}):
         now = datetime.datetime.now()
-        user = User(username=username, password=password, email=email, default_model=default_model, created_time=now, last_login_time=now, preferences=preferences)
+        user = User(username=username, password=password, email=email, default_preset=default_preset, created_time=now, last_login_time=now, preferences=preferences)
         self.session.add(user)
         self.session.commit()
         self.log.info(f'Added User with username {username}')

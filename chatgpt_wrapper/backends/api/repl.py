@@ -92,18 +92,21 @@ class ApiRepl(Repl):
         except email_validator.EmailNotValidError as e:
             return False, f"Invalid email: {e}"
 
-    # TODO: Replace this with select_prefix
-    def select_model(self, allow_empty=False):
-        models = self.backend.available_models
-        for i, model in enumerate(models):
-            print(f"{i + 1}. {model}")
-        selected_model = input("Choose a default model: ").strip() or None
-        if not selected_model and allow_empty:
+    def select_preset(self, allow_empty=False):
+        presets = list(self.backend.preset_manager.presets.keys())
+        presets.insert(0, "Global default")
+        for i, preset in enumerate(presets):
+            print(f"{i + 1}. {preset}")
+        selected_preset = input("Choose a default preset: ").strip() or None
+        if not selected_preset and allow_empty:
             return True, None
-        if not selected_model or not selected_model.isdigit() or not (1 <= int(selected_model) <= len(models)):
-            return False, "Invalid default model."
-        default_model = models[int(selected_model) - 1]
-        return True, default_model
+        if not selected_preset or not selected_preset.isdigit() or not (1 <= int(selected_preset) <= len(presets)):
+            return False, "Invalid preset selection."
+        if int(selected_preset) == 1:
+            default_preset = ""
+        else:
+            default_preset = presets[int(selected_preset) - 1]
+        return True, default_preset
 
     # Overriding default implementation because API should use UUIDs.
     def do_context(self, arg):
@@ -160,10 +163,10 @@ class ApiRepl(Repl):
         password = getpass.getpass(prompt='Enter password (leave blank for passwordless login): ') or None
         # NOTE: Not sure if it's a good workflow to prompt for this on register,
         # leaving out for now.
-        # success, default_model = self.select_model()
+        # success, default_preset = self.select_preset()
         # if not success:
-        #     return False, None, "Invalid default model."
-        # return self.user_management.register(username, email, password, default_model)
+        #     return False, None, "Invalid default preset."
+        # success, user, user_message = self.user_management.register(username, email, password, default_preset)
         success, user, user_message = self.user_management.register(username, email, password)
         if success:
             self.rebuild_completions()
@@ -309,7 +312,8 @@ Before you can start using the shell, you must create a new user.
 
 * Email: %s
 * Password: %s
-        """ % (user.username, user.email, "set" if user.password else "Not set")
+* Default preset: %s
+        """ % (user.username, user.email, "set" if user.password else "Not set", user.default_preset if user.default_preset else "Global default")
         util.print_markdown(output)
 
     def do_user(self, username=None):
@@ -362,16 +366,15 @@ Before you can start using the shell, you must create a new user.
             if not success:
                 return False, email, message
         password = getpass.getpass(prompt='New password (Press enter to skip): ') or None
-        # TODO: Replace with select_prefix.
-        # success, default_model = self.select_model(True)
-        # if not success:
-        #     return False, default_model, "Invalid default model."
+        success, default_preset = self.select_preset(True)
+        if not success:
+            return False, default_preset, "Invalid default preset."
 
         kwargs = {
             "username": username,
             "email": email,
             "password": password,
-            # "default_model": default_model,
+            "default_preset": default_preset,
         }
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)

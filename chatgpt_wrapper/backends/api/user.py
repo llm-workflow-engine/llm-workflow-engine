@@ -41,7 +41,7 @@ class UserManager(Manager):
             return self._handle_error(f"Failed to get user: {str(e)}")
         return True, user, self.user_found_message(user)
 
-    def register(self, username, email, password, default_model='default', preferences={}):
+    def register(self, username, email, password, default_preset='', preferences={}):
         username = username.lower()
         if email:
             email = email.lower()
@@ -62,7 +62,7 @@ class UserManager(Manager):
         if existing_user:
             return False, None, "Username or email is already in use."
         try:
-            user = self.orm.add_user(username, password, email, default_model, preferences)
+            user = self.orm.add_user(username, password, email, default_preset, preferences)
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to add user: {str(e)}")
         return True, user, "User successfully registered."
@@ -96,7 +96,7 @@ class UserManager(Manager):
             return self._handle_error(f"Failed to get users: {str(e)}")
         return True, users, "Users retrieved."
 
-    def edit_user(self, user_id, username=None, email=None, password=None, default_model=None):
+    def edit_user(self, user_id, username=None, email=None, password=None, default_preset=None):
         success, user, message = self.get_by_user_id(user_id)
         if not success:
             return success, user, message
@@ -120,8 +120,8 @@ class UserManager(Manager):
             kwargs['email'] = email
         if password:
             kwargs['password'] = self._hash_password(password)
-        if default_model:
-            kwargs['default_model'] = default_model
+        if default_preset is not None:
+            kwargs['default_preset'] = default_preset
         try:
             user = self.orm.edit_user(user, **kwargs)
         except SQLAlchemyError as e:
