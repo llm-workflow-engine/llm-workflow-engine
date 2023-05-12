@@ -6,6 +6,7 @@ import argparse
 from sqlalchemy.exc import OperationalError
 
 from chatgpt_wrapper.backends.api.orm import Base, Orm
+from chatgpt_wrapper.backends.api.schema.updater import SchemaUpdater
 from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.config import Config
 import chatgpt_wrapper.core.util as util
@@ -34,9 +35,13 @@ class Database:
             return False
 
     def create_schema(self):
-        if not self.schema_exists():
+        updater = SchemaUpdater(self.config)
+        if self.schema_exists():
+            updater.update_schema()
+        else:
             util.print_status_message(True, f"Creating database schema for: {self.orm.database}")
             Base.metadata.create_all(bind=self.orm.engine)
+            updater.init_alembic()
             util.print_status_message(True, "Database schema installed")
 
     def remove_schema(self):
