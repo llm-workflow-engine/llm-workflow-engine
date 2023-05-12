@@ -217,6 +217,7 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens))
         conversation_tokens = "" if self.backend.conversation_tokens is None else str(self.backend.conversation_tokens)
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", conversation_tokens)
+        prompt_prefix = prompt_prefix.replace("$SYSTEM_MESSAGE_ALIAS", self.backend.system_message_alias)
         return f"{prompt_prefix} "
 
     def get_model_temperature(self):
@@ -457,7 +458,7 @@ Before you can start using the shell, you must create a new user.
             value = getattr(self.backend, setting)
             util.print_markdown(f"* Current {setting}: {value}")
 
-    def do_system_message(self, system_message=None):
+    def do_system_message(self, alias=None):
         """
         Set the system message sent for conversations.
 
@@ -474,14 +475,17 @@ Before you can start using the shell, you must create a new user.
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
-        aliases = self.backend.get_system_message_aliases()
-        if system_message:
-            if system_message in aliases:
-                system_message = aliases[system_message]
-            self.backend.set_system_message(system_message)
-            return True, system_message, f"System message set to: {system_message}"
+        if alias:
+            return self.backend.set_system_message(alias)
         else:
-            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join([f"* {a}" for a in aliases.keys()]))
+            aliases = self.backend.get_system_message_aliases()
+            alias_list = []
+            for alias in aliases.keys():
+                alias_string = f"* {alias}"
+                if alias == self.backend.system_message_alias:
+                    alias_string += ' (✓)'
+                alias_list.append(alias_string)
+            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join(alias_list))
             util.print_markdown(output)
 
     def do_max_submission_tokens(self, max_submission_tokens=None):

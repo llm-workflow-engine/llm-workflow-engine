@@ -22,13 +22,14 @@ backend: chatgpt-api
 shell:
   # NOTE: This setting is only available on the following backends: chatgpt-api
   # Customize the prompt prefix, the following token are available:
+  # - $SYSTEM_MESSAGE_ALIAS: The current your system message alias
   # - $USER: Logged in username
   # - $MODEL: The LLM model name
   # - $NEWLINE: Insert a newline
   # - $TEMPERATURE: The current temperature
   # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
   # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation (only supported for chat models)
-  prompt_prefix: ($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS)$NEWLINE$USER@$MODEL
+  prompt_prefix: '($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS): $SYSTEM_MESSAGE_ALIAS$NEWLINE$USER@$MODEL'
   # Full path to the file that stores a history of commands in the shell.
   # Set to false to disable storing history.
   history_file: /tmp/repl_history.log

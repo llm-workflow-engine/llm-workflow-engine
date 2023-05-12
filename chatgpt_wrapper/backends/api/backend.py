@@ -228,8 +228,13 @@ class ApiBackend(Backend):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
-    def set_system_message(self, message=constants.SYSTEM_MESSAGE_DEFAULT):
-        self.system_message = message
+    def set_system_message(self, alias='default'):
+        aliases = self.get_system_message_aliases()
+        if alias in aliases:
+            self.system_message_alias = alias
+            self.system_message = aliases[alias]
+            return True, alias, f"System message set to: {self.system_message}"
+        return False, alias, f"Unknown system message alias: {alias}"
 
     def set_max_submission_tokens(self, max_submission_tokens=None, force=False):
         chat = self.provider.get_capability('chat')
