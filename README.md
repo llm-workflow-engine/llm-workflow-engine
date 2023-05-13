@@ -510,9 +510,16 @@ It's possible that:
 
 ## Upgrading:
 
-**IMPORTANT:** This project is still in pre-release, and breaking changes are happening regularly.
+### PLEASE HEED THESE IMPORTANT WARNINGS
 
-**Before you upgrade and before you file any issues related to upgrading, refer to the `Breaking Changes` section for all releases since your last upgrade.**
+1. This is a pre-release project
+  * Breaking changes are happening regularly
+  * **Before you upgrade and before you file any issues related to upgrading, refer to the `Breaking Changes` section for all releases since your last upgrade.**
+2. Back up your database
+  * Some releases include changes to the database schema
+  * **If you care about any data stored by this project, back it up before upgrading**
+  * Common upgrade scenarios are tested with the default database (SQLite), but data integrity is **not** guaranteed
+  * If any database errors occur during an upgrade, roll back to an earlier release and [file an issue](ISSUES.md)
 
 ### Via pip
 
