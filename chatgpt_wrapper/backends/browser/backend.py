@@ -55,6 +55,7 @@ class BrowserBackend(Backend):
         self.set_provider()
         self.set_available_models()
         self.init_model()
+        self.plugin_ids = self.config.get('browser.plugins')
         self.new_conversation()
 
     def init_model(self):
@@ -396,6 +397,19 @@ class BrowserBackend(Backend):
                 })
             parent_id = current_item['id']
 
+    def get_plugins(self):
+        if self.session is None:
+            self.refresh_session()
+        query_params = {
+            "offset": 0,
+            "limit": 250,
+            "statuses": "approved",
+        }
+        success, data, user_message = self._api_get_request("https://chat.openai.com/backend-api/aip/p", query_params=query_params)
+        if success:
+            return success, data['items'], user_message
+        return success, data, user_message
+
     def delete_conversation(self, uuid=None):
         if self.session is None:
             self.refresh_session()
@@ -495,6 +509,10 @@ class BrowserBackend(Backend):
             "parent_message_id": self.parent_message_id,
             "action": "next",
         }
+        models = self.provider.get_capability('models', {})
+        if self.plugin_ids and self.model in models and models[self.model].get('plugins', False):
+            self.log.debug(f"Using plugins: {self.plugin_ids}")
+            request['plugin_ids'] = self.plugin_ids
 
         code = (
             """

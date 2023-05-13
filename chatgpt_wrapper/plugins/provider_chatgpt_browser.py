@@ -94,6 +94,9 @@ class ProviderChatgptBrowser(Provider):
                 },
                 'gpt-4': {
                 },
+                'gpt-4-plugins': {
+                    'plugins': True
+                },
             }
         }
 

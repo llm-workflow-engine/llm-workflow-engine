@@ -32,6 +32,7 @@ DEFAULT_CONFIG = {
     'browser': {
         'provider': 'firefox',
         'debug': False,
+        'plugins': [],
     },
     'model': {
         'default_preset': None,
