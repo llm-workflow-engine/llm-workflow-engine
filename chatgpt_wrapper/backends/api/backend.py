@@ -47,6 +47,7 @@ class ApiBackend(Backend):
         return self.provider_manager.get_provider_plugins()
 
     def init_provider(self):
+        self.active_preset = None
         default_preset = self.config.get('model.default_preset')
         if default_preset:
             success, preset, user_message = self.activate_preset(default_preset)
@@ -57,6 +58,7 @@ class ApiBackend(Backend):
 
     def set_provider(self, provider_name, customizations=None, reset=False):
         self.log.debug(f"Setting provider to: {provider_name}, with customizations: {customizations}, reset: {reset}")
+        self.active_preset = None
         provider_full_name = self.provider_manager.full_name(provider_name)
         if self.provider_name == provider_full_name and not reset:
             return False, None, f"Provider {provider_name} already set"
@@ -116,6 +118,8 @@ class ApiBackend(Backend):
             return success, preset, user_message
         metadata, customizations = preset
         success, provider, user_message = self.set_provider(metadata['type'], customizations, reset=True)
+        if success:
+            self.active_preset = preset_name
         return success, preset, user_message
 
     def _handle_response(self, success, obj, message):
@@ -166,13 +170,23 @@ class ApiBackend(Backend):
         success, conversation, user_message = self.conversation.get_conversation(self.conversation_id)
         if not success:
             raise ValueError(user_message)
-        provider = self.provider_manager.get_provider_from_model(conversation.model)
-        if provider is None:
-            util.print_status_message(False, f"Unable to switch to conversation to initial model {conversation.model}, using current model")
-        else:
-            success, provider, _user_message = self.set_provider(provider.name, reset=True)
+        model_configured = False
+        if conversation.preset:
+            success, _preset, user_message = self.activate_preset(conversation.preset)
             if success:
-                self.set_model(conversation.model)
+                model_configured = True
+            else:
+                util.print_status_message(False, f"Unable to switch conversation to previous preset '{conversation.preset}' -- ERROR: {user_message}, falling back to provider: {conversation.provider}, model: {conversation.model}")
+        if not model_configured:
+            if conversation.provider and conversation.model:
+                success, _provider, _user_message = self.set_provider(conversation.provider, reset=True)
+                if success:
+                    success, _customizations, _user_message = self.set_model(conversation.model)
+                    if success:
+                        model_configured = True
+        if not model_configured:
+            util.print_status_message(False, "Invalid conversation provider/model, falling back to default provider/model")
+            self.init_provider()
         tokens = self.get_conversation_token_count(conversation_id)
         self.set_conversation_tokens(tokens)
 
@@ -291,7 +305,7 @@ class ApiBackend(Backend):
             llm = self.override_llm or self.llm
             provider = self.override_provider or self.provider
             model_name = getattr(llm, provider.model_property_name)
-            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title, model=model_name)
+            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title, model=model_name, provider=provider.name, preset=self.active_preset or '')
             if not success:
                 raise Exception(message)
         self.conversation_id = conversation.id
@@ -394,6 +408,7 @@ class ApiBackend(Backend):
 
     def new_conversation(self):
         super().new_conversation()
+        self.init_provider()
         self.set_conversation_tokens(0)
 
     def _strip_out_messages_over_max_tokens(self, messages, token_count, max_tokens):

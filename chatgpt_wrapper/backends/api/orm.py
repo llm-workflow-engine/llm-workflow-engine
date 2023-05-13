@@ -49,6 +49,8 @@ class Conversation(Base):
     user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     title = Column(String, nullable=True)
     model = Column(String, nullable=False)
+    provider = Column(String, nullable=False)
+    preset = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
     updated_time = Column(DateTime, nullable=False)
     hidden = Column(Boolean, nullable=False)
@@ -138,12 +140,12 @@ class Orm:
         self.log.info(f'Added User with username {username}')
         return user
 
-    def add_conversation(self, user, title, model="default", hidden=False):
+    def add_conversation(self, user, title, model=None, provider=None, preset="", hidden=False):
         now = datetime.datetime.now()
-        conversation = Conversation(user_id=user.id, title=title, model=model, created_time=now, updated_time=now, hidden=False)
+        conversation = Conversation(user_id=user.id, title=title, model=model, provider=provider, preset=preset, created_time=now, updated_time=now, hidden=False)
         self.session.add(conversation)
         self.session.commit()
-        self.log.info(f"Added Conversation with title '{title}' for User {user.username}")
+        self.log.info(f"Added Conversation with title: {title}, model: {model}, provider: {provider}, preset: {preset} for User {user.username}")
         return conversation
 
     def add_message(self, conversation, role, message):
