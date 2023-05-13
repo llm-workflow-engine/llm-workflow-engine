@@ -89,13 +89,13 @@ class SchemaUpdater:
                 util.print_status_message(False, "It is highly recommended to backup your database prior to upgrading.")
                 util.print_status_message(False, f"Database: {self.database_url}")
                 if self.confirm_upgrade():
-                    message = "Upgrading the schema..."
-                    self.log.info(message)
-                    util.print_status_message(True, message, style="bold blue")
+                    upgrading_message = "Upgrading the schema..."
+                    self.log.info(upgrading_message)
+                    util.print_status_message(True, upgrading_message, style="bold blue")
                     self.run_migrations()
-                    message = "Database schema has been successfully upgraded."
-                    self.log.info(message)
-                    util.print_status_message(True, message)
+                    upgraded_message = "Database schema has been successfully upgraded."
+                    self.log.info(upgraded_message)
+                    util.print_status_message(True, upgraded_message)
                 else:
                     message = "Database schema upgrade aborted."
                     self.log.warning(message)
