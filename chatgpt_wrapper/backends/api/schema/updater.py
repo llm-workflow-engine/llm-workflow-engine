@@ -108,6 +108,7 @@ class SchemaUpdater:
             traceback_str = traceback.format_exc()
             self.log.error(f"Stack trace: {traceback_str}")
             util.print_status_message(False, "An error occurred during the schema update process. Please check the logs.")
+            sys.exit(0)
 
     def add_revision(self, name):
         command.revision(self.alembic_cfg, message=name, autogenerate=True)
