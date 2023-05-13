@@ -145,6 +145,7 @@ Support will not be provided for using the `ChatGPT` class of this backend direc
 * Pros:
   * Free or paid version available (as of this writing)
   * Fairly easy to set up for non-technical users
+  * Access to ChatGPT plugins (alpha, requires account with access)
 * Cons:
   * Slow (runs a full browser session)
   * Clunky authentication method
@@ -182,6 +183,24 @@ Restart the program without the `install` parameter to begin using it.
 ```bash
 chatgpt
 ```
+
+##### Using ChatGPT Plugins (alpha)
+
+Officially approved ChatGPT plugins can be configured for use with the browser backend.
+
+**NOTE:** This requires your OpenAI login account to have access to ChatGPT plugins.
+
+To use plugins:
+
+1. You must use a model that supports plugins: `/model model_name gpt-4-plugins`
+2. Browse the plugins: `/plugins`, or a filter the full list by a phrase, `/plugins youtube`
+3. To enable the plugin by default, add the plugin ID to the `browser.plugins` list in your configuration file:
+   ```yaml
+   browser:
+     plugins:
+       - plugin-d1d6eb04-3375-40aa-940a-c2fc57ce0f51
+   ```
+4. You can also dynamically enable/disable plugins, see the help for `/plugin-enable` and `/plugin-disable`
 
 ### Notes for Windows users
 
