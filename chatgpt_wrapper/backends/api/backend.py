@@ -109,6 +109,7 @@ class ApiBackend(Backend):
         return metadata, customizations
 
     def activate_preset(self, preset_name):
+        self.log.debug(f"Activating preset: {preset_name}")
         success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
@@ -348,7 +349,13 @@ class ApiBackend(Backend):
         return True, response, "Response received"
 
     def set_current_user(self, user=None):
+        self.log.debug(f"Setting current user to {user.username if user else None}")
         self.current_user = user
+        if self.current_user:
+            if self.current_user.default_preset:
+                self.log.debug(f"Activating user default preset: {self.current_user.default_preset}")
+                return self.activate_preset(self.current_user.default_preset)
+        return self.init_provider()
 
     def conversation_data_to_messages(self, conversation_data):
         return conversation_data['messages']

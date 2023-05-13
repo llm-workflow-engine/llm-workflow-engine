@@ -15,6 +15,7 @@ ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'exit',
     'quit',
 ]
+SKIP_MESSAGE = "(Press enter to skip)"
 
 class ApiRepl(Repl):
     """
@@ -97,7 +98,7 @@ class ApiRepl(Repl):
         presets.insert(0, "Global default")
         for i, preset in enumerate(presets):
             print(f"{i + 1}. {preset}")
-        selected_preset = input("Choose a default preset: ").strip() or None
+        selected_preset = input(f"Choose a default preset {SKIP_MESSAGE}: ").strip() or None
         if not selected_preset and allow_empty:
             return True, None
         if not selected_preset or not selected_preset.isdigit() or not (1 <= int(selected_preset) <= len(presets)):
@@ -360,13 +361,13 @@ Before you can start using the shell, you must create a new user.
 
     def edit_user(self, user):
         util.print_markdown(f"## Editing user: {user.username}")
-        username = input("New username (Press enter to skip): ").strip() or None
-        email = input("New email (Press enter to skip): ").strip() or None
+        username = input(f"New username {SKIP_MESSAGE}: ").strip() or None
+        email = input(f"New email {SKIP_MESSAGE}: ").strip() or None
         if email:
             success, message = self.validate_email(email)
             if not success:
                 return False, email, message
-        password = getpass.getpass(prompt='New password (Press enter to skip): ') or None
+        password = getpass.getpass(prompt=f"New password {SKIP_MESSAGE}: ") or None
         success, default_preset = self.select_preset(True)
         if not success:
             return False, default_preset, "Invalid default preset."
@@ -381,6 +382,8 @@ Before you can start using the shell, you must create a new user.
         success, user, user_message = self.user_management.edit_user(user.id, **kwargs)
         if success:
             self.rebuild_completions()
+            if self.logged_in_user.id == user.id:
+                self.backend.set_current_user(user)
         return success, user, user_message
 
     def do_user_edit(self, username=None):
