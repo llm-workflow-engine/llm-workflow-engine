@@ -213,6 +213,7 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = self.config.get("shell.prompt_prefix")
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
+        prompt_prefix = prompt_prefix.replace("$PRESET_OR_MODEL", self.backend.active_preset if self.backend.active_preset else self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens))
@@ -584,6 +585,8 @@ Before you can start using the shell, you must create a new user.
             content = f"* **{preset_name}**"
             if 'description' in metadata:
                 content += f": *{metadata['description']}*"
+            if preset_name == self.backend.active_preset:
+                content += ' (✓)'
             if not arg or arg.lower() in content.lower():
                 presets.append(content)
         util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(presets)))
