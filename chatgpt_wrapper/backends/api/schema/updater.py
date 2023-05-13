@@ -5,11 +5,14 @@ import sys
 import traceback
 import argparse
 
-from sqlalchemy import create_engine
+from alembic.config import Config as AlembicConfig
+from alembic import command
+from alembic.script import ScriptDirectory
+from alembic.runtime.migration import MigrationContext
+from sqlalchemy import create_engine, inspect
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
-import chatgpt_wrapper.backends.api.schema.alembic_lib as alembic
 from chatgpt_wrapper.core import util
 
 class SchemaUpdater:
@@ -17,28 +20,69 @@ class SchemaUpdater:
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.database_url = self.config.get('database')
-        self.script_location = os.path.join(util.get_package_root(self), 'backends', 'api', 'schema', 'alembic')
-        self.alembic_cfg = alembic.set_config(self.database_url, self.script_location)
+        self.current_dir = self.get_current_dir()
+        self.script_location = os.path.join(self.current_dir, 'alembic')
+        self.alembic_cfg = self.set_config()
+        self.engine = create_engine(self.database_url)
+        self.versioning_initialized = self.is_versioning_initialized()
         self.log.debug("Initialized SchemaUpdater with database URL: %s, script location: %s", self.database_url, self.script_location)
+
+    def set_config(self):
+        ini_file = os.path.join(self.current_dir, 'alembic.ini')
+        alembic_cfg = AlembicConfig(ini_file)
+        alembic_cfg.set_main_option('sqlalchemy.url', self.database_url)
+        alembic_cfg.set_main_option("script_location", self.script_location)
+        return alembic_cfg
+
+    def get_current_dir(self):
+        current_file = os.path.abspath(__file__)
+        current_dir = os.path.dirname(current_file)
+        return current_dir
+
+    def is_versioning_initialized(self):
+        inspector = inspect(self.engine)
+        initialized = 'alembic_version' in inspector.get_table_names()
+        self.log.debug("Schema versioning initialized: %s", initialized)
+        return initialized
+
+    def get_current_schema_version(self):
+        current_revision = None
+        if self.versioning_initialized:
+            with self.engine.connect() as connection:
+                migration_context = MigrationContext.configure(connection)
+                current_revision = migration_context.get_current_revision()
+        self.log.info("Current schema version for database: %s", current_revision)
+        return current_revision
+
+    def get_latest_version(self):
+        script = ScriptDirectory.from_config(self.alembic_cfg)
+        latest_version = script.get_current_head()
+        self.log.info("Latest schema version: %s", latest_version)
+        return latest_version
+
+    def run_migrations(self):
+        self.log.debug("Running migrations")
+        if not self.versioning_initialized:
+            self.log.info("Initializing alembic versioning")
+            self.stamp_database(None)
+        command.upgrade(self.alembic_cfg, 'head')
+
+    def stamp_database(self, revision='head'):
+        self.log.debug("Stamping database with version: %s", revision)
+        command.stamp(self.alembic_cfg, revision)
 
     def confirm_upgrade(self):
         answer = input("Do you want to upgrade the database schema? (yes/no): ")
         return answer.lower() == "yes"
 
     def init_alembic(self):
-        alembic.stamp_database(self.alembic_cfg)
+        self.stamp_database()
 
     def update_schema(self):
         try:
-            engine = create_engine(self.database_url)
-            initialized = alembic.is_initialized(engine)
-            current_version = None if not initialized else alembic.get_current_schema_version(engine)
-            latest_version = alembic.get_latest_version(self.alembic_cfg)
-
-            self.log.debug("Current schema version: %s", current_version)
-            self.log.debug("Latest schema version: %s", latest_version)
-
-            if not initialized or current_version != latest_version:
+            current_version = self.get_current_schema_version()
+            latest_version = self.get_latest_version()
+            if not self.versioning_initialized or current_version != latest_version:
                 message = "Database schema is out of date."
                 self.log.warning(message)
                 util.print_status_message(False, message)
@@ -48,7 +92,7 @@ class SchemaUpdater:
                     message = "Upgrading the schema..."
                     self.log.info(message)
                     util.print_status_message(True, message, style="bold blue")
-                    alembic.run_migrations(self.alembic_cfg)
+                    self.run_migrations()
                     message = "Database schema has been successfully upgraded."
                     self.log.info(message)
                     util.print_status_message(True, message)
@@ -66,7 +110,7 @@ class SchemaUpdater:
             util.print_status_message(False, "An error occurred during the schema update process. Please check the logs.")
 
     def add_revision(self, name):
-        alembic.create_revision(name, self.alembic_cfg)
+        command.revision(self.alembic_cfg, message=name, autogenerate=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Schema Updater")
@@ -75,6 +119,6 @@ if __name__ == "__main__":
     config = Config()
     config.set('debug.log.enabled', True)
     config.set('console.log.level', 'debug')
-    schema_updater = SchemaUpdater()
+    schema_updater = SchemaUpdater(config)
     if args.add:
         schema_updater.add_revision(args.add)
