@@ -136,6 +136,14 @@ Once you're logged in, you have full access to all commands.
 
 **IMPORTANT NOTE:** The user authorization system from the command line is 'admin party' -- meaning every logged in user has admin privileges, including editing and deleting other users.
 
+##### Setting a per-user default preset
+
+The API backend supports configuring a preset per user.
+
+To do so, run `/user-edit` and selecting a default preset will be one of the options.
+
+See [Presets](#presets) for more information on configuring presets.
+
 #### Playwright (browser-based): **DEPRECATED**
 
 This backend is deprecated, and may be removed in a future release.
