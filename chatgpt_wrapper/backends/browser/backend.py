@@ -410,6 +410,15 @@ class BrowserBackend(Backend):
             return success, data['items'], user_message
         return success, data, user_message
 
+    def enable_plugin(self, plugin_id):
+        self.plugin_ids.append(plugin_id)
+        self.plugin_ids = list(set(self.plugin_ids))
+        return True, self.plugin_ids, f"Enabled plugin {plugin_id}"
+
+    def disable_plugin(self, plugin_id):
+        self.plugin_ids.remove(plugin_id)
+        return True, self.plugin_ids, f"Disabled plugin {plugin_id}"
+
     def delete_conversation(self, uuid=None):
         if self.session is None:
             self.refresh_session()

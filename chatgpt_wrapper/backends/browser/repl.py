@@ -100,3 +100,38 @@ class BrowserRepl(Repl):
                 content = self.format_plugin_item(id, data)
                 plugin_list.append(content)
         util.print_markdown("## Enabled plugins:\n\n%s" % "\n".join(plugin_list))
+
+    def do_plugin_enable(self, arg):
+        """
+        Dynamically enable a plugin
+
+        Arguments:
+            id: The ID of the plugin to enable (IDs available in plugin list)
+
+        Examples:
+            {COMMAND} plugin-43fe9e1c-665a-4c22-a0f4-2a2ec195da51
+        """
+        if not arg:
+            return False, None, "Plugin ID required"
+        success, plugins, user_message = self.get_plugin_list()
+        if not success:
+            return success, plugins, user_message
+        if arg not in plugins:
+            return False, arg, f"Plugin {arg} not found, or invalid ID"
+        return self.backend.enable_plugin(arg)
+
+    def do_plugin_disable(self, arg):
+        """
+        Dynamically disable a plugin
+
+        Arguments:
+            id: The ID of the plugin to disable (IDs available in plugin list)
+
+        Examples:
+            {COMMAND} plugin-43fe9e1c-665a-4c22-a0f4-2a2ec195da51
+        """
+        if not arg:
+            return False, None, "Plugin ID required"
+        if arg not in self.backend.plugin_ids:
+            return False, arg, f"Plugin {arg} not enabled, or invalid ID"
+        return self.backend.disable_plugin(arg)
