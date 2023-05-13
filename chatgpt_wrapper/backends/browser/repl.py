@@ -52,6 +52,12 @@ class BrowserRepl(Repl):
         } for p in plugins}
         return True, plugin_list, "Processed plugin list"
 
+    def format_plugin_item(self, id, data):
+        content = f"##### Provider: {data['domain']}, {data['namespace']}\n* **ID: {id}**"
+        if 'description' in data:
+            content += f"\n* Description: *{data['description']}*"
+        return content
+
     def do_plugins(self, arg):
         """
         Retrieve information on available plugins
@@ -72,9 +78,25 @@ class BrowserRepl(Repl):
             return success, plugins, user_message
         plugin_list = []
         for id, data in plugins.items():
-            content = f"##### Provider: {data['domain']}, {data['namespace']}\n* **ID: {id}**"
-            if 'description' in data:
-                content += f"\n* Description: *{data['description']}*"
+            content = self.format_plugin_item(id, data)
             if not arg or arg.lower() in content.lower():
                 plugin_list.append(content)
         util.print_markdown("## Plugins:\n\n%s" % "\n".join(plugin_list))
+
+    def do_plugins_enabled(self, _):
+        """
+        List enabled plugins
+
+        Examples:
+            {COMMAND}
+        """
+        success, plugins, user_message = self.get_plugin_list()
+        if not success:
+            return success, plugins, user_message
+        plugin_list = []
+        for id in self.backend.plugin_ids:
+            if id in plugins:
+                data = plugins[id]
+                content = self.format_plugin_item(id, data)
+                plugin_list.append(content)
+        util.print_markdown("## Enabled plugins:\n\n%s" % "\n".join(plugin_list))
