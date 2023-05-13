@@ -1,3 +1,38 @@
+### v0.10.0 - 13/05/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+This version performs operations on the database that stores users/conversations/messages.
+**Please read the the upgrade warnings at https://github.com/mmabrouk/chatgpt-wrapper#upgrading prior to running the upgrade!**
+
+#### New features
+
+* Plugin support for browser backend
+* Database schema upgrade system
+* Per user default presets
+* Switching conversations loads original preset or provider/module used when conversation was created
+
+#### Commit log
+
+* **Sat May 13 2023:** document per-user default presets
+* **Sat May 13 2023:** fix random bugs with streaming across providers
+* **Sat May 13 2023:** document plugin support
+* **Sat May 13 2023:** /plugin-enable and /plugin-disable commands, dynamically add/remove plugins
+* **Sat May 13 2023:** add /enabled-plugins command
+* **Sat May 13 2023:** underscore commands in help command substitution
+* **Sat May 13 2023:** add plugin support to browser backend, /plugins list command
+* **Sat May 13 2023:** add database upgrade warnings to README
+* **Sat May 13 2023:** add  prompt replacement token, indicator for active preset in /presets command
+* **Sat May 13 2023:** schema upgrade, store provider and preset for conversation, use when re-loading conversations
+* **Sat May 13 2023:** exit on upgrade error
+* **Sat May 13 2023:** improve stream logging
+* **Sat May 13 2023:** working user default presets
+* **Fri May 12 2023:** improve display/management of system message aliases
+* **Thu May 11 2023:** schema upgrade, default_model -> default_preset for users
+* **Thu May 11 2023:** database schema upgrade system using alembic
+* **Wed May 10 2023:** clarify doc for presets
+* **Tue May 09 2023:** timeout for trying to retrieve awesome prompts
+
 ### v0.9.0 - 08/05/2023
 
 This is a substantial rewrite to add support for multiple providers and management of preset configurations.
