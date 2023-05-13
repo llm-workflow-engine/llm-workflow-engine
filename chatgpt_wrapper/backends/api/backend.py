@@ -332,7 +332,7 @@ class ApiBackend(Backend):
         return message
 
     def _build_chat_request(self, messages, customizations={}):
-        if self.streaming:
+        if self.streaming and self.provider.can_stream() and self.should_stream():
             customizations.update(self.streaming_args(interrupt_handler=True))
         llm = self.override_llm or self.make_llm(customizations)
         if not self.override_llm:

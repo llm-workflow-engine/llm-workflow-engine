@@ -62,7 +62,8 @@ class Backend(ABC):
             self.provider.set_customization_value('streaming', self.stream)
         else:
             self.log.debug("Provider cannot stream")
-            self.stream = False
+            if stream is not None:
+                self.stream = stream
         self.log.info(f"Provider streaming is now: {self.stream}")
 
     def should_stream(self):

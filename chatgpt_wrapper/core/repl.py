@@ -691,13 +691,14 @@ class Repl():
         """
         return self.default(line)
 
-    def default(self, line, title=None, request_overrides={}):
+    def default(self, line, title=None, request_overrides=None):
         # TODO: This signal is recognized on Windows, and calls the callback, but the entire
         # process is still killed.
         signal.signal(signal.SIGINT, self.catch_ctrl_c)
         if not line:
             return
 
+        request_overrides = request_overrides or {}
         if self.backend.should_stream():
             print("")
             success, response, user_message = self.backend.ask_stream(line, title=title, request_overrides=request_overrides)
