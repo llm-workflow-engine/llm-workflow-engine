@@ -56,6 +56,7 @@ class ApiBackend(Backend):
         self.set_provider('provider_chat_openai')
 
     def set_provider(self, provider_name, customizations=None, reset=False):
+        self.log.debug(f"Setting provider to: {provider_name}, with customizations: {customizations}, reset: {reset}")
         provider_full_name = self.provider_manager.full_name(provider_name)
         if self.provider_name == provider_full_name and not reset:
             return False, None, f"Provider {provider_name} already set"
@@ -436,6 +437,7 @@ class ApiBackend(Backend):
         return False, None, "Conversation not updated with new messages"
 
     def ask_stream(self, prompt, title=None, request_overrides={}):
+        self.log.info("Starting streaming request")
         system_message, request_overrides = self.extract_system_message(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         # Streaming loop.
@@ -468,6 +470,7 @@ class ApiBackend(Backend):
         Returns:
             str: The response received from the model.
         """
+        self.log.info("Starting non-streaming request")
         system_message, request_overrides = self.extract_system_message(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         success, response, user_message = self._call_llm_non_streaming(messages, request_overrides)

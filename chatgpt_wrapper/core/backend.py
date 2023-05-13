@@ -54,14 +54,22 @@ class Backend(ABC):
         self.available_models = self.provider.available_models
 
     def set_provider_streaming(self, stream=None):
+        self.log.debug("Setting provider streaming")
         if self.provider.can_stream():
+            self.log.debug("Provider can stream")
             if stream is not None:
                 self.stream = stream
             self.provider.set_customization_value('streaming', self.stream)
+        else:
+            self.log.debug("Provider cannot stream")
+            self.stream = False
+        self.log.info(f"Provider streaming is now: {self.stream}")
 
     def should_stream(self):
         customizations = self.provider.get_customizations()
-        return customizations.get('streaming', False)
+        should_stream = customizations.get('streaming', False)
+        self.log.debug(f"Provider should_stream: {should_stream}")
+        return should_stream
 
     def streaming_args(self, interrupt_handler=False):
         calback_handlers = [
