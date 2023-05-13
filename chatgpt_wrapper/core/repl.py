@@ -196,7 +196,7 @@ class Repl():
             method, _obj = self.get_command_method(command)
             doc = method.__doc__
             if doc:
-                doc = doc.replace("{COMMAND}", "%s%s" % (constants.COMMAND_LEADER, command))
+                doc = doc.replace("{COMMAND}", "%s%s" % (constants.COMMAND_LEADER, util.underscore_to_dash(command)))
                 for sub in constants.HELP_TOKEN_VARIABLE_SUBSTITUTIONS:
                     try:
                         const_value = getattr(constants, sub)
