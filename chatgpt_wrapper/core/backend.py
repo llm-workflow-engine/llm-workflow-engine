@@ -67,7 +67,10 @@ class Backend(ABC):
         self.log.info(f"Provider streaming is now: {self.stream}")
 
     def should_stream(self):
-        customizations = self.provider.get_customizations()
+        # NOTE: No override_provider on some backends, this allows support
+        # across backends.
+        provider = getattr(self, 'override_provider', None) or self.provider
+        customizations = provider.get_customizations()
         should_stream = customizations.get('streaming', False)
         self.log.debug(f"Provider should_stream: {should_stream}")
         return should_stream

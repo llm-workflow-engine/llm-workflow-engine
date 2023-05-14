@@ -335,15 +335,16 @@ class ApiBackend(Backend):
 
     def _build_chat_request(self, messages, customizations=None):
         customizations = customizations or {}
-        if self.streaming and self.provider.can_stream() and self.should_stream():
-            customizations.update(self.streaming_args(interrupt_handler=True))
         llm = self.override_llm or self.make_llm(customizations)
+        provider = self.override_provider or self.provider
+        if self.streaming and provider.can_stream() and self.should_stream():
+            customizations.update(self.streaming_args(interrupt_handler=True))
         if not self.override_llm:
             self.llm = llm
         # TODO: More elegant way to do this, probably on provider.
         model_configuration = {k: str(v) for k, v in dict(llm).items()}
         self.log.debug(f"LLM request with message count: {len(messages)}, model configuration: {json.dumps(model_configuration)}")
-        messages = self.provider.prepare_messages_for_llm(messages)
+        messages = provider.prepare_messages_for_llm(messages)
         return llm, messages
 
     def _call_llm_streaming(self, messages, customizations=None):
