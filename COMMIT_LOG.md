@@ -1,3 +1,17 @@
+### v0.10.1 - 13/05/2023
+
+#### **:fire_engine:Deprecations:fire_engine:**
+
+* Configuration `backend:` settings have changed values
+  * `chatgpt-api` is now `api`
+  * `chatgpt-browser` is now `browser`
+
+#### Commit log
+
+* **Sat May 13 2023:** fix some message composition and streaming bugs
+* **Sat May 13 2023:** fix default args to prevent mutable default args bugs
+* **Sat May 13 2023:** update backend config names, add deprecation warning for old names
+
 ### v0.10.0 - 13/05/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
