@@ -5,6 +5,7 @@ import sys
 from chatgpt_wrapper.version import __version__
 import chatgpt_wrapper.core.constants as constants
 from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper.core import util
 from chatgpt_wrapper.backends.browser.backend import BrowserBackend
 from chatgpt_wrapper.backends.browser.repl import BrowserRepl
 from chatgpt_wrapper.backends.api.repl import ApiRepl
@@ -124,7 +125,14 @@ def main():
         command = args.params[0]
 
     backend = config.get('backend')
+    # TODO: Remove this deprecation warning later.
+    def backend_deprecation_warning(old, new):
+        util.print_status_message(False, f"WARNING: backend '{old}' has been renamed to '{new}', and support for the old name will be removed in a future release. Please update your config file to use '{new}' for the 'backend:' setting.")
     if backend == 'chatgpt-browser':
+        backend_deprecation_warning('chatgpt-browser', 'browser')
+    if backend == 'chatgpt-api':
+        backend_deprecation_warning('chatgpt-api', 'api')
+    if backend == 'browser' or backend == 'chatgpt-browser':
         if command == 'reinstall':
             print('Reinstalling...')
             temp_backend = BrowserBackend(config)
@@ -139,7 +147,7 @@ def main():
             )
             config.set('browser.debug', True)
         shell = BrowserRepl(config)
-    elif backend == 'chatgpt-api':
+    elif backend == 'api' or backend == 'chatgpt-api':
         if command in ['install', 'reinstall']:
             print(
                 "\n"
