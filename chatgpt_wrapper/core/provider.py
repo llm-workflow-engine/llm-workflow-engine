@@ -7,7 +7,8 @@ from chatgpt_wrapper.core import constants
 from chatgpt_wrapper.core import util
 
 class PresetValue:
-    def __init__(self, value_type, min_value=None, max_value=None, options={}, include_none=False, private=False):
+    def __init__(self, value_type, min_value=None, max_value=None, options=None, include_none=False, private=False):
+        options = options or {}
         self.value_type = value_type
         self.min_value = min_value
         self.max_value = max_value
@@ -164,7 +165,8 @@ class ProviderBase(Plugin):
         self.customizations = customizations
 
     def customizations_to_completions(self):
-        def dict_to_completions(completions, items, prefix=[], is_dict=False):
+        def dict_to_completions(completions, items, prefix=None, is_dict=False):
+            prefix = prefix or []
             for key, value in items.items():
                 full_key = '.'.join(prefix + [key])
                 if value == dict:
@@ -206,7 +208,8 @@ class ProviderBase(Plugin):
     def can_stream(self):
         return self.get_capability('streaming')
 
-    def make_llm(self, customizations={}, use_defaults=False):
+    def make_llm(self, customizations=None, use_defaults=False):
+        customizations = customizations or {}
         final_customizations = self.get_customizations(self.default_customizations()) if use_defaults else self.get_customizations()
         final_customizations.update(customizations)
         llm_class = self.llm_factory()

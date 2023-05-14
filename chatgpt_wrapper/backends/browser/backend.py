@@ -234,7 +234,8 @@ class BrowserBackend(Backend):
         ).replace("EOF_DIV_ID", self.eof_div_id)
         self.page.evaluate(code)
 
-    def _api_request_build_headers(self, custom_headers={}):
+    def _api_request_build_headers(self, custom_headers=None):
+        custom_headers = custom_headers or {}
         headers = {
             "Authorization": f"Bearer {self.session['accessToken']}",
             "Content-Type": "application/json",
@@ -252,7 +253,10 @@ class BrowserBackend(Backend):
             return False, response, message
         return True, response, "API request successful"
 
-    def _api_xhr_request(self, method, url, query_params={}, data={}, headers={}, timeout=None):
+    def _api_xhr_request(self, method, url, query_params=None, data=None, headers=None, timeout=None):
+        query_params = query_params or {}
+        data = data or {}
+        headers = headers or {}
         self.log.debug(f"Starting XHR request with METHOD: {method}, URL: {url}, QUERY_PARAMS: {query_params}, DATA: {data}, HEADERS: {headers}, TIMEOUT: {timeout}")
         random_fn_name = ''.join(random.choices(string.ascii_letters, k=20))
         js_function = f"""
@@ -318,7 +322,9 @@ class BrowserBackend(Backend):
 
         return result
 
-    def _api_get_request(self, url, query_params={}, custom_headers={}, timeout=None):
+    def _api_get_request(self, url, query_params=None, custom_headers=None, timeout=None):
+        query_params = query_params or {}
+        custom_headers = custom_headers or {}
         headers = self._api_request_build_headers(custom_headers)
         kwargs = {
             "headers": headers,
@@ -330,7 +336,9 @@ class BrowserBackend(Backend):
         response = self._api_xhr_request('GET', url, **kwargs)
         return self._process_api_response(url, response)
 
-    def _api_post_request(self, url, data={}, custom_headers={}, timeout=None):
+    def _api_post_request(self, url, data=None, custom_headers=None, timeout=None):
+        data = data or {}
+        custom_headers = custom_headers or {}
         headers = self._api_request_build_headers(custom_headers)
         kwargs = {
             "headers": headers,
@@ -342,7 +350,9 @@ class BrowserBackend(Backend):
         response = self._api_xhr_request('POST', url, **kwargs)
         return self._process_api_response(url, response, method="POST")
 
-    def _api_patch_request(self, url, data={}, custom_headers={}, timeout=None):
+    def _api_patch_request(self, url, data=None, custom_headers=None, timeout=None):
+        data = data or {}
+        custom_headers = custom_headers or {}
         headers = self._api_request_build_headers(custom_headers)
         kwargs = {
             "headers": headers,
@@ -491,7 +501,8 @@ class BrowserBackend(Backend):
             else:
                 return self._handle_error(json, response, f"Failed to get conversation {uuid}")
 
-    def _ask_stream(self, prompt, title=None, request_overrides={}):
+    def _ask_stream(self, prompt, title=None, request_overrides=None):
+        request_overrides = request_overrides or {}
         if self.session is None:
             self.refresh_session()
 
@@ -657,7 +668,7 @@ class BrowserBackend(Backend):
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         self.page.evaluate(code)
 
-    def ask(self, message, title=None, request_overrides={}):
+    def ask(self, message, title=None, request_overrides=None):
         """
         Send a message to chatGPT and return the response.
 
@@ -667,6 +678,7 @@ class BrowserBackend(Backend):
         Returns:
             str: The response received from OpenAI.
         """
+        request_overrides = request_overrides or {}
         customizations = self.provider.get_customizations()
         llm = self.override_llm or self.make_llm(customizations)
         try:
@@ -675,7 +687,7 @@ class BrowserBackend(Backend):
             return False, message, e
         return True, response.content, "Response received"
 
-    def ask_stream(self, message, title=None, request_overrides={}):
+    def ask_stream(self, message, title=None, request_overrides=None):
         """
         Send a message to chatGPT and stream the response.
 
@@ -685,6 +697,7 @@ class BrowserBackend(Backend):
         Returns:
             str: The response received from OpenAI.
         """
+        request_overrides = request_overrides or {}
         customizations = self.provider.get_customizations()
         customizations.update(self.streaming_args(interrupt_handler=True))
         llm = self.override_llm or self.make_llm(customizations)

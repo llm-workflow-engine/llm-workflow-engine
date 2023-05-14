@@ -290,7 +290,9 @@ class ApiBackend(Backend):
         new_messages.append(self.build_chat_message('user', prompt))
         return old_messages, new_messages
 
-    def prepare_prompt_messsage_context(self, old_messages=[], new_messages=[]):
+    def prepare_prompt_messsage_context(self, old_messages=None, new_messages=None):
+        old_messages = old_messages or []
+        new_messages = new_messages or []
         messages = [self.build_chat_message(m.role, m.message) for m in old_messages]
         messages.extend(new_messages)
         return messages
@@ -331,7 +333,8 @@ class ApiBackend(Backend):
             raise Exception(user_message)
         return message
 
-    def _build_chat_request(self, messages, customizations={}):
+    def _build_chat_request(self, messages, customizations=None):
+        customizations = customizations or {}
         if self.streaming and self.provider.can_stream() and self.should_stream():
             customizations.update(self.streaming_args(interrupt_handler=True))
         llm = self.override_llm or self.make_llm(customizations)
@@ -343,7 +346,8 @@ class ApiBackend(Backend):
         messages = self.provider.prepare_messages_for_llm(messages)
         return llm, messages
 
-    def _call_llm_streaming(self, messages, customizations={}):
+    def _call_llm_streaming(self, messages, customizations=None):
+        customizations = customizations or {}
         self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
         # TODO: Needs to be moved to the provider.
         customizations.update({'streaming': True})
@@ -354,7 +358,8 @@ class ApiBackend(Backend):
             return False, messages, e
         return True, response, "Response received"
 
-    def _call_llm_non_streaming(self, messages, customizations={}):
+    def _call_llm_non_streaming(self, messages, customizations=None):
+        customizations = customizations or {}
         self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
         llm, messages = self._build_chat_request(messages, customizations)
         try:
@@ -451,8 +456,9 @@ class ApiBackend(Backend):
                 return True, response_message, "No current user, conversation not saved"
         return False, None, "Conversation not updated with new messages"
 
-    def ask_stream(self, prompt, title=None, request_overrides={}):
+    def ask_stream(self, prompt, title=None, request_overrides=None):
         self.log.info("Starting streaming request")
+        request_overrides = request_overrides or {}
         system_message, request_overrides = self.extract_system_message(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         # Streaming loop.
@@ -475,7 +481,7 @@ class ApiBackend(Backend):
         self.streaming = False
         return self._handle_response(success, response_obj, user_message)
 
-    def ask(self, prompt, title=None, request_overrides={}):
+    def ask(self, prompt, title=None, request_overrides=None):
         """
         Send a message to chatGPT and return the response.
 
@@ -486,6 +492,7 @@ class ApiBackend(Backend):
             str: The response received from the model.
         """
         self.log.info("Starting non-streaming request")
+        request_overrides = request_overrides or {}
         system_message, request_overrides = self.extract_system_message(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         success, response, user_message = self._call_llm_non_streaming(messages, request_overrides)

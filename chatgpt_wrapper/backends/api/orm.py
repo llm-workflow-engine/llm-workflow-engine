@@ -132,7 +132,8 @@ class Orm:
         messages = query.all()
         return messages
 
-    def add_user(self, username, password, email, default_preset="", preferences={}):
+    def add_user(self, username, password, email, default_preset="", preferences=None):
+        preferences = preferences or {}
         now = datetime.datetime.now()
         user = User(username=username, password=password, email=email, default_preset=default_preset, created_time=now, last_login_time=now, preferences=preferences)
         self.session.add(user)

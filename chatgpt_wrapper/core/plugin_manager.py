@@ -9,7 +9,8 @@ import chatgpt_wrapper.core.util as util
 PLUGIN_PREFIX = "chatgpt_wrapper_"
 
 class PluginManager:
-    def __init__(self, config=None, backend=None, search_path=None, additional_plugins=[]):
+    def __init__(self, config=None, backend=None, search_path=None, additional_plugins=None):
+        additional_plugins = additional_plugins or []
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.backend = backend

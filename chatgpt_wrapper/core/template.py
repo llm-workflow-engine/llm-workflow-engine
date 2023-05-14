@@ -55,7 +55,8 @@ class TemplateManager():
         metadata, _ = self.extract_metadata_keys(builtin_keys, metadata)
         return metadata, overrides
 
-    def build_message_from_template(self, template_name, substitutions={}):
+    def build_message_from_template(self, template_name, substitutions=None):
+        substitutions = substitutions or {}
         template, _ = self.get_template_and_variables(template_name)
         source = frontmatter.load(template.filename)
         template_substitutions, overrides = self.extract_template_run_overrides(source.metadata)
@@ -65,7 +66,8 @@ class TemplateManager():
         message = final_template.render(**final_substitutions)
         return message, overrides
 
-    def process_template_builtin_variables(self, template_name, variables=[]):
+    def process_template_builtin_variables(self, template_name, variables=None):
+        variables = variables or []
         builtin_variables = self.template_builtin_variables()
         substitutions = {}
         for variable, method in builtin_variables.items():

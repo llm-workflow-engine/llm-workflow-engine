@@ -150,7 +150,8 @@ class Repl():
         })
         return style
 
-    def run_template(self, template_name, substitutions={}):
+    def run_template(self, template_name, substitutions=None):
+        substitutions = substitutions or {}
         message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
         preset_name = None
         if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
@@ -168,7 +169,8 @@ class Repl():
             self.backend.set_override_llm()
         return response
 
-    def collect_template_variable_values(self, template_name, variables=[]):
+    def collect_template_variable_values(self, template_name, variables=None):
+        variables = variables or []
         substitutions = {}
         builtin_variables = self.template_manager.template_builtin_variables()
         user_variables = list(set([v for v in variables if v not in builtin_variables]))

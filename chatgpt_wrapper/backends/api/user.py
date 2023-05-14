@@ -41,7 +41,8 @@ class UserManager(Manager):
             return self._handle_error(f"Failed to get user: {str(e)}")
         return True, user, self.user_found_message(user)
 
-    def register(self, username, email, password, default_preset='', preferences={}):
+    def register(self, username, email, password, default_preset='', preferences=None):
+        preferences = preferences or {}
         username = username.lower()
         if email:
             email = email.lower()

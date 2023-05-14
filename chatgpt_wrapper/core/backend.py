@@ -83,7 +83,8 @@ class Backend(ABC):
         }
         return args
 
-    def make_llm(self, customizations={}):
+    def make_llm(self, customizations=None):
+        customizations = customizations or {}
         llm = self.provider.make_llm(customizations)
         return llm
 

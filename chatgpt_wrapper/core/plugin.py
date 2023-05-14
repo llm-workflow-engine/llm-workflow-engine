@@ -27,7 +27,8 @@ class PluginBase(ABC):
     def incompatible_backends(self):
         return []
 
-    def make_llm(self, args={}):
+    def make_llm(self, args=None):
+        args = args or {}
         return self.backend.make_llm(args)
 
     def query_llm(self, messages):
