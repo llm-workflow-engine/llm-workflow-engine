@@ -20,24 +20,17 @@ class SchemaUpdater:
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.database_url = self.config.get('database')
-        self.current_dir = self.get_current_dir()
-        self.script_location = os.path.join(self.current_dir, 'alembic')
         self.alembic_cfg = self.set_config()
         self.engine = create_engine(self.database_url)
         self.versioning_initialized = self.is_versioning_initialized()
-        self.log.debug("Initialized SchemaUpdater with database URL: %s, script location: %s", self.database_url, self.script_location)
+        self.log.debug("Initialized SchemaUpdater with database URL: %s", self.database_url)
 
     def set_config(self):
-        ini_file = os.path.join(self.current_dir, 'alembic.ini')
+        ini_file = os.path.join(util.get_file_directory(), 'alembic.ini')
+        self.log.debug("Creating alembic config using .ini: %s", ini_file)
         alembic_cfg = AlembicConfig(ini_file)
         alembic_cfg.set_main_option('sqlalchemy.url', self.database_url)
-        alembic_cfg.set_main_option("script_location", self.script_location)
         return alembic_cfg
-
-    def get_current_dir(self):
-        current_file = os.path.abspath(__file__)
-        current_dir = os.path.dirname(current_file)
-        return current_dir
 
     def is_versioning_initialized(self):
         inspector = inspect(self.engine)
