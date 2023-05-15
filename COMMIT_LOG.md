@@ -1,3 +1,7 @@
+### v0.10.2 - 14/05/2023
+
+* **Sun May 14 2023:** fix missing __init__ file for schema dir
+
 ### v0.10.1 - 13/05/2023
 
 #### **:fire_engine:Deprecations:fire_engine:**
