@@ -1,3 +1,7 @@
+### v0.10.4 - 15/05/2023
+
+* **Mon May 15 2023:** fix broken streaming, clean up can/should stream logic, fixes #303
+
 ### v0.10.3 - 15/05/2023
 
 * **Mon May 15 2023:** clean up alembic config process
