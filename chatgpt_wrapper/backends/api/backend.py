@@ -91,8 +91,8 @@ class ApiBackend(Backend):
                 success, provider, user_message = self.provider_manager.load_provider(metadata['type'])
                 if success:
                     self.override_provider = provider
-                    if self.should_stream():
-                        customizations.update({'streaming': True})
+                    if self.streaming and self.should_stream():
+                        self.log.debug("Adding streaming-specific customizations to LLM request")
                         customizations.update(self.streaming_args(interrupt_handler=True))
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
                     message = f"Set override LLM based on preset {preset_name}"
@@ -335,10 +335,11 @@ class ApiBackend(Backend):
 
     def _build_chat_request(self, messages, customizations=None):
         customizations = customizations or {}
-        llm = self.override_llm or self.make_llm(customizations)
-        provider = self.override_provider or self.provider
-        if self.streaming and provider.can_stream() and self.should_stream():
+        if self.streaming and self.should_stream():
+            self.log.debug("Adding streaming-specific customizations to LLM request")
             customizations.update(self.streaming_args(interrupt_handler=True))
+        provider = self.override_provider or self.provider
+        llm = self.override_llm or self.make_llm(customizations)
         if not self.override_llm:
             self.llm = llm
         # TODO: More elegant way to do this, probably on provider.
@@ -350,8 +351,6 @@ class ApiBackend(Backend):
     def _call_llm_streaming(self, messages, customizations=None):
         customizations = customizations or {}
         self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
-        # TODO: Needs to be moved to the provider.
-        customizations.update({'streaming': True})
         llm, messages = self._build_chat_request(messages, customizations)
         try:
             response = llm(messages)

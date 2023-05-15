@@ -701,7 +701,7 @@ class Repl():
             return
 
         request_overrides = request_overrides or {}
-        if self.backend.should_stream():
+        if self.stream and self.backend.should_stream():
             print("")
             success, response, user_message = self.backend.ask_stream(line, title=title, request_overrides=request_overrides)
             print("\n")

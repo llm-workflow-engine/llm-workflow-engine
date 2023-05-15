@@ -70,10 +70,12 @@ class Backend(ABC):
         # NOTE: No override_provider on some backends, this allows support
         # across backends.
         provider = getattr(self, 'override_provider', None) or self.provider
+        can_stream = provider.can_stream()
         customizations = provider.get_customizations()
         should_stream = customizations.get('streaming', False)
-        self.log.debug(f"Provider should_stream: {should_stream}")
-        return should_stream
+        should_stream_result = can_stream and should_stream
+        self.log.debug(f"Provider should_stream: {should_stream_result}")
+        return should_stream_result
 
     def streaming_args(self, interrupt_handler=False):
         calback_handlers = [
@@ -82,6 +84,7 @@ class Backend(ABC):
         if interrupt_handler:
             calback_handlers.append(self.interrupt_streaming_callback_handler)
         args = {
+            'streaming': True,
             'callback_manager': CallbackManager(calback_handlers),
         }
         return args

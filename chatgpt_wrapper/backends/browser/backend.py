@@ -80,7 +80,7 @@ class BrowserBackend(Backend):
                 return False, None, f"Preset {preset_name} not an available model"
             customizations = {'model_name': preset_name}
             if self.should_stream():
-                customizations.update({'streaming': True})
+                self.log.debug("Adding streaming-specific customizations to LLM request")
                 customizations.update(self.streaming_args(interrupt_handler=True))
             self.override_llm = self.provider.make_llm(customizations, use_defaults=True)
             self.original_model = self.model
