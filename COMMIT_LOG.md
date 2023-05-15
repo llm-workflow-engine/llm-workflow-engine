@@ -1,3 +1,9 @@
+### v0.10.3 - 15/05/2023
+
+* **Mon May 15 2023:** clean up alembic config process
+* **Mon May 15 2023:** add util function to get directory of any file
+* **Mon May 15 2023:** fix missing alembic files
+
 ### v0.10.2 - 14/05/2023
 
 * **Sun May 14 2023:** fix missing __init__ file for schema dir
