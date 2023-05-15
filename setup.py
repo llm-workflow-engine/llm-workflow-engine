@@ -23,6 +23,13 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mmabrouk/chatgpt-wrapper",
     packages=find_packages(),
+    package_data={
+        'chatgpt_wrapper': [
+            'backends/api/schema/alembic.ini',
+            'backends/api/schema/alembic/*',
+            'backends/api/schema/alembic/**/*',
+        ],
+    },
     install_requires=install_requirement,
     classifiers=[
         "Programming Language :: Python :: 3",
