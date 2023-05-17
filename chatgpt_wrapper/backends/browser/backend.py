@@ -399,10 +399,15 @@ class BrowserBackend(Backend):
                 return messages
             message = current_item['message']
             if message is not None and 'content' in message and 'author' in message and message['author']['role'] != 'system':
+                message_content = ""
+                if 'parts' in message['content']:
+                    message_content = "".join(message['content']['parts'])
+                elif 'result' in message['content']:
+                    message_content = message['content']['result']
                 messages.append({
                     'id': message['id'],
                     'role': message['author']['role'],
-                    'message': "".join(message['content']['parts']),
+                    'message': message_content,
                     'created_time': datetime.datetime.fromtimestamp(int(message['create_time'])),
                 })
             parent_id = current_item['id']
@@ -539,21 +544,27 @@ class BrowserBackend(Backend):
             const stream_div = document.createElement('DIV');
             stream_div.id = "STREAM_DIV_ID";
             document.body.appendChild(stream_div);
+            console.log(`STREAM_DIV_ID: ${stream_div.id}`);
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://chat.openai.com/backend-api/conversation');
+            const url = "https://chat.openai.com/backend-api/conversation";
+            xhr.open('POST', url);
             xhr.setRequestHeader('Accept', 'text/event-stream');
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.setRequestHeader('Authorization', 'Bearer BEARER_TOKEN');
             xhr.responseType = 'stream';
+            console.log(`Opened XHR streaming request to ${url}`);
             xhr.onreadystatechange = function() {
+              console.debug(`XHR state change: readyState: ${xhr.readyState}`);
               var newEvent;
               const interrupt_div = document.getElementById('INTERRUPT_DIV_ID');
               if(xhr.readyState == 3 || xhr.readyState == 4) {
                 const newData = xhr.response.substr(xhr.seenBytes);
+                console.log(`Got new data: ${newData}`);
                 try {
                   const newEvents = newData.split(/\\n\\n/).reverse();
                   newEvents.shift();
                   if(newEvents[0] == "data: [DONE]") {
+                    console.log('Got done event');
                     newEvents.shift();
                   }
                   if(newEvents.length > 0) {
@@ -575,6 +586,7 @@ class BrowserBackend(Backend):
               if(xhr.readyState == 4 && (typeof interrupt_div === 'undefined' || interrupt_div === null)) {
                 const eof_div = document.createElement('DIV');
                 eof_div.id = "EOF_DIV_ID";
+                console.log(`Adding EOF_DIV_ID: ${eof_div.id}`);
                 document.body.appendChild(eof_div);
               }
               if(typeof interrupt_div !== 'undefined' && interrupt_div !== null) {
@@ -598,6 +610,9 @@ class BrowserBackend(Backend):
         self.page.evaluate(code)
 
         last_event_msg = ""
+        last_tool_event_msg = ""
+        current_message_type = ""
+        last_message_type = ""
         start_time = time.time()
         while True:
             if not self.streaming:
@@ -613,18 +628,31 @@ class BrowserBackend(Backend):
                 continue
 
             full_event_message = None
+            tool_event_message = None
 
             try:
                 event_raw = base64.b64decode(conversation_datas[0].inner_html())
                 if len(event_raw) > 0:
                     event = json.loads(event_raw)
-                    if event is not None:
+                    if event is not None and "message" in event:
+                        # util.debug.console(event["message"])
                         self.parent_message_id = event["message"]["id"]
                         self.conversation_id = event["conversation_id"]
-                        full_event_message = "\n".join(
-                            event["message"]["content"]["parts"]
-                        )
+                        if "content" in event["message"]:
+                            if "parts" in event["message"]["content"]:
+                                full_event_message = "\n".join(
+                                    event["message"]["content"]["parts"]
+                                )
+                                current_message_type = "message"
+                            # Using a tool.
+                            elif event["message"]["content"]["content_type"] == "code":
+                                tool_event_message = event["message"]["content"]["text"]
+                                current_message_type = "tool"
             except Exception:
+                try:
+                    self.log.error(f"Got bad event event: {event_raw}")
+                except Exception:
+                    self.log.error("Unknown streaming error")
                 yield (
                     "Failed to read response from ChatGPT.  Tips:\n"
                     " * Try again.  ChatGPT can be flaky.\n"
@@ -633,9 +661,17 @@ class BrowserBackend(Backend):
                 )
                 break
 
+            if last_message_type and last_message_type != current_message_type:
+                yield "\n\n"
             if full_event_message is not None:
                 chunk = full_event_message[len(last_event_msg):]
                 self.message_clipboard = last_event_msg = full_event_message
+                last_message_type = "message"
+                yield chunk
+            elif tool_event_message is not None:
+                chunk = tool_event_message[len(last_tool_event_msg):]
+                last_tool_event_msg = tool_event_message
+                last_message_type = "tool"
                 yield chunk
 
             # if we saw the eof signal, this was the last event we
