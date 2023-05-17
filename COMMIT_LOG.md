@@ -1,3 +1,8 @@
+### v0.10.5 - 17/05/2023
+
+* **Wed May 17 2023:** add doc for browser backend with web browser support
+* **Wed May 17 2023:** add support for ChatGPT with browsing (alpha, browser backend only)
+
 ### v0.10.4 - 15/05/2023
 
 * **Mon May 15 2023:** fix broken streaming, clean up can/should stream logic, fixes #303
