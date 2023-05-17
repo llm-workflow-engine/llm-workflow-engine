@@ -210,6 +210,12 @@ To use plugins:
    ```
 4. You can also dynamically enable/disable plugins, see the help for `/plugin-enable` and `/plugin-disable`
 
+##### Using ChatGPT with browsing (alpha)
+
+**NOTE:** This requires your OpenAI login account to have access to ChatGPT with browsing.
+
+To use ChatGPT with browsing, you must use a model that supports browsing: `/model model_name gpt-4-browsing`
+
 ### Notes for Windows users
 
 Most other operating systems come with SQLite (the default database choice) installed, Windows may not.
