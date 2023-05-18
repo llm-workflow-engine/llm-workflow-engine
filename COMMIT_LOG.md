@@ -1,3 +1,7 @@
+### v0.10.6 - 18/05/2023
+
+* **Thu May 18 2023:** fix streaming when overriding a preset in templates
+
 ### v0.10.5 - 17/05/2023
 
 * **Wed May 17 2023:** add doc for browser backend with web browser support
