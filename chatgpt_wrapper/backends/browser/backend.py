@@ -35,7 +35,7 @@ class BrowserBackend(Backend):
     order to provide an open API to ChatGPT.
     """
 
-    name = "chatgpt-browser"
+    name = "browser"
     stream_div_id = "chatgpt-wrapper-conversation-stream-data"
     eof_div_id = "chatgpt-wrapper-conversation-stream-data-eof"
     interrupt_div_id = "chatgpt-wrapper-conversation-stream-data-interrupt"

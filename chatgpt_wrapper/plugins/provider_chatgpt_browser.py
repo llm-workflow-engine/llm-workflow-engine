@@ -78,7 +78,7 @@ class ProviderChatgptBrowser(Provider):
 
     def incompatible_backends(self):
         return [
-            'chatgpt-api',
+            'api',
         ]
 
     @property

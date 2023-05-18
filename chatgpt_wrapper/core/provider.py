@@ -88,7 +88,7 @@ class ProviderBase(Plugin):
 
     def incompatible_backends(self):
         return [
-            'chatgpt-browser',
+            'browser',
         ]
 
     def setup(self):

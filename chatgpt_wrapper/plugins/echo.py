@@ -10,8 +10,8 @@ class Echo(Plugin):
            and skip loading the plugin.
         """
         return [
-            # 'chatgpt-browser',
-            # 'chatgpt-api',
+            # 'browser',
+            # 'api',
         ]
 
     def default_config(self):

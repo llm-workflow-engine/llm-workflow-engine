@@ -50,7 +50,7 @@ See below for details on using ChatGPT as an API from Python.
 
 To use this repository, you need `setuptools` installed. You can install it using `pip install setuptools`. Make sure that you have the last version of pip: `pip install --upgrade pip`
 
-To use the 'chatgpt-api' backend (the default), you need a database backend (SQLite by default, any configurable in SQLAlchemy allowed).
+To use the 'api' backend (the default), you need a database backend (SQLite by default, any configurable in SQLAlchemy allowed).
 
 ## Installation
 
@@ -163,7 +163,7 @@ Support will not be provided for using the `ChatGPT` class of this backend direc
 In your profile configuration file, you'll want to make sure the backend is set to the following in order to use the browser backend:
 
 ```yaml
-backend: 'chatgpt-browser'
+backend: 'browser'
 ```
 
 To tweak the configuration for the current profile, see [Configuration](#configuration)
@@ -684,7 +684,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- This project is a modification from [Taranjeet](https://github.com/taranjeet/chatgpt-api) code which is a modification of [Daniel Gross](https://github.com/danielgross/whatsapp-gpt) code.
+- The original 'browser' backend is a modification from [Taranjeet](https://github.com/taranjeet/chatgpt-api) code which is a modification of [Daniel Gross](https://github.com/danielgross/whatsapp-gpt) code.
 
 ## Star History
 

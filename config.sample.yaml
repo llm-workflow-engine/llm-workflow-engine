@@ -9,8 +9,8 @@
 ##########################################################
 # Backend settings.
 ##########################################################
-# The backend the shell should use, one of: chatgpt-browser, chatgpt-api
-backend: chatgpt-api
+# The backend the shell should use, one of: browser, api
+backend: api
 # The database connection string, in a format SQLAlchemy understands.
 # DO NOT USE THE LINE AS IT IS WRITTEN BELOW, IT ONLY ILLUSTRATES THE DEFAULT LOCATION.
 # database: sqlite:////home/[username]/.local/share/chatgpt-wrapper/profiles/default/storage.db
@@ -20,7 +20,7 @@ backend: chatgpt-api
 # Shell settings.
 ##########################################################
 shell:
-  # NOTE: This setting is only available on the following backends: chatgpt-api
+  # NOTE: This setting is only available on the following backends: api
   # Customize the prompt prefix, the following token are available:
   # - $SYSTEM_MESSAGE_ALIAS: The current your system message alias
   # - $USER: Logged in username
@@ -39,7 +39,7 @@ shell:
 ##########################################################
 # Browser settings.
 ##########################################################
-# NOTE: These settings only work on the following backends: chatgpt-browser
+# NOTE: These settings only work on the following backends: browser
 browser:
   # Enable debug mode (shows browser window if true, headless if false)
   debug: false
@@ -59,7 +59,7 @@ model:
   # disabled otherwise.
   streaming: true
   # Configure aliases to switch between system messages, key is alias, value is message.
-  # NOTE: This setting only works on the following backend: chatgpt-api
+  # NOTE: This setting only works on the following backend: api
   # NOTE: This setting is only active for chat models.
   # See '/help system_message' for more information.
   system_message:

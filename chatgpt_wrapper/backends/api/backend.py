@@ -21,7 +21,7 @@ ADDITIONAL_PLUGINS = [
 
 class ApiBackend(Backend):
 
-    name = "chatgpt-api"
+    name = "api"
 
     def __init__(self, config=None, default_user_id=None):
         super().__init__(config)

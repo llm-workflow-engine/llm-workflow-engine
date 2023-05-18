@@ -8,7 +8,7 @@ class Zap(Plugin):
 
     def incompatible_backends(self):
         return [
-            'chatgpt-browser',
+            'browser',
         ]
 
     def default_config(self):
