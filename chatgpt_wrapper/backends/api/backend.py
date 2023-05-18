@@ -85,13 +85,14 @@ class ApiBackend(Backend):
 
     def set_override_llm(self, preset_name=None):
         if preset_name:
+            self.log.info(f"Setting override LLM to preset: {preset_name}")
             success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
             if success:
                 metadata, customizations = preset
                 success, provider, user_message = self.provider_manager.load_provider(metadata['type'])
                 if success:
                     self.override_provider = provider
-                    if self.streaming and self.should_stream():
+                    if self.stream and self.should_stream():
                         self.log.debug("Adding streaming-specific customizations to LLM request")
                         customizations.update(self.streaming_args(interrupt_handler=True))
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
@@ -100,6 +101,7 @@ class ApiBackend(Backend):
                     return True, self.override_llm, message
             return False, None, user_message
         else:
+            self.log.debug("Unsetting override LLM")
             self.override_provider = None
             self.override_llm = None
             message = "Unset override LLM"
@@ -335,12 +337,13 @@ class ApiBackend(Backend):
 
     def _build_chat_request(self, messages, customizations=None):
         customizations = customizations or {}
-        if self.streaming and self.should_stream():
-            self.log.debug("Adding streaming-specific customizations to LLM request")
-            customizations.update(self.streaming_args(interrupt_handler=True))
         provider = self.override_provider or self.provider
-        llm = self.override_llm or self.make_llm(customizations)
-        if not self.override_llm:
+        llm = self.override_llm
+        if not llm:
+            if self.stream and self.should_stream():
+                self.log.debug("Adding streaming-specific customizations to LLM request")
+                customizations.update(self.streaming_args(interrupt_handler=True))
+            llm = self.make_llm(customizations)
             self.llm = llm
         # TODO: More elegant way to do this, probably on provider.
         model_configuration = {k: str(v) for k, v in dict(llm).items()}
