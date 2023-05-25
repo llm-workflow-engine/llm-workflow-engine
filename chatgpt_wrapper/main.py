@@ -79,7 +79,15 @@ def main():
         action="store",
         help="Preset to use on startup",
     )
-
+    parser.add_argument(
+        "-i",
+        "--input-file",
+        type=argparse.FileType('r'),
+        default=None,
+        const=sys.stdin,
+        nargs='?',
+        help="Input file (default: read from stdin)",
+    )
     parser.add_argument(
         "-d",
         "--debug",
@@ -162,10 +170,17 @@ def main():
         shell.do_config("")
         exit(0)
 
+    shell_prompt = ""
+    if args.input_file is not None:
+        shell.log.debug(f"Processing input file: {args.input_file}")
+        shell_prompt = args.input_file.read()
+        shell.log.debug(f"Processed input file: {shell_prompt}")
+    elif len(args.params) > 0:
+        shell_prompt = " ".join(args.params)
 
-    if len(args.params) > 0 and not command:
+    if shell_prompt and not command:
         shell.launch_backend(interactive=False)
-        shell.default(" ".join(args.params))
+        shell.default(shell_prompt)
         exit(0)
     else:
         shell.launch_backend()
