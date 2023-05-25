@@ -69,7 +69,7 @@ pip install git+https://github.com/mmabrouk/chatgpt-wrapper
   ```bash
   git clone https://github.com/mmabrouk/chatgpt-wrapper.git
   ```
-* Install the the development package:
+* Install the development package:
   ```bash
   cd chatgpt-wrapper
   pip install -e .
@@ -77,7 +77,7 @@ pip install git+https://github.com/mmabrouk/chatgpt-wrapper
 
 ### Backend
 
-The wrapper works with several differnt backends to connect to the ChatGPT models, and installation is different for each backend.
+The wrapper works with several different backends to connect to the ChatGPT models, and installation is different for each backend.
 
 #### API (REST-based): **DEFAULT**
 
