@@ -1,3 +1,11 @@
+### v0.10.7 - 27/05/2023
+
+* **Sat May 27 2023:** allow setting system message alias in config (model.default_system_message) or CLI (-s/--system-message)
+* **Sat May 27 2023:** read both extra params and input file for one-shot mode
+* **Thu May 25 2023:** add -i/--input-file argument
+* **Mon May 22 2023:** restore SQLAlchemy compat with 1.4.x
+* **Thu May 18 2023:** kill lingering deprecated chatgpt-browser/chatgpt-api
+
 ### v0.10.6 - 18/05/2023
 
 * **Thu May 18 2023:** fix streaming when overriding a preset in templates
