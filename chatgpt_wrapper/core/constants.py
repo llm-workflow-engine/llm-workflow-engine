@@ -36,6 +36,7 @@ DEFAULT_CONFIG = {
     },
     'model': {
         'default_preset': None,
+        'default_system_message': 'default',
         'streaming': False,
         'system_message': {
             'programmer': SYSTEM_MESSAGE_PROGRAMMER,

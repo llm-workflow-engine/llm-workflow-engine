@@ -89,6 +89,14 @@ def main():
         help="Input file (default: read from stdin)",
     )
     parser.add_argument(
+        "-s",
+        "--system-message",
+        metavar="ALIAS_NAME",
+        action="store",
+        help="Alias name of the system message to use on startup",
+    )
+
+    parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
@@ -127,6 +135,8 @@ def main():
         config.set('debug.log.level', 'debug')
     if args.preset is not None:
         config.set('model.default_preset', args.preset)
+    if args.system_message is not None:
+        config.set('model.default_system_message', args.system_message)
 
     command = None
     if len(args.params) == 1 and args.params[0] in constants.SHELL_ONE_SHOT_COMMANDS:

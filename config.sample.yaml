@@ -54,6 +54,10 @@ model:
   # The preset to use on startup.
   # See '/help presets' for more information.
   default_preset: null
+  # The alias name of the system message to use on startup.
+  # Can be 'default' for the default system message, or another
+  # alias name defined in the 'system_message' section.
+  default_system_message: default
   # If true, responses will be streamed in real time (no markdown formatting).
   # By default, streaming is enabled in the REPL for supported providers, and
   # disabled otherwise.
