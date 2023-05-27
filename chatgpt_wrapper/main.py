@@ -170,17 +170,21 @@ def main():
         shell.do_config("")
         exit(0)
 
-    shell_prompt = ""
+    shell_prompt = []
+    if len(args.params) > 0:
+        args_string = " ".join(args.params)
+        shell.log.debug(f"Processed extra arguments: {args_string}")
+        shell_prompt.append(args_string)
     if args.input_file is not None:
         shell.log.debug(f"Processing input file: {args.input_file}")
-        shell_prompt = args.input_file.read()
-        shell.log.debug(f"Processed input file: {shell_prompt}")
-    elif len(args.params) > 0:
-        shell_prompt = " ".join(args.params)
+        file_string = args.input_file.read()
+        shell_prompt.append(file_string)
+        shell.log.debug(f"Processed input file contents: {file_string}")
 
     if shell_prompt and not command:
+        shell.log.debug("Launching one-shot prompt")
         shell.launch_backend(interactive=False)
-        shell.default(shell_prompt)
+        shell.default("\n\n".join(shell_prompt))
         exit(0)
     else:
         shell.launch_backend()
