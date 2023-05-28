@@ -143,6 +143,7 @@ class Repl():
 
     def get_styles(self):
         style = Style.from_dict({
+            'prompt': 'bold',
             'completion-menu.completion': 'bg:#008888 #ffffff',
             'completion-menu.completion.current': 'bg:#00aaaa #000000',
             'scrollbar.background': 'bg:#88aaaa',
