@@ -121,13 +121,16 @@ class TestClass:
             {'role': 'user', 'message': 'Hi'},
             {'role': 'assistant', 'message': 'How can I help you?'}
         ]
-        content = conversation_from_messages(messages)
-        assert "**System**:" in content
-        assert "**User**:" in content
-        assert "**Assistant**:" in content
-        assert "Hello" in content
-        assert "Hi" in content
-        assert "How can I help you?" in content
+        conversation_parts = conversation_from_messages(messages)
+        assert conversation_parts[0]["role"] == "system"
+        assert conversation_parts[0]["display_role"] == "**System**:"
+        assert conversation_parts[0]["message"] == "Hello"
+        assert conversation_parts[1]["role"] == "user"
+        assert conversation_parts[1]["display_role"] == "**User**:"
+        assert conversation_parts[1]["message"] == "Hi"
+        assert conversation_parts[2]["role"] == "assistant"
+        assert conversation_parts[2]["display_role"] == "**Assistant**:"
+        assert conversation_parts[2]["message"] == "How can I help you?"
 
     def test_parse_shell_input(self):
         with pytest.raises(EOFError):

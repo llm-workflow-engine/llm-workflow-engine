@@ -612,8 +612,13 @@ class Repl():
             if conversation_data:
                 messages = self.backend.conversation_data_to_messages(conversation_data)
                 if title:
-                    util.print_markdown(f"### {title}")
-                util.print_markdown(util.conversation_from_messages(messages))
+                    util.print_markdown(f"## {title}")
+                conversation_parts = util.conversation_from_messages(messages)
+                for part in conversation_parts:
+                    print("\n")
+                    style = "bold red3" if part["role"] == "user" else "bold green3"
+                    util.print_markdown(part["display_role"], style=style)
+                    util.print_markdown(part["message"])
             else:
                 return False, conversation_data, "Could not load chat content"
         else:
