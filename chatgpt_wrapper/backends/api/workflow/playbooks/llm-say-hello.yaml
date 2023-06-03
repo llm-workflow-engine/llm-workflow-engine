@@ -1,0 +1,12 @@
+---
+- name: Say hello
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Say hello
+      lwe:
+        prompt: "Say hello"
+      register: result
+    - name: Display response
+      debug:
+        var: result.content

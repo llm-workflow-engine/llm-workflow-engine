@@ -1,0 +1,5 @@
+all:
+  hosts:
+    localhost:
+      ansible_become: False
+      ansible_connection: local

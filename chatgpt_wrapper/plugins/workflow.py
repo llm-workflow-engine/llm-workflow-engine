@@ -1,3 +1,5 @@
+import os
+
 from chatgpt_wrapper.core.workflow_manager import WorkflowManager
 from chatgpt_wrapper.core.plugin import Plugin
 import chatgpt_wrapper.core.util as util
@@ -38,18 +40,15 @@ class Workflow(Plugin):
         if not args:
             return False, args, "No workflow name specified"
         try:
-            worflow_name, *workflow_args = args.split()
+            workflow_name, *workflow_args = args.split()
         except ValueError:
-            worflow_name = args
+            workflow_name = args
             workflow_args = []
-        success, workflow_instance, user_message = self.workflow_manager.load_workflow(worflow_name)
-        if not success:
-            return success, workflow_instance, user_message
         try:
-            success, result, user_message = workflow_instance.run(workflow_args)
+            success, result, user_message = self.workflow_manager.run(workflow_name, workflow_args)
             return success, result, user_message
         except Exception as e:
-            return False, None, f"Error running workflow {worflow_name}: {e}"
+            return False, None, f"Error running workflow {workflow_name}: {e}"
 
     def do_workflows(self, arg):
         """
