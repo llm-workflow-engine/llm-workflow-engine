@@ -1,0 +1,30 @@
+---
+- name: Ask the LLM a question, get feedback on the answer
+  hosts: localhost
+  gather_facts: no
+  vars_prompt:
+    - name: question
+      prompt: "Enter a question for the LLM:"
+      private: false
+  tasks:
+    - name: Ask question
+      lwe:
+        prompt: "{{ question }}"
+      register: answer
+    - name: Display answer
+      debug:
+        var: answer.content
+    - name: Critical feedback
+      lwe:
+        prompt: "Given this question: {{ question }}\n\n Provide critical feedback on this answer to the question: {{ answer.content }}\n\nIn the feedback, include at least three recommendations that can be incorporated to improve the answer."
+      register: feedback
+    - name: Display feedback
+      debug:
+        var: feedback.content
+    - name: New answer after feedback
+      lwe:
+        prompt: "Given this question: {{ question }}\n\nGiven this answer to the question: {{ answer.content }}\n\nGiven this feedback on the answer to the question: {{ feedback.content }}\n\nProvide a new answer to the question that incorporates the feedback"
+      register: answer_after_feedback
+    - name: Display new answer after feedback
+      debug:
+        var: answer_after_feedback.content

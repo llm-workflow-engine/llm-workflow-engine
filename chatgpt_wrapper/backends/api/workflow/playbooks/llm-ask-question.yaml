@@ -1,0 +1,16 @@
+---
+- name: Ask the LLM a question
+  hosts: localhost
+  gather_facts: no
+  vars_prompt:
+    - name: question
+      prompt: "Enter a question for the LLM:"
+      private: false
+  tasks:
+    - name: Ask question
+      lwe:
+        prompt: "{{ question }}"
+      register: result
+    - name: Display response
+      debug:
+        var: result.content

@@ -1,5 +1,8 @@
 import os
 import sys
+import yaml
+import getpass
+
 import ansible_runner
 
 from chatgpt_wrapper.core.config import Config
@@ -120,25 +123,46 @@ class WorkflowManager():
                 if not os.getenv(var):
                     os.environ[var] = data['default']
 
+    def collect_vars(self, workflow_file):
+        collected_vars = {}
+        with open(workflow_file, 'r') as file:
+            playbook = yaml.safe_load(file)
+        for play in playbook:
+            if 'vars_prompt' in play:
+                for prompt in play['vars_prompt']:
+                    name = prompt.get('name')
+                    prompt_text = prompt.get('prompt')
+                    is_private = prompt.get('private', False)
+                    if is_private:
+                        user_input = getpass.getpass(prompt_text + " ")
+                    else:
+                        user_input = input(prompt_text + " ")
+                    collected_vars[name] = user_input
+        return collected_vars
+
     def run(self, workflow_name, workflow_args):
         self.set_workflow_environment()
         success, workflow_file, message = self.ensure_workflow(workflow_name)
         if not success:
             return success, workflow_file, message
         try:
+            self.log.debug(f"Collecting vars for workflow {workflow_name} from {workflow_file}")
+            collected_vars = self.collect_vars(workflow_file)
             self.log.info(f"Running workflow {workflow_name} from {workflow_file} with args: {workflow_args}")
             envvars = dict(os.environ)
-            r = ansible_runner.run(
+            result = ansible_runner.run(
                 private_data_dir=self.get_runner_dir(),
                 playbook=workflow_file,
                 envvars=envvars,
+                extravars=collected_vars,
+                # json_mode=True,
             )
-            print("{}: {}".format(r.status, r.rc))
-            for each_host_event in r.events:
-                print(each_host_event['event'])
-            print("Final status:")
-            print(r.stats)
-            return True, r, f"Workflow {workflow_name} completed"
+            # print("{}: {}".format(r.status, r.rc))
+            # for each_host_event in r.events:
+            #     print(each_host_event['event'])
+            # print("Final status:")
+            # print(r.stats)
+            return True, result, f"Workflow {workflow_name} completed"
         except Exception as e:
             message = f"Error running workflow {workflow_name} from {workflow_file}: {e}"
             self.log.error(message)

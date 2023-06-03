@@ -91,6 +91,8 @@ def run_module():
 
     try:
         response = query_llm(prompt, model, temperature)
+        result['changed'] = True
+        result['response'] = dict(response)
         result['content'] = response.content
     except ValueError as e:
         module.fail_json(msg=f"Error fetching LLM response: {e}", **result)
