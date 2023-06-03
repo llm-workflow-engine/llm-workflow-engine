@@ -40,10 +40,12 @@ class WorkflowManager():
         runner_env_dir = os.path.join(runner_dir, 'env')
         if not os.path.exists(runner_env_dir):
             os.makedirs(runner_env_dir)
-            # Ansible Runner creates this file dynamically and fills it with the current environment.
-            # We don't want this, so provide our own empty file.
-            with open(os.path.join(runner_env_dir, 'envvars'), 'w') as f:
-                f.write('{}')
+            # Ansible Runner creates these files dynamically and fills them with values
+            # from the first run.
+            # We don't want this, so provide our own empty files.
+            for file in ['envvars', 'extravars']:
+                with open(os.path.join(runner_env_dir, file), 'w') as f:
+                    f.write('{}')
 
     def get_runner_dir(self):
         runner_dir = os.path.join(self.config.data_profile_dir, 'ansible-runner')
