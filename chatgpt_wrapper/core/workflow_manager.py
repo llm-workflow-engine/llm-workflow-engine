@@ -2,6 +2,7 @@ import os
 import sys
 import yaml
 import getpass
+import shlex
 
 import ansible_runner
 
@@ -121,10 +122,23 @@ class WorkflowManager():
         for var, data in self.get_workflow_environment_config().items():
             if data['op'] == 'add-if-empty':
                 if not os.getenv(var):
+                    self.log.debug(f"Setting workflow environment variable {var}: {data['default']}")
                     os.environ[var] = data['default']
 
-    def collect_vars(self, workflow_file):
-        collected_vars = {}
+    def parse_workflow_args(self, args_string):
+        args_string = args_string.strip()
+        if not args_string:
+            return {}
+        args_list = shlex.split(args_string)
+        args_dict = {}
+        for arg in args_list:
+            key, value = arg.split('=')
+            args_dict[key] = value
+        return args_dict
+
+    def collect_vars(self, workflow_file, workflow_args):
+        self.log.debug(f"Collecting vars for {workflow_file} with args: {workflow_args}")
+        final_vars = self.parse_workflow_args(workflow_args)
         with open(workflow_file, 'r') as file:
             playbook = yaml.safe_load(file)
         for play in playbook:
@@ -133,22 +147,23 @@ class WorkflowManager():
                     name = prompt.get('name')
                     prompt_text = prompt.get('prompt')
                     is_private = prompt.get('private', False)
-                    if is_private:
-                        user_input = getpass.getpass(prompt_text + " ")
-                    else:
-                        user_input = input(prompt_text + " ")
-                    collected_vars[name] = user_input
-        return collected_vars
+                    if name not in final_vars:
+                        if is_private:
+                            user_input = getpass.getpass(prompt_text + " ")
+                        else:
+                            user_input = input(prompt_text + " ")
+                        final_vars[name] = user_input
+        self.log.debug(f"Collected vars for {workflow_file}: {final_vars}")
+        return final_vars
 
     def run(self, workflow_name, workflow_args):
         self.set_workflow_environment()
         success, workflow_file, message = self.ensure_workflow(workflow_name)
         if not success:
             return success, workflow_file, message
+        self.log.info(f"Running workflow {workflow_name} from {workflow_file} with args: {workflow_args}")
         try:
-            self.log.debug(f"Collecting vars for workflow {workflow_name} from {workflow_file}")
-            collected_vars = self.collect_vars(workflow_file)
-            self.log.info(f"Running workflow {workflow_name} from {workflow_file} with args: {workflow_args}")
+            collected_vars = self.collect_vars(workflow_file, workflow_args)
             envvars = dict(os.environ)
             result = ansible_runner.run(
                 private_data_dir=self.get_runner_dir(),

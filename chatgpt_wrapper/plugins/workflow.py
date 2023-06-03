@@ -40,10 +40,10 @@ class Workflow(Plugin):
         if not args:
             return False, args, "No workflow name specified"
         try:
-            workflow_name, *workflow_args = args.split()
-        except ValueError:
-            workflow_name = args
-            workflow_args = []
+            workflow_name, workflow_args = args.split(" ", 1)[0], args.split(" ", 1)[1]
+        except IndexError:
+            workflow_name = args.strip()
+            workflow_args = ""
         try:
             success, result, user_message = self.workflow_manager.run(workflow_name, workflow_args)
             return success, result, user_message
