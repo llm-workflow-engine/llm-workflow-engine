@@ -213,35 +213,16 @@ class WorkflowManager():
             self.log.error(message)
             return False, None, message
 
-    # def save_workflow(self, workflow_name, metadata, customizations, workflow_dir=None):
-    #     metadata['name'] = workflow_name
-    #     workflow_data = {f"_{key}": value for key, value in metadata.items()}
-    #     workflow_data.update(customizations)
-    #     if workflow_dir is None:
-    #         workflow_dir = self.workflow_dirs[-1]
-    #     file_path = os.path.join(workflow_dir, f"{workflow_name}.yaml")
-    #     try:
-    #         with open(file_path, 'w') as file:
-    #             yaml.safe_dump(workflow_data, file, default_flow_style=False)
-    #         message = f"Successfully saved workflow '{workflow_name}' to '{file_path}'"
-    #         self.log.info(message)
-    #         return True, file_path, message
-    #     except Exception as e:
-    #         message = f"An error occurred while saving workflow '{workflow_name}': {e}"
-    #         self.log.error(message)
-    #         return False, None, message
-
-    # def delete_workflow(self, workflow_name, workflow_dir=None):
-    #     try:
-    #         if workflow_dir is None:
-    #             workflow_dir = self.workflow_dirs[-1]
-    #         workflow_name = f"{workflow_name}.yaml" if not workflow_name.endswith('.yaml') else workflow_name
-    #         file_path = os.path.join(workflow_dir, workflow_name)
-    #         os.remove(file_path)
-    #         message = f"Successfully deleted workflow '{workflow_name}' from '{file_path}'"
-    #         self.log.info(message)
-    #         return True, workflow_name, message
-    #     except Exception as e:
-    #         message = f"An error occurred while deleting workflow '{workflow_name}': {e}"
-    #         self.log.error(message)
-    #         return False, None, message
+    def delete_workflow(self, workflow_name, workflow_dir=None):
+        success, workflow_file, user_message = self.ensure_workflow(workflow_name)
+        if not success:
+            return success, workflow_file, user_message
+        try:
+            os.remove(workflow_file)
+            message = f"Successfully deleted workflow '{workflow_name}' from '{workflow_file}'"
+            self.log.info(message)
+            return True, workflow_name, message
+        except Exception as e:
+            message = f"An error occurred while deleting workflow '{workflow_name}': {e}"
+            self.log.error(message)
+            return False, None, message
