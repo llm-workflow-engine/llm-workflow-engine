@@ -28,7 +28,9 @@ What would you like to do?
 
 🗣 **Supports multiple LLM providers**. Provider plugins allow interacting with other LLMs (GPT-3, Cohere, Hugginface, etc.)
 
-🐍 **Python API**. The ChatGPT Wrapper also has a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
+🐍**Python API**. The ChatGPT Wrapper also has a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
+
+🔄**[Build workflows](#workflows)**. Easily integrate calls to an LLM into larger workflows via Ansible Playbooks (alpha)
 
 🐳 **Docker image**. The ChatGPT Wrapper is also available as a docker image. (experimental)
 
@@ -487,6 +489,18 @@ if success:
 else:
     raise RuntimeError(message)
 ```
+
+### Workflows (alpha, subject to change)
+
+The wrapper supports more complex linear workflows via built-in integration for [Ansible playbooks](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html).
+
+Some example workflows are included, run `/workflows` to list them, and `/workflow-show workflowname` to view the playbook configuration for a particular workflow.
+
+To execute a workflow, run `/workflow-run workflowname` -- depending on configuration, workflows can either be run ad hoc (not saved to the database), or associated with a conversation stored in the database.
+
+See `/help` for the various other workflow commands.
+
+The wrapper implements a custom Ansible module, `lwe`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/chatgpt_wrapper/backends/api/workflow/library/lwe.py).
 
 ### Flask API (experimental)
 
