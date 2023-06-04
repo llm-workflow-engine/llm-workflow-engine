@@ -104,6 +104,7 @@ def run_module():
     if success:
         result['changed'] = True
         result['response'] = response
+        result['conversation_id'] = gpt.conversation_id
         result['user_message'] = user_message
     else:
         module.fail_json(msg=f"Error fetching LLM response: {user_message}", **result)

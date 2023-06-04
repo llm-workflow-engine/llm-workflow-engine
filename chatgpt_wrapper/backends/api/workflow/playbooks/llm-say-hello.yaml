@@ -9,4 +9,4 @@
       register: result
     - name: Display response
       debug:
-        var: result.response
+        var: result
