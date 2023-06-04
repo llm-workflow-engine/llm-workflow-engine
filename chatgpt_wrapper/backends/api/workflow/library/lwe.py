@@ -69,7 +69,7 @@ def run_module():
         # provider=dict(type='str', required=False, default='chat_openai'),
         # model=dict(type='str', required=False, default='gpt-3.5-turbo'),
         preset=dict(type='str', required=False, default=None),
-        user=dict(type='str', required=False, default=None),
+        user=dict(type='raw', required=False, default=None),
         conversation_id=dict(type='int', required=False, default=None),
     )
 
@@ -92,6 +92,10 @@ def run_module():
     # model = module.params['model']
     preset = module.params['preset']
     user = module.params['user']
+    try:
+        user = int(user)
+    except Exception:
+        pass
     conversation_id = module.params['conversation_id']
 
     config = Config(profile=profile)
