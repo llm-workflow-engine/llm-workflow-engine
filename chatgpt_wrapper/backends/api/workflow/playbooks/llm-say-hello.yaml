@@ -1,4 +1,5 @@
 ---
+# Simple connectivity test to the LLM.
 - name: Say hello
   hosts: localhost
   gather_facts: no

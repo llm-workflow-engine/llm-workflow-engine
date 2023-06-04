@@ -1,4 +1,11 @@
 ---
+# A more advanced example of the workflow system.
+#
+# A series of requests is made to the LLM, which requires the LLM to:
+#
+# 1. Answer a question
+# 2. Provide feedback on the answer, including recommendations for improvement
+# 3. Provide a new answer based on the feedback
 - name: Ask the LLM a question, get feedback on the answer
   hosts: localhost
   gather_facts: no
@@ -9,27 +16,39 @@
       prompt: "Enter a question for the LLM:"
       private: false
   tasks:
-    - name: Ask question
+    - name: "Ask question: {{ question }}"
       lwe:
         message: "{{ question }}"
         profile: "{{ profile }}"
       register: answer
     - name: Display answer
       debug:
-        var: answer.response
+        var: answer
     - name: Critical feedback
       lwe:
-        message: "Given this question: {{ question }}\n\n Provide critical feedback on this answer to the question: {{ answer.response }}\n\nIn the feedback, include at least three recommendations that can be incorporated to improve the answer."
+        message:  |-
+          Given this question: {{ question }}
+
+          Provide critical feedback on this answer to the question: {{ answer.response }}
+
+          In the feedback, include at least three recommendations that can be incorporated to improve the answer.
         profile: "{{ profile }}"
       register: feedback
     - name: Display feedback
       debug:
-        var: feedback.response
+        var: feedback
     - name: New answer after feedback
       lwe:
-        message: "Given this question: {{ question }}\n\nGiven this answer to the question: {{ answer.response }}\n\nGiven this feedback on the answer to the question: {{ feedback.response }}\n\nProvide a new answer to the question that incorporates the feedback"
+        message:  |-
+          Given this question: {{ question }}
+
+          Given this answer to the question: {{ answer.response }}
+
+          Given this feedback on the answer to the question: {{ feedback.response }}
+
+          Provide a new answer to the question that incorporates the feedback"
         profile: "{{ profile }}"
       register: answer_after_feedback
     - name: Display new answer after feedback
       debug:
-        var: answer_after_feedback.response
+        var: answer_after_feedback

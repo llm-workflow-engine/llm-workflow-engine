@@ -1,4 +1,5 @@
 ---
+# Simple test of the workflow system.
 - name: Hello World
   hosts: localhost
   gather_facts: no

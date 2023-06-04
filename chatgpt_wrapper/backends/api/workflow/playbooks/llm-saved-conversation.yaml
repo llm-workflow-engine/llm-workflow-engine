@@ -1,0 +1,50 @@
+---
+# An example of a progressive chat conversation.
+#
+# Passing a username or user ID in the first request results in saving a conversation thread
+# in LWE.
+#
+# Future calls to LWE pass the returned conversation ID, which automatically:
+#
+# 1. Passes all previous messages in the next request
+# 2. Stores the entire conversation in the conversation history
+- name: Conversation with the LLM
+  hosts: localhost
+  gather_facts: no
+  vars:
+    profile: default
+    user: 1
+  vars_prompt:
+    - name: question
+      prompt: "Enter a question for the LLM:"
+      private: false
+  tasks:
+    - name: "Ask question: {{ question }}"
+      lwe:
+        message: "{{ question }}"
+        profile: "{{ profile }}"
+        user: "{{ user }}"
+      register: answer
+    - name: Display answer
+      debug:
+        var: answer
+    - name: Provide more detail to original answer
+      lwe:
+        message: Please provide more detail to the original answer
+        profile: "{{ profile }}"
+        user: "{{ user }}"
+        conversation_id: "{{ answer.conversation_id }}"
+      register: more_detail
+    - name: Display more detail
+      debug:
+        var: more_detail
+    - name: Summarize the conversation
+      lwe:
+        message: Provide a brief one sentence summary of the conversation
+        profile: "{{ profile }}"
+        user: "{{ user }}"
+        conversation_id: "{{ more_detail.conversation_id }}"
+      register: summary
+    - name: Display summary
+      debug:
+        var: summary
