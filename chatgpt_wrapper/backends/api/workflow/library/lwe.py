@@ -3,41 +3,46 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-import os
-
 from ansible.module_utils.basic import AnsibleModule
 
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import (
-    HumanMessage,
-    SystemMessage
-)
+from chatgpt_wrapper.core.config import Config
+from chatgpt_wrapper import ApiBackend
 
 DOCUMENTATION = r'''
 ---
 module: lwe
 
-short_description: Test retrieving a response from Langchain ChatOpenAI
+short_description: Make LLM requests via LWE.
 
 version_added: "1.0.0"
 
-description: Test retrieving a response from Langchain ChatOpenAI
+description: Make LLM requests via LWE.
 
 options:
-    prompt:
-        description: The prompt to send to the model.
+    message:
+        description: The message to send to the model.
         required: true
         type: str
-    model:
-        description: The model name.
+    profile:
+        description: The LWE profile to use.
         required: false
-        default: 'gpt-3.5-turbo'
+        default: 'default'
         type: str
-    temperature:
-        description: The model temperature.
+    preset:
+        description: The LWE preset to use.
         required: false
-        default: 0.7
-        type: float
+        default: None
+        type: str
+    user:
+        description: The LWE user to load for the execution
+        required: false
+        default: None (anonymous)
+        type: str
+    conversation_id:
+        description: An existing LWE conversation to use.
+        required: false
+        default: None (anonymous, or new conversation if user is provided)
+        type: int
 
 author:
     - Chad Phillips (@thehunmonkgroup)
@@ -46,9 +51,10 @@ author:
 EXAMPLES = r'''
 - name: Say hello
   lwe:
-    prompt: "Say Hello!"
+    message: "Say Hello!"
 '''
 
+# TODO: Clarify this.
 RETURN = r'''
 llm_response:
     description: The response from the model.
@@ -56,20 +62,15 @@ llm_response:
     returned: always
 '''
 
-def query_llm(prompt, model='gpt-3.5-turbo', temperature=0.7):
-    llm = ChatOpenAI(temperature=temperature, model=model)
-    messages = [
-        SystemMessage(content="You are a helpful assistant."),
-        HumanMessage(content=prompt),
-    ]
-    response = llm(messages)
-    return response
-
 def run_module():
     module_args = dict(
-        prompt=dict(type='str', required=True),
-        model=dict(type='str', required=False, default='gpt-3.5-turbo'),
-        temperature=dict(type='float', required=False, default=0.7)
+        message=dict(type='str', required=True),
+        profile=dict(type='str', required=False, default='default'),
+        # provider=dict(type='str', required=False, default='chat_openai'),
+        # model=dict(type='str', required=False, default='gpt-3.5-turbo'),
+        preset=dict(type='str', required=False, default=None),
+        user=dict(type='str', required=False, default=None),
+        conversation_id=dict(type='int', required=False, default=None),
     )
 
     result = dict(
@@ -85,17 +86,27 @@ def run_module():
     if module.check_mode:
         module.exit_json(**result)
 
-    prompt = module.params['prompt']
-    model = module.params['model']
-    temperature = module.params['temperature']
+    message = module.params['message']
+    profile = module.params['profile']
+    # provider = module.params['provider']
+    # model = module.params['model']
+    preset = module.params['preset']
+    user = module.params['user']
+    conversation_id = module.params['conversation_id']
 
-    try:
-        response = query_llm(prompt, model, temperature)
+    config = Config(profile=profile)
+    config.set('debug.log.enabled', True)
+    config.set('model.default_preset', preset)
+    config.set('backend_options.default_user', user)
+    config.set('backend_options.default_conversation_id', conversation_id)
+    gpt = ApiBackend(config)
+    success, response, user_message = gpt.ask(message)
+    if success:
         result['changed'] = True
-        result['response'] = dict(response)
-        result['content'] = response.content
-    except ValueError as e:
-        module.fail_json(msg=f"Error fetching LLM response: {e}", **result)
+        result['response'] = response
+        result['user_message'] = user_message
+    else:
+        module.fail_json(msg=f"Error fetching LLM response: {user_message}", **result)
 
     module.exit_json(**result)
 

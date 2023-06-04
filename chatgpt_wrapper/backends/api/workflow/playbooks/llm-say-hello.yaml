@@ -5,8 +5,8 @@
   tasks:
     - name: Say hello
       lwe:
-        prompt: "Say hello"
+        message: "Say hello"
       register: result
     - name: Display response
       debug:
-        var: result.content
+        var: result.response

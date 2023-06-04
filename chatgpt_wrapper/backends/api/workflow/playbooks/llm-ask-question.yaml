@@ -12,10 +12,8 @@
   tasks:
     - name: Ask question
       lwe:
-        prompt: "{{ question }}"
-        model: "{{ model }}"
-        temperature: "{{ temperature }}"
+        message: "{{ question }}"
       register: result
     - name: Display response
       debug:
-        var: result.content
+        var: result.response
