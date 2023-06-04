@@ -1,3 +1,24 @@
+### v0.11.0 - 04/06/2023
+
+* **Sun Jun 04 2023:** fixes to workflow CLI help
+* **Sun Jun 04 2023:** add documentation for workflows
+* **Sun Jun 04 2023:** flesh out lwe doc
+* **Sun Jun 04 2023:** migrate workflow from plugin to API backend
+* **Sun Jun 04 2023:** add workflow show/edit/delete commands
+* **Sun Jun 04 2023:** output YAML in workflow runs
+* **Sun Jun 04 2023:** allow both user IDs and usernames in user arg to lwe module
+* **Sun Jun 04 2023:** refine and comment example workflows
+* **Sun Jun 04 2023:** save conversation ID in lwe results dict
+* **Sun Jun 04 2023:** convert lwe ansible module to LWE API backend
+* **Sun Jun 04 2023:** add backend_options.default_user, backend_options.default_conversation_id to config, backend loading of default user/conversation
+* **Sat Jun 03 2023:** provide default file for extravars
+* **Sat Jun 03 2023:** support passing workflow args in /workflow-run
+* **Sat Jun 03 2023:** include more example workflows, mechanism for collecting var_prompt variables in playbooks
+* **Sat Jun 03 2023:** initial ansible playbook integration for workflows
+* **Sun May 28 2023:** bold styling for user prompt
+* **Sun May 28 2023:** color-code role labels in /chat output
+* **Mon May 22 2023:** very basic workflow manager and workflow base class, with test workflow in Prefect
+
 ### v0.10.7 - 27/05/2023
 
 * **Sat May 27 2023:** allow setting system message alias in config (model.default_system_message) or CLI (-s/--system-message)
