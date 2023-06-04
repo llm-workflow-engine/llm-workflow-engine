@@ -102,6 +102,12 @@ class WorkflowManager():
                 'op': 'add-if-empty',
                 'default': os.path.join(workflow_dir, 'ansible.cfg'),
             },
+            # Set here instead of in ansible.cfg because ansible-runner only allows
+            # overriding this setting via an environment variable.
+            'ANSIBLE_STDOUT_CALLBACK': {
+                'op': 'add-if-empty',
+                'default': 'community.general.yaml',
+            },
             # 'ANSIBLE_LIBRARY': {
             #     'op': 'append',
             #     'default': os.path.join(workflow_dir, 'library'),

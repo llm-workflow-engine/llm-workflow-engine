@@ -1,3 +1,4 @@
+ansible>=8.0
 ansible-core>=2.15
 ansible-runner>=2.3
 alembic
