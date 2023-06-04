@@ -716,10 +716,11 @@ Before you can start using the shell, you must create a new user.
 
         Arguments:
             workflow_name: Required. The name of the workflow
-            additional_args: Any additional arguments to pass to the workflow
+            variables: Space-separated list of additional variables to pass to the workflow
 
         Examples:
             {COMMAND} myworkflow
+            {COMMAND} myworkflow foo=bar baz="bang bong"
         """
         if not args:
             return False, args, "No workflow name specified"
@@ -762,7 +763,7 @@ Before you can start using the shell, you must create a new user.
             workflow_name: Required. The name of the workflow
 
         Examples:
-            {COMMAND} myworkflow.md
+            {COMMAND} myworkflow
         """
         if not workflow_name:
             return False, workflow_name, "No workflow name specified"
