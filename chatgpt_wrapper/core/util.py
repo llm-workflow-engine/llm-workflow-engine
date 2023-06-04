@@ -102,8 +102,8 @@ def print_status_message(success, message, style=None):
     console.print(message, style=style)
     print("")
 
-def print_markdown(output):
-    console.print(Markdown(output))
+def print_markdown(output, style=None):
+    console.print(Markdown(output), style=style)
     print("")
 
 def parse_conversation_ids(id_string):
@@ -127,12 +127,14 @@ def parse_conversation_ids(id_string):
     return list(set(final_list))
 
 def conversation_from_messages(messages):
-    message_parts = []
+    conversation_parts = []
     for message in messages:
-        message_parts.append("**%s**:" % message['role'].capitalize())
-        message_parts.append(message['message'])
-    content = "\n\n".join(message_parts)
-    return content
+        conversation_parts.append({
+            "role": message['role'],
+            "display_role": "**%s**:" % message['role'].capitalize(),
+            "message": message['message']
+        })
+    return conversation_parts
 
 def parse_shell_input(user_input):
     text = user_input.strip()

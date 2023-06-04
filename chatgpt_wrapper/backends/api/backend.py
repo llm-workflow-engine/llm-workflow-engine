@@ -35,13 +35,19 @@ class ApiBackend(Backend):
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.init_provider()
         self.set_available_models()
-        self.set_system_message()
+        self.init_system_message()
         self.set_conversation_tokens(0)
         if default_user_id is not None:
             success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
             if not success:
                 raise Exception(user_message)
             self.set_current_user(user)
+
+    def init_system_message(self):
+        success, _alias, user_message = self.set_system_message(self.config.get('model.default_system_message'))
+        if not success:
+            util.print_status_message(success, user_message)
+            self.set_system_message()
 
     def get_providers(self):
         return self.provider_manager.get_provider_plugins()

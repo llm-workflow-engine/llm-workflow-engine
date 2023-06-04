@@ -79,6 +79,22 @@ def main():
         action="store",
         help="Preset to use on startup",
     )
+    parser.add_argument(
+        "-i",
+        "--input-file",
+        type=argparse.FileType('r'),
+        default=None,
+        const=sys.stdin,
+        nargs='?',
+        help="Input file (default: read from stdin)",
+    )
+    parser.add_argument(
+        "-s",
+        "--system-message",
+        metavar="ALIAS_NAME",
+        action="store",
+        help="Alias name of the system message to use on startup",
+    )
 
     parser.add_argument(
         "-d",
@@ -119,6 +135,8 @@ def main():
         config.set('debug.log.level', 'debug')
     if args.preset is not None:
         config.set('model.default_preset', args.preset)
+    if args.system_message is not None:
+        config.set('model.default_system_message', args.system_message)
 
     command = None
     if len(args.params) == 1 and args.params[0] in constants.SHELL_ONE_SHOT_COMMANDS:
@@ -162,10 +180,21 @@ def main():
         shell.do_config("")
         exit(0)
 
+    shell_prompt = []
+    if len(args.params) > 0:
+        args_string = " ".join(args.params)
+        shell.log.debug(f"Processed extra arguments: {args_string}")
+        shell_prompt.append(args_string)
+    if args.input_file is not None:
+        shell.log.debug(f"Processing input file: {args.input_file}")
+        file_string = args.input_file.read()
+        shell_prompt.append(file_string)
+        shell.log.debug(f"Processed input file contents: {file_string}")
 
-    if len(args.params) > 0 and not command:
+    if shell_prompt and not command:
+        shell.log.debug("Launching one-shot prompt")
         shell.launch_backend(interactive=False)
-        shell.default(" ".join(args.params))
+        shell.default("\n\n".join(shell_prompt))
         exit(0)
     else:
         shell.launch_backend()
