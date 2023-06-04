@@ -24,6 +24,10 @@ DEFAULT_DATABASE_BASENAME = 'storage'
 CONFIG_PROFILES_DIR = 'profiles'
 DEFAULT_CONFIG = {
     'backend': 'api',
+    'backend_options': {
+        'default_user': None,
+        'default_conversation_id': None,
+    },
     'shell': {
         'prompt_prefix': '($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS): $SYSTEM_MESSAGE_ALIAS$NEWLINE$USER@$PRESET_OR_MODEL',
         'history_file': '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep),

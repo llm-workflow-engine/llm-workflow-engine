@@ -23,7 +23,7 @@ class ApiBackend(Backend):
 
     name = "api"
 
-    def __init__(self, config=None, default_user_id=None):
+    def __init__(self, config=None):
         super().__init__(config)
         self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
@@ -37,11 +37,39 @@ class ApiBackend(Backend):
         self.set_available_models()
         self.init_system_message()
         self.set_conversation_tokens(0)
-        if default_user_id is not None:
-            success, user, user_message = self.user_manager.get_by_user_id(default_user_id)
-            if not success:
-                raise Exception(user_message)
-            self.set_current_user(user)
+        self.load_default_user()
+        self.load_default_conversation()
+
+    def load_default_user(self):
+        default_user = self.config.get('backend_options.default_user')
+        if default_user is not None:
+            self.load_user(default_user)
+
+    def load_default_conversation(self):
+        default_conversation_id = self.config.get('backend_options.default_conversation_id')
+        if default_conversation_id is not None:
+            self.load_conversation(default_conversation_id)
+
+    def load_user(self, identifier):
+        if isinstance(identifier, int):
+            success, user, user_message = self.user_manager.get_by_user_id(identifier)
+        else:
+            success, user, user_message = self.user_manager.get_by_username_or_email(identifier)
+        if not success or not user:
+            raise Exception(user_message)
+        self.set_current_user(user)
+
+    def load_conversation(self, conversation_id):
+        success, conversation_data, user_message = self.get_conversation(conversation_id)
+        if success:
+            if conversation_data:
+                messages = self.conversation_data_to_messages(conversation_data)
+                message = messages.pop()
+                self.switch_to_conversation(conversation_id, message['id'])
+                return
+            else:
+                user_message = "Missing conversation data"
+        raise Exception(user_message)
 
     def init_system_message(self):
         success, _alias, user_message = self.set_system_message(self.config.get('model.default_system_message'))
