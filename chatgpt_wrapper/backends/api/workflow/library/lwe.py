@@ -34,12 +34,14 @@ options:
         default: None
         type: str
     user:
-        description: The LWE user to load for the execution
+        description: The LWE user to load for the execution, a user ID or username.
+                     NOTE: A user must be provided to start or continue a conversation.
         required: false
         default: None (anonymous)
         type: str
     conversation_id:
         description: An existing LWE conversation to use.
+                     NOTE: A conversation_id must be provided to continue a conversation.
         required: false
         default: None (anonymous, or new conversation if user is provided)
         type: int
@@ -49,16 +51,47 @@ author:
 '''
 
 EXAMPLES = r'''
+# Simple message with default values
 - name: Say hello
   lwe:
     message: "Say Hello!"
+
+# Start a new conversation with this response
+- name: Start conversation
+  lwe:
+    message: "What are the three primary colors?"
+    # User ID or username
+    user: 1
+    register: result
+
+# Continue a conversation with this response
+- name: Continue conversation
+  lwe:
+    message: "Provide more detail about your previous response"
+    user: 1
+    conversation_id: result.conversation_id
+
+# Use the 'test' profile, and a pre-configured provider/model preset 'mypreset'
+- name: Continue conversation
+  lwe:
+    message: "Say three things about bacon"
+    profile: test
+    preset: mypreset
+
 '''
 
-# TODO: Clarify this.
 RETURN = r'''
-llm_response:
+response:
     description: The response from the model.
-    type: dict
+    type: str
+    returned: always
+conversation_id:
+    description: The conversation ID if the task run is associated with a conversation, or None otherwise.
+    type: int
+    returned: always
+user_message:
+    description: Human-readable user status message for the response.
+    type: str
     returned: always
 '''
 
