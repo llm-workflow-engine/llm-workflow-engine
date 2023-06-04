@@ -10,24 +10,13 @@ from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 import chatgpt_wrapper.core.util as util
 
-def parse_workflow_dict(content):
-    metadata = {}
-    customizations = {}
-    for key, value in content.items():
-        if key.startswith('_'):
-            metadata[key[1:]] = value
-        else:
-            customizations[key] = value
-    return metadata, customizations
-
 class WorkflowManager():
     """
     Manage workflows.
     """
 
-    def __init__(self, config=None, backend=None):
+    def __init__(self, config=None):
         self.config = config or Config()
-        self.backend = backend
         self.log = Logger(self.__class__.__name__, self.config)
         self.workflow_dirs = self.make_workflow_dirs()
         self.create_runner_dir()
@@ -47,6 +36,11 @@ class WorkflowManager():
                 with open(os.path.join(runner_env_dir, file), 'w') as f:
                     f.write('{}')
 
+    def get_workflow_dir(self):
+        package_root = util.get_package_root(self)
+        workflow_dir = os.path.join(package_root, 'backends', 'api', 'workflow')
+        return workflow_dir
+
     def get_runner_dir(self):
         runner_dir = os.path.join(self.config.data_profile_dir, 'ansible-runner')
         return runner_dir
@@ -64,8 +58,8 @@ class WorkflowManager():
         return True, self.workflows[workflow_name], message
 
     def make_workflow_dirs(self):
-        package_root = util.get_package_root(self)
-        core_workflow_dir = os.path.join(package_root, 'backends', 'api', 'workflow', 'playbooks')
+        workflow_dir = self.get_workflow_dir()
+        core_workflow_dir = os.path.join(workflow_dir, 'playbooks')
         workflow_dirs = []
         workflow_dirs.append(os.path.join(self.config.config_profile_dir, 'workflows'))
         workflow_dirs.append(os.path.join(self.config.config_dir, 'workflows'))
@@ -75,24 +69,8 @@ class WorkflowManager():
                 os.makedirs(workflow_dir)
         return workflow_dirs
 
-    def merge_workflow_config(self, workflow_instance):
-        config_key = f"workflows.{workflow_instance.name}"
-        default_config = workflow_instance.default_config()
-        user_config = self.config.get(config_key) or {}
-        self.log.debug(f"Merging workflow {config_key} config, default: {default_config}, user: {user_config}")
-        workflow_config = util.merge_dicts(default_config, user_config)
-        self.config.set(config_key, workflow_config)
-
-    def setup_workflow(self, workflow_name, workflow_instance):
-        workflow_instance.set_name(workflow_name)
-        workflow_instance.set_backend(self.backend)
-        self.merge_workflow_config(workflow_instance)
-        workflow_instance.setup()
-        return True
-
     def get_workflow_environment_config(self):
-        package_root = util.get_package_root(self)
-        workflow_dir = os.path.join(package_root, 'backends', 'api', 'workflow')
+        workflow_dir = self.get_workflow_dir()
         return {
             'ANSIBLE_PYTHON_INTERPRETER': {
                 'op': 'add-if-empty',

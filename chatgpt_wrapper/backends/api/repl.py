@@ -1,3 +1,4 @@
+import os
 import getpass
 import yaml
 import email_validator
@@ -9,6 +10,7 @@ from chatgpt_wrapper.backends.api.database import Database
 from chatgpt_wrapper.backends.api.orm import User
 from chatgpt_wrapper.backends.api.user import UserManager
 from chatgpt_wrapper.backends.api.backend import ApiBackend
+from chatgpt_wrapper.core.editor import file_editor
 
 ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
     'config',
@@ -66,6 +68,15 @@ class ApiRepl(Repl):
         preset_keys = self.backend.preset_manager.presets.keys()
         for subcmd in ['save', 'load', 'delete', 'show']:
             final_completions[util.command_with_leader(f"preset-{subcmd}")] = util.list_to_completion_hash(preset_keys) if preset_keys else None
+        final_completions[util.command_with_leader('workflows')] = None
+        subcommands = [
+            'run',
+            'show',
+            'edit',
+            'delete',
+        ]
+        for subcommand in subcommands:
+            final_completions[util.command_with_leader(f"workflow-{subcommand}")] = util.list_to_completion_hash(self.backend.workflow_manager.workflows.keys())
         return final_completions
 
     def configure_backend(self):
@@ -665,3 +676,120 @@ Before you can start using the shell, you must create a new user.
             self.backend.preset_manager.load_presets()
             self.rebuild_completions()
         return success, preset_name, user_message
+
+    def do_workflows(self, arg):
+        """
+        List available workflows
+
+        Workflows enable multi-step interaction with LLMs, with simple decision-making
+        abilities.
+
+        They are located in the 'workflows' directory in the following locations, and
+        searched in this order:
+
+            - The profile configuration directory
+            - The main configuration directory
+            - The core workflows directory
+
+        See {COMMAND_LEADER}config for current locations of the configuration and
+        profile directories.
+
+        Arguments:
+            filter_string: Optional. If provided, only workflows with a name or description containing the filter string will be shown.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} filterstring
+        """
+        self.backend.workflow_manager.load_workflows()
+        self.rebuild_completions()
+        workflows = []
+        for workflow_name in self.backend.workflow_manager.workflows.keys():
+            content = f"* **{workflow_name}**"
+            if not arg or arg.lower() in content.lower():
+                workflows.append(content)
+        util.print_markdown("## Workflows:\n\n%s" % "\n".join(sorted(workflows)))
+
+    def do_workflow_run(self, args):
+        """
+        Run a workflow
+
+        Arguments:
+            workflow_name: Required. The name of the workflow
+            additional_args: Any additional arguments to pass to the workflow
+
+        Examples:
+            {COMMAND} myworkflow
+        """
+        if not args:
+            return False, args, "No workflow name specified"
+        try:
+            workflow_name, workflow_args = args.split(" ", 1)[0], args.split(" ", 1)[1]
+        except IndexError:
+            workflow_name = args.strip()
+            workflow_args = ""
+        try:
+            success, result, user_message = self.backend.workflow_manager.run(workflow_name, workflow_args)
+            return success, result, user_message
+        except Exception as e:
+            return False, None, f"Error running workflow {workflow_name}: {e}"
+
+    def do_workflow_show(self, workflow_name):
+        """
+        Display a workflow
+
+        Arguments:
+            workflow_name: Required. The name of the workflow
+
+        Examples:
+            {COMMAND} myworkflow
+        """
+        if not workflow_name:
+            return False, None, "No workflow name specified"
+        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
+        if not success:
+            return success, workflow_file, user_message
+        with open(workflow_file) as f:
+            workflow_content = f.read()
+        util.print_markdown(f"\n## Workflow '{workflow_name}'")
+        util.print_markdown("```yaml\n%s\n```" % workflow_content)
+
+    def do_workflow_edit(self, workflow_name):
+        """
+        Create a new workflow, or edit an existing workflow
+
+        Arguments:
+            workflow_name: Required. The name of the workflow
+
+        Examples:
+            {COMMAND} myworkflow.md
+        """
+        if not workflow_name:
+            return False, workflow_name, "No workflow name specified"
+        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
+        if success:
+            filename = workflow_file
+        else:
+            workflow_name = f"{workflow_name}.yaml" if not workflow_name.endswith('.yaml') else workflow_name
+            filename = os.path.join(self.backend.workflow_manager.workflow_dirs[0], workflow_name)
+        file_editor(filename)
+        self.backend.workflow_manager.load_workflows()
+        self.rebuild_completions()
+
+    def do_workflow_delete(self, workflow_name):
+        """
+        Deletes an existing workflow
+
+        Arguments:
+            workflow_name: Required. The name of the workflow to delete
+
+        Examples:
+            {COMMAND} myworkflow
+        """
+        if not workflow_name:
+            return False, None, "No workflow name specified"
+        success, workflow_name, user_message = self.backend.workflow_manager.delete_workflow(workflow_name)
+        if success:
+            self.backend.workflow_manager.load_workflows()
+            self.rebuild_completions()
+        return success, workflow_name, user_message

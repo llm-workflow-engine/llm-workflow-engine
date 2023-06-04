@@ -7,6 +7,7 @@ from langchain.schema import BaseMessage
 
 from chatgpt_wrapper.core.backend import Backend
 from chatgpt_wrapper.core.provider_manager import ProviderManager
+from chatgpt_wrapper.core.workflow_manager import WorkflowManager
 from chatgpt_wrapper.core.plugin_manager import PluginManager
 import chatgpt_wrapper.core.constants as constants
 import chatgpt_wrapper.core.util as util
@@ -33,6 +34,8 @@ class ApiBackend(Backend):
         self.override_llm = None
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
+        self.workflow_manager = WorkflowManager(self.config)
+        self.workflow_manager.load_workflows()
         self.init_provider()
         self.set_available_models()
         self.init_system_message()
