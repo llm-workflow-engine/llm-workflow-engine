@@ -30,7 +30,7 @@ What would you like to do?
 
 🐍**Python API**. The ChatGPT Wrapper also has a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
 
-🔄**[Build workflows](#workflows)**. Easily integrate calls to an LLM into larger workflows via Ansible Playbooks (alpha)
+🔄[**Build workflows**](#workflows). Easily integrate calls to an LLM into larger workflows via Ansible Playbooks (alpha)
 
 🐳 **Docker image**. The ChatGPT Wrapper is also available as a docker image. (experimental)
 
