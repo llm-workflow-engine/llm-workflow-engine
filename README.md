@@ -504,6 +504,12 @@ See `/help` for the various other workflow commands.
 
 The wrapper implements a custom Ansible module, `lwe`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/chatgpt_wrapper/backends/api/workflow/library/lwe.py).
 
+It is also possible to execute workflows directly with `ansible-playbook`, by simply navigating to the `chatgpt_wrapper/backends/api/workflow` directory:
+
+```bash
+ansible-playbook playbooks/hello-world.yaml
+```
+
 ### Flask API (experimental)
 
 - Run `python chatgpt_wrapper/gpt_api.py --port 5000` (default port is 5000) to start the server
