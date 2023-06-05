@@ -1,3 +1,11 @@
+### v0.11.2 - 05/06/2023
+
+* **Mon Jun 05 2023:** add template/variable support for workflows
+* **Mon Jun 05 2023:** tweak lwe ansible module exit data
+* **Mon Jun 05 2023:** move template manager instantiation to backend
+* **Mon Jun 05 2023:** document running workflows directly with ansible-playbook
+* **Mon Jun 05 2023:** add default ansible callback config
+
 ### v0.11.1 - 05/06/2023
 
 * **Mon Jun 05 2023:** fix missing workflow directories
