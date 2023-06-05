@@ -6,7 +6,7 @@
 # 1. Answer a question
 # 2. Provide feedback on the answer, including recommendations for improvement
 # 3. Provide a new answer based on the feedback
-- name: Ask the LLM a question, get feedback on the answer
+- name: Ask the LLM a question, get feedback on answer, provide new answer based on feedback
   hosts: localhost
   gather_facts: no
   vars:
