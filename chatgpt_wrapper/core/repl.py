@@ -723,6 +723,7 @@ class Repl():
 
         self._write_log(line, response)
         self._update_message_map()
+        return success, response, user_message
 
     def do_read(self, _):
         """
@@ -1175,10 +1176,12 @@ class Repl():
                 return method, plugin
         raise AttributeError(f"{do_command} method not found in any shell class")
 
-    def run_command(self, command, argument):
+    def run_command(self, command=constants.DEFAULT_COMMAND, argument=None):
         command = util.dash_to_underscore(command)
+        response = None
         if command == 'help':
             self.help(argument)
+            return response
         else:
             if command in self.commands:
                 method, obj = self.get_command_method(command)
@@ -1190,8 +1193,10 @@ class Repl():
                         traceback.print_exc()
                 else:
                     util.output_response(response)
+                    return response
             else:
                 print(f'Unknown command: {command}')
+        return response
 
     def cmdloop(self):
         print("")
