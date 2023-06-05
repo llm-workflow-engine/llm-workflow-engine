@@ -28,6 +28,8 @@ setup(
             'backends/api/schema/alembic.ini',
             'backends/api/schema/alembic/*',
             'backends/api/schema/alembic/**/*',
+            'backends/api/workflow/*',
+            'backends/api/workflow/**/*',
         ],
     },
     install_requires=install_requirement,
