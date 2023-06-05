@@ -1,3 +1,7 @@
+### v0.11.1 - 05/06/2023
+
+* **Mon Jun 05 2023:** fix missing workflow directories
+
 ### v0.11.0 - 04/06/2023
 
 * **Sun Jun 04 2023:** fixes to workflow CLI help
