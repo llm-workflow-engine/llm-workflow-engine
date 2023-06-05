@@ -24,7 +24,6 @@ from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 from chatgpt_wrapper.core.error import NoInputError, LegacyCommandLeaderError
 from chatgpt_wrapper.core.editor import file_editor, pipe_editor
-from chatgpt_wrapper.core.template import TemplateManager
 
 # Monkey patch _FIND_WORD_RE in the document module.
 # This is needed because the current version of _FIND_WORD_RE
@@ -56,7 +55,6 @@ class Repl():
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.debug = self.config.get('log.console.level').lower() == 'debug'
-        self.template_manager = TemplateManager(self.config)
         self.history = self.get_shell_history()
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
@@ -124,7 +122,7 @@ class Repl():
         commands_with_leader[util.command_with_leader('help')] = util.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
             commands_with_leader[util.command_with_leader(command)] = PathCompleter()
-        template_completions = util.list_to_completion_hash(self.template_manager.templates)
+        template_completions = util.list_to_completion_hash(self.backend.template_manager.templates)
         template_commands = [c for c in self.dashed_commands if c.startswith('template') and c != 'templates']
         for command in template_commands:
             commands_with_leader[util.command_with_leader(command)] = template_completions
@@ -153,7 +151,7 @@ class Repl():
 
     def run_template(self, template_name, substitutions=None):
         substitutions = substitutions or {}
-        message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
+        message, overrides = self.backend.template_manager.build_message_from_template(template_name, substitutions)
         preset_name = None
         if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
             preset_name = overrides['request_overrides'].pop('preset')
@@ -173,7 +171,7 @@ class Repl():
     def collect_template_variable_values(self, template_name, variables=None):
         variables = variables or []
         substitutions = {}
-        builtin_variables = self.template_manager.template_builtin_variables()
+        builtin_variables = self.backend.template_manager.template_builtin_variables()
         user_variables = list(set([v for v in variables if v not in builtin_variables]))
         if user_variables:
             self.do_template(template_name)
@@ -182,7 +180,7 @@ class Repl():
             for variable in user_variables:
                 substitutions[variable] = input(f"    {variable}: ").strip()
                 self.log.debug(f"Collected variable {variable} for template {template_name}: {substitutions[variable]}")
-        substitutions = util.merge_dicts(substitutions, self.template_manager.process_template_builtin_variables(template_name, variables))
+        substitutions = util.merge_dicts(substitutions, self.backend.template_manager.process_template_builtin_variables(template_name, variables))
         return substitutions
 
     def get_command_help_brief(self, command):
@@ -284,7 +282,7 @@ class Repl():
         self.configure_backend()
         self.configure_plugins()
         self.backend.set_provider_streaming(self.config.get('model.streaming'))
-        self.template_manager.load_templates()
+        self.backend.template_manager.load_templates()
         self.configure_shell_commands()
         self.configure_commands()
         self.rebuild_completions()
@@ -901,12 +899,12 @@ class Repl():
             {COMMAND}
             {COMMAND} filterstring
         """
-        self.template_manager.load_templates()
+        self.backend.template_manager.load_templates()
         self.rebuild_completions()
         templates = []
-        for template_name in self.template_manager.templates:
+        for template_name in self.backend.template_manager.templates:
             content = f"* **{template_name}**"
-            template, _ = self.template_manager.get_template_and_variables(template_name)
+            template, _ = self.backend.template_manager.get_template_and_variables(template_name)
             source = frontmatter.load(template.filename)
             if 'description' in source.metadata:
                 content += f": *{source.metadata['description']}*"
@@ -924,10 +922,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.template_manager.ensure_template(template_name)
+        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        template, _ = self.template_manager.get_template_and_variables(template_name)
+        template, _ = self.backend.template_manager.get_template_and_variables(template_name)
         source = frontmatter.load(template.filename)
         util.print_markdown(f"\n## Template '{template_name}'")
         if source.metadata:
@@ -946,13 +944,13 @@ class Repl():
         """
         if not template_name:
             return False, template_name, "No template name specified"
-        template, _ = self.template_manager.get_template_and_variables(template_name)
+        template, _ = self.backend.template_manager.get_template_and_variables(template_name)
         if template:
             filename = template.filename
         else:
-            filename = os.path.join(self.template_manager.template_dirs[0], template_name)
+            filename = os.path.join(self.backend.template_manager.template_dirs[0], template_name)
         file_editor(filename)
-        self.template_manager.load_templates()
+        self.backend.template_manager.load_templates()
         self.rebuild_completions()
 
     def do_template_copy(self, template_names):
@@ -969,7 +967,7 @@ class Repl():
             old_name, new_name = template_names.split()
         except ValueError:
             return False, template_names, "Old and new template name required"
-        template, _ = self.template_manager.get_template_and_variables(old_name)
+        template, _ = self.backend.template_manager.get_template_and_variables(old_name)
         if not template:
             return False, template_names, f"{old_name} does not exist"
         old_filepath = template.filename
@@ -977,7 +975,7 @@ class Repl():
         if os.path.exists(new_filepath):
             return False, template_names, f"{new_name} already exists"
         shutil.copy2(old_filepath, new_filepath)
-        self.template_manager.load_templates()
+        self.backend.template_manager.load_templates()
         self.rebuild_completions()
         return True, template_names, f"Copied {old_name} to {new_name}"
 
@@ -993,13 +991,13 @@ class Repl():
         """
         if not template_name:
             return False, template_name, "No template name specified"
-        template, _ = self.template_manager.get_template_and_variables(template_name)
+        template, _ = self.backend.template_manager.get_template_and_variables(template_name)
         if not template:
             return False, template_name, f"{template_name} does not exist"
         confirmation = input(f"Are you sure you want to delete template {template_name}? [y/N] ").strip()
         if confirmation.lower() in ["yes", "y"]:
             os.remove(template.filename)
-            self.template_manager.load_templates()
+            self.backend.template_manager.load_templates()
             self.rebuild_completions()
             return True, template_name, f"Deleted {template_name}"
         else:
@@ -1017,11 +1015,11 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.template_manager.ensure_template(template_name)
+        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        _, variables = self.template_manager.get_template_and_variables(template_name)
-        substitutions = self.template_manager.process_template_builtin_variables(template_name, variables)
+        _, variables = self.backend.template_manager.get_template_and_variables(template_name)
+        substitutions = self.backend.template_manager.process_template_builtin_variables(template_name, variables)
         return self.run_template(template_name, substitutions)
 
     def do_template_prompt_run(self, template_name):
@@ -1037,10 +1035,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.template_manager.ensure_template(template_name)
+        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        _, variables = self.template_manager.get_template_and_variables(template_name)
+        _, variables = self.backend.template_manager.get_template_and_variables(template_name)
         substitutions = self.collect_template_variable_values(template_name, variables)
         return self.run_template(template_name, substitutions)
 
@@ -1057,11 +1055,11 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.template_manager.ensure_template(template_name)
+        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        template, variables = self.template_manager.get_template_and_variables(template_name)
-        substitutions = self.template_manager.process_template_builtin_variables(template_name, variables)
+        template, variables = self.backend.template_manager.get_template_and_variables(template_name)
+        substitutions = self.backend.template_manager.process_template_builtin_variables(template_name, variables)
         message = template.render(**substitutions)
         return self.do_editor(message)
 
@@ -1077,10 +1075,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.template_manager.ensure_template(template_name)
+        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
-        template, variables = self.template_manager.get_template_and_variables(template_name)
+        template, variables = self.backend.template_manager.get_template_and_variables(template_name)
         substitutions = self.collect_template_variable_values(template_name, variables)
         message = template.render(**substitutions)
         return self.do_editor(message)
@@ -1108,7 +1106,7 @@ class Repl():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.template_manager.template_dirs), ", ".join(self.backend.preset_manager.preset_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.backend.template_manager.template_dirs), ", ".join(self.backend.preset_manager.preset_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
 

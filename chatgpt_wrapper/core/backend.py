@@ -9,6 +9,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
+from chatgpt_wrapper.core.template import TemplateManager
 from chatgpt_wrapper.core.preset_manager import PresetManager
 from chatgpt_wrapper.core import util
 
@@ -48,6 +49,7 @@ class Backend(ABC):
         self.stream = False
         self.streaming = False
         self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
+        self.template_manager = TemplateManager(self.config)
         self.preset_manager = PresetManager(self.config)
 
     def set_available_models(self):
