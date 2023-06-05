@@ -143,10 +143,10 @@ def run_module():
         result['response'] = response
         result['conversation_id'] = gpt.conversation_id
         result['user_message'] = user_message
+        module.exit_json(**result)
     else:
+        result['failed'] = True
         module.fail_json(msg=f"Error fetching LLM response: {user_message}", **result)
-
-    module.exit_json(**result)
 
 def main():
     run_module()
