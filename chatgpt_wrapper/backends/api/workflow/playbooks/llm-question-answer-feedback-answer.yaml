@@ -13,7 +13,7 @@
     profile: default
   vars_prompt:
     - name: question
-      prompt: "Enter a question for the LLM:"
+      prompt: "Enter a question for the LLM"
       private: false
   tasks:
     - name: "Ask question: {{ question }}"
