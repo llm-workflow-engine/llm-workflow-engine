@@ -1,10 +1,10 @@
 import os
 import sys
+import subprocess
+import copy
 import yaml
 import getpass
 import shlex
-
-import ansible_runner
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
@@ -80,12 +80,10 @@ class WorkflowManager():
                 'op': 'add-if-empty',
                 'default': os.path.join(workflow_dir, 'ansible.cfg'),
             },
-            # Set here instead of in ansible.cfg because ansible-runner only allows
-            # overriding this setting via an environment variable.
-            'ANSIBLE_STDOUT_CALLBACK': {
-                'op': 'add-if-empty',
-                'default': 'community.general.yaml',
-            },
+            # 'ANSIBLE_STDOUT_CALLBACK': {
+            #     'op': 'add-if-empty',
+            #     'default': 'community.general.yaml',
+            # },
             # 'ANSIBLE_LIBRARY': {
             #     'op': 'append',
             #     'default': os.path.join(workflow_dir, 'library'),
@@ -114,33 +112,9 @@ class WorkflowManager():
     def parse_workflow_args(self, args_string):
         args_string = args_string.strip()
         if not args_string:
-            return {}
+            return []
         args_list = shlex.split(args_string)
-        args_dict = {}
-        for arg in args_list:
-            key, value = arg.split('=')
-            args_dict[key] = value
-        return args_dict
-
-    def collect_vars(self, workflow_file, workflow_args):
-        self.log.debug(f"Collecting vars for {workflow_file} with args: {workflow_args}")
-        final_vars = self.parse_workflow_args(workflow_args)
-        with open(workflow_file, 'r') as file:
-            playbook = yaml.safe_load(file)
-        for play in playbook:
-            if 'vars_prompt' in play:
-                for prompt in play['vars_prompt']:
-                    name = prompt.get('name')
-                    prompt_text = prompt.get('prompt')
-                    is_private = prompt.get('private', False)
-                    if name not in final_vars:
-                        if is_private:
-                            user_input = getpass.getpass(prompt_text + " ")
-                        else:
-                            user_input = input(prompt_text + " ")
-                        final_vars[name] = user_input
-        self.log.debug(f"Collected vars for {workflow_file}: {final_vars}")
-        return final_vars
+        return args_list
 
     def run(self, workflow_name, workflow_args):
         self.set_workflow_environment()
@@ -148,26 +122,32 @@ class WorkflowManager():
         if not success:
             return success, workflow_file, message
         self.log.info(f"Running workflow {workflow_name} from {workflow_file} with args: {workflow_args}")
+        env = copy.copy(dict(os.environ))
+        kwargs = {
+            'env': env,
+            'stdin': sys.stdin,
+            'stdout': sys.stdout,
+            'stderr': sys.stderr,
+            'universal_newlines': True,
+        }
+        args = self.parse_workflow_args(workflow_args)
+        command = [
+            'ansible-playbook',
+            workflow_file,
+        ] + args
+
+        return_code = 1
+        error = "Unknown error"
         try:
-            collected_vars = self.collect_vars(workflow_file, workflow_args)
-            envvars = dict(os.environ)
-            result = ansible_runner.run(
-                private_data_dir=self.get_runner_dir(),
-                playbook=workflow_file,
-                envvars=envvars,
-                extravars=collected_vars,
-                # json_mode=True,
-            )
-            # print("{}: {}".format(r.status, r.rc))
-            # for each_host_event in r.events:
-            #     print(each_host_event['event'])
-            # print("Final status:")
-            # print(r.stats)
-            return True, result, f"Workflow {workflow_name} completed"
+            proc = subprocess.Popen(command, **kwargs)
+            return_code = proc.wait()
         except Exception as e:
-            message = f"Error running workflow {workflow_name} from {workflow_file}: {e}"
-            self.log.error(message)
-            return False, None, message
+            error = e.message if hasattr(e, 'message') else str(e)
+        if return_code == 0:
+            return True, None, f"Workflow {workflow_name} completed"
+        message = f"Error running workflow {workflow_name}: {error}"
+        self.log.error(message)
+        return False, None, message
 
     def load_workflows(self):
         self.log.debug("Loading workflows from dirs: %s" % ", ".join(self.workflow_dirs))

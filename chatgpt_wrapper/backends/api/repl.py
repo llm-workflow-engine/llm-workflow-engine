@@ -729,11 +729,8 @@ Before you can start using the shell, you must create a new user.
         except IndexError:
             workflow_name = args.strip()
             workflow_args = ""
-        try:
-            success, result, user_message = self.backend.workflow_manager.run(workflow_name, workflow_args)
-            return success, result, user_message
-        except Exception as e:
-            return False, None, f"Error running workflow {workflow_name}: {e}"
+        success, result, user_message = self.backend.workflow_manager.run(workflow_name, workflow_args)
+        return success, result, user_message
 
     def do_workflow_show(self, workflow_name):
         """
