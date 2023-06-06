@@ -110,11 +110,14 @@ class WorkflowManager():
                     os.environ[var] = data['default']
 
     def parse_workflow_args(self, args_string):
-        args_string = args_string.strip()
-        if not args_string:
-            return []
         args_list = shlex.split(args_string)
-        return args_list
+        final_args = []
+        for arg in args_list:
+            key, value = arg.split('=', maxsplit=1)
+            final_args.append("%s='%s'" % (key, value.replace("'", "\\'")))
+        if final_args:
+            return ' '.join(final_args)
+        return ""
 
     def run(self, workflow_name, workflow_args):
         self.set_workflow_environment()
@@ -130,11 +133,13 @@ class WorkflowManager():
             'stderr': sys.stderr,
             'universal_newlines': True,
         }
-        args = self.parse_workflow_args(workflow_args)
         command = [
             'ansible-playbook',
             workflow_file,
-        ] + args
+        ]
+        args = self.parse_workflow_args(workflow_args)
+        if args:
+            command = command + ['--extra-vars', args]
 
         return_code = 1
         error = "Unknown error"
