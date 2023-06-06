@@ -1,0 +1,50 @@
+---
+# Illustrates multiple linear workflows, with user input between workflows.
+#
+# 1. User inputs a question, LLM provides an answer
+# 2. User provides feedback on the answer
+# 3. LLM provides a new answer based on the feedback
+- name: Ask the LLM a question, get answer
+  hosts: localhost
+  gather_facts: no
+  vars:
+    profile: default
+  tasks:
+    - name: Collect question
+      pause:
+        prompt: "Enter a question for the LLM"
+      register: question
+    - name: "Ask question: {{ question.user_input }}"
+      lwe:
+        message: "{{ question.user_input }}"
+        profile: "{{ profile }}"
+      register: answer
+    - name: Display answer
+      debug:
+        var: answer
+
+- name: Provide feedback on answer, get new answer based on feedback
+  hosts: localhost
+  gather_facts: no
+  vars:
+    profile: default
+  vars_prompt:
+    - name: feedback
+      prompt: "Enter a feedback for the LLM"
+      private: false
+  tasks:
+    - name: New answer after feedback
+      lwe:
+        message:  |-
+          Given this question: {{ hostvars.localhost.question.user_input }}
+
+          Given this answer to the question: {{ hostvars.localhost.answer.response }}
+
+          Given this feedback on the answer to the question: {{ feedback }}
+
+          Provide a new answer to the question that incorporates the feedback"
+        profile: "{{ profile }}"
+      register: answer_after_feedback
+    - name: Display new answer after feedback
+      debug:
+        var: answer_after_feedback
