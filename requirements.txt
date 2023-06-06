@@ -2,6 +2,7 @@ ansible>=8.0
 ansible-core>=2.15
 alembic
 ai21>=1.0.5
+beautifulsoup4
 cohere>=4.3.1
 email-validator
 Flask
