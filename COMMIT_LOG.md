@@ -1,3 +1,11 @@
+### v0.11.3 - 06/06/2023
+
+* **Tue Jun 06 2023:** add multi-workflow example
+* **Tue Jun 06 2023:** fix passing args to workflows
+* **Tue Jun 06 2023:** replace ansible-runner with ansible-playbook subprocess
+* **Tue Jun 06 2023:** kill dead file
+* **Tue Jun 06 2023:** clean up prompt formatting
+
 ### v0.11.2 - 05/06/2023
 
 * **Mon Jun 05 2023:** add template/variable support for workflows
