@@ -1,0 +1,31 @@
+---
+# Illustrates the use of the html_extractor module.
+# 1. Extract text content from a URL
+# 2. Write a brief summary
+- name: Retrieve content from a URL, write a summary
+  hosts: localhost
+  gather_facts: no
+  vars_prompt:
+    - name: url
+      prompt: "Enter a URL to summarize"
+      private: false
+  tasks:
+    - name: Extract content from {{ url }}
+      html_extractor:
+        path: "{{ url }}"
+      register: content
+    - name: "Summarise content for {{ url }}"
+      lwe:
+        message: |-
+          Write a brief summary for the CONTENT below.
+
+          The summary should be no more than {{ (content.length / 3) | round | int }} characters long.
+
+          Make sure to include the three most salient points of the content.
+
+          CONTENT:
+          {{ content.content }}
+      register: summary
+    - name: Display summary
+      debug:
+        var: summary
