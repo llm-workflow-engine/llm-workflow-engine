@@ -35,7 +35,7 @@
   tasks:
     - name: New answer after feedback
       lwe:
-        message:  |-
+        message: |-
           Given this question: {{ hostvars.localhost.question.user_input }}
 
           Given this answer to the question: {{ hostvars.localhost.answer.response }}
