@@ -1,0 +1,127 @@
+---
+# Illustrates an example workflow for creating and posting social media content.
+#
+# NOTE: This workflow does NOT actually post any content!
+#
+# 1. LLM generates a post based on a user-provided topic
+# 2. LLM provides critical feedback on its initial post
+# 3. LLM generates a revised post based on critical feedback
+# 4. User provides feedback on the revised post
+# 5. LLM provides a final post based on user feedback
+# 6. Here integration would be added to actually post to social media,
+#    the current workflow just posts to some dummy locations
+# 7. If a post fails, user is alerted and content is saved to a file.
+- name: Social Media Content Generation Workflow
+  hosts: localhost
+  gather_facts: no
+  vars:
+    user: 1
+    post_failed_backup_file: "/tmp/final_post.txt"
+  vars_prompt:
+    - name: topic
+      prompt: "Please enter a topic for the post"
+      private: no
+
+  tasks:
+    - name: "Generate initial post for topic: {{ topic }}"
+      lwe:
+        message: |-
+          Generate a social media post about: {{ topic }}
+
+          The length of the post should be no more than 250 characters.
+        user: "{{ user }}"
+      register: initial_post
+
+    - name: Generate critical feedback
+      lwe:
+        message: |-
+          Provide critical feedback on the post you just wrote.
+
+          Offer three specific suggestions to improve its reach and clarity.
+        user: "{{ user }}"
+        conversation_id: "{{ initial_post.conversation_id }}"
+
+    - name: Generate revised post based on LWE feedback
+      lwe:
+        message: |-
+          Revise the post based on the feedback you just generated.
+
+          Output ONLY the post, do not output any other information or explanation.
+
+          Focus on implementing the three specific suggestions you provided in the feedback.
+        user: "{{ user }}"
+        conversation_id: "{{ initial_post.conversation_id }}"
+      register: revised_post
+
+    - name: Prompt user for their feedback
+      pause:
+        prompt: "Please review the revised post and provide your feedback: '{{ revised_post.response }}'"
+      register: user_feedback
+
+    - name: Generate final post based on user feedback
+      lwe:
+        message: |-
+          Revise the post again based on the following user feedback.
+
+          Output ONLY the post, do not output any other information or explanation.
+
+          Focus on using the feedback to improve the post's reach and clarity.
+
+          USER FEEDBACK
+
+          {{ user_feedback.user_input }}
+        user: "{{ user }}"
+        conversation_id: "{{ initial_post.conversation_id }}"
+      register: final_post
+
+    # NOTE: This doesn't actually post to Twitter, you'd need to integrate
+    # some kind of script that manages Oauth.
+    - name: Post content to Twitter
+      uri:
+        url: "https://jsonplaceholder.typicode.com/posts"
+        method: POST
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ lookup('env', 'TWITTER_API_KEY') }}"
+        body:
+          status: "{{ final_post.response }}"
+        status_code: 201
+      retries: 2
+      delay: 5
+      register: twitter_response
+      ignore_errors: yes
+
+    # NOTE: This doesn't actually post to Facebook, you'd need to integrate
+    # some kind of script that manages Oauth.
+    - name: Post content to Facebook
+      uri:
+        url: "https://jsonplaceholder.typicode.com/posts"
+        method: POST
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ lookup('env', 'FACEBOOK_API_KEY') }}"
+        body:
+          message: "{{ final_post.response }}"
+        status_code: 201
+      retries: 2
+      delay: 5
+      register: facebook_response
+      ignore_errors: yes
+
+    - name: Display success message
+      ansible.builtin.debug:
+        msg: "NOTE: Twitter and Facebook posts were not actually submitted, this workflow submits the post to dummy locations for example purposes only!"
+      when: not twitter_response.failed and not facebook_response.failed
+
+    - name: Check for posting failures
+      block:
+        - name: Save final post to a file
+          ansible.builtin.copy:
+            content: "{{ final_post.response }}"
+            dest: "{{ post_failed_backup_file }}"
+          register: saved_final_post
+
+        - name: Display posting failures and saved post location
+          ansible.builtin.debug:
+            msg: "Twitter post status: {{ 'Success' if not twitter_response.failed else 'Failed' }}. Facebook post status: {{ 'Success' if not facebook_response.failed else 'Failed' }}. The final post has been saved to {{ saved_final_post.dest }}."
+      when: twitter_response.failed or facebook_response.failed
