@@ -1,3 +1,10 @@
+### v0.11.5 - 08/06/2023
+
+* **Thu Jun 08 2023:** rename lwe module to lwe_llm module
+* **Thu Jun 08 2023:** add custom lwe_input action plugin, with editor support
+* **Thu Jun 08 2023:** convert text_extractor to textract, many more extensions supported
+* **Thu Jun 08 2023:** html_extractor -> text_extractor, add PDF support, scrub non-UTF-8 in text files
+
 ### v0.11.4 - 08/06/2023
 
 * **Thu Jun 08 2023:** don't re-init provider on new conversation
