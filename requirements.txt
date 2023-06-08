@@ -21,5 +21,6 @@ pyperclip
 python-frontmatter
 PyYAML
 rich
+textract
 sqlalchemy>=1.4.48,<=2
 tiktoken

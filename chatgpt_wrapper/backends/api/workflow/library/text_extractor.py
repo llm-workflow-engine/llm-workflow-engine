@@ -3,12 +3,10 @@
 import os
 import re
 import requests
+import tempfile
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
-
-from pdfminer.high_level import extract_pages
-from pdfminer.layout import LAParams, LTTextBoxHorizontal
+import textract
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -19,6 +17,27 @@ config = Config()
 config.set('debug.log.enabled', True)
 log = Logger(__name__, config)
 
+SUPPORTED_FILE_EXTENSIONS = [
+    # Microsoft Office formats
+    '.docx', '.pptx', '.xlsx',
+    # OpenDocument formats
+    '.odt', '.ods', '.odp', '.odg', '.odc', '.odf', '.odi', '.odm',
+    # Portable Document Format
+    '.pdf',
+    # Rich Text Format
+    '.rtf',
+    # Markdown
+    '.md',
+    # ePub
+    '.epub',
+    # Text files
+    '.txt', '.csv',
+    # HTML and XML formats
+    '.html', '.htm', '.xhtml', '.xml',
+    # Email formats
+    '.eml', '.msg'
+]
+
 DOCUMENTATION = r'''
 ---
 module: text_extractor
@@ -26,7 +45,7 @@ short_description: Extract text content from a file or URL
 description:
     - This module extracts the main text content from a given file or URL
     - For URLs, it extracts the main text content from the page, excluding header and footer.
-    - For files, PDFs and text-based files are supported.
+    - For files, see SUPPORTED_FILE_EXTENSIONS in the module code.
 options:
     path:
       description:
@@ -58,28 +77,9 @@ RETURN = r'''
       returned: success
 '''
 
-def extract_text_from_pdf(pdf_file):
-    laparams = LAParams(line_margin=0.5, all_texts=True)
-    pages = []
-    for page_layout in extract_pages(pdf_file, laparams=laparams):
-        text = []
-        for element in page_layout:
-            if isinstance(element, LTTextBoxHorizontal):
-                text.append(element.get_text())
-        pages.append(''.join(text))
-    return "\n\n".join(pages)
-
-def extract_text_from_html(content):
-    log.debug("Parsing HTML content")
-    soup = BeautifulSoup(content, 'html.parser')
-    log.debug("Removing header and footer")
-    if soup.header:
-        soup.header.decompose()
-    if soup.footer:
-        soup.footer.decompose()
-    log.debug("Extracting main text content")
-    text_content = ''.join(soup.stripped_strings)
-    return text_content
+def extract_text(path):
+    text = textract.process(path).decode("utf-8")
+    return text
 
 def main():
     result = dict(
@@ -99,42 +99,41 @@ def main():
 
     parsed_url = urlparse(path)
     is_url = parsed_url.scheme in ['http', 'https']
+    cleanup_tmpfile_path = None
     if is_url:
         try:
             response = requests.get(path)
             response.raise_for_status()
             content = response.text
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".html") as f:
+                f.write(content)
+                path = cleanup_tmpfile_path = f.name
         except Exception as e:
             message = f"Error downloading content from URL {path}: {str(e)}"
             log.error(message)
             module.fail_json(msg=message)
-    else:
-        if not os.access(path, os.R_OK):
-            message = f"File not found or not readable: {path}"
-            log.error(message)
-            module.fail_json(msg=message)
-        if path.endswith(".pdf"):
-            try:
-                content = extract_text_from_pdf(path)
-            except Exception as e:
-                message = f"Error extracting PDF content: {str(e)}"
-                log.error(message)
-                module.fail_json(msg=message)
-        else:
-            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-                # Get rid of any non-ascii characters.
-                content = re.sub(r'[^\x00-\x7F]+', '', f.read())
-    if is_url or path.endswith(".html"):
+    if not os.access(path, os.R_OK):
+        message = f"File not found or not readable: {path}"
+        log.error(message)
+        module.fail_json(msg=message)
+    _, file_extension = os.path.splitext(path)
+    file_extension = file_extension.lower()
+    if file_extension in SUPPORTED_FILE_EXTENSIONS:
         try:
-            extracted_content = extract_text_from_html(content)
+            content = extract_text(path)
         except Exception as e:
-            message = f"Error extracting HTML content: {str(e)}"
+            message = f"Error extracting {file_extension} content: {str(e)}"
             log.error(message)
             module.fail_json(msg=message)
     else:
-        extracted_content = content
-    result['content'] = extracted_content
-    result['length'] = len(extracted_content)
+        # Last ditch, try to read the file as UTF-8.
+        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            # Get rid of any non-ascii characters.
+            content = re.sub(r'[^\x00-\x7F]+', '', f.read())
+    if cleanup_tmpfile_path:
+        os.remove(cleanup_tmpfile_path)
+    result['content'] = content
+    result['length'] = len(content)
     log.info("Content extracted successfully")
     module.exit_json(**result)
 
