@@ -13,6 +13,7 @@ names
 numexpr>=2.8.4
 openai>=0.27.2
 openpyxl
+pdfminer.six
 playwright
 prompt-toolkit
 pydantic-computed

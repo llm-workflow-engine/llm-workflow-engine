@@ -1,20 +1,20 @@
 ---
-# Illustrates the use of the html_extractor module.
-# 1. Extract text content from a URL
+# Illustrates the use of the text_extractor module.
+# 1. Extract text content from a URL or file
 # 2. Write a brief summary
-- name: Retrieve content from a URL, write a summary
+- name: Retrieve content from a URL or file, write a summary
   hosts: localhost
   gather_facts: no
   vars_prompt:
-    - name: url
-      prompt: "Enter a URL to summarize"
+    - name: path
+      prompt: "Enter a URL or file to summarize"
       private: false
   tasks:
-    - name: Extract content from {{ url }}
-      html_extractor:
-        path: "{{ url }}"
+    - name: Extract content from {{ path }}
+      text_extractor:
+        path: "{{ path }}"
       register: content
-    - name: "Summarise content for {{ url }}"
+    - name: "Summarise content for {{ path }}"
       lwe:
         message: |-
           Write a brief summary for the CONTENT below.
