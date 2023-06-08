@@ -10,7 +10,7 @@ from chatgpt_wrapper import ApiBackend
 
 DOCUMENTATION = r'''
 ---
-module: lwe
+module: lwe_llm
 
 short_description: Make LLM requests via LWE.
 
@@ -63,12 +63,12 @@ author:
 EXAMPLES = r'''
 # Simple message with default values
 - name: Say hello
-  lwe:
+  lwe_llm:
     message: "Say Hello!"
 
 # Start a new conversation with this response
 - name: Start conversation
-  lwe:
+  lwe_llm:
     message: "What are the three primary colors?"
     # User ID or username
     user: 1
@@ -76,14 +76,14 @@ EXAMPLES = r'''
 
 # Continue a conversation with this response
 - name: Continue conversation
-  lwe:
+  lwe_llm:
     message: "Provide more detail about your previous response"
     user: 1
     conversation_id: result.conversation_id
 
 # Use the 'mytemplate.md' template, passing in a few template variables
 - name: Templated prompt
-  lwe:
+  lwe_llm:
     template: mytemplate.md
     template_vars:
         foo: bar
@@ -91,7 +91,7 @@ EXAMPLES = r'''
 
 # Use the 'test' profile, and a pre-configured provider/model preset 'mypreset'
 - name: Continue conversation
-  lwe:
+  lwe_llm:
     message: "Say three things about bacon"
     profile: test
     preset: mypreset
@@ -163,13 +163,13 @@ def run_module():
     config.set('backend_options.default_conversation_id', conversation_id)
     gpt = ApiBackend(config)
 
-    gpt.log.info("[lwe module]: Starting execution")
+    gpt.log.info("[lwe_llm module]: Starting execution")
 
     if template_name is not None:
-        gpt.log.debug(f"[lwe module]: Using template: {template_name}")
+        gpt.log.debug(f"[lwe_llm module]: Using template: {template_name}")
         success, template_name, user_message = gpt.template_manager.ensure_template(template_name)
         if not success:
-            gpt.log.error(f"[lwe module]: {user_message}")
+            gpt.log.error(f"[lwe_llm module]: {user_message}")
             module.fail_json(msg=user_message, **result)
         _, variables = gpt.template_manager.get_template_and_variables(template_name)
         substitutions = gpt.template_manager.process_template_builtin_variables(template_name, variables)
@@ -179,11 +179,11 @@ def run_module():
             preset_name = overrides['request_overrides'].pop('preset')
             success, llm, user_message = gpt.set_override_llm(preset_name)
             if success:
-                gpt.log.info(f"[lwe module]: Switching to preset '{preset_name}' for template: {template_name}")
+                gpt.log.info(f"[lwe_llm module]: Switching to preset '{preset_name}' for template: {template_name}")
             else:
-                gpt.log.error(f"[lwe module]: {user_message}")
+                gpt.log.error(f"[lwe_llm module]: {user_message}")
                 module.fail_json(msg=user_message, **result)
-        gpt.log.info(f"[lwe module]: Running template: {template_name}")
+        gpt.log.info(f"[lwe_llm module]: Running template: {template_name}")
 
     success, response, user_message = gpt.ask(message)
     gpt.set_override_llm()
@@ -195,14 +195,14 @@ def run_module():
             message = f"Error fetching LLM response: {user_message}"
         elif not response:
             message = f"Empty LLM response: {user_message}"
-        gpt.log.error(f"[lwe module]: {message}")
+        gpt.log.error(f"[lwe_llm module]: {message}")
         module.fail_json(msg=message, **result)
 
     result['changed'] = True
     result['response'] = response
     result['conversation_id'] = gpt.conversation_id
     result['user_message'] = user_message
-    gpt.log.info("[lwe module]: execution completed successfully")
+    gpt.log.info("[lwe_llm module]: execution completed successfully")
     module.exit_json(**result)
 
 def main():

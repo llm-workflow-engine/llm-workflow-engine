@@ -17,7 +17,7 @@
       private: false
   tasks:
     - name: "Ask question: {{ question }}"
-      lwe:
+      lwe_llm:
         message: "{{ question }}"
         profile: "{{ profile }}"
       register: answer
@@ -25,7 +25,7 @@
       debug:
         var: answer
     - name: Critical feedback
-      lwe:
+      lwe_llm:
         message: |-
           Given this question: {{ question }}
 
@@ -38,7 +38,7 @@
       debug:
         var: feedback
     - name: New answer after feedback
-      lwe:
+      lwe_llm:
         message: |-
           Given this question: {{ question }}
 

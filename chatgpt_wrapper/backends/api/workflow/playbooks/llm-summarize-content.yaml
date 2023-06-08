@@ -15,7 +15,7 @@
         path: "{{ path }}"
       register: content
     - name: "Summarise content for {{ path }}"
-      lwe:
+      lwe_llm:
         message: |-
           Write a brief summary for the CONTENT below.
 

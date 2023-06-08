@@ -24,7 +24,7 @@
 
   tasks:
     - name: "Generate initial post for topic: {{ topic }}"
-      lwe:
+      lwe_llm:
         message: |-
           Generate a social media post about: {{ topic }}
 
@@ -33,7 +33,7 @@
       register: initial_post
 
     - name: Generate critical feedback
-      lwe:
+      lwe_llm:
         message: |-
           Provide critical feedback on the post you just wrote.
 
@@ -42,7 +42,7 @@
         conversation_id: "{{ initial_post.conversation_id }}"
 
     - name: Generate revised post based on LWE feedback
-      lwe:
+      lwe_llm:
         message: |-
           Revise the post based on the feedback you just generated.
 
@@ -59,7 +59,7 @@
       register: user_feedback
 
     - name: Generate final post based on user feedback
-      lwe:
+      lwe_llm:
         message: |-
           Revise the post again based on the following user feedback.
 

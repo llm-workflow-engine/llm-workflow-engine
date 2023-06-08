@@ -20,7 +20,7 @@
       private: false
   tasks:
     - name: "Ask question: {{ question }}"
-      lwe:
+      lwe_llm:
         message: "{{ question }}"
         profile: "{{ profile }}"
         user: "{{ user }}"
@@ -29,7 +29,7 @@
       debug:
         var: answer
     - name: Provide more detail to original answer
-      lwe:
+      lwe_llm:
         message: Please provide more detail to the original answer
         profile: "{{ profile }}"
         user: "{{ user }}"
@@ -39,7 +39,7 @@
       debug:
         var: more_detail
     - name: Summarize the conversation
-      lwe:
+      lwe_llm:
         message: Provide a brief one sentence summary of the conversation
         profile: "{{ profile }}"
         user: "{{ user }}"

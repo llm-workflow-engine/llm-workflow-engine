@@ -5,7 +5,7 @@
   gather_facts: no
   tasks:
     - name: Say hello
-      lwe:
+      lwe_llm:
         message: "Say hello"
       register: result
     - name: Display response

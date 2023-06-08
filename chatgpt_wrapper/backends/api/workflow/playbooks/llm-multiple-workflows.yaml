@@ -11,11 +11,11 @@
     profile: default
   tasks:
     - name: Collect question
-      pause:
+      lwe_input:
         prompt: "Enter a question for the LLM"
       register: question
     - name: "Ask question: {{ question.user_input }}"
-      lwe:
+      lwe_llm:
         message: "{{ question.user_input }}"
         profile: "{{ profile }}"
       register: answer
@@ -34,7 +34,7 @@
       private: false
   tasks:
     - name: New answer after feedback
-      lwe:
+      lwe_llm:
         message: |-
           Given this question: {{ hostvars.localhost.question.user_input }}
 

@@ -11,7 +11,7 @@
       private: false
   tasks:
     - name: "Ask question: {{ question }}"
-      lwe:
+      lwe_llm:
         message: "{{ question }}"
       register: result
     - name: Display response
