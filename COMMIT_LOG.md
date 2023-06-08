@@ -1,3 +1,14 @@
+### v0.11.4 - 08/06/2023
+
+* **Thu Jun 08 2023:** don't re-init provider on new conversation
+* **Thu Jun 08 2023:** best guess cast random dict model customizations, recurse dicts when setting customization values
+* **Thu Jun 08 2023:** rebuild completions on /preset-load, activate preset on /preset-save, init default provider when deleting active preset
+* **Wed Jun 07 2023:** rebranding writeup.
+* **Wed Jun 07 2023:** example workflow for generating and posting social media content
+* **Tue Jun 06 2023:** example workflow: summarize HTML page
+* **Tue Jun 06 2023:** add html_extractor workflow module
+* **Tue Jun 06 2023:** syntax cleanup
+
 ### v0.11.3 - 06/06/2023
 
 * **Tue Jun 06 2023:** add multi-workflow example
