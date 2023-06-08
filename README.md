@@ -502,7 +502,7 @@ To execute a workflow, run `/workflow-run workflowname` -- depending on configur
 
 See `/help` for the various other workflow commands.
 
-The wrapper implements a custom Ansible module, `lwe`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/chatgpt_wrapper/backends/api/workflow/library/lwe.py).
+The wrapper implements a custom Ansible module, `lwe_llm`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/chatgpt_wrapper/backends/api/workflow/library/lwe_llm.py).
 
 It is also possible to execute workflows directly with `ansible-playbook`, by simply navigating to the `chatgpt_wrapper/backends/api/workflow` directory:
 
