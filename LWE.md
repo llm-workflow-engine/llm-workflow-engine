@@ -19,20 +19,20 @@ At its heart, LWE has four main components:
    * Integrate model configurations
    * Save LLM interactions to conversations
 
-When combined, these four components provide a lot of flexibility and power when working with LLMs.
+When combined, these four components provide a lot of flexibility and power for working with LLMs.
 
 Other LWE nicities:
 
 1. **Plugins:**
-   * Command plugins: Write a new command for LWE that accomplishes some new task
-   * Provider plugins: easily add new LLM providers into the LWE ecosystem
+   * Command plugins: Write a command for LWE that accomplishes some new task
+   * Provider plugins: Easily add new LLM providers into the LWE ecosystem
 2. **Custom system messages:** Easily create and use different system messages for supported providers
 3. **Command completion:** Tab completion for most commands and arguments
-4. **Managed database updates:** Automatically upgrade the database for new releases
+4. **Managed database updates:** Automatic database upgrades for new releases
 5. **Examples**: To help jump start your productivity
    * Prompt templates
    * Workflows
-6. **Ansible-compatible playbooks**: Re-use LWE workflows inside a larger Ansible ecosystem
+6. **Ansible-compatible playbooks**: Re-use LWE workflows inside a larger [Ansible](https://docs.ansible.com) ecosystem
 7. **Automatic conversation titles**: ChatGPT generates short titles for your conversations
 8. **Token tracking**: For supported providers, see the number of tokens you've consumed, and auto-prune messages from long conversations
 9. **Customizable user prompt**
