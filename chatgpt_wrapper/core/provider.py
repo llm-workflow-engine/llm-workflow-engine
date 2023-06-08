@@ -108,6 +108,18 @@ class ProviderBase(Plugin):
         defaults['_type'] = llm_defaults['_type']
         return defaults
 
+    # NOTE: This is a best-guess approach for random dict values.
+    def cast_dict_value(self, value):
+        if isinstance(value, str):
+            try:
+                value = int(value)
+            except ValueError:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
+        return value
+
     def calculate_customization_value(self, orig_keys, new_value):
         if isinstance(orig_keys, str):
             orig_keys = orig_keys.split('.')
@@ -118,7 +130,7 @@ class ProviderBase(Plugin):
             if key in config:
                 config = config[key]
                 if config == dict:
-                    return True, new_value, "Found dict key."
+                    return True, self.cast_dict_value(new_value), "Found dict key."
                 elif isinstance(config, PresetValue):
                     success, new_value, user_message = config.cast(new_value)
                     if success:
@@ -143,12 +155,19 @@ class ProviderBase(Plugin):
     def set_customization_value(self, keys, new_value):
         if isinstance(keys, str):
             keys = keys.split('.')
-        success, new_value, user_message = self.calculate_customization_value(keys, new_value)
-        if success:
-            self.set_value(keys, new_value)
-            return success, self.customizations, f"Set {'.'.join(keys)} to {new_value}"
-        else:
+        if isinstance(new_value, dict):
+            for k, v in new_value.items():
+                success, new_value, user_message = self.set_customization_value(keys + [k], v)
+                if not success:
+                    return success, new_value, user_message
             return success, new_value, user_message
+        else:
+            success, new_value, user_message = self.calculate_customization_value(keys, new_value)
+            if success:
+                self.set_value(keys, new_value)
+                return success, self.customizations, f"Set {'.'.join(keys)} to {new_value}"
+            else:
+                return success, new_value, user_message
 
     def set_value(self, keys, value):
         customizations = self.customizations
