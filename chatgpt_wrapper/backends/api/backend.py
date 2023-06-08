@@ -453,7 +453,6 @@ class ApiBackend(Backend):
 
     def new_conversation(self):
         super().new_conversation()
-        self.init_provider()
         self.set_conversation_tokens(0)
 
     def _strip_out_messages_over_max_tokens(self, messages, token_count, max_tokens):
