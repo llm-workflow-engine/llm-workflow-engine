@@ -640,7 +640,9 @@ Before you can start using the shell, you must create a new user.
         success, file_path, user_message = self.backend.preset_manager.save_preset(preset_name, metadata, customizations)
         if success:
             self.backend.preset_manager.load_presets()
-            self.rebuild_completions()
+            success, preset, load_preset_message = self.do_preset_load(preset_name)
+            if not success:
+                return success, preset, load_preset_message
         return success, file_path, user_message
 
     def do_preset_load(self, preset_name):
@@ -656,7 +658,10 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND} mypreset
         """
-        return self.backend.activate_preset(preset_name)
+        success, preset, user_message = self.backend.activate_preset(preset_name)
+        if success:
+            self.rebuild_completions()
+        return success, preset, user_message
 
     def do_preset_delete(self, preset_name):
         """
@@ -671,9 +676,11 @@ Before you can start using the shell, you must create a new user.
         success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
-        success, preset_name, user_message = self.backend.preset_manager.delete_preset(preset_name)
+        success, _, user_message = self.backend.preset_manager.delete_preset(preset_name)
         if success:
             self.backend.preset_manager.load_presets()
+            if self.backend.active_preset == preset_name:
+                self.backend.init_provider()
             self.rebuild_completions()
         return success, preset_name, user_message
 
