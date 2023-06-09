@@ -110,7 +110,13 @@
 
     - name: Display success message
       ansible.builtin.debug:
-        msg: "NOTE: Twitter and Facebook posts were not actually submitted, this workflow submits the post to dummy locations for example purposes only!"
+        msg: |-
+          NOTE: Twitter and Facebook posts were not actually submitted, this workflow submits the post to dummy locations for example purposes only!
+
+          Final post, length {{ final_post.response | length }} characters:
+
+          {{ final_post.response }}
+
       when: not twitter_response.failed and not facebook_response.failed
 
     - name: Check for posting failures
