@@ -104,7 +104,7 @@ class ActionModule(ActionBase):
             except AnsiblePromptInterrupt:
                 raise AnsibleError('user requested abort!')
         elif user_input.strip() == b'e':
-            display.warning("Editor requested")
+            display.display("Editor requested")
             user_input = pipe_editor('', suffix='md')
 
         duration = time.time() - start
