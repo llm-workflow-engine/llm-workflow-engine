@@ -54,7 +54,7 @@
       register: revised_post
 
     - name: Prompt user for their feedback
-      pause:
+      lwe_input:
         prompt: "Please review the revised post and provide your feedback: '{{ revised_post.response }}'"
       register: user_feedback
 
