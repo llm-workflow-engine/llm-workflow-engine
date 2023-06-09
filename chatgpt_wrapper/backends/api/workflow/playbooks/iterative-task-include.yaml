@@ -1,0 +1,45 @@
+# This file is included in the llm-iterative-tasks.yaml playbook.
+#
+# Separating it out allows the file to include itself for infinite loops
+# until the user indicates they are done.
+- name: "Perform LLM query: {{ llm_task.user_input }}"
+  lwe_llm:
+    message: "{{ llm_task.user_input }}"
+  register: llm_output
+
+- name: Store user input
+  command: echo "{{ llm_task.user_input }}"
+  register: user_task_input
+
+- name: Display response
+  debug:
+    var: llm_output
+
+- name: Give the LLM another task, or done
+  lwe_input:
+    prompt: "Give the LLM another task, or enter 'done' to finish"
+  register: llm_task
+
+# Here the input/output from the previous task is stored in a file
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Get task output filename
+  command: echo "/tmp/llm-task-output-{{ ansible_date_time.epoch_int }}.txt"
+  register: task_output_filename
+
+- name: "Save LLM task output to file: {{ task_output_filename.stdout }}"
+  copy:
+    content: |-
+      TASK:
+
+      {{ user_task_input.stdout }}
+
+      RESPONSE:
+
+      {{ llm_output.response }}
+    dest: "{{ task_output_filename.stdout }}"
+
+- name: "Performing next task: {{ llm_task.user_input }}"
+  include_tasks: iterative-task-include.yaml
+  when: llm_task.user_input | lower | trim not in ['done', 'complete', 'finished', 'quit', 'exit']

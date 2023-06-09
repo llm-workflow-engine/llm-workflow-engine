@@ -1,0 +1,19 @@
+# Illustrates how to perform an iterative task until the user indicates they are done.
+#
+# This workflow continues to ask the user for tasks to give the LLM until they enter 'done'.
+#
+# For each round, it stores the response in a file suffixed with the unix timestamp.
+---
+- name: Iterative tasks until done
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+
+    - name: Initial user task
+      lwe_input:
+        prompt: "Give the LLM a task"
+      register: llm_task
+
+    - name: Perform LLM tasks until user indicates they are done
+      include_tasks: iterative-task-include.yaml
