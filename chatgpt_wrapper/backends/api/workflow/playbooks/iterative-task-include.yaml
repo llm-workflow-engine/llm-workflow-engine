@@ -2,44 +2,44 @@
 #
 # Separating it out allows the file to include itself for infinite loops
 # until the user indicates they are done.
-- name: "Perform LLM query: {{ llm_task.user_input }}"
-  lwe_llm:
-    message: "{{ llm_task.user_input }}"
-  register: llm_output
-
-- name: Store user input
-  command: echo "{{ llm_task.user_input }}"
-  register: user_task_input
-
-- name: Display response
-  debug:
-    var: llm_output
-
-- name: Give the LLM another task, or done
+- name: Give the LLM a task, or done
   lwe_input:
-    prompt: "Give the LLM another task, or enter 'done' to finish"
+    prompt: "Give the LLM a task, or enter 'done' to finish"
   register: llm_task
 
-# Here the input/output from the previous task is stored in a file
-- name: Gather facts
-  ansible.builtin.setup:
+# This block handles the primary actions if the user gave the LLM a task.
+# If they entered 'done', it's skipped.
+- block:
 
-- name: Get task output filename
-  command: echo "/tmp/llm-task-output-{{ ansible_date_time.epoch_int }}.txt"
-  register: task_output_filename
+  - name: "Perform LLM query: {{ llm_task.user_input }}"
+    lwe_llm:
+      message: "{{ llm_task.user_input }}"
+    register: llm_output
 
-- name: "Save LLM task output to file: {{ task_output_filename.stdout }}"
-  copy:
-    content: |-
-      TASK:
+  - name: Display response
+    debug:
+      var: llm_output
 
-      {{ user_task_input.stdout }}
+  - name: Gather facts
+    ansible.builtin.setup:
 
-      RESPONSE:
+  - name: Get task output filename
+    command: echo "/tmp/llm-task-output-{{ ansible_date_time.epoch_int }}.txt"
+    register: task_output_filename
 
-      {{ llm_output.response }}
-    dest: "{{ task_output_filename.stdout }}"
+  - name: "Save LLM task/output to file: {{ task_output_filename.stdout }}"
+    copy:
+      content: |-
+        TASK:
 
-- name: "Performing next task: {{ llm_task.user_input }}"
-  include_tasks: iterative-task-include.yaml
+        {{ llm_task.user_input }}
+
+        RESPONSE:
+
+        {{ llm_output.response }}
+      dest: "{{ task_output_filename.stdout }}"
+
+  - name: "Performing next task"
+    include_tasks: iterative-task-include.yaml
+
   when: llm_task.user_input | lower | trim not in ['done', 'complete', 'finished', 'quit', 'exit']
