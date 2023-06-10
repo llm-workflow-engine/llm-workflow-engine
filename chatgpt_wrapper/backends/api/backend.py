@@ -14,7 +14,7 @@ import chatgpt_wrapper.core.util as util
 from chatgpt_wrapper.backends.api.user import UserManager
 from chatgpt_wrapper.backends.api.conversation import ConversationManager
 from chatgpt_wrapper.backends.api.message import MessageManager
-from chatgpt_wrapper.core.preset_manager import parse_preset_dict
+from chatgpt_wrapper.core.preset_manager import parse_llm_dict
 
 ADDITIONAL_PLUGINS = [
     'provider_chat_openai',
@@ -126,7 +126,7 @@ class ApiBackend(Backend):
             success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
             if success:
                 metadata, customizations = preset
-                success, provider, user_message = self.provider_manager.load_provider(metadata['type'])
+                success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
                 if success:
                     self.override_provider = provider
                     if self.stream and self.should_stream():
@@ -147,7 +147,7 @@ class ApiBackend(Backend):
 
 
     def make_preset(self):
-        metadata, customizations = parse_preset_dict(self.provider.customizations)
+        metadata, customizations = parse_llm_dict(self.provider.customizations)
         return metadata, customizations
 
     def activate_preset(self, preset_name):
@@ -156,7 +156,7 @@ class ApiBackend(Backend):
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
-        success, provider, user_message = self.set_provider(metadata['type'], customizations, reset=True)
+        success, provider, user_message = self.set_provider(metadata['provider'], customizations, reset=True)
         if success:
             self.active_preset = preset_name
         return success, preset, user_message

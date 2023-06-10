@@ -4,11 +4,13 @@ import yaml
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
 
-def parse_preset_dict(content):
+def parse_llm_dict(content):
     metadata = {}
     customizations = {}
     for key, value in content.items():
-        if key.startswith('_'):
+        if key == '_type':
+            metadata['provider'] = value
+        elif key.startswith('_'):
             metadata[key[1:]] = value
         else:
             customizations[key] = value
@@ -46,6 +48,14 @@ class PresetManager():
                 os.makedirs(preset_dir)
         return preset_dirs
 
+    def parse_preset_dict(self, content):
+        return content['metadata'], content['model_customizations']
+
+    def user_metadata_fields(self):
+        return [
+            'description',
+        ]
+
     def load_presets(self):
         self.log.debug("Loading presets from dirs: %s" % ", ".join(self.preset_dirs))
         self.presets = {}
@@ -62,7 +72,7 @@ class PresetManager():
                             except Exception as e:
                                 self.log.error(f"Error loading YAML file '{file_name}': {e}")
                                 continue
-                            metadata, customizations = parse_preset_dict(content)
+                            metadata, customizations = self.parse_preset_dict(content)
                             preset_name = file_name[:-5]  # Remove '.yaml' extension
                             self.presets[preset_name] = (metadata, customizations)
                             self.log.info(f"Successfully loaded preset: {preset_name}")
@@ -78,8 +88,10 @@ class PresetManager():
 
     def save_preset(self, preset_name, metadata, customizations, preset_dir=None):
         metadata['name'] = preset_name
-        preset_data = {f"_{key}": value for key, value in metadata.items()}
-        preset_data.update(customizations)
+        preset_data = {
+            'metadata': metadata,
+            'model_customizations': customizations,
+        }
         if preset_dir is None:
             preset_dir = self.preset_dirs[-1]
         file_path = os.path.join(preset_dir, f"{preset_name}.yaml")

@@ -68,6 +68,8 @@ class ApiRepl(Repl):
         preset_keys = self.backend.preset_manager.presets.keys()
         for subcmd in ['save', 'load', 'delete', 'show']:
             final_completions[util.command_with_leader(f"preset-{subcmd}")] = util.list_to_completion_hash(preset_keys) if preset_keys else None
+        for preset_name in preset_keys:
+            final_completions[util.command_with_leader("preset-save")][preset_name] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
         final_completions[util.command_with_leader('workflows')] = None
         subcommands = [
             'run',
@@ -626,17 +628,31 @@ Before you can start using the shell, you must create a new user.
 
         Arguments:
             preset_name: Required. The name of the preset
+            [metadata_field]: Optional. The name of a metadata field, followed by the value.
+                Valid metadata fields are:
+                    description: A description of the preset
 
         Examples:
             {COMMAND} mypreset
         """
         if not args:
             return False, args, "No preset name specified"
+        extra_metadata = {}
+        success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(args.split()[0])
+        if success:
+            existing_metadata, _customizations = existing_preset
+            for key in self.backend.preset_manager.user_metadata_fields():
+                if key in existing_metadata:
+                    extra_metadata[key] = existing_metadata[key]
         metadata, customizations = self.backend.make_preset()
-        preset_name, *rest = args.split()
-        description = " ".join(rest) if rest else None
-        if description:
-            metadata['description'] = description
+        try:
+            preset_name, metadata_field, *rest = args.split()
+            if metadata_field not in self.backend.preset_manager.user_metadata_fields():
+                return False, metadata_field, f"Invalid metadata field: {metadata_field}"
+            extra_metadata[metadata_field] = " ".join(rest)
+        except ValueError:
+            preset_name = args
+        metadata.update(extra_metadata)
         success, file_path, user_message = self.backend.preset_manager.save_preset(preset_name, metadata, customizations)
         if success:
             self.backend.preset_manager.load_presets()
