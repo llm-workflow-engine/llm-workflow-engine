@@ -232,7 +232,7 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens))
         conversation_tokens = "" if self.backend.conversation_tokens is None else str(self.backend.conversation_tokens)
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", conversation_tokens)
-        prompt_prefix = prompt_prefix.replace("$SYSTEM_MESSAGE_ALIAS", self.backend.system_message_alias)
+        prompt_prefix = prompt_prefix.replace("$SYSTEM_MESSAGE_ALIAS", self.backend.system_message_alias or "")
         return f"{prompt_prefix} "
 
     def get_model_temperature(self):
@@ -628,9 +628,11 @@ Before you can start using the shell, you must create a new user.
 
         Arguments:
             preset_name: Required. The name of the preset
-            [metadata_field]: Optional. The name of a metadata field, followed by the value.
+            [metadata_field]: Optional. The name of a metadata field, followed by the value
                 Valid metadata fields are:
                     description: A description of the preset
+                    system_message: A system message to activate for the preset,
+                                    can be a configured alias or a custom message
 
         Examples:
             {COMMAND} mypreset

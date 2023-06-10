@@ -160,6 +160,8 @@ class ApiBackend(Backend):
         success, provider, user_message = self.set_provider(metadata['provider'], customizations, reset=True)
         if success:
             self.active_preset = preset_name
+            if 'system_message' in metadata:
+                self.set_system_message(metadata['system_message'])
         return success, preset, user_message
 
     def _handle_response(self, success, obj, message):
@@ -239,13 +241,11 @@ class ApiBackend(Backend):
         tokens = self.get_num_tokens_from_messages(token_messages)
         return tokens
 
-    def extract_system_message(self, request_overrides):
+    def extract_system_message_from_overrides(self, request_overrides):
         system_message = None
         if 'system_message' in request_overrides:
             system_message = request_overrides.pop('system_message')
-            aliases = self.get_system_message_aliases()
-            if system_message in aliases:
-                system_message = aliases[system_message]
+            system_message = self.get_system_message(system_message)
         return system_message, request_overrides
 
     def _extract_message_content(self, message):
@@ -284,13 +284,18 @@ class ApiBackend(Backend):
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
-    def set_system_message(self, alias='default'):
+    def get_system_message(self, system_message='default'):
         aliases = self.get_system_message_aliases()
-        if alias in aliases:
-            self.system_message_alias = alias
-            self.system_message = aliases[alias]
-            return True, alias, f"System message set to: {self.system_message}"
-        return False, alias, f"Unknown system message alias: {alias}"
+        if system_message in aliases:
+            system_message = aliases[system_message]
+        return system_message
+
+    def set_system_message(self, system_message='default'):
+        self.system_message = self.get_system_message(system_message)
+        self.system_message_alias = system_message if system_message in self.get_system_message_aliases() else None
+        message = f"System message set to: {self.system_message}"
+        self.log.info(message)
+        return True, system_message, message
 
     def set_max_submission_tokens(self, max_submission_tokens=None, force=False):
         chat = self.provider.get_capability('chat')
@@ -499,7 +504,7 @@ class ApiBackend(Backend):
     def ask_stream(self, prompt, title=None, request_overrides=None):
         self.log.info("Starting streaming request")
         request_overrides = request_overrides or {}
-        system_message, request_overrides = self.extract_system_message(request_overrides)
+        system_message, request_overrides = self.extract_system_message_from_overrides(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         # Streaming loop.
         self.streaming = True
@@ -533,7 +538,7 @@ class ApiBackend(Backend):
         """
         self.log.info("Starting non-streaming request")
         request_overrides = request_overrides or {}
-        system_message, request_overrides = self.extract_system_message(request_overrides)
+        system_message, request_overrides = self.extract_system_message_from_overrides(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         success, response, user_message = self._call_llm_non_streaming(messages, request_overrides)
         if success:

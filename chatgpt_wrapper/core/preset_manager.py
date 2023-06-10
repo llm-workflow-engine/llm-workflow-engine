@@ -54,6 +54,7 @@ class PresetManager():
     def user_metadata_fields(self):
         return [
             'description',
+            'system_message',
         ]
 
     def load_presets(self):
