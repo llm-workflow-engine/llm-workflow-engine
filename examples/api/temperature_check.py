@@ -6,27 +6,22 @@ from chatgpt_wrapper import ApiBackend
 from chatgpt_wrapper.core.config import Config
 import chatgpt_wrapper.core.util as util
 
-DEFAULT_PROMPT = 'Say three things about earth'
+DEFAULT_PROMPT = 'Say five words about earth'
 
 def main(prompt):
     config = Config()
+    config.set('debug.log.enabled', True)
     gpt = ApiBackend(config)
+    gpt.set_provider_streaming(True)
     temperatures = [t for t, _ in util.float_range_to_completions(0, 2).items()]
     temperatures_list = ", ".join(temperatures)
     temperatures = [float(t) for t in temperatures]
     util.print_markdown(f"# Asking: '{prompt}' at these temperatures:\n{temperatures_list}")
     for temp in temperatures:
+        print("")
         util.print_markdown(f"# Temperature: {temp}")
-        first = True
-        gpt.set_model_temperature(temp)
-        for chunk in gpt.ask_stream(prompt):
-            if first:
-                print("")
-                first = False
-            print(chunk, end="")
-            sys.stdout.flush()
-        print("\n")
-        # Work around rate limit if needed.
+        gpt.provider.set_customization_value('temperature', temp)
+        gpt.ask_stream(prompt)
         time.sleep(5)
 
 if __name__ == "__main__":
