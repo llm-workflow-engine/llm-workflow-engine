@@ -101,6 +101,7 @@ class ApiBackend(Backend):
             return False, None, f"Provider {provider_name} already set"
         success, provider, user_message = self.provider_manager.load_provider(provider_full_name)
         if success:
+            provider.setup()
             self.provider_name = provider_full_name
             self.provider = provider
             if isinstance(customizations, dict):
