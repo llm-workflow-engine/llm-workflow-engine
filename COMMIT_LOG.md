@@ -1,3 +1,17 @@
+### v0.11.6 - 10/06/2023
+
+* **Sat Jun 10 2023:** /preset-show defaults to current preset
+* **Sat Jun 10 2023:** fix api temperature check example
+* **Sat Jun 10 2023:** allow storing system message with a preset, allow storing non-aliased system messages
+* **Sat Jun 10 2023:** reset provider customizations loading a provider
+* **Sat Jun 10 2023:** upgrade presets schema to be more robust
+* **Sat Jun 10 2023:** pass config/data dirs to schema updater config, generalize message
+* **Fri Jun 09 2023:** better output for example social media workflow
+* **Fri Jun 09 2023:** better status message for opening editor
+* **Fri Jun 09 2023:** replace pause with lwe_input
+* **Thu Jun 08 2023:** cleaner infinite task workflow approach
+* **Thu Jun 08 2023:** llm-iterative-tasks workflow, infinite loop until user exits
+
 ### v0.11.5 - 08/06/2023
 
 * **Thu Jun 08 2023:** rename lwe module to lwe_llm module
