@@ -609,11 +609,15 @@ Before you can start using the shell, you must create a new user.
         Display a preset
 
         Arguments:
-            preset_name: Required. The name of the preset
+            preset_name: Optional. The name of the preset to show (default: active preset)
 
         Examples:
             {COMMAND} mypreset
         """
+        if not preset_name:
+            if not self.backend.active_preset:
+                return False, None, "No active preset"
+            preset_name = self.backend.active_preset
         success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
