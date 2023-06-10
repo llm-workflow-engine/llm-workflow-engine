@@ -30,6 +30,10 @@ class SchemaUpdater:
         self.log.debug("Creating alembic config using .ini: %s", ini_file)
         alembic_cfg = AlembicConfig(ini_file)
         alembic_cfg.set_main_option('sqlalchemy.url', self.database_url)
+        alembic_cfg.attributes['config_dir'] = self.config.config_dir
+        alembic_cfg.attributes['config_profile_dir'] = self.config.config_profile_dir
+        alembic_cfg.attributes['data_dir'] = self.config.data_dir
+        alembic_cfg.attributes['data_profile_dir'] = self.config.data_profile_dir
         return alembic_cfg
 
     def is_versioning_initialized(self):
@@ -65,7 +69,7 @@ class SchemaUpdater:
         command.stamp(self.alembic_cfg, revision)
 
     def confirm_upgrade(self):
-        answer = input("Do you want to upgrade the database schema? (yes/no): ")
+        answer = input("Do you want to upgrade the schema? (yes/no): ")
         return answer.lower() == "yes"
 
     def init_alembic(self):
@@ -76,26 +80,27 @@ class SchemaUpdater:
             current_version = self.get_current_schema_version()
             latest_version = self.get_latest_version()
             if not self.versioning_initialized or current_version != latest_version:
-                message = "Database schema is out of date."
+                message = "Schema is out of date."
                 self.log.warning(message)
                 util.print_status_message(False, message)
-                util.print_status_message(False, "It is highly recommended to backup your database prior to upgrading.")
+                util.print_status_message(False, "It is highly recommended to backup your database and configruation directory prior to upgrading.")
                 util.print_status_message(False, f"Database: {self.database_url}")
+                util.print_status_message(False, f"Configuration directory: {self.config.config_dir}")
                 if self.confirm_upgrade():
                     upgrading_message = "Upgrading the schema..."
                     self.log.info(upgrading_message)
                     util.print_status_message(True, upgrading_message, style="bold blue")
                     self.run_migrations()
-                    upgraded_message = "Database schema has been successfully upgraded."
+                    upgraded_message = "Schema has been successfully upgraded."
                     self.log.info(upgraded_message)
                     util.print_status_message(True, upgraded_message)
                 else:
-                    message = "Database schema upgrade aborted."
+                    message = "Schema upgrade aborted."
                     self.log.warning(message)
                     util.print_status_message(False, message)
                     sys.exit(0)
             else:
-                self.log.info("Database schema is up to date.")
+                self.log.info("Schema is up to date.")
         except Exception as e:
             self.log.error("Error during schema update process: %s", str(e))
             traceback_str = traceback.format_exc()
