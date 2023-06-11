@@ -192,7 +192,6 @@ class ProviderBase(Plugin):
                     completions[full_key] = {}
                 elif isinstance(value, dict):
                     prefix.append(key)
-                    completions[full_key] = None
                     for k, v in value.items():
                         dict_key = "%s.%s" % (full_key, k)
                         if isinstance(v, PresetValue):
