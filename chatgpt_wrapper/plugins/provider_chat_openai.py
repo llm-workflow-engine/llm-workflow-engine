@@ -59,7 +59,6 @@ class ProviderChatOpenai(Provider):
             'verbose': PresetValue(bool),
             'model_name': PresetValue(str, options=self.available_models),
             'temperature': PresetValue(float, min_value=0.0, max_value=2.0),
-            'model_kwargs': dict,
             'openai_api_key': PresetValue(str, include_none=True, private=True),
             'openai_organization': PresetValue(str, include_none=True, private=True),
             'request_timeout': PresetValue(int),
@@ -67,4 +66,12 @@ class ProviderChatOpenai(Provider):
             'streaming': PresetValue(bool),
             'n': PresetValue(int, 1, 10),
             'max_tokens': PresetValue(int, include_none=True),
+            'model_kwargs': {
+                'top_p': PresetValue(float, min_value=0.0, max_value=1.0),
+                'presence_penalty': PresetValue(float, min_value=-2.0, max_value=2.0),
+                'frequency_penalty': PresetValue(float, min_value=-2.0, max_value=2.0),
+                'logit_bias': dict,
+                'stop': PresetValue(str, include_none=True),
+                'user': PresetValue(str),
+            },
         }

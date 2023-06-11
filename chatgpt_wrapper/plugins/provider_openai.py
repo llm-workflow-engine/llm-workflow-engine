@@ -64,4 +64,13 @@ class ProviderOpenai(Provider):
             'top_p': PresetValue(float, min_value=0.0, max_value=1.0),
             'frequency_penalty': PresetValue(float, min_value=-2.0, max_value=2.0),
             'presence_penalty': PresetValue(float, min_value=-2.0, max_value=2.0),
+            'best_of': PresetValue(int, min_value=1),
+            'model_kwargs': {
+                'suffix': PresetValue(str, include_none=True),
+                'logprobs': PresetValue(int, min_value=1, max_value=5),
+                'echo': PresetValue(bool),
+                'stop': PresetValue(str, include_none=True),
+                'logit_bias': dict,
+                'user': PresetValue(str),
+            },
         }
