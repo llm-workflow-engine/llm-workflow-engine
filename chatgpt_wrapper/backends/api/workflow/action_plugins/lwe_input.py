@@ -29,6 +29,59 @@ from ansible.utils.display import Display
 
 from chatgpt_wrapper.core.editor import pipe_editor
 
+DOCUMENTATION = '''
+  module: lwe_input
+  short_description: Pauses execution until input is received
+  description:
+    - This module pauses the execution of a playbook until the user provides input.
+    - The user can provide input through the command line or by opening an editor.
+  options:
+    echo:
+      description:
+        - If set to True, the user's input will be displayed on the screen.
+        - If set to False, the user's input will be hidden.
+      type: bool
+      default: True
+    prompt:
+      description:
+        - The custom prompt message to display before waiting for user input.
+      type: str
+  author:
+    - Chad Phillips (@thehunmonkgroup)
+'''
+
+EXAMPLES = '''
+  - name: Pause execution and wait for user input
+    lwe_input:
+
+  - name: Pause execution and wait for user input with custom prompt
+    lwe_input:
+      prompt: "Please enter your name"
+
+  - name: Pause execution and wait for user input with hidden output
+    lwe_input:
+      echo: False
+'''
+
+RETURN = '''
+  stdout:
+    description: Standard output of the task, showing the duration of the pause.
+    type: str
+    returned: always
+  stop:
+    description: The end time of the pause.
+    type: str
+    returned: always
+  delta:
+    description: The duration of the pause in seconds.
+    type: int
+    returned: always
+  user_input:
+    description: The input provided by the user.
+    type: str
+    returned: always
+'''
+
 display = Display()
 
 
