@@ -1095,6 +1095,7 @@ class Repl():
 * Data profile dir: %s
 * Templates dirs: %s
 * Presets dirs: %s
+* Workflows dirs: %s
 
 # Profile '%s' configuration:
 
@@ -1106,7 +1107,7 @@ class Repl():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.backend.template_manager.template_dirs), ", ".join(self.backend.preset_manager.preset_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.backend.template_manager.template_dirs), ", ".join(self.backend.preset_manager.preset_dirs), ", ".join(self.backend.workflow_manager.workflow_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
 
