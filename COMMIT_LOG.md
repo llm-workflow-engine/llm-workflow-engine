@@ -1,3 +1,14 @@
+### v0.11.7 - 12/06/2023
+
+* **Mon Jun 12 2023:** delete confirmation for presets/workflows
+* **Mon Jun 12 2023:** allow copying system templates to user directories
+* **Mon Jun 12 2023:** allow LWE_ environment variable overrides of templates/plugins/presets/workflows dirs
+* **Mon Jun 12 2023:** configuration overrides for user templates/plugins/presets/workflows dirs
+* **Sun Jun 11 2023:** doc and examples for lwe_input action plugin
+* **Sun Jun 11 2023:** output workflow dirs for /config
+* **Sun Jun 11 2023:** add remaining customization_config values to openai providers
+* **Sun Jun 11 2023:** don't include dict values as empty completions
+
 ### v0.11.6 - 10/06/2023
 
 * **Sat Jun 10 2023:** /preset-show defaults to current preset
