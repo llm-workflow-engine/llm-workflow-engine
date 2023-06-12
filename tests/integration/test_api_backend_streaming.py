@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from chatgpt_wrapper.core.config import Config
-from chatgpt_wrapper import ApiBackend
+from lwe.core.config import Config
+from lwe import ApiBackend
 
 def test_api_backend_streaming():
     config = Config(profile='test')

@@ -460,7 +460,7 @@ You can  use the API backend's `ApiBackend` class to interact directly with the 
 Create an instance of the class and use the `ask` method to send a message to OpenAI and receive the response. For example:
 
 ```python
-from chatgpt_wrapper import ApiBackend
+from lwe import ApiBackend
 
 bot = ApiBackend()
 success, response, message = bot.ask("Hello, world!")
@@ -477,8 +477,8 @@ You may also stream the response as it comes in from the API in chunks using the
 To pass custom configuration to ChatGPT, use the Config class:
 
 ```python
-from chatgpt_wrapper import ApiBackend
-from chatgpt_wrapper.core.config import Config
+from lwe import ApiBackend
+from lwe.core.config import Config
 
 config = Config()
 config.set('browser.debug', True)
@@ -502,9 +502,9 @@ To execute a workflow, run `/workflow-run workflowname` -- depending on configur
 
 See `/help` for the various other workflow commands.
 
-The wrapper implements a custom Ansible module, `lwe_llm`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/chatgpt_wrapper/backends/api/workflow/library/lwe_llm.py).
+The wrapper implements a custom Ansible module, `lwe_llm`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/lwe/backends/api/workflow/library/lwe_llm.py).
 
-It is also possible to execute workflows directly with `ansible-playbook`, by simply navigating to the `chatgpt_wrapper/backends/api/workflow` directory:
+It is also possible to execute workflows directly with `ansible-playbook`, by simply navigating to the `lwe/backends/api/workflow` directory:
 
 ```bash
 ansible-playbook playbooks/hello-world.yaml
@@ -512,7 +512,7 @@ ansible-playbook playbooks/hello-world.yaml
 
 ### Flask API (experimental)
 
-- Run `python chatgpt_wrapper/gpt_api.py --port 5000` (default port is 5000) to start the server
+- Run `python lwe/gpt_api.py --port 5000` (default port is 5000) to start the server
 - Install pytest: `pip install pytest`
 - Test whether it is working using `pytest tests/integration/api_test.py`
 - See an example of interaction with api in `tests/integration/example_api_call.py`
@@ -678,8 +678,8 @@ From within the shell, execute this command:
 To use GPT-4 within your Python code, follow the template below:
 
 ```python
-from chatgpt_wrapper import ApiBackend
-from chatgpt_wrapper.core.config import Config
+from lwe import ApiBackend
+from lwe.core.config import Config
 
 config = Config()
 config.set('chat.model', 'gpt4')

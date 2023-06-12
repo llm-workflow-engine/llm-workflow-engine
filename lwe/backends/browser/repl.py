@@ -1,0 +1,137 @@
+import lwe.core.util as util
+from lwe.backends.browser.backend import BrowserBackend
+from lwe.core.repl import Repl
+
+class BrowserRepl(Repl):
+    """
+    A shell interpreter that serves as a front end to the BrowserBackend class
+    """
+
+    def configure_shell_commands(self):
+        self.commands = util.introspect_commands(__class__)
+
+    def get_custom_shell_completions(self):
+        self.base_shell_completions[util.command_with_leader('model')] = self.backend.provider.customizations_to_completions()
+        return {}
+
+    def configure_backend(self):
+        self.backend = BrowserBackend(self.config)
+
+    def launch_backend(self, interactive=True):
+        self.backend.launch_browser()
+
+    def build_shell_user_prefix(self):
+        return f"{self.backend.model} "
+
+    def do_session(self, _):
+        """
+        Refresh session information
+
+        This can resolve errors under certain scenarios.
+
+        Examples:
+            {COMMAND}
+        """
+        self.backend.refresh_session()
+        usable = (
+            "The session appears to be usable."
+            if "accessToken" in self.backend.session
+            else "The session is not usable.  Try `install` mode."
+        )
+        util.print_markdown(f"* Session information refreshed.  {usable}")
+
+    def get_plugin_list(self):
+        success, plugins, user_message = self.backend.get_plugins()
+        if not success:
+            return success, plugins, user_message
+        plugin_list = {p['id']: {
+            'domain': p['domain'],
+            'namespace': p['namespace'],
+            'name': p['manifest']['name_for_human'],
+            'description': p['manifest']['description_for_human'],
+        } for p in plugins}
+        return True, plugin_list, "Processed plugin list"
+
+    def format_plugin_item(self, id, data):
+        content = f"##### Provider: {data['domain']}, {data['namespace']}\n* **ID: {id}**"
+        if 'description' in data:
+            content += f"\n* Description: *{data['description']}*"
+        return content
+
+    def do_plugins(self, arg):
+        """
+        Retrieve information on available plugins
+
+        Plugins are retrieved from OpenAI's official approved plugins list.
+
+        NOTE: Not all users may have access to all plugins.
+
+        Arguments:
+            filter_string: Optional. String to filter plugins by. Domain, name, and description are matched.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} youtube
+        """
+        success, plugins, user_message = self.get_plugin_list()
+        if not success:
+            return success, plugins, user_message
+        plugin_list = []
+        for id, data in plugins.items():
+            content = self.format_plugin_item(id, data)
+            if not arg or arg.lower() in content.lower():
+                plugin_list.append(content)
+        util.print_markdown("## Plugins:\n\n%s" % "\n".join(plugin_list))
+
+    def do_plugins_enabled(self, _):
+        """
+        List enabled plugins
+
+        Examples:
+            {COMMAND}
+        """
+        success, plugins, user_message = self.get_plugin_list()
+        if not success:
+            return success, plugins, user_message
+        plugin_list = []
+        for id in self.backend.plugin_ids:
+            if id in plugins:
+                data = plugins[id]
+                content = self.format_plugin_item(id, data)
+                plugin_list.append(content)
+        util.print_markdown("## Enabled plugins:\n\n%s" % "\n".join(plugin_list))
+
+    def do_plugin_enable(self, arg):
+        """
+        Dynamically enable a plugin
+
+        Arguments:
+            id: The ID of the plugin to enable (IDs available in plugin list)
+
+        Examples:
+            {COMMAND} plugin-43fe9e1c-665a-4c22-a0f4-2a2ec195da51
+        """
+        if not arg:
+            return False, None, "Plugin ID required"
+        success, plugins, user_message = self.get_plugin_list()
+        if not success:
+            return success, plugins, user_message
+        if arg not in plugins:
+            return False, arg, f"Plugin {arg} not found, or invalid ID"
+        return self.backend.enable_plugin(arg)
+
+    def do_plugin_disable(self, arg):
+        """
+        Dynamically disable a plugin
+
+        Arguments:
+            id: The ID of the plugin to disable (IDs available in plugin list)
+
+        Examples:
+            {COMMAND} plugin-43fe9e1c-665a-4c22-a0f4-2a2ec195da51
+        """
+        if not arg:
+            return False, None, "Plugin ID required"
+        if arg not in self.backend.plugin_ids:
+            return False, arg, f"Plugin {arg} not enabled, or invalid ID"
+        return self.backend.disable_plugin(arg)

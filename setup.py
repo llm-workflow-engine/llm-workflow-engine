@@ -10,7 +10,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 with open('requirements.txt') as f:
     install_requirement = f.readlines()
 
-with open(path.join(FILE_DIR, 'chatgpt_wrapper', 'version.py')) as f:
+with open(path.join(FILE_DIR, 'lwe', 'version.py')) as f:
     version = re.match(r'^__version__ = "([\w\.]+)"$', f.read().strip())[1]
 
 setup(
@@ -24,7 +24,7 @@ setup(
     url="https://github.com/mmabrouk/chatgpt-wrapper",
     packages=find_packages(),
     package_data={
-        'chatgpt_wrapper': [
+        'lwe': [
             'backends/api/schema/alembic.ini',
             'backends/api/schema/alembic/*',
             'backends/api/schema/alembic/**/*',
@@ -45,9 +45,10 @@ setup(
     python_requires=">=3.7",
     entry_points={
         "console_scripts": [
-            "chatgpt = chatgpt_wrapper.main:main",
+            "chatgpt = lwe.main:main",
+            "lwe = lwe.main:main",
         ],
-        "chatgpt_wrapper_plugins": [],
+        "lwe_plugins": [],
     },
     scripts=["postinstall.sh"],
 )

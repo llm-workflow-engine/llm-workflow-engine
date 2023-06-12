@@ -3,8 +3,8 @@
 import time
 import sys
 
-from chatgpt_wrapper.core.config import Config
-from chatgpt_wrapper.backends.browser.backend import BrowserBackend
+from lwe.core.config import Config
+from lwe.backends.browser.backend import BrowserBackend
 
 def test_browser_backend_non_streaming(wait=None):
     config = Config(profile='test')

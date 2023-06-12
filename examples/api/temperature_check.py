@@ -2,9 +2,9 @@
 
 import sys
 import time
-from chatgpt_wrapper import ApiBackend
-from chatgpt_wrapper.core.config import Config
-import chatgpt_wrapper.core.util as util
+from lwe import ApiBackend
+from lwe.core.config import Config
+import lwe.core.util as util
 
 DEFAULT_PROMPT = 'Say five words about earth'
 
