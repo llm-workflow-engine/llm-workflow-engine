@@ -704,13 +704,17 @@ Before you can start using the shell, you must create a new user.
                 return False, preset_name, f"{metadata['name']} is a system preset, and cannot be deleted"
         else:
             return success, preset, user_message
-        success, _, user_message = self.backend.preset_manager.delete_preset(preset_name)
-        if success:
-            self.backend.preset_manager.load_presets()
-            if self.backend.active_preset == preset_name:
-                self.backend.init_provider()
-            self.rebuild_completions()
-        return success, preset_name, user_message
+        confirmation = input(f"Are you sure you want to delete preset {preset_name}? [y/N] ").strip()
+        if confirmation.lower() in ["yes", "y"]:
+            success, _, user_message = self.backend.preset_manager.delete_preset(preset_name)
+            if success:
+                self.backend.preset_manager.load_presets()
+                if self.backend.active_preset == preset_name:
+                    self.backend.init_provider()
+                self.rebuild_completions()
+            return success, preset_name, user_message
+        else:
+            return False, preset_name, "Deletion aborted"
 
     def do_workflows(self, arg):
         """
@@ -826,8 +830,12 @@ Before you can start using the shell, you must create a new user.
         success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
         if success and self.backend.workflow_manager.is_system_workflow(workflow_file):
             return False, workflow_name, f"{workflow_name} is a system workflow, and cannot be deleted"
-        success, workflow_name, user_message = self.backend.workflow_manager.delete_workflow(workflow_name)
-        if success:
-            self.backend.workflow_manager.load_workflows()
-            self.rebuild_completions()
-        return success, workflow_name, user_message
+        confirmation = input(f"Are you sure you want to delete workflow {workflow_name}? [y/N] ").strip()
+        if confirmation.lower() in ["yes", "y"]:
+            success, workflow_name, user_message = self.backend.workflow_manager.delete_workflow(workflow_name)
+            if success:
+                self.backend.workflow_manager.load_workflows()
+                self.rebuild_completions()
+            return success, workflow_name, user_message
+        else:
+            return False, workflow_name, "Deletion aborted"
