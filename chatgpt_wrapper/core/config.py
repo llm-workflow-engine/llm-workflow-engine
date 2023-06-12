@@ -3,6 +3,7 @@ import yaml
 import platform
 
 import chatgpt_wrapper.core.constants as constants
+import chatgpt_wrapper.core.util as util
 
 class Config:
     def __init__(self, config_dir=None, data_dir=None, profile=constants.DEFAULT_PROFILE, config=None):
@@ -71,6 +72,9 @@ class Config:
         self.set('debug.log.level', self.get('debug.log.level').upper(), False)
         if not self.get('database'):
             self.set('database', "sqlite:///%s/%s.db" % (self.data_profile_dir, constants.DEFAULT_DATABASE_BASENAME), False)
+        for setting, paths in self.get('directories').items():
+            adjusted_paths = [util.filepath_replacements(path, self) for path in paths]
+            self.set(f"directories.{setting}", adjusted_paths, False)
 
     def _merge_configs(self, default, config):
         if isinstance(default, dict) and isinstance(config, dict):

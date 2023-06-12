@@ -3,6 +3,7 @@ import yaml
 
 from chatgpt_wrapper.core.config import Config
 from chatgpt_wrapper.core.logger import Logger
+import chatgpt_wrapper.core.util as util
 
 def parse_llm_dict(content):
     metadata = {}
@@ -24,7 +25,12 @@ class PresetManager():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.preset_dirs = self.make_preset_dirs()
+        self.user_preset_dirs = self.config.get('directories.presets')
+        self.make_user_preset_dirs()
+        self.system_preset_dirs = [
+            os.path.join(util.get_package_root(self), 'presets'),
+        ]
+        self.all_preset_dirs = self.system_preset_dirs + self.user_preset_dirs
         self.load_presets()
 
     def ensure_preset(self, preset_name):
@@ -39,14 +45,10 @@ class PresetManager():
         self.log.debug(message)
         return True, self.presets[preset_name], message
 
-    def make_preset_dirs(self):
-        preset_dirs = []
-        preset_dirs.append(os.path.join(self.config.config_dir, 'presets'))
-        preset_dirs.append(os.path.join(self.config.config_profile_dir, 'presets'))
-        for preset_dir in preset_dirs:
+    def make_user_preset_dirs(self):
+        for preset_dir in self.user_preset_dirs:
             if not os.path.exists(preset_dir):
                 os.makedirs(preset_dir)
-        return preset_dirs
 
     def parse_preset_dict(self, content):
         return content['metadata'], content['model_customizations']
@@ -58,22 +60,24 @@ class PresetManager():
         ]
 
     def load_presets(self):
-        self.log.debug("Loading presets from dirs: %s" % ", ".join(self.preset_dirs))
+        self.log.debug("Loading presets from dirs: %s" % ", ".join(self.all_preset_dirs))
         self.presets = {}
         try:
-            for preset_dir in self.preset_dirs:
+            for preset_dir in self.all_preset_dirs:
                 if os.path.exists(preset_dir) and os.path.isdir(preset_dir):
                     self.log.info(f"Processing directory: {preset_dir}")
                     for file_name in os.listdir(preset_dir):
                         if file_name.endswith('.yaml'):
                             self.log.debug(f"Loading YAML file: {file_name}")
                             try:
-                                with open(os.path.join(preset_dir, file_name), 'r') as file:
+                                filepath = os.path.join(preset_dir, file_name)
+                                with open(filepath, 'r') as file:
                                     content = yaml.safe_load(file)
                             except Exception as e:
                                 self.log.error(f"Error loading YAML file '{file_name}': {e}")
                                 continue
                             metadata, customizations = self.parse_preset_dict(content)
+                            metadata['filepath'] = filepath
                             preset_name = file_name[:-5]  # Remove '.yaml' extension
                             self.presets[preset_name] = (metadata, customizations)
                             self.log.info(f"Successfully loaded preset: {preset_name}")
@@ -94,7 +98,7 @@ class PresetManager():
             'model_customizations': customizations,
         }
         if preset_dir is None:
-            preset_dir = self.preset_dirs[-1]
+            preset_dir = self.user_preset_dirs[-1]
         file_path = os.path.join(preset_dir, f"{preset_name}.yaml")
         try:
             with open(file_path, 'w') as file:
@@ -110,7 +114,7 @@ class PresetManager():
     def delete_preset(self, preset_name, preset_dir=None):
         try:
             if preset_dir is None:
-                preset_dir = self.preset_dirs[-1]
+                preset_dir = self.user_preset_dirs[-1]
             preset_name = f"{preset_name}.yaml" if not preset_name.endswith('.yaml') else preset_name
             file_path = os.path.join(preset_dir, preset_name)
             os.remove(file_path)
@@ -121,3 +125,9 @@ class PresetManager():
             message = f"An error occurred while deleting preset '{preset_name}': {e}"
             self.log.error(message)
             return False, None, message
+
+    def is_system_preset(self, filepath):
+        for dir in self.system_preset_dirs:
+            if filepath.startswith(dir):
+                return True
+        return False

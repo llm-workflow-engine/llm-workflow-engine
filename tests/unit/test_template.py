@@ -30,19 +30,18 @@ def template_manager(test_config):
     return template_manager
 
 def make_template_file(template_manager, template_name, content=None):
-    template_dir = template_manager.template_dirs[0]
+    template_dir = template_manager.user_template_dirs[0]
     util.create_file(template_dir, template_name, content)
     template_manager.load_templates()
 
 def remove_template_file(template_manager, template_name):
-    template_dir = template_manager.template_dirs[0]
+    template_dir = template_manager.user_template_dirs[0]
     os.remove(os.path.join(template_dir, template_name))
 
 def test_init(template_manager):
     assert isinstance(template_manager, TemplateManager)
-    assert len(template_manager.template_dirs) > 0
-    assert template_manager.templates == []
-
+    assert len(template_manager.user_template_dirs) > 0
+    assert len(template_manager.templates) > 0
 
 def test_template_builtin_variables(template_manager):
     builtins = template_manager.template_builtin_variables()
@@ -112,13 +111,11 @@ def test_process_template_builtin_variables(template_manager, monkeypatch):
     assert substitutions == {'clipboard': 'clipboard_text'}
 
 
-def test_make_template_dirs(template_manager, tmpdir):
+def test_make_user_template_dirs(template_manager, tmpdir):
     template_manager.config.config_dir = str(tmpdir)
     template_manager.config.config_profile_dir = str(tmpdir)
-    template_dirs = template_manager.make_template_dirs()
-
-    assert len(template_dirs) == 2
-    for template_dir in template_dirs:
+    template_manager.make_user_template_dirs()
+    for template_dir in template_manager.user_template_dirs:
         assert os.path.exists(template_dir)
 
 def test_load_templates(template_manager):

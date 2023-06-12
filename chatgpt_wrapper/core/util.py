@@ -209,3 +209,12 @@ def create_file(directory, filename, content=None):
 def current_datetime():
     now = datetime.now()
     return now
+
+def filepath_replacements(filepath, config):
+    filepath = filepath.replace("$HOME", os.path.expanduser('~user'))
+    filepath = filepath.replace("$CONFIG_DIR", config.config_dir)
+    filepath = filepath.replace("$PROFILE", config.profile)
+    return filepath
+
+def set_lwe_environment_variable(name, value):
+    os.environ[f"LWE_{name.upper()}"] = value

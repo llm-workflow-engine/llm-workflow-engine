@@ -2,8 +2,6 @@ import os
 import sys
 import subprocess
 import copy
-import yaml
-import getpass
 import shlex
 
 from chatgpt_wrapper.core.config import Config
@@ -18,7 +16,12 @@ class WorkflowManager():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.workflow_dirs = self.make_workflow_dirs()
+        self.user_workflow_dirs = self.config.get('directories.workflows')
+        self.make_user_workflow_dirs()
+        self.system_workflow_dirs = [
+            os.path.join(util.get_package_root(self), 'workflows'),
+        ]
+        self.all_workflow_dirs = self.system_workflow_dirs + self.user_workflow_dirs
         self.create_runner_dir()
         self.load_workflows()
 
@@ -57,17 +60,10 @@ class WorkflowManager():
         self.log.debug(message)
         return True, self.workflows[workflow_name], message
 
-    def make_workflow_dirs(self):
-        workflow_dir = self.get_workflow_dir()
-        core_workflow_dir = os.path.join(workflow_dir, 'playbooks')
-        workflow_dirs = []
-        workflow_dirs.append(os.path.join(self.config.config_profile_dir, 'workflows'))
-        workflow_dirs.append(os.path.join(self.config.config_dir, 'workflows'))
-        workflow_dirs.append(core_workflow_dir)
-        for workflow_dir in workflow_dirs:
+    def make_user_workflow_dirs(self):
+        for workflow_dir in self.user_workflow_dirs:
             if not os.path.exists(workflow_dir):
                 os.makedirs(workflow_dir)
-        return workflow_dirs
 
     def get_workflow_environment_config(self):
         workflow_dir = self.get_workflow_dir()
@@ -155,10 +151,10 @@ class WorkflowManager():
         return False, None, message
 
     def load_workflows(self):
-        self.log.debug("Loading workflows from dirs: %s" % ", ".join(self.workflow_dirs))
+        self.log.debug("Loading workflows from dirs: %s" % ", ".join(self.all_workflow_dirs))
         self.workflows = {}
         try:
-            for workflow_dir in self.workflow_dirs:
+            for workflow_dir in self.all_workflow_dirs:
                 if os.path.exists(workflow_dir) and os.path.isdir(workflow_dir):
                     self.log.info(f"Processing directory: {workflow_dir}")
                     for file_name in os.listdir(workflow_dir):
@@ -189,3 +185,9 @@ class WorkflowManager():
             message = f"An error occurred while deleting workflow '{workflow_name}': {e}"
             self.log.error(message)
             return False, None, message
+
+    def is_system_workflow(self, filepath):
+        for dir in self.system_workflow_dirs:
+            if filepath.startswith(dir):
+                return True
+        return False

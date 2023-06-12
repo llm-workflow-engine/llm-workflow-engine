@@ -15,7 +15,12 @@ class TemplateManager():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.template_dirs = self.make_template_dirs()
+        self.user_template_dirs = self.config.get('directories.templates')
+        self.make_user_template_dirs()
+        self.system_template_dirs = [
+            os.path.join(util.get_package_root(self), 'templates'),
+        ]
+        self.all_template_dirs = self.user_template_dirs + self.system_template_dirs
         self.templates = []
         self.templates_env = None
 
@@ -76,18 +81,14 @@ class TemplateManager():
                 self.log.debug(f"Collected builtin variable {variable} for template {template_name}: {substitutions[variable]}")
         return substitutions
 
-    def make_template_dirs(self):
-        template_dirs = []
-        template_dirs.append(os.path.join(self.config.config_dir, 'templates'))
-        template_dirs.append(os.path.join(self.config.config_profile_dir, 'templates'))
-        for template_dir in template_dirs:
+    def make_user_template_dirs(self):
+        for template_dir in self.user_template_dirs:
             if not os.path.exists(template_dir):
                 os.makedirs(template_dir)
-        return template_dirs
 
     def load_templates(self):
-        self.log.debug("Loading templates from dirs: %s" % ", ".join(self.template_dirs))
-        jinja_env = Environment(loader=FileSystemLoader(self.template_dirs))
+        self.log.debug("Loading templates from dirs: %s" % ", ".join(self.all_template_dirs))
+        jinja_env = Environment(loader=FileSystemLoader(self.all_template_dirs))
         filenames = jinja_env.list_templates()
         self.templates_env = jinja_env
         self.templates = filenames or []
@@ -101,3 +102,9 @@ class TemplateManager():
         parsed_content = self.templates_env.parse(template_source)
         variables = meta.find_undeclared_variables(parsed_content)
         return template, variables
+
+    def is_system_template(self, filepath):
+        for dir in self.system_template_dirs:
+            if filepath.startswith(dir):
+                return True
+        return False

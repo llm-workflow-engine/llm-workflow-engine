@@ -17,6 +17,41 @@ backend: api
 
 
 ##########################################################
+# Directory settings.
+##########################################################
+# Customize user directory locations.
+#
+# Directories are scanned by their order in the list. System directories for these
+# settings are automatically included and are searched with the lowest priority.
+#
+# For presets and workflows, later files with the same name override earlier ones.
+# For plugins and templates, first found wins.
+#
+# The following token are available:
+# - $HOME: The user's home directory
+# - $CONFIG_DIR: The configuration directory
+# - $PROFILE: The active profile
+directories:
+  templates:
+    # New templates created in the CLI are saved to the first directory in the list.
+    - $CONFIG_DIR/profiles/$PROFILE/templates
+    - $CONFIG_DIR/templates
+  # NOTE: This setting is only available on the following backends: api
+  presets:
+    - $CONFIG_DIR/presets
+    # New presets created in the CLI are saved to the last directory in the list.
+    - $CONFIG_DIR/profiles/$PROFILE/presets
+  plugins:
+    - $CONFIG_DIR/profiles/$PROFILE/plugins
+    - $CONFIG_DIR/plugins
+  # NOTE: This setting is only available on the following backends: api
+  workflows:
+    - $CONFIG_DIR/workflows
+    # New workflows created in the CLI are saved to the last directory in the list.
+    - $CONFIG_DIR/profiles/$PROFILE/workflows
+
+
+##########################################################
 # Shell settings.
 ##########################################################
 shell:

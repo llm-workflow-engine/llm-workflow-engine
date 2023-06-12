@@ -647,6 +647,8 @@ Before you can start using the shell, you must create a new user.
         success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(args.split()[0])
         if success:
             existing_metadata, _customizations = existing_preset
+            if self.backend.preset_manager.is_system_preset(existing_metadata['filepath']):
+                return False, args, f"{existing_metadata['name']} is a system preset, and cannot be edited directly"
             for key in self.backend.preset_manager.user_metadata_fields():
                 if key in existing_metadata:
                     extra_metadata[key] = existing_metadata[key]
@@ -696,7 +698,11 @@ Before you can start using the shell, you must create a new user.
             {COMMAND} mypreset
         """
         success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
-        if not success:
+        if success:
+            metadata, _customizations = preset
+            if self.backend.preset_manager.is_system_preset(metadata['filepath']):
+                return False, preset_name, f"{metadata['name']} is a system preset, and cannot be deleted"
+        else:
             return success, preset, user_message
         success, _, user_message = self.backend.preset_manager.delete_preset(preset_name)
         if success:
@@ -796,9 +802,11 @@ Before you can start using the shell, you must create a new user.
         success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
         if success:
             filename = workflow_file
+            if self.backend.workflow_manager.is_system_workflow(filename):
+                return False, workflow_name, f"{workflow_name} is a system workflow, and cannot be edited directly"
         else:
             workflow_name = f"{workflow_name}.yaml" if not workflow_name.endswith('.yaml') else workflow_name
-            filename = os.path.join(self.backend.workflow_manager.workflow_dirs[0], workflow_name)
+            filename = os.path.join(self.backend.workflow_manager.user_workflow_dirs[-1], workflow_name)
         file_editor(filename)
         self.backend.workflow_manager.load_workflows()
         self.rebuild_completions()
@@ -815,6 +823,9 @@ Before you can start using the shell, you must create a new user.
         """
         if not workflow_name:
             return False, None, "No workflow name specified"
+        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
+        if success and self.backend.workflow_manager.is_system_workflow(workflow_file):
+            return False, workflow_name, f"{workflow_name} is a system workflow, and cannot be deleted"
         success, workflow_name, user_message = self.backend.workflow_manager.delete_workflow(workflow_name)
         if success:
             self.backend.workflow_manager.load_workflows()

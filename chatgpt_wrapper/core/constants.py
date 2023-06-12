@@ -28,6 +28,24 @@ DEFAULT_CONFIG = {
         'default_user': None,
         'default_conversation_id': None,
     },
+    'directories': {
+        'templates': [
+            '$CONFIG_DIR/profiles/$PROFILE/templates',
+            '$CONFIG_DIR/templates',
+        ],
+        'presets': [
+            '$CONFIG_DIR/presets',
+            '$CONFIG_DIR/profiles/$PROFILE/presets',
+        ],
+        'plugins': [
+            '$CONFIG_DIR/profiles/$PROFILE/plugins',
+            '$CONFIG_DIR/plugins',
+        ],
+        'workflows': [
+            '$CONFIG_DIR/workflows',
+            '$CONFIG_DIR/profiles/$PROFILE/workflows',
+        ],
+    },
     'shell': {
         'prompt_prefix': '($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS): $SYSTEM_MESSAGE_ALIAS$NEWLINE$USER@$PRESET_OR_MODEL',
         'history_file': '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep),

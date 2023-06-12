@@ -22,13 +22,12 @@ class PluginManager:
         self.load_plugins(self.plugin_list)
 
     def get_default_plugin_paths(self):
-        package_root = os.path.join(util.get_package_root(self), 'plugins')
-        self.log.debug(f"Package root: {package_root}")
-        plugin_paths = [
-            package_root,
-            os.path.join(self.config.config_dir, 'plugins'),
-            os.path.join(self.config.config_profile_dir, 'plugins'),
+        user_plugin_dirs = self.config.get('directories.plugins')
+        system_plugin_dirs = [
+            os.path.join(util.get_package_root(self), 'plugins'),
         ]
+        plugin_paths = user_plugin_dirs + system_plugin_dirs
+        self.log.debug(f"Plugin paths: {plugin_paths}")
         return plugin_paths
 
     def inject_plugin(self, plugin_name, plugin_class):

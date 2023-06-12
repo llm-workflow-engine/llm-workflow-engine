@@ -947,8 +947,10 @@ class Repl():
         template, _ = self.backend.template_manager.get_template_and_variables(template_name)
         if template:
             filename = template.filename
+            if self.backend.template_manager.is_system_template(filename):
+                return False, template_name, f"{template_name} is a system template, and cannot be edited directly"
         else:
-            filename = os.path.join(self.backend.template_manager.template_dirs[0], template_name)
+            filename = os.path.join(self.backend.template_manager.user_template_dirs[0], template_name)
         file_editor(filename)
         self.backend.template_manager.load_templates()
         self.rebuild_completions()
@@ -992,7 +994,10 @@ class Repl():
         if not template_name:
             return False, template_name, "No template name specified"
         template, _ = self.backend.template_manager.get_template_and_variables(template_name)
-        if not template:
+        if template:
+            if self.backend.template_manager.is_system_template(template.filename):
+                return False, template_name, f"{template_name} is a system template, and cannot be deleted"
+        else:
             return False, template_name, f"{template_name} does not exist"
         confirmation = input(f"Are you sure you want to delete template {template_name}? [y/N] ").strip()
         if confirmation.lower() in ["yes", "y"]:
@@ -1107,7 +1112,7 @@ class Repl():
 
 * Streaming: %s
 * Logging to: %s
-""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.backend.template_manager.template_dirs), ", ".join(self.backend.preset_manager.preset_dirs), ", ".join(self.backend.workflow_manager.workflow_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
+""" % (self.backend.name, self.config.config_dir, self.config.config_profile_dir, self.config.config_file or "None", self.config.data_dir, self.config.data_profile_dir, ", ".join(self.backend.template_manager.user_template_dirs), ", ".join(self.backend.preset_manager.user_preset_dirs), ", ".join(self.backend.workflow_manager.user_workflow_dirs), self.config.profile, yaml.dump(self.config.get(), default_flow_style=False), str(self.stream), self.logfile and self.logfile.name or "None")
         output += self.backend.get_runtime_config()
         util.print_markdown(output)
 
