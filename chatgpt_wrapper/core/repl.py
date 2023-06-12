@@ -973,7 +973,8 @@ class Repl():
         if not template:
             return False, template_names, f"{old_name} does not exist"
         old_filepath = template.filename
-        new_filepath = os.path.join(os.path.dirname(old_filepath), new_name)
+        base_filepath = self.backend.template_manager.user_template_dirs[0] if self.backend.template_manager.is_system_template(old_filepath) else os.path.dirname(old_filepath)
+        new_filepath = os.path.join(base_filepath, new_name)
         if os.path.exists(new_filepath):
             return False, template_names, f"{new_name} already exists"
         shutil.copy2(old_filepath, new_filepath)
