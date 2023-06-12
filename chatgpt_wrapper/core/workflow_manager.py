@@ -16,7 +16,7 @@ class WorkflowManager():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.user_workflow_dirs = self.config.get('directories.workflows')
+        self.user_workflow_dirs = util.get_environment_variable_list('workflow_dirs') or self.config.get('directories.workflows')
         self.make_user_workflow_dirs()
         self.system_workflow_dirs = [
             os.path.join(util.get_package_root(self), 'workflows'),

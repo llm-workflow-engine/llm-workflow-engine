@@ -216,5 +216,9 @@ def filepath_replacements(filepath, config):
     filepath = filepath.replace("$PROFILE", config.profile)
     return filepath
 
-def set_lwe_environment_variable(name, value):
-    os.environ[f"LWE_{name.upper()}"] = value
+def get_environment_variable(name, default=None):
+    return os.environ.get(f"LWE_{name.upper()}", default)
+
+def get_environment_variable_list(name):
+    var_list = get_environment_variable(name)
+    return var_list.split(',') if var_list else None
