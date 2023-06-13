@@ -1,3 +1,24 @@
+### v0.12.0 - 13/06/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+* The base module namespace has been changed from `chatgpt_wrapper` to `lwe` in preparation for a re-branding.
+  This affects all uses of the Python module, the change is straightforward:
+
+  OLD:
+
+  ```python
+  from chatgpt_wrapper import ApiBackend
+  from chatgpt_wrapper.core.config import Config
+  ```
+
+  NEW:
+  ```python
+  from lwe import ApiBackend
+  from lwe.core.config import Config
+  ```
+* For packaged plugins, the plugin namespace has changed from `chatgpt_wrapper` to `lwe`.
+
 ### v0.11.7 - 12/06/2023
 
 * **Mon Jun 12 2023:** delete confirmation for presets/workflows
