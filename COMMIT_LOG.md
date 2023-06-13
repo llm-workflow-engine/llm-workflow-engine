@@ -1,3 +1,7 @@
+### v0.12.1 - 13/06/2023
+
+* **Tue Jun 13 2023:** monkey patch / version lock langchain with stream interruption fixes, fixes #274, fixes #180
+
 ### v0.12.0 - 13/06/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
