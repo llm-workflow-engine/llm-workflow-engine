@@ -508,9 +508,6 @@ class ApiBackend(Backend):
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         # Streaming loop.
         self.streaming = True
-        #    if not self.streaming:
-        #        self.log.info("Request to interrupt streaming")
-        #        break
         self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
         success, response_obj, user_message = self._call_llm_streaming(messages, request_overrides)
         if success:

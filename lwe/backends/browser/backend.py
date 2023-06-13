@@ -694,7 +694,7 @@ class BrowserBackend(Backend):
 
     def interrupt_stream(self):
         self.log.info("Interrupting stream")
-        util.print_status_message(False, "\n\nWARNING:\nStream interruption on the browser backend is not currently working properly, and may require force closing the process.\nIf you'd like to help fix this error, see https://github.com/mmabrouk/chatgpt-wrapper/issues/274")
+        # util.print_status_message(False, "\n\nWARNING:\nStream interruption on the browser backend is not currently working properly, and may require force closing the process.\nIf you'd like to help fix this error, see https://github.com/mmabrouk/chatgpt-wrapper/issues/274")
         code = (
             """
             const interrupt_div = document.createElement('DIV');

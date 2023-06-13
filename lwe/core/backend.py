@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-# TODO: Uncomment after https://github.com/hwchase17/langchain/pull/4403 is fixed.
-# from langchain.callbacks.manager import CallbackManager, StreamInterruption
-# TODO: Remove after https://github.com/hwchase17/langchain/pull/4403 is fixed.
-from langchain.callbacks.manager import CallbackManager
+import lwe.core.monkey_patch
+
+from langchain.callbacks.manager import CallbackManager, StreamInterruption
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from lwe.core.config import Config
@@ -23,13 +22,9 @@ def make_interrupt_streaming_callback_handler(backend):
     class InterruptStreamingCallbackHandler(VerboseStreamingStdOutCallbackHandler):
         def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
             if not backend.streaming:
-                util.print_status_message(False, "\n\nWARNING:\nStream interruption on the API backend is not currently working properly, and may not properly store information on an interrupted stream.\nIf you'd like to help fix this error, see https://github.com/mmabrouk/chatgpt-wrapper/issues/274")
                 message = "Request to interrupt streaming"
                 backend.log.info(message)
-                # TODO: Uncomment after https://github.com/hwchase17/langchain/pull/4403 is fixed.
-                # raise StreamInterruption(message)
-                # TODO: Remove after https://github.com/hwchase17/langchain/pull/4403 is fixed.
-                raise EOFError(message)
+                raise StreamInterruption(message)
     return InterruptStreamingCallbackHandler()
 
 class Backend(ABC):

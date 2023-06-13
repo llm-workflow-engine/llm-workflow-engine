@@ -7,6 +7,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
+from langchain.callbacks.manager import StreamInterruption
 from langchain.chat_models.openai import _convert_dict_to_message
 
 from lwe.backends.browser.backend import BrowserBackend
@@ -61,10 +62,13 @@ def make_llm_class(klass):
                 inner_completion += token
                 if self.streaming:
                     if run_manager:
-                        run_manager.on_llm_new_token(
-                            token,
-                            verbose=self.verbose,
-                        )
+                        try:
+                            run_manager.on_llm_new_token(
+                                token,
+                                verbose=self.verbose,
+                            )
+                        except StreamInterruption:
+                            pass
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
