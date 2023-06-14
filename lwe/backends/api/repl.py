@@ -66,7 +66,7 @@ class ApiRepl(Repl):
             util.command_with_leader('provider'): provider_completions,
         }
         preset_keys = self.backend.preset_manager.presets.keys()
-        for subcmd in ['save', 'load', 'delete', 'show']:
+        for subcmd in ['save', 'load', 'edit', 'delete', 'show']:
             final_completions[util.command_with_leader(f"preset-{subcmd}")] = util.list_to_completion_hash(preset_keys) if preset_keys else None
         for preset_name in preset_keys:
             final_completions[util.command_with_leader("preset-save")][preset_name] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
@@ -590,7 +590,9 @@ Before you can start using the shell, you must create a new user.
             {COMMAND}
             {COMMAND} filterstring
         """
-        self.backend.preset_manager.load_presets()
+        success, presets, user_message = self.backend.preset_manager.load_presets()
+        if not success:
+            return success, presets, user_message
         self.rebuild_completions()
         presets = []
         for preset_name, data in self.backend.preset_manager.presets.items():
@@ -666,11 +668,44 @@ Before you can start using the shell, you must create a new user.
         metadata.update(extra_metadata)
         success, file_path, user_message = self.backend.preset_manager.save_preset(preset_name, metadata, customizations)
         if success:
-            self.backend.preset_manager.load_presets()
+            success, presets, user_message = self.backend.preset_manager.load_presets()
+            if not success:
+                return success, presets, user_message
             success, preset, load_preset_message = self.do_preset_load(preset_name)
             if not success:
                 return success, preset, load_preset_message
         return success, file_path, user_message
+
+
+    def do_preset_edit(self, preset_name):
+        """
+        Edit an existing preset
+
+        Arguments:
+            preset_name: Required. The name of the preset
+
+        Examples:
+            {COMMAND} mypreset
+        """
+        if not preset_name:
+            return False, preset_name, "No preset name specified"
+        success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
+        if success:
+            metadata, _customizations = preset
+            if self.backend.preset_manager.is_system_preset(metadata['filepath']):
+                return False, preset_name, f"{metadata['name']} is a system preset, and cannot be edited directly"
+        else:
+            return success, preset_name, user_message
+        file_editor(metadata['filepath'])
+        success, presets, user_message = self.backend.preset_manager.load_presets()
+        if not success:
+            return success, presets, user_message
+        if self.backend.active_preset == preset_name:
+            success, preset, user_message = self.backend.activate_preset(preset_name)
+            if success:
+                return success, preset, f"Edited and re-actived preset: {preset_name}"
+            return success, preset, user_message
+        return True, preset_name, f"Edited preset: {preset_name}"
 
     def do_preset_load(self, preset_name):
         """
@@ -711,10 +746,11 @@ Before you can start using the shell, you must create a new user.
         if confirmation.lower() in ["yes", "y"]:
             success, _, user_message = self.backend.preset_manager.delete_preset(preset_name)
             if success:
-                self.backend.preset_manager.load_presets()
-                if self.backend.active_preset == preset_name:
-                    self.backend.init_provider()
-                self.rebuild_completions()
+                success, _presets, user_message = self.backend.preset_manager.load_presets()
+                if success:
+                    if self.backend.active_preset == preset_name:
+                        self.backend.init_provider()
+                    self.rebuild_completions()
             return success, preset_name, user_message
         else:
             return False, preset_name, "Deletion aborted"
