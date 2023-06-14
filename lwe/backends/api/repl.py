@@ -657,7 +657,10 @@ Before you can start using the shell, you must create a new user.
             preset_name, metadata_field, *rest = args.split()
             if metadata_field not in self.backend.preset_manager.user_metadata_fields():
                 return False, metadata_field, f"Invalid metadata field: {metadata_field}"
-            extra_metadata[metadata_field] = " ".join(rest)
+            if not rest:
+                del extra_metadata[metadata_field]
+            else:
+                extra_metadata[metadata_field] = " ".join(rest)
         except ValueError:
             preset_name = args
         metadata.update(extra_metadata)
