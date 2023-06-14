@@ -129,7 +129,9 @@ class ProviderBase(Plugin):
             key = keys.pop(0)
             if key in config:
                 config = config[key]
-                if config == dict:
+                if config is None:
+                    return True, new_value, "Passing through value."
+                elif config == dict:
                     return True, self.cast_dict_value(new_value), "Found dict key."
                 elif isinstance(config, PresetValue):
                     success, new_value, user_message = config.cast(new_value)
@@ -188,7 +190,9 @@ class ProviderBase(Plugin):
             prefix = prefix or []
             for key, value in items.items():
                 full_key = '.'.join(prefix + [key])
-                if value == dict:
+                if value is None:
+                    continue
+                elif value == dict:
                     completions[full_key] = {}
                 elif isinstance(value, dict):
                     prefix.append(key)
