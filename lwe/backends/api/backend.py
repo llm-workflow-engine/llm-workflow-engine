@@ -38,7 +38,6 @@ class ApiBackend(Backend):
         self.workflow_manager.load_workflows()
         self.init_provider()
         self.set_available_models()
-        self.init_system_message()
         self.set_conversation_tokens(0)
         self.load_default_user()
         self.load_default_conversation()
@@ -84,6 +83,7 @@ class ApiBackend(Backend):
         return self.provider_manager.get_provider_plugins()
 
     def init_provider(self):
+        self.init_system_message()
         self.active_preset = None
         default_preset = self.config.get('model.default_preset')
         if default_preset:
@@ -225,6 +225,7 @@ class ApiBackend(Backend):
                 if success:
                     success, _customizations, _user_message = self.set_model(conversation.model)
                     if success:
+                        self.init_system_message()
                         model_configured = True
         if not model_configured:
             util.print_status_message(False, "Invalid conversation provider/model, falling back to default provider/model")
