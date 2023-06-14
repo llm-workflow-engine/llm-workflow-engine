@@ -91,5 +91,6 @@ class ProviderChatOpenai(Provider):
                 'logit_bias': dict,
                 'stop': PresetValue(str, include_none=True),
                 'user': PresetValue(str),
+                'functions': None,
             },
         }

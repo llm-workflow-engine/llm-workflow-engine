@@ -250,6 +250,9 @@ class ApiBackend(Backend):
 
     def _extract_message_content(self, message):
         if isinstance(message, BaseMessage):
+            if message.additional_kwargs:
+                if 'function_call' in message.additional_kwargs:
+                    return json.dumps(message.additional_kwargs['function_call'], indent=4)
             return message.content
         return str(message)
 
