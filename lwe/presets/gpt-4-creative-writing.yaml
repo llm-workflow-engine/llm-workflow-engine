@@ -1,6 +1,7 @@
 metadata:
   name: gpt-4-creative-writing
   provider: chat_openai
+  system_message: You are a creative writing assistant.
 model_customizations:
   max_tokens: null
   model_kwargs:

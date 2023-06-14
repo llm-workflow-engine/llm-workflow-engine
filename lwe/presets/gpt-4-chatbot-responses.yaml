@@ -1,6 +1,7 @@
 metadata:
   name: gpt-4-chatbot-responses
   provider: chat_openai
+  system_message: You are a helpful assistant.
 model_customizations:
   max_tokens: null
   model_kwargs:
