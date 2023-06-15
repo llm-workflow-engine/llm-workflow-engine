@@ -46,6 +46,10 @@ DEFAULT_CONFIG = {
             '$CONFIG_DIR/workflows',
             '$CONFIG_DIR/profiles/$PROFILE/workflows',
         ],
+        'functions': [
+            '$CONFIG_DIR/functions',
+            '$CONFIG_DIR/profiles/$PROFILE/functions',
+        ],
     },
     'shell': {
         'prompt_prefix': '($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS): $SYSTEM_MESSAGE_ALIAS$NEWLINE$USER@$PRESET_OR_MODEL',

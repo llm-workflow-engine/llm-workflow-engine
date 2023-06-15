@@ -8,6 +8,7 @@ from langchain.schema import BaseMessage
 from lwe.core.backend import Backend
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.workflow_manager import WorkflowManager
+from lwe.core.function_manager import FunctionManager
 from lwe.core.plugin_manager import PluginManager
 import lwe.core.constants as constants
 import lwe.core.util as util
@@ -35,6 +36,7 @@ class ApiBackend(Backend):
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.workflow_manager = WorkflowManager(self.config)
+        self.function_manager = FunctionManager(self.config)
         self.workflow_manager.load_workflows()
         self.init_provider()
         self.set_available_models()
