@@ -1,3 +1,26 @@
+### v0.12.2 - 15/06/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+GPT-4 models are currently broken in the browser backend, due to increased 'anti-bot' security measures implemented by OpenAI on
+chat.openai.com
+
+If you'd like to help fix this issue, see https://github.com/mmabrouk/chatgpt-wrapper/issues/311
+
+#### Commit log
+
+* **Thu Jun 15 2023:** add warning, GPT-4 models broken on browser backend
+* **Wed Jun 14 2023:** add function manager
+* **Wed Jun 14 2023:** add /preset-edit command, to edit existing presets, ensure load_preset() succeeds
+* **Wed Jun 14 2023:** add creative writer system message, use in system preset
+* **Wed Jun 14 2023:** init_system_message when init_provider, missing conversation preset
+* **Wed Jun 14 2023:** openai functions: ability to configure functions in presets, store assistant function reply
+* **Wed Jun 14 2023:** add system message to chatbot/creative writing presets
+* **Wed Jun 14 2023:** pass through provider customization when a key's value is None, skip completions
+* **Wed Jun 14 2023:** empty user metadata field in /preset-save removes field from preset
+* **Tue Jun 13 2023:** add workflow review template
+* **Tue Jun 13 2023:** add new openai chat models released 0613
+
 ### v0.12.1 - 13/06/2023
 
 * **Tue Jun 13 2023:** monkey patch / version lock langchain with stream interruption fixes, fixes #274, fixes #180
