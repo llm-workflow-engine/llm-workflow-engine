@@ -251,11 +251,18 @@ class ApiBackend(Backend):
             system_message = self.get_system_message(system_message)
         return system_message, request_overrides
 
+    def post_response(self, response_obj):
+        if isinstance(response_obj, BaseMessage):
+            if response_obj.additional_kwargs:
+                if 'function_call' in response_obj.additional_kwargs:
+                    function_call = response_obj.additional_kwargs['function_call']
+                    util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
+
     def _extract_message_content(self, message):
         if isinstance(message, BaseMessage):
             if message.additional_kwargs:
                 if 'function_call' in message.additional_kwargs:
-                    return json.dumps(message.additional_kwargs['function_call'], indent=4)
+                    return json.dumps(message.additional_kwargs)
             return message.content
         return str(message)
 
@@ -516,6 +523,7 @@ class ApiBackend(Backend):
         self.streaming = True
         self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
         success, response_obj, user_message = self._call_llm_streaming(messages, request_overrides)
+        self.post_response(response_obj)
         if success:
             self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
             response_message = self._extract_message_content(response_obj)
@@ -543,12 +551,13 @@ class ApiBackend(Backend):
         request_overrides = request_overrides or {}
         system_message, request_overrides = self.extract_system_message_from_overrides(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        success, response, user_message = self._call_llm_non_streaming(messages, request_overrides)
+        success, response_obj, user_message = self._call_llm_non_streaming(messages, request_overrides)
+        self.post_response(response_obj)
         if success:
-            response_message = self._extract_message_content(response)
+            response_message = self._extract_message_content(response_obj)
             self.message_clipboard = response_message
             success, conversation, user_message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
             if success:
                 return self._handle_response(success, response_message, user_message)
             return self._handle_response(success, conversation, user_message)
-        return self._handle_response(success, response, user_message)
+        return self._handle_response(success, response_obj, user_message)
