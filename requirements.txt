@@ -22,5 +22,5 @@ python-frontmatter
 PyYAML
 rich
 textract
-sqlalchemy>=1.4.48,<=2
+sqlalchemy>=1.4.48
 tiktoken
