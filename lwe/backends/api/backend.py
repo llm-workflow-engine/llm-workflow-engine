@@ -200,10 +200,10 @@ class ApiBackend(Backend):
         if self.conversation_id is None:
             provider = self.provider
         else:
-            success, conversation, user_message = self.conversation.get_conversation(self.conversation_id)
+            success, last_message, user_message = self.message.get_last_message(self.conversation_id)
             if not success:
                 raise ValueError(user_message)
-            provider = self.provider_manager.get_provider_from_model(conversation.model)
+            provider = self.provider_manager.get_provider_from_name(last_message.provider)
         if provider is not None and provider.get_capability('chat'):
             self.conversation_tokens = tokens
         else:
@@ -211,21 +211,21 @@ class ApiBackend(Backend):
 
     def switch_to_conversation(self, conversation_id, parent_message_id):
         super().switch_to_conversation(conversation_id, parent_message_id)
-        success, conversation, user_message = self.conversation.get_conversation(self.conversation_id)
+        success, last_message, user_message = self.message.get_last_message(self.conversation_id)
         if not success:
             raise ValueError(user_message)
         model_configured = False
-        if conversation.preset:
-            success, _preset, user_message = self.activate_preset(conversation.preset)
+        if last_message.preset:
+            success, _preset, user_message = self.activate_preset(last_message.preset)
             if success:
                 model_configured = True
             else:
-                util.print_status_message(False, f"Unable to switch conversation to previous preset '{conversation.preset}' -- ERROR: {user_message}, falling back to provider: {conversation.provider}, model: {conversation.model}")
+                util.print_status_message(False, f"Unable to switch conversation to previous preset '{last_message.preset}' -- ERROR: {user_message}, falling back to provider: {last_message.provider}, model: {last_message.model}")
         if not model_configured:
-            if conversation.provider and conversation.model:
-                success, _provider, _user_message = self.set_provider(conversation.provider, reset=True)
+            if last_message.provider and last_message.model:
+                success, _provider, _user_message = self.set_provider(last_message.provider, reset=True)
                 if success:
-                    success, _customizations, _user_message = self.set_model(conversation.model)
+                    success, _customizations, _user_message = self.set_model(last_message.model)
                     if success:
                         self.init_system_message()
                         model_configured = True
@@ -323,6 +323,12 @@ class ApiBackend(Backend):
 """ % (self.system_message)
         return output
 
+    def get_current_llm_config(self):
+        llm = self.override_llm or self.llm
+        provider = self.override_provider or self.provider
+        model_name = getattr(llm, provider.model_property_name)
+        return llm, provider, model_name
+
     def get_system_message_aliases(self):
         aliases = self.config.get('model.system_message')
         aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
@@ -362,22 +368,21 @@ class ApiBackend(Backend):
             if not success:
                 raise Exception(message)
         else:
-            llm = self.override_llm or self.llm
-            provider = self.override_provider or self.provider
-            model_name = getattr(llm, provider.model_property_name)
-            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title, model=model_name, provider=provider.name, preset=self.active_preset or '')
+            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title)
             if not success:
                 raise Exception(message)
         self.conversation_id = conversation.id
         return conversation
 
     def add_new_messages_to_conversation(self, conversation_id, new_messages, response_message, title=None):
+        _llm, provider, model_name = self.get_current_llm_config()
+        preset = self.active_preset or ''
         conversation = self.create_new_conversation_if_needed(conversation_id, title)
         for m in new_messages:
-            success, message, user_message = self.message.add_message(conversation.id, m['role'], m['content'])
+            success, message, user_message = self.message.add_message(conversation.id, m['role'], m['content'], 'content', provider.name, model_name, preset)
             if not success:
                 raise Exception(user_message)
-        success, last_message, user_message = self.message.add_message(conversation.id, 'assistant', response_message)
+        success, last_message, user_message = self.message.add_message(conversation.id, 'assistant', response_message, 'content', provider.name, model_name, preset)
         if not success:
             raise Exception(user_message)
         tokens = self.get_conversation_token_count()
@@ -386,7 +391,9 @@ class ApiBackend(Backend):
 
     def add_message(self, role, message, conversation_id=None):
         conversation_id = conversation_id or self.conversation_id
-        success, message, user_message = self.message.add_message(conversation_id, role, message)
+        _llm, provider, model_name = self.get_current_llm_config()
+        preset = self.active_preset or ''
+        success, message, user_message = self.message.add_message(conversation_id, role, message, 'content', provider.name, model_name, preset)
         if not success:
             raise Exception(user_message)
         return message

@@ -80,7 +80,7 @@ class DatabaseDevel(Database):
                 for k in range(self.num_messages):
                     role = 'user' if k % 2 == 0 else 'assistant'
                     message = f'This is message {k+1} in conversation {j+1} for user {i+1}'
-                    message = self.orm.add_message(conversation, role, message)
+                    message = self.orm.add_message(conversation, role, message, 'content', 'chat_openai', 'gpt-3.5-turbo', '')
 
     def print_data(self):
         output = ['# Users']
