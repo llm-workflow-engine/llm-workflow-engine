@@ -273,7 +273,7 @@ class ApiBackend(Backend):
         # first user message we need for generating the title.
         success, messages, user_message = self.message.get_messages(conversation.id, limit=2)
         if success:
-            user_content = messages[1].message
+            user_content = messages[1].message[:constants.TITLE_GENERATION_MAX_CHARACTERS]
             new_messages = [
                 self.build_chat_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
                 self.build_chat_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
