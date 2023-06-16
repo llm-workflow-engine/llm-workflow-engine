@@ -240,51 +240,70 @@ def get_ansible_module_doc(module_name):
     except json.JSONDecodeError as e:
         raise json.JSONDecodeError(f"Error: Unable to parse Ansible doc: {e}")
 
-def ansible_doc_to_markdown(module_name):
+def ansible_doc_to_markdown(module_name, full_doc=False):
     data = get_ansible_module_doc(module_name)
     module_data = data["copy"]["doc"]
     examples = data["copy"]["examples"]
     return_data = data["copy"]["return"]
 
-    markdown = f"# {module_name}: {module_data['short_description']}\n\n"
+    markdown = f"""The following is reference documentation for the Ansible '{module_name}' module.
 
-    markdown += "## Purpose\n\n"
-    for desc in module_data["description"]:
-        markdown += f" * {desc}\n"
+Examples listed demonstrate how to use the module in an Ansible playbook.
 
-    markdown += "\n## Parameters\n\n"
-    for option, details in module_data["options"].items():
-        markdown += f"### {option}\n\n"
-        for desc in details["description"]:
+"""
+    markdown += f"# Description: {module_data['short_description']}"
+
+    if full_doc:
+        markdown += "\n\n## Purpose\n\n"
+        for desc in module_data["description"]:
             markdown += f" * {desc}\n"
-        if "type" in details:
+
+    markdown += "\n\n## Parameters\n\n"
+
+    if full_doc:
+        for option, details in module_data["options"].items():
+            markdown += f"### {option}\n\n"
+            for desc in details["description"]:
+                markdown += f" * {desc}\n"
+            if "type" in details:
+                markdown += f" * Type: {details['type']}\n"
+            if "default" in details:
+                markdown += f" * Default: {details['default']}\n"
+            markdown += "\n"
+    else:
+        markdown += "\n".join([f" * {k}" for k in module_data["options"].keys()])
+
+
+    markdown += "\n\n##Attributes\n\n"
+
+    if full_doc:
+        for attribute, details in module_data["attributes"].items():
+            markdown += f"### {attribute}\n\n"
+            if isinstance(details["description"], list):
+                for desc in details["description"]:
+                    markdown += f" * {desc}\n"
+            else:
+                markdown += f"{details['description']}\n"
+            markdown += "\n"
+    else:
+        markdown += "\n".join([f" * {k}" for k in module_data["attributes"].keys()])
+
+    markdown += "\n\n## Return values\n\n"
+
+    if full_doc:
+        for return_value, details in return_data.items():
+            markdown += f"### {return_value}\n\n"
+            if isinstance(details["description"], list):
+                for desc in details["description"]:
+                    markdown += f" * {desc}\n"
+            else:
+                markdown += f"{details['description']}\n"
             markdown += f" * Type: {details['type']}\n"
-        if "default" in details:
-            markdown += f" * Default: {details['default']}\n"
-        markdown += "\n"
+            markdown += "\n"
+    else:
+        markdown += "\n".join([f" * {k}" for k in return_data.keys()])
 
-    markdown += "##Attributes\n\n"
-    for attribute, details in module_data["attributes"].items():
-        markdown += f"### {attribute}\n\n"
-        if isinstance(details["description"], list):
-            for desc in details["description"]:
-                markdown += f" * {desc}\n"
-        else:
-            markdown += f"{details['description']}\n"
-        markdown += "\n"
-
-    markdown += "## Return values\n\n"
-    for return_value, details in return_data.items():
-        markdown += f"### {return_value}\n\n"
-        if isinstance(details["description"], list):
-            for desc in details["description"]:
-                markdown += f" * {desc}\n"
-        else:
-            markdown += f"{details['description']}\n"
-        markdown += f" * Type: {details['type']}\n"
-        markdown += "\n"
-
-    markdown += "## Examples\n\n"
+    markdown += "\n\n## Examples\n\n"
     markdown += f"```yaml{examples}```\n"
 
     return markdown
