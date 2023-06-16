@@ -164,6 +164,9 @@ class Orm:
         now = datetime.datetime.now()
         message = Message(conversation_id=conversation.id, role=role, message=message, message_type=message_type, provider=provider, model=model, preset=preset, created_time=now)
         self.session.add(message)
+        # Original conversation was created in another session, so load one fresh.
+        conversation_update = self.get_conversation(conversation.id)
+        setattr(conversation_update, 'updated_time', now)
         self.session.commit()
         self.log.info(f"Added Message with role: {role}, message_type: {message_type}, provider: {provider}, model: {model}, preset: {preset} for Conversation with id {conversation.id}")
         return message
