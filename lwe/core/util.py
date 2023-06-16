@@ -1,4 +1,6 @@
 import os
+import json
+import subprocess
 import inspect
 import shutil
 import sys
@@ -222,3 +224,67 @@ def get_environment_variable(name, default=None):
 def get_environment_variable_list(name):
     var_list = get_environment_variable(name)
     return var_list.split(',') if var_list else None
+
+def get_ansible_module_doc(module_name):
+    try:
+        result = subprocess.run(
+            ['ansible-doc', '-t', 'module', module_name, '--json'],
+            stdout=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        data = json.loads(result.stdout)
+        return data
+    except subprocess.CalledProcessError as e:
+        raise subprocess.CalledProcessError(f"Error parsing Ansible doc: {e}")
+    except json.JSONDecodeError as e:
+        raise json.JSONDecodeError(f"Error: Unable to parse Ansible doc: {e}")
+
+def ansible_doc_to_markdown(module_name):
+    data = get_ansible_module_doc(module_name)
+    module_data = data["copy"]["doc"]
+    examples = data["copy"]["examples"]
+    return_data = data["copy"]["return"]
+
+    markdown = f"# {module_name}: {module_data['short_description']}\n\n"
+
+    markdown += "## Purpose\n\n"
+    for desc in module_data["description"]:
+        markdown += f" * {desc}\n"
+
+    markdown += "\n## Parameters\n\n"
+    for option, details in module_data["options"].items():
+        markdown += f"### {option}\n\n"
+        for desc in details["description"]:
+            markdown += f" * {desc}\n"
+        if "type" in details:
+            markdown += f" * Type: {details['type']}\n"
+        if "default" in details:
+            markdown += f" * Default: {details['default']}\n"
+        markdown += "\n"
+
+    markdown += "##Attributes\n\n"
+    for attribute, details in module_data["attributes"].items():
+        markdown += f"### {attribute}\n\n"
+        if isinstance(details["description"], list):
+            for desc in details["description"]:
+                markdown += f" * {desc}\n"
+        else:
+            markdown += f"{details['description']}\n"
+        markdown += "\n"
+
+    markdown += "## Return values\n\n"
+    for return_value, details in return_data.items():
+        markdown += f"### {return_value}\n\n"
+        if isinstance(details["description"], list):
+            for desc in details["description"]:
+                markdown += f" * {desc}\n"
+        else:
+            markdown += f"{details['description']}\n"
+        markdown += f" * Type: {details['type']}\n"
+        markdown += "\n"
+
+    markdown += "## Examples\n\n"
+    markdown += f"```yaml{examples}```\n"
+
+    return markdown
