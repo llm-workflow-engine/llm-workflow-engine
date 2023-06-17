@@ -15,7 +15,7 @@ class TemplateManager():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.user_template_dirs = util.get_environment_variable_list('template_dirs') or self.config.get('directories.templates')
+        self.user_template_dirs = self.config.args.template_dir or util.get_environment_variable_list('template_dir') or self.config.get('directories.templates')
         self.make_user_template_dirs()
         self.system_template_dirs = [
             os.path.join(util.get_package_root(self), 'templates'),

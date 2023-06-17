@@ -12,7 +12,7 @@ class FunctionManager():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.user_function_dirs = util.get_environment_variable_list('function_dirs') or self.config.get('directories.functions')
+        self.user_function_dirs = self.config.args.function_dir or util.get_environment_variable_list('function_dir') or self.config.get('directories.functions')
         self.make_user_function_dirs()
         self.system_function_dirs = [
             os.path.join(util.get_package_root(self), 'functions'),

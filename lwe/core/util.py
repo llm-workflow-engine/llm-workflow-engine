@@ -22,6 +22,10 @@ console = Console()
 
 is_windows = platform.system() == "Windows"
 
+class NoneAttrs:
+    def __getattr__(self, _name):
+        return None
+
 def introspect_commands(klass):
     return [method[3:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("do_")]
 
@@ -223,7 +227,10 @@ def get_environment_variable(name, default=None):
 
 def get_environment_variable_list(name):
     var_list = get_environment_variable(name)
-    return var_list.split(',') if var_list else None
+    return split_on_delimiter(var_list, ':') if var_list else None
+
+def split_on_delimiter(string, delimiter=','):
+    return [x.strip() for x in string.split(delimiter)]
 
 def get_ansible_module_doc(module_name):
     try:
