@@ -1099,10 +1099,11 @@ class Repl():
 * Config file: %s
 * Data dir: %s
 * Data profile dir: %s
-* Templates dirs: %s
-* Presets dirs: %s
-* Workflows dirs: %s
-* Functions dirs: %s
+* Database: %s
+* Template dirs: %s
+* Preset dirs: %s
+* Workflow dirs: %s
+* Function dirs: %s
 
 # Profile '%s' configuration:
 
@@ -1121,6 +1122,7 @@ class Repl():
             self.config.config_file or "None",
             self.config.data_dir,
             self.config.data_profile_dir,
+            self.config.get('database'),
             ", ".join(self.backend.template_manager.user_template_dirs),
             ", ".join(self.backend.preset_manager.user_preset_dirs),
             ", ".join(self.backend.workflow_manager.user_workflow_dirs) if getattr(self.backend, "workflow_manager", None) else "",
