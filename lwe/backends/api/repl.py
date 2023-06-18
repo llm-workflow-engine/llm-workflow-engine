@@ -500,7 +500,7 @@ Before you can start using the shell, you must create a new user.
             for alias in aliases.keys():
                 alias_string = f"* {alias}"
                 if alias == self.backend.system_message_alias:
-                    alias_string += ' (✓)'
+                    alias_string += f" {constants.ACTIVE_ITEM_INDICATOR}"
                 alias_list.append(alias_string)
             output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join(alias_list))
             util.print_markdown(output)
@@ -601,7 +601,7 @@ Before you can start using the shell, you must create a new user.
             if 'description' in metadata:
                 content += f": *{metadata['description']}*"
             if preset_name == self.backend.active_preset:
-                content += ' (✓)'
+                content += f" {constants.ACTIVE_ITEM_INDICATOR}"
             if not arg or arg.lower() in content.lower():
                 presets.append(content)
         util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(presets)))
