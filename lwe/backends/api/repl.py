@@ -502,7 +502,7 @@ Before you can start using the shell, you must create a new user.
                 if alias == self.backend.system_message_alias:
                     alias_string += f" {constants.ACTIVE_ITEM_INDICATOR}"
                 alias_list.append(alias_string)
-            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join(alias_list))
+            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join(sorted(alias_list)))
             util.print_markdown(output)
 
     def do_max_submission_tokens(self, max_submission_tokens=None):
