@@ -22,6 +22,13 @@ ADDITIONAL_PLUGINS = [
     'provider_chat_openai',
 ]
 
+LLM_MESSAGE_FIELDS = [
+    'role',
+    'content',
+    'function_call',
+    'name',
+]
+
 class ApiBackend(Backend):
 
     name = "api"
@@ -188,11 +195,12 @@ class ApiBackend(Backend):
             encoding = self.get_token_encoding()
         """Returns the number of tokens used by a list of messages."""
         num_tokens = 0
+        messages = self.filter_messages_for_llm(messages)
         for message in messages:
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             for key, value in message.items():
-                if key in ["function_call", "message_type"]:
-                    continue
+                if isinstance(value, dict):
+                    value = json.dumps(value, indent=2)
                 num_tokens += len(encoding.encode(value))
                 if key == "name":  # if there's a name, the role is omitted
                     num_tokens += -1  # role is always required and always 1 token
@@ -262,6 +270,9 @@ class ApiBackend(Backend):
         new_messages.append(response_message)
         return response_message['content'], new_messages
 
+    def filter_messages_for_llm(self, messages):
+        return [{k: v for k, v in m.items() if k in LLM_MESSAGE_FIELDS} for m in messages]
+
     def _extract_message_content(self, message):
         if isinstance(message, BaseMessage):
             message_dict = _convert_message_to_dict(message)
@@ -285,6 +296,7 @@ class ApiBackend(Backend):
                 self.build_chat_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
                 self.build_chat_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
             ]
+            new_messages = self.filter_messages_for_llm(new_messages)
             new_messages = self.provider.prepare_messages_for_llm_chat(new_messages)
             llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
             try:
@@ -440,6 +452,7 @@ class ApiBackend(Backend):
         # TODO: More elegant way to do this, probably on provider.
         model_configuration = {k: str(v) for k, v in dict(llm).items()}
         self.log.debug(f"LLM request with message count: {len(messages)}, model configuration: {json.dumps(model_configuration)}")
+        messages = self.filter_messages_for_llm(messages)
         messages = provider.prepare_messages_for_llm(messages)
         return llm, messages
 
