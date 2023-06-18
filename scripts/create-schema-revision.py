@@ -8,6 +8,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config as AlembicConfig
 from lwe.core.config import Config
+import lwe.core.util as util
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,6 +37,17 @@ def create_schema_revision(message, database_url=None):
         logger.info("Starting schema revision generation...")
         command.revision(alembic_cfg, message, autogenerate=True)
         logger.info("Schema revision created successfully.")
+        util.print_markdown("""
+## To dump and re-import data into a fresh schema:
+
+ * `sudo apt install libsqlite3-mod-impexp`
+ * *...open original Sqlite database...*
+ * `.load libsqlite3_mod_impexp`
+ * `select export_sql('/tmp/dump.sql','1');`
+ * *...backup original database, then delete it...*
+ * *...create fresh database, and open it in Sqlite...*
+ * `.read /tmp/dump.sql`
+          """)
     except Exception as e:
         logger.error(f"Error creating schema revision: {e}")
         sys.exit(1)
