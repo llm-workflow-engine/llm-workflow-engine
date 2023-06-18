@@ -57,6 +57,7 @@ class PresetManager():
         return [
             'description',
             'system_message',
+            'return_on_function_call',
         ]
 
     def load_presets(self):

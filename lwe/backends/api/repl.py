@@ -226,7 +226,7 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = self.config.get("shell.prompt_prefix")
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
-        prompt_prefix = prompt_prefix.replace("$PRESET_OR_MODEL", self.backend.active_preset if self.backend.active_preset else self.backend.model)
+        prompt_prefix = prompt_prefix.replace("$PRESET_OR_MODEL", self.backend.active_preset_name if self.backend.active_preset_name else self.backend.model)
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())
         prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens))
@@ -594,17 +594,17 @@ Before you can start using the shell, you must create a new user.
         if not success:
             return success, presets, user_message
         self.rebuild_completions()
-        presets = []
-        for preset_name, data in self.backend.preset_manager.presets.items():
+        preset_names = []
+        for preset_name, data in presets.items():
             metadata, _customizations = data
             content = f"* **{preset_name}**"
             if 'description' in metadata:
                 content += f": *{metadata['description']}*"
-            if preset_name == self.backend.active_preset:
+            if preset_name == self.backend.active_preset_name:
                 content += f" {constants.ACTIVE_ITEM_INDICATOR}"
             if not arg or arg.lower() in content.lower():
-                presets.append(content)
-        util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(presets)))
+                preset_names.append(content)
+        util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(preset_names)))
 
     def do_preset_show(self, preset_name):
         """
@@ -617,9 +617,9 @@ Before you can start using the shell, you must create a new user.
             {COMMAND} mypreset
         """
         if not preset_name:
-            if not self.backend.active_preset:
+            if not self.backend.active_preset_name:
                 return False, None, "No active preset"
-            preset_name = self.backend.active_preset
+            preset_name = self.backend.active_preset_name
         success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
@@ -700,7 +700,7 @@ Before you can start using the shell, you must create a new user.
         success, presets, user_message = self.backend.preset_manager.load_presets()
         if not success:
             return success, presets, user_message
-        if self.backend.active_preset == preset_name:
+        if self.backend.active_preset_name == preset_name:
             success, preset, user_message = self.backend.activate_preset(preset_name)
             if success:
                 return success, preset, f"Edited and re-actived preset: {preset_name}"
@@ -748,7 +748,7 @@ Before you can start using the shell, you must create a new user.
             if success:
                 success, _presets, user_message = self.backend.preset_manager.load_presets()
                 if success:
-                    if self.backend.active_preset == preset_name:
+                    if self.backend.active_preset_name == preset_name:
                         self.backend.init_provider()
                     self.rebuild_completions()
             return success, preset_name, user_message
@@ -878,3 +878,34 @@ Before you can start using the shell, you must create a new user.
             return success, workflow_name, user_message
         else:
             return False, workflow_name, "Deletion aborted"
+
+    def do_functions(self, arg):
+        """
+        List available functions
+
+        Functions are executable scripts that the LLM can request to be called to perform
+        some action.
+
+        They are located in the 'functions' directory in the following locations:
+
+            - The main configuration directory
+            - The profile configuration directory
+
+        See {COMMAND_LEADER}config for current locations.
+
+        Arguments:
+            filter_string: Optional. If provided, only functions with a name or description containing the filter string will be shown.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} filterstring
+        """
+        success, functions, user_message = self.backend.function_manager.load_functions()
+        if not success:
+            return success, functions, user_message
+        function_names = []
+        for function_name, _filepath in functions.items():
+            content = f"* **{function_name}**"
+            if not arg or arg.lower() in content.lower():
+                function_names.append(content)
+        util.print_markdown("## Functions:\n\n%s" % "\n".join(sorted(function_names)))

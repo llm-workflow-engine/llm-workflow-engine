@@ -109,6 +109,8 @@ def print_status_message(success, message, style=None):
     print("")
 
 def print_markdown(output, style=None):
+    if isinstance(output, dict):
+        output = dict_to_pretty_json(output)
     console.print(Markdown(output), style=style)
     print("")
 
@@ -173,13 +175,17 @@ def get_class_command_method(klass, do_command):
         if method:
             return method
 
+def dict_to_pretty_json(dict_obj):
+    response = json.dumps(dict_obj, indent=4)
+    return f"```json\n{response}\n```"
+
 def output_response(response):
     if response:
         if isinstance(response, tuple):
             success, _obj, message = response
             print_status_message(success, message)
         else:
-            print(response)
+            print_markdown(response)
 
 def open_temp_file(input_data='', suffix=None):
     kwargs = {'suffix': f'.{suffix}'} if suffix else {}

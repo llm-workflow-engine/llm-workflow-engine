@@ -95,6 +95,7 @@ class ApiBackend(Backend):
     def init_provider(self):
         self.init_system_message()
         self.active_preset = None
+        self.active_preset_name = None
         default_preset = self.config.get('model.default_preset')
         if default_preset:
             success, preset, user_message = self.activate_preset(default_preset)
@@ -106,6 +107,7 @@ class ApiBackend(Backend):
     def set_provider(self, provider_name, customizations=None, reset=False):
         self.log.debug(f"Setting provider to: {provider_name}, with customizations: {customizations}, reset: {reset}")
         self.active_preset = None
+        self.active_preset_name = None
         provider_full_name = self.provider_manager.full_name(provider_name)
         if self.provider_name == provider_full_name and not reset:
             return False, None, f"Provider {provider_name} already set"
@@ -169,7 +171,8 @@ class ApiBackend(Backend):
         metadata, customizations = preset
         success, provider, user_message = self.set_provider(metadata['provider'], customizations, reset=True)
         if success:
-            self.active_preset = preset_name
+            self.active_preset = preset
+            self.active_preset_name = preset_name
             if 'system_message' in metadata:
                 self.set_system_message(metadata['system_message'])
         return success, preset, user_message
@@ -262,12 +265,46 @@ class ApiBackend(Backend):
             system_message = self.get_system_message(system_message)
         return system_message, request_overrides
 
+    def is_return_on_function_call(self):
+        if self.active_preset:
+            metadata, _customizations = self.active_preset
+            if 'return_on_function_call' in metadata and metadata['return_on_function_call']:
+                return True
+        return False
+
+    def is_return_on_function_response(self):
+        if self.active_preset:
+            metadata, _customizations = self.active_preset
+            if 'return_on_function_response' in metadata and metadata['return_on_function_response']:
+                return True
+        return False
+
+    def run_function(self, function_name, data):
+        success, response, user_message = self.function_manager.run_function(function_name, data)
+        json_obj = json.loads(response) if success else None
+        formatted_response = f"\n```json\n{json.dumps(json_obj, indent=4)}\n```" if json_obj else user_message
+        util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}\n* Response: {formatted_response}")
+        return success, json_obj, user_message
+
     def post_response(self, response_obj, new_messages):
         response_message = self._extract_message_content(response_obj)
+        new_messages.append(response_message)
         if response_message['message_type'] == 'function_call':
             function_call = _convert_message_to_dict(response_obj)['function_call']
             util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
-        new_messages.append(response_message)
+            if self.is_return_on_function_call():
+                function_definition = {
+                    'name': function_call['name'],
+                    'arguments': json.loads(function_call['arguments']),
+                }
+                return function_definition, new_messages
+            success, json_obj, user_message = self.run_function(function_call['name'], function_call['arguments'])
+            content = json.dumps(json_obj) if success else user_message
+            message_metadata = '{"name": "%s"}' % function_call['name']
+            new_messages.append(self.build_chat_message('function', content, message_type='function_response', message_metadata=message_metadata))
+            if self.is_return_on_function_response():
+                function_response = json_obj if success else user_message
+                return function_response, new_messages
         return response_message['content'], new_messages
 
     def filter_messages_for_llm(self, messages):
@@ -425,7 +462,7 @@ class ApiBackend(Backend):
     def add_new_messages_to_conversation(self, conversation_id, new_messages, title=None):
         conversation = self.create_new_conversation_if_needed(conversation_id, title)
         _llm, provider, model_name = self.get_current_llm_config()
-        preset = self.active_preset or ''
+        preset = self.active_preset_name or ''
         last_message = None
         for m in new_messages:
             success, last_message, user_message = self.message.add_message(conversation.id, m['role'], self.message_content_from_dict(m), m['message_type'], m['message_metadata'], provider.name, model_name, preset)
@@ -438,7 +475,7 @@ class ApiBackend(Backend):
     def add_message(self, role, message, message_type, metadata, conversation_id=None):
         conversation_id = conversation_id or self.conversation_id
         _llm, provider, model_name = self.get_current_llm_config()
-        preset = self.active_preset or ''
+        preset = self.active_preset_name or ''
         success, message, user_message = self.message.add_message(conversation_id, role, message, message_type, metadata, provider.name, model_name, preset)
         if not success:
             raise Exception(user_message)
