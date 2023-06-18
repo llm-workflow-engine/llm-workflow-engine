@@ -1,12 +1,14 @@
 import logging
 import langchain.callbacks.manager
 import langchain.chat_models.openai
-from langchain.chat_models.openai import _convert_dict_to_message
+# TODO: Uncomment after ___ lands.
+# from langchain.chat_models.openai import _convert_dict_to_message
 
 from typing import (
     Any,
     List,
     Optional,
+    Mapping,
 )
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -22,7 +24,32 @@ from langchain.schema import (
     BaseMessage,
     ChatGeneration,
     ChatResult,
+    HumanMessage,
+    AIMessage,
+    SystemMessage,
+    FunctionMessage,
+    ChatMessage,
 )
+
+# TODO: Remove after ___ lands.
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    role = _dict["role"]
+    if role == "user":
+        return HumanMessage(content=_dict["content"])
+    elif role == "assistant":
+        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
+        if _dict.get("function_call"):
+            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        else:
+            additional_kwargs = {}
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    elif role == "system":
+        return SystemMessage(content=_dict["content"])
+    elif role == "function":
+        additional_kwargs = {"name": _dict["name"]}
+        return FunctionMessage(content=_dict["content"], additional_kwargs=additional_kwargs)
+    else:
+        return ChatMessage(content=_dict["content"], role=role)
 
 logger = logging.getLogger(__name__)
 

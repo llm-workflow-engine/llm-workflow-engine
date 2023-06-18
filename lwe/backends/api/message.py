@@ -41,14 +41,14 @@ class MessageManager(Manager):
             return self._handle_error(f"Failed to retrieve last message: {str(e)}")
         return True, last_message, "Last message retrieved successfully"
 
-    def add_message(self, conversation_id, role, message, message_type=None, provider=None, model=None, preset=None):
+    def add_message(self, conversation_id, role, message, message_type=None, message_metadata=None, provider=None, model=None, preset=None):
         success, conversation, user_message = self.conversation_manager.get_conversation(conversation_id)
         if not success:
             return success, conversation, user_message
         if not conversation:
             return False, None, "Conversation not found"
         try:
-            message = self.orm.add_message(conversation, role, message, message_type, provider, model, preset)
+            message = self.orm.add_message(conversation, role, message, message_type, message_metadata, provider, model, preset)
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to add message: {str(e)}")
         return True, message, "Message added successfully"

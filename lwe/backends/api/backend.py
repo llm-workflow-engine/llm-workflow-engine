@@ -4,6 +4,7 @@ import tiktoken
 
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import BaseMessage
+from langchain.chat_models.openai import _convert_message_to_dict
 
 from lwe.core.backend import Backend
 from lwe.core.provider_manager import ProviderManager
@@ -190,6 +191,8 @@ class ApiBackend(Backend):
         for message in messages:
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             for key, value in message.items():
+                if key in ["function_call", "message_type"]:
+                    continue
                 num_tokens += len(encoding.encode(value))
                 if key == "name":  # if there's a name, the role is omitted
                     num_tokens += -1  # role is always required and always 1 token
@@ -251,20 +254,24 @@ class ApiBackend(Backend):
             system_message = self.get_system_message(system_message)
         return system_message, request_overrides
 
-    def post_response(self, response_obj):
-        if isinstance(response_obj, BaseMessage):
-            if response_obj.additional_kwargs:
-                if 'function_call' in response_obj.additional_kwargs:
-                    function_call = response_obj.additional_kwargs['function_call']
-                    util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
+    def post_response(self, response_obj, new_messages):
+        response_message = self._extract_message_content(response_obj)
+        if response_message['message_type'] == 'function_call':
+            function_call = _convert_message_to_dict(response_obj)['function_call']
+            util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
+        new_messages.append(response_message)
+        return response_message['content'], new_messages
 
     def _extract_message_content(self, message):
         if isinstance(message, BaseMessage):
-            if message.additional_kwargs:
-                if 'function_call' in message.additional_kwargs:
-                    return json.dumps(message.additional_kwargs)
-            return message.content
-        return str(message)
+            message_dict = _convert_message_to_dict(message)
+            content = message_dict['content']
+            message_type = 'content'
+            if 'function_call' in message_dict:
+                content = json.dumps(message_dict['function_call'])
+                message_type = 'function_call'
+            return self.build_chat_message(message_dict['role'], content, message_type)
+        return self.build_chat_message('assistant', message)
 
     def gen_title_thread(self, conversation):
         self.log.info(f"Generating title for conversation {conversation.id}")
@@ -282,7 +289,7 @@ class ApiBackend(Backend):
             llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
             try:
                 result = llm(new_messages)
-                title = self._extract_message_content(result)
+                title = self._extract_message_content(result)['content']
                 title = title.replace("\n", ", ").strip()
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
                 success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
@@ -334,11 +341,34 @@ class ApiBackend(Backend):
         aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
         return aliases
 
-    def build_chat_message(self, role, content):
-        message = {
-            "role": role,
-            "content": content,
-        }
+    def build_chat_message(self, role, content, message_type='content', message_metadata=''):
+        message = None
+        if message_type == 'function_call':
+            if role == 'assistant':
+                message = {
+                    "role": role,
+                    "content": "",
+                    "function_call": json.loads(content),
+                    "function_call_content": content,
+                    "message_type": message_type,
+                    "message_metadata": message_metadata,
+                }
+            elif role == 'function':
+                metadata = json.loads(message_metadata)
+                message = {
+                    "role": role,
+                    "content": content,
+                    "name": metadata['name'],
+                    "message_type": message_type,
+                    "message_metadata": message_metadata,
+                }
+        if not message:
+            message = {
+                "role": role,
+                "content": content,
+                "message_type": message_type,
+                "message_metadata": message_metadata,
+            }
         return message
 
     def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None, system_message=None):
@@ -357,7 +387,7 @@ class ApiBackend(Backend):
     def prepare_prompt_messsage_context(self, old_messages=None, new_messages=None):
         old_messages = old_messages or []
         new_messages = new_messages or []
-        messages = [self.build_chat_message(m.role, m.message) for m in old_messages]
+        messages = [self.build_chat_message(m.role, m.message, m.message_type, m.message_metadata) for m in old_messages]
         messages.extend(new_messages)
         return messages
 
@@ -374,26 +404,25 @@ class ApiBackend(Backend):
         self.conversation_id = conversation.id
         return conversation
 
-    def add_new_messages_to_conversation(self, conversation_id, new_messages, response_message, title=None):
+    def add_new_messages_to_conversation(self, conversation_id, new_messages, title=None):
+        conversation = self.create_new_conversation_if_needed(conversation_id, title)
         _llm, provider, model_name = self.get_current_llm_config()
         preset = self.active_preset or ''
-        conversation = self.create_new_conversation_if_needed(conversation_id, title)
+        last_message = None
         for m in new_messages:
-            success, message, user_message = self.message.add_message(conversation.id, m['role'], m['content'], 'content', provider.name, model_name, preset)
+            content = m['function_call_content'] if m['message_type'] == 'function_call' else m['content']
+            success, last_message, user_message = self.message.add_message(conversation.id, m['role'], content, m['message_type'], m['message_metadata'], provider.name, model_name, preset)
             if not success:
                 raise Exception(user_message)
-        success, last_message, user_message = self.message.add_message(conversation.id, 'assistant', response_message, 'content', provider.name, model_name, preset)
-        if not success:
-            raise Exception(user_message)
         tokens = self.get_conversation_token_count()
         self.set_conversation_tokens(tokens)
         return conversation, last_message
 
-    def add_message(self, role, message, conversation_id=None):
+    def add_message(self, role, message, message_type, metadata, conversation_id=None):
         conversation_id = conversation_id or self.conversation_id
         _llm, provider, model_name = self.get_current_llm_config()
         preset = self.active_preset or ''
-        success, message, user_message = self.message.add_message(conversation_id, role, message, 'content', provider.name, model_name, preset)
+        success, message, user_message = self.message.add_message(conversation_id, role, message, message_type, metadata, provider.name, model_name, preset)
         if not success:
             raise Exception(user_message)
         return message
@@ -506,20 +535,18 @@ class ApiBackend(Backend):
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
         return new_messages, messages
 
-    def _ask_request_post(self, conversation_id, new_messages, response_message, title=None):
+    def _ask_request_post(self, conversation_id, new_messages, response_content, title=None):
         conversation_id = conversation_id or self.conversation_id
-        if response_message:
-            if self.current_user:
-                conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, response_message, title)
-                self.parent_message_id = last_message.id
-                if conversation.title:
-                    self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
-                else:
-                    self.gen_title(conversation)
-                return True, conversation, "Conversation updated with new messages"
+        if self.current_user:
+            conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, title)
+            self.parent_message_id = last_message.id
+            if conversation.title:
+                self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
             else:
-                return True, response_message, "No current user, conversation not saved"
-        return False, None, "Conversation not updated with new messages"
+                self.gen_title(conversation)
+            return True, conversation, "Conversation updated with new messages"
+        else:
+            return True, response_content, "No current user, conversation not saved"
 
     def ask_stream(self, prompt, title=None, request_overrides=None):
         self.log.info("Starting streaming request")
@@ -530,16 +557,15 @@ class ApiBackend(Backend):
         self.streaming = True
         self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
         success, response_obj, user_message = self._call_llm_streaming(messages, request_overrides)
-        self.post_response(response_obj)
+        self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
         if success:
-            self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
-            response_message = self._extract_message_content(response_obj)
-            self.message_clipboard = response_message
             if not self.streaming:
                 util.print_status_message(False, "Generation stopped")
-            success, response_obj, user_message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
+            response_content, new_messages = self.post_response(response_obj, new_messages)
+            self.message_clipboard = response_content
+            success, response_obj, user_message = self._ask_request_post(self.conversation_id, new_messages, response_content, title)
             if success:
-                response_obj = response_message
+                response_obj = response_content
         # End streaming loop.
         self.streaming = False
         return self._handle_response(success, response_obj, user_message)
@@ -559,12 +585,11 @@ class ApiBackend(Backend):
         system_message, request_overrides = self.extract_system_message_from_overrides(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         success, response_obj, user_message = self._call_llm_non_streaming(messages, request_overrides)
-        self.post_response(response_obj)
         if success:
-            response_message = self._extract_message_content(response_obj)
-            self.message_clipboard = response_message
-            success, conversation, user_message = self._ask_request_post(self.conversation_id, new_messages, response_message, title)
+            response_content, new_messages = self.post_response(response_obj, new_messages)
+            self.message_clipboard = response_content
+            success, conversation, user_message = self._ask_request_post(self.conversation_id, new_messages, response_content, title)
             if success:
-                return self._handle_response(success, response_message, user_message)
+                return self._handle_response(success, response_content, user_message)
             return self._handle_response(success, conversation, user_message)
         return self._handle_response(success, response_obj, user_message)

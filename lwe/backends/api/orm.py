@@ -68,6 +68,7 @@ class Message(Base):
     role = Column(String, nullable=False)
     message = Column(String, nullable=False)
     message_type = Column(String, nullable=False)
+    message_metadata = Column(String, nullable=False)
     model = Column(String, nullable=False)
     provider = Column(String, nullable=False)
     preset = Column(String, nullable=False)
@@ -160,15 +161,15 @@ class Orm:
         self.log.info(f"Added Conversation with title: {title} for User {user.username}")
         return conversation
 
-    def add_message(self, conversation, role, message, message_type, provider, model, preset):
+    def add_message(self, conversation, role, message, message_type, message_metadata, provider, model, preset):
         now = datetime.datetime.now()
-        message = Message(conversation_id=conversation.id, role=role, message=message, message_type=message_type, provider=provider, model=model, preset=preset, created_time=now)
+        message = Message(conversation_id=conversation.id, role=role, message=message, message_type=message_type, message_metadata=message_metadata, provider=provider, model=model, preset=preset, created_time=now)
         self.session.add(message)
         # Original conversation was created in another session, so load one fresh.
         conversation_update = self.get_conversation(conversation.id)
         setattr(conversation_update, 'updated_time', now)
         self.session.commit()
-        self.log.info(f"Added Message with role: {role}, message_type: {message_type}, provider: {provider}, model: {model}, preset: {preset} for Conversation with id {conversation.id}")
+        self.log.info(f"Added Message with role: {role}, message_type: {message_type}, message_metadata: {message_metadata}, provider: {provider}, model: {model}, preset: {preset} for Conversation with id {conversation.id}")
         return message
 
     def get_user(self, user_id):
