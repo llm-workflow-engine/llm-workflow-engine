@@ -273,6 +273,12 @@ class ApiBackend(Backend):
     def filter_messages_for_llm(self, messages):
         return [{k: v for k, v in m.items() if k in LLM_MESSAGE_FIELDS} for m in messages]
 
+    def message_content_from_dict(self, message):
+        content = message['content']
+        if message['message_type'] == 'function_call':
+            content = json.dumps(message['function_call'])
+        return content
+
     def _extract_message_content(self, message):
         if isinstance(message, BaseMessage):
             message_dict = _convert_message_to_dict(message)
@@ -361,11 +367,11 @@ class ApiBackend(Backend):
                     "role": role,
                     "content": "",
                     "function_call": json.loads(content),
-                    "function_call_content": content,
                     "message_type": message_type,
                     "message_metadata": message_metadata,
                 }
-            elif role == 'function':
+        elif message_type == 'function_response':
+            if role == 'function':
                 metadata = json.loads(message_metadata)
                 message = {
                     "role": role,
@@ -422,8 +428,7 @@ class ApiBackend(Backend):
         preset = self.active_preset or ''
         last_message = None
         for m in new_messages:
-            content = m['function_call_content'] if m['message_type'] == 'function_call' else m['content']
-            success, last_message, user_message = self.message.add_message(conversation.id, m['role'], content, m['message_type'], m['message_metadata'], provider.name, model_name, preset)
+            success, last_message, user_message = self.message.add_message(conversation.id, m['role'], self.message_content_from_dict(m), m['message_type'], m['message_metadata'], provider.name, model_name, preset)
             if not success:
                 raise Exception(user_message)
         tokens = self.get_conversation_token_count()
