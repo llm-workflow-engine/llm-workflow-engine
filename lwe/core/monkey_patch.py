@@ -46,10 +46,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     elif role == "function":
-        additional_kwargs = {"name": _dict["name"]}
-        return FunctionMessage(content=_dict["content"], additional_kwargs=additional_kwargs)
+        return FunctionMessage(content=_dict["content"], name=_dict["name"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
+langchain.chat_models.openai._convert_dict_to_message = _convert_dict_to_message
 
 logger = logging.getLogger(__name__)
 
