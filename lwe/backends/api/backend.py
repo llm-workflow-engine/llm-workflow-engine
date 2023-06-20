@@ -139,6 +139,7 @@ class ApiBackend(Backend):
             success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
             if success:
                 metadata, customizations = preset
+                customizations = self.expand_functions(customizations)
                 success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
                 if success:
                     self.override_provider = provider
@@ -158,9 +159,20 @@ class ApiBackend(Backend):
             self.log.debug(message)
             return True, None, message
 
+    def expand_functions(self, customizations):
+        if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
+            for idx, function_name in enumerate(customizations['model_kwargs']['functions']):
+                customizations['model_kwargs']['functions'][idx] = self.function_manager.get_function_config(function_name)
+        return customizations
+
+    def compact_functions(self, customizations):
+        if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
+            customizations['model_kwargs']['functions'] = [f['name'] for f in customizations['model_kwargs']['functions']]
+        return customizations
 
     def make_preset(self):
         metadata, customizations = parse_llm_dict(self.provider.customizations)
+        customizations = self.compact_functions(customizations)
         return metadata, customizations
 
     def activate_preset(self, preset_name):
@@ -169,6 +181,7 @@ class ApiBackend(Backend):
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
+        customizations = self.expand_functions(customizations)
         success, provider, user_message = self.set_provider(metadata['provider'], customizations, reset=True)
         if success:
             self.active_preset = preset
@@ -281,7 +294,7 @@ class ApiBackend(Backend):
 
     def run_function(self, function_name, data):
         success, response, user_message = self.function_manager.run_function(function_name, data)
-        json_obj = json.loads(response) if success else None
+        json_obj = response if success else None
         formatted_response = f"\n```json\n{json.dumps(json_obj, indent=4)}\n```" if json_obj else user_message
         util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}\n* Response: {formatted_response}")
         return success, json_obj, user_message
