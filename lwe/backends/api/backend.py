@@ -162,7 +162,8 @@ class ApiBackend(Backend):
     def expand_functions(self, customizations):
         if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
             for idx, function_name in enumerate(customizations['model_kwargs']['functions']):
-                customizations['model_kwargs']['functions'][idx] = self.function_manager.get_function_config(function_name)
+                if isinstance(function_name, str):
+                    customizations['model_kwargs']['functions'][idx] = self.function_manager.get_function_config(function_name)
         return customizations
 
     def compact_functions(self, customizations):
