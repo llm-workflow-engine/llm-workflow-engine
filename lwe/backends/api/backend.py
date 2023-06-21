@@ -300,7 +300,7 @@ class ApiBackend(Backend):
         util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}\n* Response: {formatted_response}")
         return success, json_obj, user_message
 
-    def post_response(self, response_obj, new_messages):
+    def post_response(self, response_obj, new_messages, request_overrides):
         response_message = self._extract_message_content(response_obj)
         new_messages.append(response_message)
         if response_message['message_type'] == 'function_call':
@@ -314,11 +314,15 @@ class ApiBackend(Backend):
                 return function_definition, new_messages
             success, json_obj, user_message = self.run_function(function_call['name'], function_call['arguments'])
             content = json.dumps(json_obj) if success else user_message
-            message_metadata = '{"name": "%s"}' % function_call['name']
-            new_messages.append(self.build_chat_message('function', content, message_type='function_response', message_metadata=message_metadata))
+            message_metadata = {
+                'name': function_call['name'],
+            }
+            new_messages.append(self.build_chat_message('function', content, message_type='function_response', message_metadata=json.dumps(message_metadata)))
             if self.is_return_on_function_response():
                 function_response = json_obj if success else user_message
                 return function_response, new_messages
+            success, response_obj, user_message = self._call_llm(new_messages, request_overrides)
+            self.post_response(response_obj, new_messages, request_overrides)
         return response_message['content'], new_messages
 
     def filter_messages_for_llm(self, messages):
@@ -512,19 +516,9 @@ class ApiBackend(Backend):
         messages = provider.prepare_messages_for_llm(messages)
         return llm, messages
 
-    def _call_llm_streaming(self, messages, customizations=None):
+    def _call_llm(self, messages, customizations=None):
         customizations = customizations or {}
-        self.log.debug(f"Initiated streaming request with message count: {len(messages)}")
-        llm, messages = self._build_chat_request(messages, customizations)
-        try:
-            response = llm(messages)
-        except ValueError as e:
-            return False, messages, e
-        return True, response, "Response received"
-
-    def _call_llm_non_streaming(self, messages, customizations=None):
-        customizations = customizations or {}
-        self.log.debug(f"Initiated non-streaming request with message count: {len(messages)}")
+        self.log.debug(f"Calling LLM with message count: {len(messages)}")
         llm, messages = self._build_chat_request(messages, customizations)
         try:
             response = llm(messages)
@@ -604,7 +598,7 @@ class ApiBackend(Backend):
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
         return new_messages, messages
 
-    def _ask_request_post(self, conversation_id, new_messages, response_content, title=None):
+    def _store_conversation_messages(self, conversation_id, new_messages, response_content, title=None):
         conversation_id = conversation_id or self.conversation_id
         if self.current_user:
             conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, title)
@@ -617,27 +611,34 @@ class ApiBackend(Backend):
         else:
             return True, response_content, "No current user, conversation not saved"
 
-    def ask_stream(self, prompt, title=None, request_overrides=None):
-        self.log.info("Starting streaming request")
+    def _ask(self, prompt, title=None, request_overrides=None):
+        stream = self.stream and self.should_stream()
+        self.log.info(f"Starting {stream and 'streaming' or 'non-streaming'} request")
         request_overrides = request_overrides or {}
         system_message, request_overrides = self.extract_system_message_from_overrides(request_overrides)
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        # Streaming loop.
-        self.streaming = True
-        self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
-        success, response_obj, user_message = self._call_llm_streaming(messages, request_overrides)
-        self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
-        if success:
-            if not self.streaming:
+        if stream:
+            # Start streaming loop.
+            self.streaming = True
+            self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
+        success, response_obj, user_message = self._call_llm(messages, request_overrides)
+        if stream:
+            self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
+            if success and not self.streaming:
                 util.print_status_message(False, "Generation stopped")
-            response_content, new_messages = self.post_response(response_obj, new_messages)
+        if success:
+            response_content, new_messages = self.post_response(response_obj, new_messages, request_overrides)
             self.message_clipboard = response_content
-            success, response_obj, user_message = self._ask_request_post(self.conversation_id, new_messages, response_content, title)
+            success, response_obj, user_message = self._store_conversation_messages(self.conversation_id, new_messages, response_content, title)
             if success:
                 response_obj = response_content
-        # End streaming loop.
-        self.streaming = False
+        if stream:
+            # End streaming loop.
+            self.streaming = False
         return self._handle_response(success, response_obj, user_message)
+
+    def ask_stream(self, prompt, title=None, request_overrides=None):
+        return self._ask(prompt, title, request_overrides)
 
     def ask(self, prompt, title=None, request_overrides=None):
         """
@@ -649,16 +650,4 @@ class ApiBackend(Backend):
         Returns:
             str: The response received from the model.
         """
-        self.log.info("Starting non-streaming request")
-        request_overrides = request_overrides or {}
-        system_message, request_overrides = self.extract_system_message_from_overrides(request_overrides)
-        new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
-        success, response_obj, user_message = self._call_llm_non_streaming(messages, request_overrides)
-        if success:
-            response_content, new_messages = self.post_response(response_obj, new_messages)
-            self.message_clipboard = response_content
-            success, conversation, user_message = self._ask_request_post(self.conversation_id, new_messages, response_content, title)
-            if success:
-                return self._handle_response(success, response_content, user_message)
-            return self._handle_response(success, conversation, user_message)
-        return self._handle_response(success, response_obj, user_message)
+        return self._ask(prompt, title, request_overrides)
