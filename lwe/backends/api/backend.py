@@ -419,29 +419,23 @@ class ApiBackend(Backend):
         if message_type == 'function_call':
             if role == 'assistant':
                 message = {
-                    "role": role,
                     "content": "",
                     "function_call": json.loads(content),
-                    "message_type": message_type,
-                    "message_metadata": message_metadata,
                 }
         elif message_type == 'function_response':
             if role == 'function':
                 metadata = json.loads(message_metadata)
                 message = {
-                    "role": role,
                     "content": content,
                     "name": metadata['name'],
-                    "message_type": message_type,
-                    "message_metadata": message_metadata,
                 }
         if not message:
             message = {
-                "role": role,
                 "content": content,
-                "message_type": message_type,
-                "message_metadata": message_metadata,
             }
+        message['role'] = role
+        message['message_type'] = message_type
+        message['message_metadata'] = message_metadata
         return message
 
     def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None, system_message=None):
