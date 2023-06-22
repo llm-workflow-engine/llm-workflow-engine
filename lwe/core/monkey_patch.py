@@ -1,14 +1,12 @@
 import logging
 import langchain.callbacks.manager
 import langchain.chat_models.openai
-# TODO: Uncomment after ___ lands.
-# from langchain.chat_models.openai import _convert_dict_to_message
+from langchain.chat_models.openai import _convert_dict_to_message
 
 from typing import (
     Any,
     List,
     Optional,
-    Mapping,
 )
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -24,32 +22,7 @@ from langchain.schema import (
     BaseMessage,
     ChatGeneration,
     ChatResult,
-    HumanMessage,
-    AIMessage,
-    SystemMessage,
-    FunctionMessage,
-    ChatMessage,
 )
-
-# TODO: Remove after ___ lands.
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
-        if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    elif role == "system":
-        return SystemMessage(content=_dict["content"])
-    elif role == "function":
-        return FunctionMessage(content=_dict["content"], name=_dict["name"])
-    else:
-        return ChatMessage(content=_dict["content"], role=role)
-langchain.chat_models.openai._convert_dict_to_message = _convert_dict_to_message
 
 logger = logging.getLogger(__name__)
 
@@ -88,11 +61,15 @@ def _handle_event(
                     **kwargs,
                 )
             else:
-                logger.warning(f"Error in {event_name} callback: {e}")
+                logger.warning(
+                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                )
         except Exception as e:
+            logger.warning(
+                f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+            )
             if handler.raise_error:
                 raise e
-            logger.warning(f"Error in {event_name} callback: {e}")
 langchain.callbacks.manager._handle_event = _handle_event
 langchain.callbacks.manager.StreamInterruption = StreamInterruption
 
@@ -115,7 +92,7 @@ def _generate(
             for stream_resp in response:
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token
+                inner_completion += token or ""
                 _function_call = stream_resp["choices"][0]["delta"].get("function_call")
                 if _function_call:
                     if function_call is None:
