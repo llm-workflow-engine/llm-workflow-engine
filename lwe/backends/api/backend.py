@@ -22,13 +22,6 @@ ADDITIONAL_PLUGINS = [
     'provider_chat_openai',
 ]
 
-LLM_MESSAGE_FIELDS = [
-    'role',
-    'content',
-    'function_call',
-    'name',
-]
-
 class ApiBackend(Backend):
 
     name = "api"
@@ -212,7 +205,7 @@ class ApiBackend(Backend):
             encoding = self.get_token_encoding()
         """Returns the number of tokens used by a list of messages."""
         num_tokens = 0
-        messages = self.filter_messages_for_llm(messages)
+        messages = self.transform_messages_to_chat_messages(messages)
         for message in messages:
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             for key, value in message.items():
@@ -231,7 +224,7 @@ class ApiBackend(Backend):
             success, last_message, user_message = self.message.get_last_message(self.conversation_id)
             if not success:
                 raise ValueError(user_message)
-            provider = self.provider_manager.get_provider_from_name(last_message.provider)
+            provider = self.provider_manager.get_provider_from_name(last_message['provider'])
         if provider is not None and provider.get_capability('chat'):
             self.conversation_tokens = tokens
         else:
@@ -243,17 +236,17 @@ class ApiBackend(Backend):
         if not success:
             raise ValueError(user_message)
         model_configured = False
-        if last_message.preset:
-            success, _preset, user_message = self.activate_preset(last_message.preset)
+        if last_message['preset']:
+            success, _preset, user_message = self.activate_preset(last_message['preset'])
             if success:
                 model_configured = True
             else:
-                util.print_status_message(False, f"Unable to switch conversation to previous preset '{last_message.preset}' -- ERROR: {user_message}, falling back to provider: {last_message.provider}, model: {last_message.model}")
+                util.print_status_message(False, f"Unable to switch conversation to previous preset '{last_message['preset']}' -- ERROR: {user_message}, falling back to provider: {last_message['provider']}, model: {last_message['model']}")
         if not model_configured:
-            if last_message.provider and last_message.model:
-                success, _provider, _user_message = self.set_provider(last_message.provider, reset=True)
+            if last_message['provider'] and last_message['model']:
+                success, _provider, _user_message = self.set_provider(last_message['provider'], reset=True)
                 if success:
-                    success, _customizations, _user_message = self.set_model(last_message.model)
+                    success, _customizations, _user_message = self.set_model(last_message['model'])
                     if success:
                         self.init_system_message()
                         model_configured = True
@@ -268,8 +261,7 @@ class ApiBackend(Backend):
         success, old_messages, user_message = self.message.get_messages(conversation_id)
         if not success:
             raise Exception(user_message)
-        token_messages = self.prepare_prompt_messsage_context(old_messages)
-        tokens = self.get_num_tokens_from_messages(token_messages)
+        tokens = self.get_num_tokens_from_messages(old_messages)
         return tokens
 
     def extract_system_message_from_overrides(self, request_overrides):
@@ -295,38 +287,57 @@ class ApiBackend(Backend):
 
     def run_function(self, function_name, data):
         success, response, user_message = self.function_manager.run_function(function_name, data)
-        json_obj = response if success else None
-        formatted_response = f"\n```json\n{json.dumps(json_obj, indent=4)}\n```" if json_obj else user_message
-        util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}\n* Response: {formatted_response}")
+        json_obj = response if success else {'error': user_message}
+        util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}")
+        util.print_markdown(json_obj)
         return success, json_obj, user_message
 
     def post_response(self, response_obj, new_messages, request_overrides):
         response_message = self._extract_message_content(response_obj)
         new_messages.append(response_message)
         if response_message['message_type'] == 'function_call':
-            function_call = _convert_message_to_dict(response_obj)['function_call']
+            function_call = response_message['message']
             util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
             if self.is_return_on_function_call():
                 function_definition = {
                     'name': function_call['name'],
-                    'arguments': json.loads(function_call['arguments']),
+                    'arguments': function_call['arguments'],
                 }
                 return function_definition, new_messages
-            success, json_obj, user_message = self.run_function(function_call['name'], function_call['arguments'])
-            content = json.dumps(json_obj) if success else user_message
+            success, function_response, user_message = self.run_function(function_call['name'], function_call['arguments'])
             message_metadata = {
                 'name': function_call['name'],
             }
-            new_messages.append(self.build_chat_message('function', content, message_type='function_response', message_metadata=json.dumps(message_metadata)))
+            new_messages.append(self.message.build_message('function', function_response, message_type='function_response', message_metadata=message_metadata))
             if self.is_return_on_function_response():
-                function_response = json_obj if success else user_message
                 return function_response, new_messages
             success, response_obj, user_message = self._call_llm(new_messages, request_overrides)
             self.post_response(response_obj, new_messages, request_overrides)
-        return response_message['content'], new_messages
+        return response_message['message'], new_messages
 
-    def filter_messages_for_llm(self, messages):
-        return [{k: v for k, v in m.items() if k in LLM_MESSAGE_FIELDS} for m in messages]
+    def transform_messages_to_chat_messages(self, messages):
+        chat_messages = []
+        for message in messages:
+            role = message['role']
+            next_message = {
+                'role': role,
+            }
+            if role == "assistant":
+                if message['message_type'] == "function_call":
+                    next_message['function_call'] = {
+                        'name': message['message']['name'],
+                        'arguments': json.dumps(message['message']['arguments'], indent=2),
+                    }
+                    next_message['content'] = ""
+                else:
+                    next_message['content'] = message['message']
+            elif role == "function":
+                next_message['content'] = json.dumps(message['message'])
+                next_message['name'] = message['message_metadata']['name']
+            else:
+                next_message['content'] = message['message']
+            chat_messages.append(next_message)
+        return chat_messages
 
     def message_content_from_dict(self, message):
         content = message['content']
@@ -340,10 +351,15 @@ class ApiBackend(Backend):
             content = message_dict['content']
             message_type = 'content'
             if 'function_call' in message_dict:
-                content = json.dumps(message_dict['function_call'])
                 message_type = 'function_call'
-            return self.build_chat_message(message_dict['role'], content, message_type)
-        return self.build_chat_message('assistant', message)
+                message_dict['function_call']['arguments'] = json.loads(message_dict['function_call']['arguments'])
+                util.debug.console("EXTRACT")
+                util.debug.console(message_dict)
+                content = message_dict['function_call']
+            elif message_dict['role'] == 'function':
+                message_type = 'function_response'
+            return self.message.build_message(message_dict['role'], content, message_type)
+        return self.message.build_message('assistant', message)
 
     def gen_title_thread(self, conversation):
         self.log.info(f"Generating title for conversation {conversation.id}")
@@ -352,17 +368,17 @@ class ApiBackend(Backend):
         # first user message we need for generating the title.
         success, messages, user_message = self.message.get_messages(conversation.id, limit=2)
         if success:
-            user_content = messages[1].message[:constants.TITLE_GENERATION_MAX_CHARACTERS]
+            user_content = messages[1]['message'][:constants.TITLE_GENERATION_MAX_CHARACTERS]
             new_messages = [
-                self.build_chat_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
-                self.build_chat_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
+                self.message.build_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
+                self.message.build_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
             ]
-            new_messages = self.filter_messages_for_llm(new_messages)
+            new_messages = self.transform_messages_to_chat_messages(new_messages)
             new_messages = self.provider.prepare_messages_for_llm_chat(new_messages)
             llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
             try:
                 result = llm(new_messages)
-                title = self._extract_message_content(result)['content']
+                title = self._extract_message_content(result)['message']
                 title = title.replace("\n", ", ").strip()
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
                 success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
@@ -447,16 +463,9 @@ class ApiBackend(Backend):
                 raise Exception(message)
         if len(old_messages) == 0:
             system_message = system_message or self.system_message
-            new_messages.append(self.build_chat_message('system', system_message))
-        new_messages.append(self.build_chat_message('user', prompt))
+            new_messages.append(self.message.build_message('system', system_message))
+        new_messages.append(self.message.build_message('user', prompt))
         return old_messages, new_messages
-
-    def prepare_prompt_messsage_context(self, old_messages=None, new_messages=None):
-        old_messages = old_messages or []
-        new_messages = new_messages or []
-        messages = [self.build_chat_message(m.role, m.message, m.message_type, m.message_metadata) for m in old_messages]
-        messages.extend(new_messages)
-        return messages
 
     def create_new_conversation_if_needed(self, conversation_id=None, title=None):
         conversation_id = conversation_id or self.conversation_id
@@ -477,7 +486,7 @@ class ApiBackend(Backend):
         preset = self.active_preset_name or ''
         last_message = None
         for m in new_messages:
-            success, last_message, user_message = self.message.add_message(conversation.id, m['role'], self.message_content_from_dict(m), m['message_type'], m['message_metadata'], provider.name, model_name, preset)
+            success, last_message, user_message = self.message.add_message(conversation.id, m['role'], m['message'], m['message_type'], m['message_metadata'], provider.name, model_name, preset)
             if not success:
                 raise Exception(user_message)
         tokens = self.get_conversation_token_count()
@@ -506,7 +515,7 @@ class ApiBackend(Backend):
         # TODO: More elegant way to do this, probably on provider.
         model_configuration = {k: str(v) for k, v in dict(llm).items()}
         self.log.debug(f"LLM request with message count: {len(messages)}, model configuration: {json.dumps(model_configuration)}")
-        messages = self.filter_messages_for_llm(messages)
+        messages = self.transform_messages_to_chat_messages(messages)
         messages = provider.prepare_messages_for_llm(messages)
         return llm, messages
 
@@ -558,7 +567,7 @@ class ApiBackend(Backend):
             if success:
                 conversation_data = {
                     "conversation": self.conversation.orm.object_as_dict(conversation),
-                    "messages": [self.conversation.orm.object_as_dict(m) for m in messages],
+                    "messages": messages,
                 }
                 return success, conversation_data, message
         return self._handle_response(success, conversation, message)
@@ -586,7 +595,7 @@ class ApiBackend(Backend):
 
     def _prepare_ask_request(self, prompt, system_message=None):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id, system_message=system_message)
-        messages = self.prepare_prompt_messsage_context(old_messages, new_messages)
+        messages = old_messages + new_messages
         tokens = self.get_num_tokens_from_messages(messages)
         self.set_conversation_tokens(tokens)
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
@@ -594,6 +603,7 @@ class ApiBackend(Backend):
 
     def _store_conversation_messages(self, conversation_id, new_messages, response_content, title=None):
         conversation_id = conversation_id or self.conversation_id
+        self.log.debug(f"Storing conversation messages for conversation {conversation_id}")
         if self.current_user:
             conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, title)
             self.parent_message_id = last_message.id
