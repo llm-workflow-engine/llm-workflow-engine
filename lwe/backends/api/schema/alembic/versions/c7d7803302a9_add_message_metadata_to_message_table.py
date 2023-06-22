@@ -17,4 +17,4 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column('message', sa.Column('message_metadata', sa.String(), nullable=False, server_default=''))
+    op.add_column('message', sa.Column('message_metadata', sa.String()))

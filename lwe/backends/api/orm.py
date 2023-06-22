@@ -68,7 +68,7 @@ class Message(Base):
     role = Column(String, nullable=False)
     message = Column(String, nullable=False)
     message_type = Column(String, nullable=False)
-    message_metadata = Column(String, nullable=False)
+    message_metadata = Column(String)
     model = Column(String, nullable=False)
     provider = Column(String, nullable=False)
     preset = Column(String, nullable=False)
