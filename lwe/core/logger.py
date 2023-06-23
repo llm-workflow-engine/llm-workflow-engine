@@ -7,6 +7,9 @@ class Logger():
     def __new__(cls, name, config=None):
         config = config or Config()
         logger = logging.getLogger(name)
+        # Prevent duplicate loggers.
+        if logger.hasHandlers():
+            return logger
         logger.setLevel(logging.DEBUG)
         log_console_handler = logging.StreamHandler()
         log_console_handler.setFormatter(logging.Formatter(config.get('log.console.format')))
