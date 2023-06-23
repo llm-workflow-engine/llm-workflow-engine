@@ -152,11 +152,59 @@ class ApiBackend(Backend):
             self.log.debug(message)
             return True, None, message
 
+    def init_function_cache(self):
+        success, _functions, user_message = self.function_manager.load_functions()
+        if not success:
+            raise RuntimeError(user_message)
+        self.function_cache = []
+        if self.active_preset:
+            _metadata, customizations = self.active_preset
+            if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
+                for function in customizations['model_kwargs']['functions']:
+                    self.function_cache.append(function)
+
+    def function_cache_add(self, function_name):
+        if function_name not in self.function_manager.functions:
+            return False
+        if function_name not in self.function_cache:
+            self.function_cache.append(function_name)
+        return True
+
+    def add_message_functions_to_cache(self, messages):
+        filtered_messages = []
+        for message in messages:
+            m_type = message['message_type']
+            if m_type in ['function_call', 'function_response']:
+                if m_type == 'function_call':
+                    function_name = message['message']['name']
+                if m_type == 'function_response':
+                    function_name = message['message_metadata']['name']
+                if self.function_cache_add(function_name):
+                    filtered_messages.append(message)
+                else:
+                    message = f"Function {function_name} not found in function list, filtered message out"
+                    self.log.warning(message)
+                    util.print_status_message(False, message)
+            else:
+                filtered_messages.append(message)
+        return filtered_messages
+
     def expand_functions(self, customizations):
+        self.init_function_cache()
+        # Necessary to seed function cache.
+        self.retrieve_old_messages(self.conversation_id)
+        already_configured_functions = []
         if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
             for idx, function_name in enumerate(customizations['model_kwargs']['functions']):
+                already_configured_functions.append(function_name)
                 if isinstance(function_name, str):
                     customizations['model_kwargs']['functions'][idx] = self.function_manager.get_function_config(function_name)
+        if len(self.function_cache) > 0:
+            customizations.setdefault('model_kwargs', {})
+            customizations['model_kwargs'].setdefault('functions', [])
+            for function_name in self.function_cache:
+                if function_name not in already_configured_functions:
+                    customizations['model_kwargs']['functions'].append(self.function_manager.get_function_config(function_name))
         return customizations
 
     def compact_functions(self, customizations):
@@ -175,7 +223,6 @@ class ApiBackend(Backend):
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
-        customizations = self.expand_functions(customizations)
         success, provider, user_message = self.set_provider(metadata['provider'], customizations, reset=True)
         if success:
             self.active_preset = preset
@@ -205,6 +252,8 @@ class ApiBackend(Backend):
             encoding = self.get_token_encoding()
         """Returns the number of tokens used by a list of messages."""
         num_tokens = 0
+        self.init_function_cache()
+        messages = self.add_message_functions_to_cache(messages)
         messages = self.transform_messages_to_chat_messages(messages)
         for message in messages:
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -215,6 +264,10 @@ class ApiBackend(Backend):
                 if key == "name":  # if there's a name, the role is omitted
                     num_tokens += -1  # role is always required and always 1 token
         num_tokens += 2  # every reply is primed with <im_start>assistant
+        if len(self.function_cache) > 0:
+            functions = [self.function_manager.get_function_config(function_name) for function_name in self.function_cache]
+            functions_string = json.dumps(functions, indent=2)
+            num_tokens += len(encoding.encode(functions_string))
         return num_tokens
 
     def set_conversation_tokens(self, tokens):
@@ -353,8 +406,6 @@ class ApiBackend(Backend):
             if 'function_call' in message_dict:
                 message_type = 'function_call'
                 message_dict['function_call']['arguments'] = json.loads(message_dict['function_call']['arguments'])
-                util.debug.console("EXTRACT")
-                util.debug.console(message_dict)
                 content = message_dict['function_call']
             elif message_dict['role'] == 'function':
                 message_type = 'function_response'
@@ -454,13 +505,19 @@ class ApiBackend(Backend):
         message['message_metadata'] = message_metadata
         return message
 
-    def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None, system_message=None):
+
+    def retrieve_old_messages(self, conversation_id=None, target_id=None):
         old_messages = []
-        new_messages = []
         if conversation_id:
             success, old_messages, message = self.message.get_messages(conversation_id, target_id=target_id)
             if not success:
                 raise Exception(message)
+            old_messages = self.add_message_functions_to_cache(old_messages)
+        return old_messages
+
+    def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None, system_message=None):
+        new_messages = []
+        old_messages = self.retrieve_old_messages(conversation_id, target_id)
         if len(old_messages) == 0:
             system_message = system_message or self.system_message
             new_messages.append(self.message.build_message('system', system_message))
@@ -510,6 +567,7 @@ class ApiBackend(Backend):
             if self.stream and self.should_stream():
                 self.log.debug("Adding streaming-specific customizations to LLM request")
                 customizations.update(self.streaming_args(interrupt_handler=True))
+            customizations = self.expand_functions(customizations)
             llm = self.make_llm(customizations)
             self.llm = llm
         # TODO: More elegant way to do this, probably on provider.
@@ -596,8 +654,6 @@ class ApiBackend(Backend):
     def _prepare_ask_request(self, prompt, system_message=None):
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id, system_message=system_message)
         messages = old_messages + new_messages
-        tokens = self.get_num_tokens_from_messages(messages)
-        self.set_conversation_tokens(tokens)
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
         return new_messages, messages
 
