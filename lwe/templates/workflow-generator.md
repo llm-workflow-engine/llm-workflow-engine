@@ -32,6 +32,11 @@ request_overrides:
             required: false
             default: None
             type: str
+        system_message:
+            description: The LWE system message to use, either an alias or custom message.
+            required: false
+            default: None
+            type: str
         template:
             description: An LWE template to use for constructing the prompt.
             required: true if message not provided

@@ -1,5 +1,6 @@
 import os
 import frontmatter
+import shutil
 
 from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound, meta
 
@@ -39,6 +40,72 @@ class TemplateManager():
         message = f"Template {template_name} exists"
         self.log.debug(message)
         return True, template_name, message
+
+    def get_template_variables_substitutions(self, template_name):
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, variables = self.get_template_and_variables(template_name)
+        substitutions = self.process_template_builtin_variables(template_name, variables)
+        return True, (template, variables, substitutions), f"Loaded template substitutions: {template_name}"
+
+    def render_template(self, template_name):
+        success, response, user_message = self.get_template_variables_substitutions(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, variables, substitutions = response
+        message = template.render(**substitutions)
+        return True, message, f"Rendered template: {template_name}"
+
+    def get_template_source(self, template_name):
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template, _ = self.get_template_and_variables(template_name)
+        source = frontmatter.load(template.filename)
+        return True, source, f"Loaded template source: {template_name}"
+
+    def get_template_editable_filepath(self, template_name):
+        if not template_name:
+            return False, template_name, "No template name specified"
+        template, _ = self.get_template_and_variables(template_name)
+        if template:
+            filename = template.filename
+            if self.is_system_template(filename):
+                return False, template_name, f"{template_name} is a system template, and cannot be edited directly"
+        else:
+            filename = os.path.join(self.user_template_dirs[0], template_name)
+        return True, filename, f"Template {filename} can be edited"
+
+    def copy_template(self, old_name, new_name):
+        template, _ = self.get_template_and_variables(old_name)
+        if not template:
+            return False, old_name, f"{old_name} does not exist"
+        old_filepath = template.filename
+        base_filepath = self.user_template_dirs[0] if self.is_system_template(old_filepath) else os.path.dirname(old_filepath)
+        new_filepath = os.path.join(base_filepath, new_name)
+        if os.path.exists(new_filepath):
+            return False, new_filepath, f"{new_filepath} already exists"
+        shutil.copy2(old_filepath, new_filepath)
+        self.load_templates()
+        return True, new_filepath, f"Copied template {old_filepath} to {new_filepath}"
+
+    def template_can_delete(self, template_name):
+        if not template_name:
+            return False, template_name, "No template name specified"
+        template, _ = self.get_template_and_variables(template_name)
+        if template:
+            filename = template.filename
+            if self.is_system_template(filename):
+                return False, filename, f"{filename} is a system template, and cannot be deleted"
+        else:
+            return False, template_name, f"{template_name} does not exist"
+        return True, filename, f"Template {filename} can be deleted"
+
+    def template_delete(self, filename):
+        os.remove(filename)
+        self.load_templates()
+        return True, filename, f"Deleted {filename}"
 
     def extract_metadata_keys(self, keys, metadata):
         extracted_keys = {}

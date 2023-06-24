@@ -4,7 +4,6 @@ import yaml
 import os
 import sys
 import traceback
-import shutil
 import signal
 import frontmatter
 import pyperclip
@@ -150,19 +149,13 @@ class Repl():
         return style
 
     def run_template(self, template_name, substitutions=None):
-        substitutions = substitutions or {}
-        message, overrides = self.backend.template_manager.build_message_from_template(template_name, substitutions)
-        preset_name = None
-        if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
-            preset_name = overrides['request_overrides'].pop('preset')
-            success, llm, user_message = self.backend.set_override_llm(preset_name)
-            if success:
-                self.log.info(f"Switching to preset '{preset_name}' for template: {template_name}")
-            else:
-                return success, llm, user_message
-        self.log.info(f"Running template: {template_name}")
+        success, response, user_message = self.backend.run_template_setup(template_name, substitutions)
+        if not success:
+            return success, response, user_message
+        message, preset_name, overrides = response
         print("")
         print(message)
+        self.log.info("Running template")
         response = self.default(message, **overrides)
         if preset_name:
             self.backend.set_override_llm()
@@ -922,11 +915,9 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
+        success, source, user_message = self.backend.template_manager.get_template_source(template_name)
         if not success:
-            return success, template_name, user_message
-        template, _ = self.backend.template_manager.get_template_and_variables(template_name)
-        source = frontmatter.load(template.filename)
+            return success, source, user_message
         util.print_markdown(f"\n## Template '{template_name}'")
         if source.metadata:
             util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False))
@@ -942,16 +933,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        if not template_name:
-            return False, template_name, "No template name specified"
-        template, _ = self.backend.template_manager.get_template_and_variables(template_name)
-        if template:
-            filename = template.filename
-            if self.backend.template_manager.is_system_template(filename):
-                return False, template_name, f"{template_name} is a system template, and cannot be edited directly"
-        else:
-            filename = os.path.join(self.backend.template_manager.user_template_dirs[0], template_name)
-        file_editor(filename)
+        success, filepath, user_message = self.backend.template_manager.get_template_editable_filepath(template_name)
+        if not success:
+            return success, filepath, user_message
+        file_editor(filepath)
         self.backend.template_manager.load_templates()
         self.rebuild_completions()
 
@@ -969,18 +954,12 @@ class Repl():
             old_name, new_name = template_names.split()
         except ValueError:
             return False, template_names, "Old and new template name required"
-        template, _ = self.backend.template_manager.get_template_and_variables(old_name)
-        if not template:
-            return False, template_names, f"{old_name} does not exist"
-        old_filepath = template.filename
-        base_filepath = self.backend.template_manager.user_template_dirs[0] if self.backend.template_manager.is_system_template(old_filepath) else os.path.dirname(old_filepath)
-        new_filepath = os.path.join(base_filepath, new_name)
-        if os.path.exists(new_filepath):
-            return False, template_names, f"{new_name} already exists"
-        shutil.copy2(old_filepath, new_filepath)
-        self.backend.template_manager.load_templates()
+
+        success, new_filepath, user_message = self.backend.template_manager.copy_template(old_name, new_name)
+        if not success:
+            return success, new_filepath, user_message
         self.rebuild_completions()
-        return True, template_names, f"Copied {old_name} to {new_name}"
+        return True, new_filepath, f"Copied {old_name} to {new_filepath}"
 
     def do_template_delete(self, template_name):
         """
@@ -992,20 +971,12 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        if not template_name:
-            return False, template_name, "No template name specified"
-        template, _ = self.backend.template_manager.get_template_and_variables(template_name)
-        if template:
-            if self.backend.template_manager.is_system_template(template.filename):
-                return False, template_name, f"{template_name} is a system template, and cannot be deleted"
-        else:
-            return False, template_name, f"{template_name} does not exist"
+        success, filename, user_message = self.backend.template_manager.template_can_delete(template_name)
+        if not success:
+            return success, filename, user_message
         confirmation = input(f"Are you sure you want to delete template {template_name}? [y/N] ").strip()
         if confirmation.lower() in ["yes", "y"]:
-            os.remove(template.filename)
-            self.backend.template_manager.load_templates()
-            self.rebuild_completions()
-            return True, template_name, f"Deleted {template_name}"
+            return self.backend.template_manager.template_delete(filename)
         else:
             return False, template_name, "Deletion aborted"
 
@@ -1021,11 +992,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
+        success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
-        _, variables = self.backend.template_manager.get_template_and_variables(template_name)
-        substitutions = self.backend.template_manager.process_template_builtin_variables(template_name, variables)
+        _template, variables, substitutions = response
         return self.run_template(template_name, substitutions)
 
     def do_template_prompt_run(self, template_name):
@@ -1041,10 +1011,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
+        success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
-        _, variables = self.backend.template_manager.get_template_and_variables(template_name)
+        _template, variables, _substitutions = response
         substitutions = self.collect_template_variable_values(template_name, variables)
         return self.run_template(template_name, substitutions)
 
@@ -1061,12 +1031,9 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
+        success, message, user_message = self.backend.template_manager.render_template(template_name)
         if not success:
             return success, template_name, user_message
-        template, variables = self.backend.template_manager.get_template_and_variables(template_name)
-        substitutions = self.backend.template_manager.process_template_builtin_variables(template_name, variables)
-        message = template.render(**substitutions)
         return self.do_editor(message)
 
     def do_template_prompt_edit_run(self, template_name):
@@ -1081,10 +1048,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, template_name, user_message = self.backend.template_manager.ensure_template(template_name)
+        success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
-        template, variables = self.backend.template_manager.get_template_and_variables(template_name)
+        template, variables, _substitutions = response
         substitutions = self.collect_template_variable_values(template_name, variables)
         message = template.render(**substitutions)
         return self.do_editor(message)
