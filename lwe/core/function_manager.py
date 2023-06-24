@@ -117,7 +117,7 @@ class FunctionManager():
             return False, function_name, user_message
         function_instance = self.setup_function_instance(function_name, function_path)
         try:
-            output_data = function_instance(input_data)
+            output_data = function_instance(**input_data)
             self.log.info(f"Function {function_name} executed successfully, output data: {output_data}")
             return True, output_data, f"Function '{function_name}' executed successfully"
         except Exception as e:

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
+from lwe.core.doc_parser import func_to_openai_function_spec
 
 class Function:
     def __init__(self, config):
@@ -21,15 +22,18 @@ class Function:
     def get_config(self):
         filepath = Path(self.filepath)
         config_filepath = filepath.with_suffix('.config.yaml')
-        try:
-            self.log.debug(f"Loading configuration for {self.name} from filepath: {config_filepath}")
-            with open(config_filepath, 'r') as config_file:
-                config = yaml.safe_load(config_file)
-            self.log.debug(f"Loaded YAML configuration for {self.name}: {config}")
-            return config
-        except Exception as e:
-            self.log.error(f"Error loading configuration for {self.name}: {str(e)}")
-            raise ValueError(f"Failed to load configuration file for {self.name}") from e
+        if config_filepath.is_file():
+            try:
+                self.log.debug(f"Loading configuration for {self.name} from filepath: {config_filepath}")
+                with open(config_filepath, 'r') as config_file:
+                    config = yaml.safe_load(config_file)
+                self.log.debug(f"Loaded YAML configuration for {self.name}: {config}")
+                return config
+            except Exception as e:
+                self.log.error(f"Error loading configuration for {self.name}: {str(e)}")
+                raise ValueError(f"Failed to load configuration file for {self.name}") from e
+        return func_to_openai_function_spec(self.name, self.__call__)
+
 
     @abstractmethod
     def __call__(self, **kwargs):
