@@ -1,3 +1,8 @@
+### v0.12.3 - 25/06/2023
+
+* **Sun Jun 25 2023:** roll custom textract, current package not well maintained
+* **Sun Jun 25 2023:** bump openai dependency
+
 ### v0.12.2 - 15/06/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
