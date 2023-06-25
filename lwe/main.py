@@ -36,7 +36,7 @@ def main():
         "-p",
         "--config-profile",
         action="store",
-        help=f"Donfig profile to use (default: {dummy_config.profile})",
+        help=f"Config profile to use (default: {dummy_config.profile})",
     )
     parser.add_argument(
         "-t",
