@@ -30,47 +30,19 @@ def main():
         "-c",
         "--config-dir",
         action="store",
-        help=f"directory to read config from (default: {dummy_config.config_dir})",
+        help=f"Directory to read config from (default: {dummy_config.config_dir})",
     )
     parser.add_argument(
         "-p",
         "--config-profile",
         action="store",
-        help=f"config profile to use (default: {dummy_config.profile})",
+        help=f"Config profile to use (default: {dummy_config.profile})",
     )
     parser.add_argument(
         "-t",
         "--data-dir",
         action="store",
-        help=f"directory to read/store data from (default: {dummy_config.data_dir})",
-    )
-    parser.add_argument(
-        "--database",
-        action="store",
-        help=f"Database to store chat-related data (default: {dummy_config.get('database')})",
-    )
-    parser.add_argument(
-        "-n", "--no-stream", default=True, dest="stream", action="store_false",
-        help="disable streaming mode"
-    )
-    parser.add_argument(
-        "-l",
-        "--log",
-        action="store",
-        help="log prompts and responses to the named file",
-    )
-    parser.add_argument(
-        "-e",
-        "--debug-log",
-        metavar="FILEPATH",
-        action="store",
-        help="debug logging to FILEPATH",
-    )
-    parser.add_argument(
-        "-b",
-        "--browser",
-        action="store",
-        help="set preferred browser; 'firefox' 'chromium' or 'webkit'",
+        help=f"Directory to read/store data from (default: {dummy_config.data_dir})",
     )
     parser.add_argument(
         "-r",
@@ -78,6 +50,13 @@ def main():
         metavar="PRESET",
         action="store",
         help="Preset to use on startup",
+    )
+    parser.add_argument(
+        "-s",
+        "--system-message",
+        metavar="ALIAS_NAME",
+        action="store",
+        help="Alias name of the system message to use on startup",
     )
     parser.add_argument(
         "-i",
@@ -89,22 +68,64 @@ def main():
         help="Input file (default: read from stdin)",
     )
     parser.add_argument(
-        "-s",
-        "--system-message",
-        metavar="ALIAS_NAME",
+        "-l",
+        "--log",
         action="store",
-        help="Alias name of the system message to use on startup",
+        help="Log prompts and responses to the named file",
     )
+    parser.add_argument(
+        "-n",
+        "--no-stream",
+        default=True,
+        dest="stream",
+        action="store_false",
+        help="Disable streaming mode",
+    )
+    parser.add_argument(
+        "-b",
+        "--browser",
+        action="store",
+        help="Set preferred browser; 'firefox' 'chromium' or 'webkit'",
+    )
+    parser.add_argument(
+        "--database",
+        action="store",
+        help=f"Database to store chat-related data (default: {dummy_config.get('database')})",
+    )
+    user_directories = [
+        'template',
+        'preset',
+        'plugin',
+        'workflow',
+        'function',
+    ]
+    for directory in user_directories:
+        parser.add_argument(
+            f"--{directory}-dir",
+            metavar="PATH",
+            action="append",
+            help=f"User {directory} directory (can be specified multiple times)",
+        )
 
     parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
-        help="enable debug mode in which the browser window is not hidden",
+        help="Enable debug mode in which the browser window is not hidden",
     )
+    parser.add_argument(
+        "-e",
+        "--debug-log",
+        metavar="FILEPATH",
+        action="store",
+        help="Debug logging to FILEPATH",
+    )
+
     args = parser.parse_args()
 
-    config_args = {}
+    config_args = {
+        'args': args,
+    }
     config_dir = args.config_dir or os.environ.get('CHATGPT_WRAPPER_CONFIG_DIR', None)
     config_profile = args.config_profile or os.environ.get('CHATGPT_WRAPPER_CONFIG_PROFILE', None)
     data_dir = args.data_dir or os.environ.get('CHATGPT_WRAPPER_DATA_DIR', None)

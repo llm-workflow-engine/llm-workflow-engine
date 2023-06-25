@@ -1,4 +1,6 @@
 import os
+import json
+import subprocess
 import inspect
 import shutil
 import sys
@@ -19,6 +21,10 @@ if False:
 console = Console()
 
 is_windows = platform.system() == "Windows"
+
+class NoneAttrs:
+    def __getattr__(self, _name):
+        return None
 
 def introspect_commands(klass):
     return [method[3:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("do_")]
@@ -103,6 +109,8 @@ def print_status_message(success, message, style=None):
     print("")
 
 def print_markdown(output, style=None):
+    if isinstance(output, dict):
+        output = dict_to_pretty_json(output)
     console.print(Markdown(output), style=style)
     print("")
 
@@ -167,13 +175,17 @@ def get_class_command_method(klass, do_command):
         if method:
             return method
 
+def dict_to_pretty_json(dict_obj):
+    response = json.dumps(dict_obj, indent=4)
+    return f"```json\n{response}\n```"
+
 def output_response(response):
     if response:
         if isinstance(response, tuple):
             success, _obj, message = response
             print_status_message(success, message)
         else:
-            print(response)
+            print_markdown(response)
 
 def open_temp_file(input_data='', suffix=None):
     kwargs = {'suffix': f'.{suffix}'} if suffix else {}
@@ -221,4 +233,90 @@ def get_environment_variable(name, default=None):
 
 def get_environment_variable_list(name):
     var_list = get_environment_variable(name)
-    return var_list.split(',') if var_list else None
+    return split_on_delimiter(var_list, ':') if var_list else None
+
+def split_on_delimiter(string, delimiter=','):
+    return [x.strip() for x in string.split(delimiter)]
+
+def get_ansible_module_doc(module_name):
+    try:
+        result = subprocess.run(
+            ['ansible-doc', '-t', 'module', module_name, '--json'],
+            stdout=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        data = json.loads(result.stdout)
+        return data
+    except subprocess.CalledProcessError as e:
+        raise subprocess.CalledProcessError(f"Error parsing Ansible doc: {e}")
+    except json.JSONDecodeError as e:
+        raise json.JSONDecodeError(f"Error: Unable to parse Ansible doc: {e}")
+
+def ansible_doc_to_markdown(module_name, full_doc=False):
+    data = get_ansible_module_doc(module_name)
+    module_data = data["copy"]["doc"]
+    examples = data["copy"]["examples"]
+    return_data = data["copy"]["return"]
+
+    markdown = f"""The following is reference documentation for the Ansible '{module_name}' module.
+
+Examples listed demonstrate how to use the module in an Ansible playbook.
+
+"""
+    markdown += f"# Description: {module_data['short_description']}"
+
+    if full_doc:
+        markdown += "\n\n## Purpose\n\n"
+        for desc in module_data["description"]:
+            markdown += f" * {desc}\n"
+
+    markdown += "\n\n## Parameters\n\n"
+
+    if full_doc:
+        for option, details in module_data["options"].items():
+            markdown += f"### {option}\n\n"
+            for desc in details["description"]:
+                markdown += f" * {desc}\n"
+            if "type" in details:
+                markdown += f" * Type: {details['type']}\n"
+            if "default" in details:
+                markdown += f" * Default: {details['default']}\n"
+            markdown += "\n"
+    else:
+        markdown += "\n".join([f" * {k}" for k in module_data["options"].keys()])
+
+
+    markdown += "\n\n##Attributes\n\n"
+
+    if full_doc:
+        for attribute, details in module_data["attributes"].items():
+            markdown += f"### {attribute}\n\n"
+            if isinstance(details["description"], list):
+                for desc in details["description"]:
+                    markdown += f" * {desc}\n"
+            else:
+                markdown += f"{details['description']}\n"
+            markdown += "\n"
+    else:
+        markdown += "\n".join([f" * {k}" for k in module_data["attributes"].keys()])
+
+    markdown += "\n\n## Return values\n\n"
+
+    if full_doc:
+        for return_value, details in return_data.items():
+            markdown += f"### {return_value}\n\n"
+            if isinstance(details["description"], list):
+                for desc in details["description"]:
+                    markdown += f" * {desc}\n"
+            else:
+                markdown += f"{details['description']}\n"
+            markdown += f" * Type: {details['type']}\n"
+            markdown += "\n"
+    else:
+        markdown += "\n".join([f" * {k}" for k in return_data.keys()])
+
+    markdown += "\n\n## Examples\n\n"
+    markdown += f"```yaml{examples}```\n"
+
+    return markdown

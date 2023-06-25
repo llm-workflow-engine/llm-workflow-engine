@@ -11,10 +11,10 @@ class ConversationManager(Manager):
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to retrieve conversations: {str(e)}")
 
-    def add_conversation(self, user_id, title=None, model=None, provider=None, preset="", hidden=False):
+    def add_conversation(self, user_id, title=None, hidden=False):
         try:
             user = self.orm.get_user(user_id)
-            conversation = self.orm.add_conversation(user, title, model, provider, preset, hidden)
+            conversation = self.orm.add_conversation(user, title, hidden)
             return True, conversation, "Conversation created successfully."
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to create conversation: {str(e)}")

@@ -61,11 +61,15 @@ def _handle_event(
                     **kwargs,
                 )
             else:
-                logger.warning(f"Error in {event_name} callback: {e}")
+                logger.warning(
+                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                )
         except Exception as e:
+            logger.warning(
+                f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+            )
             if handler.raise_error:
                 raise e
-            logger.warning(f"Error in {event_name} callback: {e}")
 langchain.callbacks.manager._handle_event = _handle_event
 langchain.callbacks.manager.StreamInterruption = StreamInterruption
 
@@ -88,7 +92,7 @@ def _generate(
             for stream_resp in response:
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token
+                inner_completion += token or ""
                 _function_call = stream_resp["choices"][0]["delta"].get("function_call")
                 if _function_call:
                     if function_call is None:

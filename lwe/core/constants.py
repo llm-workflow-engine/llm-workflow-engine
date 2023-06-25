@@ -13,6 +13,7 @@ SYSTEM_MESSAGE_PROGRAMMER = "You are an expert programmer, who responds to quest
 SYSTEM_MESSAGE_CREATIVE_WRITER = "You are a creative writing assistant."
 DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT = 'You write short 3-5 word titles for any content'
 DEFAULT_TITLE_GENERATION_USER_PROMPT = 'Write a title for this content:'
+TITLE_GENERATION_MAX_CHARACTERS = 1500
 
 OPENAPI_MAX_TOKENS = 4096
 OPENAPI_MIN_SUBMISSION_TOKENS = 1
@@ -99,6 +100,7 @@ DEFAULT_CONFIG = {
 
 # Shell specific constants.
 COMMAND_LEADER = '/'
+ACTIVE_ITEM_INDICATOR = "\U0001F7E2"  # Green circle.
 LEGACY_COMMAND_LEADER = '!'
 DEFAULT_COMMAND = 'ask'
 DEFAULT_HISTORY_LIMIT = 20

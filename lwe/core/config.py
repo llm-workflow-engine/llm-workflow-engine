@@ -6,8 +6,9 @@ import lwe.core.constants as constants
 import lwe.core.util as util
 
 class Config:
-    def __init__(self, config_dir=None, data_dir=None, profile=constants.DEFAULT_PROFILE, config=None):
+    def __init__(self, config_dir=None, data_dir=None, profile=constants.DEFAULT_PROFILE, config=None, args=None):
         config = config or {}
+        self.args = args or util.NoneAttrs()
         self.system = platform.system()
         self.profile = profile
         self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)

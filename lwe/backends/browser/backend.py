@@ -704,6 +704,19 @@ class BrowserBackend(Backend):
         ).replace("INTERRUPT_DIV_ID", self.interrupt_div_id)
         self.page.evaluate(code)
 
+    def _ask(self, message, title=None, request_overrides=None):
+        stream = self.stream and self.should_stream()
+        request_overrides = request_overrides or {}
+        customizations = self.provider.get_customizations()
+        if stream:
+            customizations.update(self.streaming_args(interrupt_handler=True))
+        llm = self.override_llm or self.make_llm(customizations)
+        try:
+            response = llm([HumanMessage(content=message)])
+        except ValueError as e:
+            return False, message, e
+        return True, response.content, "Response received"
+
     def ask(self, message, title=None, request_overrides=None):
         """
         Send a message to chatGPT and return the response.
@@ -714,14 +727,7 @@ class BrowserBackend(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        request_overrides = request_overrides or {}
-        customizations = self.provider.get_customizations()
-        llm = self.override_llm or self.make_llm(customizations)
-        try:
-            response = llm([HumanMessage(content=message)])
-        except ValueError as e:
-            return False, message, e
-        return True, response.content, "Response received"
+        return self._ask(message, title, request_overrides)
 
     def ask_stream(self, message, title=None, request_overrides=None):
         """
@@ -733,15 +739,7 @@ class BrowserBackend(Backend):
         Returns:
             str: The response received from OpenAI.
         """
-        request_overrides = request_overrides or {}
-        customizations = self.provider.get_customizations()
-        customizations.update(self.streaming_args(interrupt_handler=True))
-        llm = self.override_llm or self.make_llm(customizations)
-        try:
-            response = llm([HumanMessage(content=message)])
-        except ValueError as e:
-            return False, message, e
-        return True, response.content, "Response received"
+        return self._ask(message, title, request_overrides)
 
     def new_conversation(self):
         super().new_conversation()

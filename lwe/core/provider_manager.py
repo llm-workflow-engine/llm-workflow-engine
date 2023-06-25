@@ -32,8 +32,6 @@ class ProviderManager:
         self.log.info(message)
         return True, provider, message
 
-    def get_provider_from_model(self, model_name):
-        for provider in self.provider_plugins.values():
-            if model_name in provider.available_models:
-                return provider
-        return None
+    def get_provider_from_name(self, provider_name):
+        full_name = self.full_name(provider_name)
+        return self.provider_plugins[full_name] if full_name in self.provider_plugins else None

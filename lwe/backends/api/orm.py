@@ -48,9 +48,6 @@ class Conversation(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     title = Column(String, nullable=True)
-    model = Column(String, nullable=False)
-    provider = Column(String, nullable=False)
-    preset = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
     updated_time = Column(DateTime, nullable=False)
     hidden = Column(Boolean, nullable=False)
@@ -70,9 +67,12 @@ class Message(Base):
     conversation_id = Column(Integer, ForeignKey('conversation.id', ondelete='CASCADE'), nullable=False)
     role = Column(String, nullable=False)
     message = Column(String, nullable=False)
+    message_type = Column(String, nullable=False)
+    message_metadata = Column(String)
+    model = Column(String, nullable=False)
+    provider = Column(String, nullable=False)
+    preset = Column(String, nullable=False)
     created_time = Column(DateTime, nullable=False)
-    prompt_tokens = Column(Integer, nullable=False)
-    completion_tokens = Column(Integer, nullable=False)
 
     conversation = relationship('Conversation', back_populates='messages')
 
@@ -138,6 +138,12 @@ class Orm:
         messages = query.all()
         return messages
 
+    def get_last_message(self, conversation):
+        self.log.debug(f'Retrieving last Message for Conversation with id {conversation.id}')
+        query = self.session.query(Message).filter(Message.conversation_id == conversation.id).order_by(Message.id.desc()).limit(1)
+        last_message = query.first()
+        return last_message
+
     def add_user(self, username, password, email, default_preset="", preferences=None):
         preferences = preferences or {}
         now = datetime.datetime.now()
@@ -147,20 +153,23 @@ class Orm:
         self.log.info(f'Added User with username {username}')
         return user
 
-    def add_conversation(self, user, title, model=None, provider=None, preset="", hidden=False):
+    def add_conversation(self, user, title, hidden=False):
         now = datetime.datetime.now()
-        conversation = Conversation(user_id=user.id, title=title, model=model, provider=provider, preset=preset, created_time=now, updated_time=now, hidden=False)
+        conversation = Conversation(user_id=user.id, title=title, created_time=now, updated_time=now, hidden=False)
         self.session.add(conversation)
         self.session.commit()
-        self.log.info(f"Added Conversation with title: {title}, model: {model}, provider: {provider}, preset: {preset} for User {user.username}")
+        self.log.info(f"Added Conversation with title: {title} for User {user.username}")
         return conversation
 
-    def add_message(self, conversation, role, message):
+    def add_message(self, conversation, role, message, message_type, message_metadata, provider, model, preset):
         now = datetime.datetime.now()
-        message = Message(conversation_id=conversation.id, role=role, message=message, created_time=now, prompt_tokens=0, completion_tokens=0)
+        message = Message(conversation_id=conversation.id, role=role, message=message, message_type=message_type, message_metadata=message_metadata, provider=provider, model=model, preset=preset, created_time=now)
         self.session.add(message)
+        # Original conversation was created in another session, so load one fresh.
+        conversation_update = self.get_conversation(conversation.id)
+        setattr(conversation_update, 'updated_time', now)
         self.session.commit()
-        self.log.info(f"Added Message with role '{role}' for Conversation with id {conversation.id}")
+        self.log.info(f"Added Message with role: {role}, message_type: {message_type}, message_metadata: {message_metadata}, provider: {provider}, model: {model}, preset: {preset} for Conversation with id {conversation.id}")
         return message
 
     def get_user(self, user_id):
@@ -189,7 +198,7 @@ class Orm:
         for key, value in kwargs.items():
             setattr(conversation, key, value)
         self.session.commit()
-        self.log.info(f'Edited Conversation with id {conversation.id}')
+        self.log.info(f'Edited Conversation with id {conversation.id}: {kwargs}')
         return conversation
 
     def edit_message(self, message, **kwargs):

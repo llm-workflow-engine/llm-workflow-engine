@@ -25,7 +25,7 @@ class PresetManager():
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.user_preset_dirs = util.get_environment_variable_list('preset_dirs') or self.config.get('directories.presets')
+        self.user_preset_dirs = self.config.args.preset_dir or util.get_environment_variable_list('preset_dir') or self.config.get('directories.presets')
         self.make_user_preset_dirs()
         self.system_preset_dirs = [
             os.path.join(util.get_package_root(self), 'presets'),
@@ -57,6 +57,7 @@ class PresetManager():
         return [
             'description',
             'system_message',
+            'return_on_function_call',
         ]
 
     def load_presets(self):

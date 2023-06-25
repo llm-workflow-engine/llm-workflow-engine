@@ -4,11 +4,12 @@ alembic
 ai21>=1.0.5
 beautifulsoup4
 cohere>=4.3.1
+docutils
 email-validator
 Flask
 huggingface-hub>=0.13.2
 Jinja2
-langchain==0.0.199
+langchain==0.0.208
 names
 numexpr>=2.8.4
 openai>=0.27.8
@@ -22,5 +23,5 @@ python-frontmatter
 PyYAML
 rich
 textract @ git+https://github.com/thehunmonkgroup/textract@490bd4e7b6d1b24f007a4cf1288215c3d45e5895
-sqlalchemy>=1.4.48,<=2
+sqlalchemy>=1.4.48
 tiktoken

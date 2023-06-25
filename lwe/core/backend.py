@@ -113,6 +113,36 @@ class Backend(ABC):
     def get_runtime_config(self):
         return ""
 
+    def run_template_setup(self, template_name, substitutions=None):
+        self.log.info(f"Setting up run of template: {template_name}")
+        substitutions = substitutions or {}
+        message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
+        preset_name = None
+        if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
+            preset_name = overrides['request_overrides'].pop('preset')
+            success, llm, user_message = self.set_override_llm(preset_name)
+            if success:
+                self.log.info(f"Switching to preset '{preset_name}' for template: {template_name}")
+            else:
+                return success, llm, user_message
+        return True, (message, preset_name, overrides), f"Set up of template run complete: {template_name}"
+
+    def run_template_compiled(self, message, preset_name=None, overrides=None):
+        overrides = overrides or {}
+        self.log.info("Running template")
+        response = self._ask(message, **overrides)
+        if preset_name:
+            self.set_override_llm()
+        return response
+
+    def run_template(self, template_name, substitutions=None):
+        success, response, user_message = self.run_template_setup(template_name, substitutions)
+        if not success:
+            return success, response, user_message
+        message, preset_name, overrides = response
+        response = self.backend.run_template_compiled(message, preset_name, overrides)
+        return response
+
     @abstractmethod
     def conversation_data_to_messages(self, conversation_data):
         pass

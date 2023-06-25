@@ -22,7 +22,7 @@ class PluginManager:
         self.load_plugins(self.plugin_list)
 
     def get_default_plugin_paths(self):
-        user_plugin_dirs = util.get_environment_variable_list('plugin_dirs') or self.config.get('directories.plugins')
+        user_plugin_dirs = self.config.args.plugin_dir or util.get_environment_variable_list('plugin_dir') or self.config.get('directories.plugins')
         system_plugin_dirs = [
             os.path.join(util.get_package_root(self), 'plugins'),
         ]

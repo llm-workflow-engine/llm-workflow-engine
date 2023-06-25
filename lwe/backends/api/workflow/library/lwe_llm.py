@@ -7,6 +7,7 @@ from ansible.module_utils.basic import AnsibleModule
 
 from lwe.core.config import Config
 from lwe import ApiBackend
+import lwe.core.util as util
 
 DOCUMENTATION = r'''
 ---
@@ -30,6 +31,11 @@ options:
         type: str
     preset:
         description: The LWE preset to use.
+        required: false
+        default: None
+        type: str
+    system_message:
+        description: The LWE system message to use, either an alias or custom message.
         required: false
         default: None
         type: str
@@ -120,6 +126,7 @@ def run_module():
         # provider=dict(type='str', required=False, default='chat_openai'),
         # model=dict(type='str', required=False, default='gpt-3.5-turbo'),
         preset=dict(type='str', required=False),
+        system_message=dict(type='str', required=False),
         template=dict(type='str', required=False),
         template_vars=dict(type='dict', required=False),
         user=dict(type='raw', required=False),
@@ -141,6 +148,7 @@ def run_module():
     # provider = module.params['provider']
     # model = module.params['model']
     preset = module.params['preset']
+    system_message = module.params['system_message']
     template_name = module.params['template']
     template_vars = module.params['template_vars'] or {}
     user = module.params['user']
@@ -165,28 +173,33 @@ def run_module():
 
     gpt.log.info("[lwe_llm module]: Starting execution")
 
+    overrides = {
+        "request_overrides": {},
+    }
+    if system_message:
+        overrides['request_overrides']['system_message'] = system_message
     if template_name is not None:
         gpt.log.debug(f"[lwe_llm module]: Using template: {template_name}")
-        success, template_name, user_message = gpt.template_manager.ensure_template(template_name)
+        success, response, user_message = gpt.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             gpt.log.error(f"[lwe_llm module]: {user_message}")
             module.fail_json(msg=user_message, **result)
-        _, variables = gpt.template_manager.get_template_and_variables(template_name)
-        substitutions = gpt.template_manager.process_template_builtin_variables(template_name, variables)
+        _template, _variables, substitutions = response
         substitutions.update(template_vars)
-        message, overrides = gpt.template_manager.build_message_from_template(template_name, substitutions)
-        if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
-            preset_name = overrides['request_overrides'].pop('preset')
-            success, llm, user_message = gpt.set_override_llm(preset_name)
-            if success:
-                gpt.log.info(f"[lwe_llm module]: Switching to preset '{preset_name}' for template: {template_name}")
-            else:
-                gpt.log.error(f"[lwe_llm module]: {user_message}")
-                module.fail_json(msg=user_message, **result)
+        success, response, user_message = gpt.run_template_setup(template_name, substitutions)
+        if not success:
+            gpt.log.error(f"[lwe_llm module]: {user_message}")
+            module.fail_json(msg=user_message, **result)
+        message, preset_name, template_overrides = response
+        util.merge_dicts(overrides, template_overrides)
         gpt.log.info(f"[lwe_llm module]: Running template: {template_name}")
-
-    success, response, user_message = gpt.ask(message)
-    gpt.set_override_llm()
+        success, response, user_message = gpt.run_template_compiled(message, preset_name, overrides)
+        gpt.set_override_llm()
+        if not success:
+            gpt.log.error(f"[lwe_llm module]: {user_message}")
+            module.fail_json(msg=user_message, **result)
+    else:
+        success, response, user_message = gpt.ask(message, **overrides)
 
     if not success or not response:
         result['failed'] = True
