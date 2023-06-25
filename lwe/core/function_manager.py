@@ -94,8 +94,8 @@ class FunctionManager():
             function_instance.set_filepath(function_path)
             return function_instance
         except Exception as e:
-            self.log.error(f"Error loading function {function_name} from {function_path}: {e}")
-            return None
+            self.log.error(f"Error creating function instance for {function_name}: {e}")
+            raise RuntimeError(f"Error creating function instance for {function_name}") from e
 
     def get_function_config(self, function_name):
         self.log.debug(f"Getting config for function: {function_name}")
