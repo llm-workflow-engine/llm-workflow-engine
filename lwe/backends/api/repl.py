@@ -905,7 +905,10 @@ Before you can start using the shell, you must create a new user.
             return success, functions, user_message
         function_names = []
         for function_name, _filepath in functions.items():
+            function_config = self.backend.function_manager.get_function_config(function_name)
             content = f"* **{function_name}**"
+            if 'description' in function_config:
+                content += f": *{function_config['description']}*"
             if not arg or arg.lower() in content.lower():
                 function_names.append(content)
         util.print_markdown("## Functions:\n\n%s" % "\n".join(sorted(function_names)))
