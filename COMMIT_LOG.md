@@ -1,3 +1,44 @@
+### v0.13.0 - 25/06/2023
+
+* **Sun Jun 25 2023:** documentation for OpenAI functions
+* **Sun Jun 25 2023:** add function descriptions to /functions command
+* **Sun Jun 25 2023:** allow recursive function calling for return_on_function_response
+* **Sun Jun 25 2023:** add core test function
+* **Sun Jun 25 2023:** better traceback from function instance loading errors
+* **Sun Jun 25 2023:** add missing docutils requirement
+* **Sun Jun 25 2023:** bump openai dependency
+* **Sun Jun 25 2023:** roll custom textract, current package not well maintained
+* **Sat Jun 24 2023:** build open function spec from function type hints and doc if .config.yaml file is not provided
+* **Sat Jun 24 2023:** move more template logic into template manager class
+* **Fri Jun 23 2023:** prevent duplicate loggers
+* **Fri Jun 23 2023:** dynamically check/build function definitions for LLM calls and token counting
+* **Thu Jun 22 2023:** pass messages around as dicts, transform at edges
+* **Thu Jun 22 2023:** allow message_metadata to be NULL
+* **Thu Jun 22 2023:** DRY message objects
+* **Wed Jun 21 2023:** bump langchain dep, clean up some monkey patching
+* **Wed Jun 21 2023:** multi-function processing with final LLM output
+* **Tue Jun 20 2023:** only expand functions once
+* **Tue Jun 20 2023:** refactor functions to be callable classes, default YAML config in separate file
+* **Sun Jun 18 2023:** fix monkey patch for langchain FunctionMessage
+* **Sun Jun 18 2023:** listing/running functions, allow returning directly after function calls
+* **Sun Jun 18 2023:** sort system message alias list in /system-messages
+* **Sun Jun 18 2023:** change checkmark indicator to green circle
+* **Sun Jun 18 2023:** add post revision creation instructions for re-importing data
+* **Sun Jun 18 2023:** script to automate creating new schema revisions
+* **Sun Jun 18 2023:** abstract determining message content from message type
+* **Sat Jun 17 2023:** filter full message dict before sending to LLM
+* **Sat Jun 17 2023:** add message_metadata to messages table, refactoring in prep for full functions support
+* **Sat Jun 17 2023:** clean up /config display, add database entry to file section
+* **Sat Jun 17 2023:** add cli args for template/plugin/function/workflow/preset dirs, clean up cli doc
+* **Fri Jun 16 2023:** include header in ansible module doc, provide full/summary modes
+* **Fri Jun 16 2023:** limit length of title generation message
+* **Fri Jun 16 2023:** util functions to extract Ansible doc to Markdown
+* **Thu Jun 15 2023:** properly update updated_time for conversations on new message
+* **Thu Jun 15 2023:** store provider/model/preset per message, add message_type field
+* **Thu Jun 15 2023:** expose LWE_SCHEMA_MIGRATION_SQLALCHEMY_URL environment variable for autogenerating migrations
+* **Thu Jun 15 2023:** loosen sqlalchemy requirements
+* **Thu Jun 15 2023:** add post_response method, for actions after response has been received
+
 ### v0.12.3 - 25/06/2023
 
 * **Sun Jun 25 2023:** roll custom textract, current package not well maintained
