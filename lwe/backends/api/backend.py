@@ -324,19 +324,38 @@ class ApiBackend(Backend):
             system_message = self.get_system_message(system_message)
         return system_message, request_overrides
 
-    def is_return_on_function_call(self):
+    def should_return_on_function_call(self):
         if self.active_preset:
             metadata, _customizations = self.active_preset
             if 'return_on_function_call' in metadata and metadata['return_on_function_call']:
                 return True
         return False
 
-    def is_return_on_function_response(self):
+    def is_function_response_message(self, message):
+        return message['message_type'] == 'function_response'
+
+    def check_return_on_function_response(self, new_messages):
         if self.active_preset:
             metadata, _customizations = self.active_preset
             if 'return_on_function_response' in metadata and metadata['return_on_function_response']:
-                return True
-        return False
+                # NOTE: In order to allow for multiple function calling and
+                # returning on the LAST function response, we need to allow
+                # the LLM to respond to all previous function responses, as
+                # it may respond with another function call.
+                #
+                # Thus, at the end of all responses from the LLM, the last
+                # message will be a natural language reponse, and the previous
+                # message will be the last function response.
+                #
+                # To correctly return the function response and message list
+                # we need to:
+                # 1. Remove the last message
+                # 2. Extract and return the function response
+                if self.is_function_response_message(new_messages[-2]):
+                    new_messages.pop()
+                    function_response = new_messages[-1]['message']
+                    return function_response, new_messages
+        return None, new_messages
 
     def run_function(self, function_name, data):
         success, response, user_message = self.function_manager.run_function(function_name, data)
@@ -351,21 +370,28 @@ class ApiBackend(Backend):
         if response_message['message_type'] == 'function_call':
             function_call = response_message['message']
             util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
-            if self.is_return_on_function_call():
+            if self.should_return_on_function_call():
                 function_definition = {
                     'name': function_call['name'],
                     'arguments': function_call['arguments'],
                 }
                 return function_definition, new_messages
             success, function_response, user_message = self.run_function(function_call['name'], function_call['arguments'])
-            message_metadata = {
-                'name': function_call['name'],
-            }
-            new_messages.append(self.message.build_message('function', function_response, message_type='function_response', message_metadata=message_metadata))
-            if self.is_return_on_function_response():
-                return function_response, new_messages
-            success, response_obj, user_message = self._call_llm(new_messages, request_overrides)
-            self.post_response(response_obj, new_messages, request_overrides)
+            if success:
+                message_metadata = {
+                    'name': function_call['name'],
+                }
+                new_messages.append(self.message.build_message('function', function_response, message_type='function_response', message_metadata=message_metadata))
+                success, response_obj, user_message = self._call_llm(new_messages, request_overrides)
+                if success:
+                    return self.post_response(response_obj, new_messages, request_overrides)
+                else:
+                    return user_message, new_messages
+            else:
+                return user_message, new_messages
+        function_response, new_messages = self.check_return_on_function_response(new_messages)
+        if function_response:
+            return function_response, new_messages
         return response_message['message'], new_messages
 
     def transform_messages_to_chat_messages(self, messages):
