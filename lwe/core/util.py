@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import subprocess
 import inspect
@@ -237,6 +238,10 @@ def get_environment_variable_list(name):
 
 def split_on_delimiter(string, delimiter=','):
     return [x.strip() for x in string.split(delimiter)]
+
+def remove_prefix(text, prefix):
+    pattern = r'(?i)^' + re.escape(prefix)
+    return re.sub(pattern, '', text)
 
 def get_ansible_module_doc(module_name):
     try:
