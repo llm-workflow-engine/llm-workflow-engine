@@ -4,9 +4,13 @@ import importlib
 
 from pathlib import Path
 
+import langchain.tools
+
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 import lwe.core.util as util
+
+LANGCHAIN_TOOL_PREFIX = "Langchain-"
 
 class FunctionManager():
     """
@@ -58,6 +62,45 @@ class FunctionManager():
             return True, function_filepath, message
         return False, None, f"Function {function_name} not found"
 
+    def is_langchain_tool(self, function_name):
+        self.log.debug(f"Checking for Langchain tool: {function_name}")
+        return function_name.lower().startswith(LANGCHAIN_TOOL_PREFIX.lower())
+
+    def get_langchain_tool(self, function_name):
+        self.log.debug(f"Loading Langchain tool: {function_name}")
+        tool_name = util.remove_prefix(function_name, LANGCHAIN_TOOL_PREFIX)
+        tool = getattr(langchain.tools, tool_name)
+        try:
+            tool_instance = tool()
+            return tool_instance
+        except Exception as e:
+            self.log.warning(f"Could not load Langchaine tool: {function_name}: {str(e)}")
+            return None
+
+    def get_langchain_tool_spec(self, function_name):
+        self.log.debug(f"Loading tool spec for Langchain tool: {function_name}")
+        tool_instance = self.get_langchain_tool(function_name)
+        if not tool_instance:
+            raise RuntimeError(f"Langchain tool {function_name} not found")
+        spec = langchain.tools.format_tool_to_openai_function(tool_instance)
+        spec['name'] = function_name
+        return spec
+
+    def run_langchain_tool(self, function_name, input_data):
+        self.log.debug(f"Running langchaing tool: {function_name} with data: {input_data}")
+        tool_instance = self.get_langchain_tool(function_name)
+        if not tool_instance:
+            raise RuntimeError(f"Langchain tool {function_name} not found")
+        try:
+            result = tool_instance.run(input_data)
+        except Exception as e:
+            message = f"Error: Exception occurred while running langchain tool {function_name}: {str(e)}"
+            self.log.error(message)
+            return False, None, message
+        message = f"Langchain tool {function_name} executed successfully, output data: {result}"
+        self.log.info(message)
+        return True, result, message
+
     def load_functions(self):
         self.log.debug("Loading functions from dirs: %s" % ", ".join(self.all_function_dirs))
         self.functions = {}
@@ -99,6 +142,8 @@ class FunctionManager():
 
     def get_function_config(self, function_name):
         self.log.debug(f"Getting config for function: {function_name}")
+        if self.is_langchain_tool(function_name):
+            return self.get_langchain_tool_spec(function_name)
         try:
             _success, function_path, user_message = self.load_function(function_name)
             function_instance = self.setup_function_instance(function_name, function_path)
@@ -111,6 +156,8 @@ class FunctionManager():
     def run_function(self, function_name, input_data):
         if isinstance(input_data, str):
             input_data = json.loads(input_data)
+        if self.is_langchain_tool(function_name):
+            return self.run_langchain_tool(function_name, input_data)
         self.log.debug(f"Running function: {function_name} with data: {input_data}")
         success, function_path, user_message = self.load_function(function_name)
         if not success:

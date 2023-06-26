@@ -164,8 +164,12 @@ class ApiBackend(Backend):
                     self.function_cache.append(function)
 
     def function_cache_add(self, function_name):
-        if function_name not in self.function_manager.functions:
-            return False
+        if self.function_manager.is_langchain_tool(function_name):
+            if not self.function_manager.get_langchain_tool(function_name):
+                return False
+        else:
+            if function_name not in self.function_manager.functions:
+                return False
         if function_name not in self.function_cache:
             self.function_cache.append(function_name)
         return True

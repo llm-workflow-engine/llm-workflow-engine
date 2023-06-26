@@ -606,6 +606,26 @@ A preset can be edited by using the `/preset-edit` command:
 Note the special `return_on_function_call` and `return_on_function_response` metadata attributes, which can be used to
 control the return value, useful when using the `ApiBackend`module, or via [workflows](#workflows)
 
+#### Support for Langchain tools
+
+[Langchain](https://docs.langchain.com) has many useful [tools](https://python.langchain.com/docs/modules/agents/tools/) that
+can be used in function calls.
+
+To use a Langchain tool as function:
+
+1. Find the name of the tool class, e.g. `MoveFileTool` or `ShellTool`.
+2. Prefix that class name with `Langchain-`
+3. Add it to the `functions` list for the preset:
+   ```yaml
+   metadata:
+     # Usual preset metadata.
+   model_customizations:
+     # Other attributes.
+     model_kwargs:
+       functions:
+         - Langchain-ShellTool
+   ```
+
 
 ### Flask API (experimental)
 
