@@ -57,12 +57,11 @@ class Database(Plugin):
                  NO GUARANTEE that the integrity of your data will be preserved.
 
         Arguments:
+
             configure: Optional configuration commands, one of:
-                connect: Connect to a database, requires a connection string in a format
-                         accepted by SQLAlchemy. Only one database can be connected at a
-                         time. If no connection string is provided, connects to the
-                         default database.
+                connect: Connect to a database, requires a connection string in a format accepted by SQLAlchemy. Only one database can be connected at a time. If no connection string is provided, connects to the default database.
                 disconnect: Disconnect from a database
+
             prompt: Prompt to send to the database
 
         Examples:

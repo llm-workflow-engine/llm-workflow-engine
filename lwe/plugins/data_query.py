@@ -199,9 +199,11 @@ class DataQuery(Plugin):
             a response.
 
         Arguments:
+
             configure: Optional configuration commands, one of:
                 load: Load a file of structured data, provide the file path.
                 unload: Unload any loaded file.
+
             prompt: Prompt to interact with the data.
 
         Examples:
