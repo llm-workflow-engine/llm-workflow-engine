@@ -1,15 +1,41 @@
-.. LLM Workflow Engine documentation master file, created by
-   sphinx-quickstart on Sun Jun 25 20:42:12 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to LLM Workflow Engine's documentation!
+===============================================
+LLM Workflow Engine
 ===============================================
 
+LLM Workflow Engine (LWE) is a command-line tool and Python module that streamlines
+common LLM-related tasks, such as:
+
+* Managing reusable prompts
+* Stress-testing prompts across different LLM configurations
+* Designing multi-step workflows that involve LLMs.
+
+At its heart, LWE has four main components:
+
+#. **Conversation management:**
+    * Start new conversations
+    * Review/extend/remove old conversations
+#. **Model configuration:**
+    * Configure LLMs across different providers
+    * Customize model attributes (temperature, etc.)
+    * Save/reload existing configurations
+#. **Prompt templates:**
+    * Design/save new prompts
+    * Include/pass variables to prompts during execution
+    * Connect a specific prompt to a specific model configuration
+#. **Workflows:**
+    * Design multi-step workflows using YAML
+    * Integrate prompt templates
+    * Integrate model configurations
+    * Save LLM interactions to conversations
+
+
+
 .. toctree::
+   :hidden:
    :maxdepth: 2
    :caption: Contents:
 
+   installation
    modules
 
 

@@ -43,5 +43,30 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
 html_static_path = ['_static']
+html_theme = 'alabaster'
+html_theme_options = {
+    # 'logo': 'images/cog-brain-trimmed.png',
+    'logo': 'images/lwe-logo.png',
+    'logo_name': False,
+    'fixed_sidebar': True,
+    'show_powered_by': False,
+    'show_relbars': True,
+    'sidebar_collapse': True,
+    'github_button': True,
+    'github_repo': 'llm-workflow-engine',
+    'github_user': 'llm-workflow-engine',
+
+}
+html_sidebars = {
+    '**': [
+        'about.html',
+        'searchbox.html',
+        'navigation.html',
+        'relations.html',
+        'donate.html',
+    ]
+}
+html_css_files = [
+    'css/custom.css',
+]
