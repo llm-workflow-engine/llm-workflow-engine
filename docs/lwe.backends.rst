@@ -1,8 +1,8 @@
-lwe.backends package
+lwe.backends Package
 ====================
 
-Subpackages
------------
+lwe.backends Subpackages
+------------------------
 
 .. toctree::
    :maxdepth: 4
@@ -10,8 +10,8 @@ Subpackages
    lwe.backends.api
    lwe.backends.browser
 
-Module contents
----------------
+lwe.backends Module contents
+----------------------------
 
 .. automodule:: lwe.backends
    :members:

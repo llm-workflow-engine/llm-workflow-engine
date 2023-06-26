@@ -1,8 +1,8 @@
-lwe.plugins package
+lwe.plugins Package
 ===================
 
-Submodules
-----------
+lwe.plugins Submodules
+----------------------
 
 lwe.plugins.awesome module
 --------------------------
@@ -100,8 +100,8 @@ lwe.plugins.zap module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+lwe.plugins Module contents
+---------------------------
 
 .. automodule:: lwe.plugins
    :members:

@@ -1,8 +1,8 @@
-lwe.core package
+lwe.core Package
 ================
 
-Submodules
-----------
+lwe.core Submodules
+-------------------
 
 lwe.core.backend module
 -----------------------
@@ -156,8 +156,8 @@ lwe.core.workflow\_manager module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+lwe.core Module contents
+------------------------
 
 .. automodule:: lwe.core
    :members:

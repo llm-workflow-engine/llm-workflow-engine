@@ -1,8 +1,8 @@
-lwe.backends.browser package
+lwe.backends.browser Package
 ============================
 
-Submodules
-----------
+lwe.backends.browser Submodules
+-------------------------------
 
 lwe.backends.browser.backend module
 -----------------------------------
@@ -20,8 +20,8 @@ lwe.backends.browser.repl module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+lwe.backends.browser Module contents
+------------------------------------
 
 .. automodule:: lwe.backends.browser
    :members:

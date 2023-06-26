@@ -1,8 +1,8 @@
-lwe package
+lwe Package
 ===========
 
-Subpackages
------------
+lwe Subpackages
+---------------
 
 .. toctree::
    :maxdepth: 4
@@ -11,8 +11,8 @@ Subpackages
    lwe.core
    lwe.plugins
 
-Submodules
-----------
+lwe Submodules
+--------------
 
 lwe.debug module
 ----------------
@@ -46,8 +46,8 @@ lwe.version module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+lwe Module contents
+-------------------
 
 .. automodule:: lwe
    :members:

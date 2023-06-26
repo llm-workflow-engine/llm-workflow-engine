@@ -1,8 +1,8 @@
-lwe.backends.api.schema package
+lwe.backends.api.schema Package
 ===============================
 
-Submodules
-----------
+lwe.backends.api.schema Submodules
+----------------------------------
 
 lwe.backends.api.schema.updater module
 --------------------------------------
@@ -12,8 +12,8 @@ lwe.backends.api.schema.updater module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+lwe.backends.api.schema Module contents
+---------------------------------------
 
 .. automodule:: lwe.backends.api.schema
    :members:

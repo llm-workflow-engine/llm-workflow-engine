@@ -33,10 +33,17 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
+    "sphinx.ext.autosectionlabel",
 ]
 
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = [
+    '.python-version',
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+]
+pygments_style = 'sphinx'
 
 
 

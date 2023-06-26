@@ -1,16 +1,16 @@
-lwe.backends.api package
+lwe.backends.api Package
 ========================
 
-Subpackages
------------
+lwe.backends.api Subpackages
+----------------------------
 
 .. toctree::
    :maxdepth: 4
 
    lwe.backends.api.schema
 
-Submodules
-----------
+lwe.backends.api Submodules
+---------------------------
 
 lwe.backends.api.backend module
 -------------------------------
@@ -68,8 +68,8 @@ lwe.backends.api.user module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+lwe.backends.api Module contents
+--------------------------------
 
 .. automodule:: lwe.backends.api
    :members:
