@@ -92,5 +92,6 @@ class ProviderChatOpenai(Provider):
                 'stop': PresetValue(str, include_none=True),
                 'user': PresetValue(str),
                 'functions': None,
+                'function_call': None,
             },
         }
