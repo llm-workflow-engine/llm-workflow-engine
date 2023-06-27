@@ -372,6 +372,14 @@ class ApiBackend(Backend):
                     return function_response, new_messages
         return None, new_messages
 
+    def check_forced_function(self):
+        preset = self.override_preset or self.active_preset
+        if preset:
+            _metadata, customizations = preset
+            if 'model_kwargs' in customizations and 'function_call' in customizations['model_kwargs'] and isinstance(customizations['model_kwargs']['function_call'], dict):
+                return True
+        return False
+
     def run_function(self, function_name, data):
         success, response, user_message = self.function_manager.run_function(function_name, data)
         json_obj = response if success else {'error': user_message}
@@ -399,6 +407,16 @@ class ApiBackend(Backend):
                     'name': function_call['name'],
                 }
                 new_messages.append(self.message.build_message('function', function_response, message_type='function_response', message_metadata=message_metadata))
+                # If a function call is forced, we cannot recurse, as there will
+                # never be a final non-function response, and we'l recurse infinitely.
+                # TODO: Perhaps in the future we can handle this more elegantly by:
+                # 1. Tracking which functions with which arguments are called, and breaking
+                #    on the first duplicate call.
+                # 2. Allowing a 'maximum_forced_function_calls' metadata attribute.
+                # 3. Automatically switching the preset's 'function_call' to 'auto' after
+                #    the first call.
+                if self.check_forced_function():
+                    return function_response, new_messages
                 success, response_obj, user_message = self._call_llm(new_messages, request_overrides)
                 if success:
                     return self.post_response(response_obj, new_messages, request_overrides)
