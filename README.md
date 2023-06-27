@@ -792,14 +792,16 @@ From within the shell, execute this command:
 
 ### Python module
 
-To use GPT-4 within your Python code, follow the template below:
+To use GPT-4 within your Python code, you must use [Presets](#presets).
+
+The code below uses the system-defined `gpt-4-chatbot-responses` preset:
 
 ```python
 from lwe import ApiBackend
 from lwe.core.config import Config
 
 config = Config()
-config.set('chat.model', 'gpt4')
+config.set('model.default_preset', 'gpt-4-chatbot-responses')
 bot = ApiBackend(config)
 success, response, message = bot.ask("Hello, world!")
 ```
