@@ -33,6 +33,7 @@ class ApiBackend(Backend):
         self.message = MessageManager(self.config)
         self.current_user = None
         self.override_provider = None
+        self.override_preset = None
         self.override_llm = None
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
@@ -135,17 +136,19 @@ class ApiBackend(Backend):
                 customizations = self.expand_functions(customizations)
                 success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
                 if success:
-                    self.override_provider = provider
                     if self.stream and self.should_stream():
                         self.log.debug("Adding streaming-specific customizations to LLM request")
                         customizations.update(self.streaming_args(interrupt_handler=True))
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
+                    self.override_provider = provider
+                    self.override_preset = preset
                     message = f"Set override LLM based on preset {preset_name}"
                     self.log.debug(message)
                     return True, self.override_llm, message
             return False, None, user_message
         else:
             self.log.debug("Unsetting override LLM")
+            self.override_preset = None
             self.override_provider = None
             self.override_llm = None
             message = "Unset override LLM"
@@ -329,8 +332,9 @@ class ApiBackend(Backend):
         return system_message, request_overrides
 
     def should_return_on_function_call(self):
-        if self.active_preset:
-            metadata, _customizations = self.active_preset
+        preset = self.override_preset or self.active_preset
+        if preset:
+            metadata, _customizations = preset
             if 'return_on_function_call' in metadata and metadata['return_on_function_call']:
                 return True
         return False
@@ -339,8 +343,9 @@ class ApiBackend(Backend):
         return message['message_type'] == 'function_response'
 
     def check_return_on_function_response(self, new_messages):
-        if self.active_preset:
-            metadata, _customizations = self.active_preset
+        preset = self.override_preset or self.active_preset
+        if preset:
+            metadata, _customizations = preset
             if 'return_on_function_response' in metadata and metadata['return_on_function_response']:
                 # NOTE: In order to allow for multiple function calling and
                 # returning on the LAST function response, we need to allow
