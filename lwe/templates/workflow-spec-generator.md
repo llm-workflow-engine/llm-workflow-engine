@@ -17,6 +17,12 @@ request_overrides:
     * lwe_input (User Input Collection): Collects user input during playbook execution, preferred over native Ansible vars_prompt and pause module.
 
 
+    ## SPECIFICATION RULES
+
+    1. Assume that the installation already has all necessary packages and dependencies installed.
+    2. Do no try to guess the attributes of the above-mentioned modules, instead ask the user for clarification if you need those module attributes to complete the spec.
+
+
     ## SPECIFICATION FORMAT
 
     Your final output should be a linear list of steps describing how the Ansible playbook should be structured. Use structured text, such as numbered lists. Remember, the specification will be consumed by another system, so it must be self-contained and complete, containing enough context and explanation for another system to correctly interpret. 
