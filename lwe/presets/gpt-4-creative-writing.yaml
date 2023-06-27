@@ -1,5 +1,6 @@
 metadata:
   name: gpt-4-creative-writing
+  description: GPT-4 for creative writing
   provider: chat_openai
   system_message: creative_writer
 model_customizations:

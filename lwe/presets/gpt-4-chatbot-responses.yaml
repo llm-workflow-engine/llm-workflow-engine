@@ -1,5 +1,6 @@
 metadata:
   name: gpt-4-chatbot-responses
+  description: GPT-4 general chatbot
   provider: chat_openai
   system_message: default
 model_customizations:

@@ -1,5 +1,6 @@
 metadata:
   name: gpt-4-code-generation
+  description: GPT-4 for code generation
   provider: chat_openai
   system_message: programmer
 model_customizations:
