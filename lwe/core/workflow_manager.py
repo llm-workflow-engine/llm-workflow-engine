@@ -3,6 +3,7 @@ import sys
 import subprocess
 import copy
 import shlex
+import yaml
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -149,6 +150,20 @@ class WorkflowManager():
         message = f"Error running workflow {workflow_name}: {error}"
         self.log.error(message)
         return False, None, message
+
+    def load_workflow(self, workflow_name):
+        success, workflow_file, message = self.ensure_workflow(workflow_name)
+        if not success:
+            return success, workflow_file, message
+        self.log.info(f"Loading workflow {workflow_name} from {workflow_file}")
+        try:
+            with open(workflow_file, 'r') as f:
+                workflow = yaml.safe_load(f)
+            return True, workflow, f"Workflow {workflow_name} successfully loaded"
+        except Exception as e:
+            message = f"An error occurred while loading workflow {workflow_name}: {e}"
+            self.log.error(message)
+            return False, None, message
 
     def load_workflows(self):
         self.log.debug("Loading workflows from dirs: %s" % ", ".join(self.all_workflow_dirs))

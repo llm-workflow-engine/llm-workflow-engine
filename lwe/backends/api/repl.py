@@ -783,7 +783,11 @@ Before you can start using the shell, you must create a new user.
         self.rebuild_completions()
         workflows = []
         for workflow_name in self.backend.workflow_manager.workflows.keys():
+            success, workflow, user_message = self.backend.workflow_manager.load_workflow(workflow_name)
+            if not success:
+                return success, None, user_message
             content = f"* **{workflow_name}**"
+            content += ": *%s*" % ", ".join([p['name'] for p in workflow])
             if not arg or arg.lower() in content.lower():
                 workflows.append(content)
         util.print_markdown("## Workflows:\n\n%s" % "\n".join(sorted(workflows)))
