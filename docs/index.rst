@@ -29,13 +29,16 @@ At its heart, LWE has four main components:
     * Save LLM interactions to conversations
 
 
-
 .. toctree::
    :hidden:
    :maxdepth: 2
    :caption: Contents:
 
+   how_it_works
    installation
+   initial_setup
+   presets
+   python_module
    modules
 
 
