@@ -227,9 +227,9 @@ request_overrides:
     1. If the playbook requires looping over a group of tasks, put that group of tasks in a separate file and use the `include_tasks` directive to include the separate file. Example:
        ```yaml
        - name: Process each row in the CSV file
-       loop: "{{ csv_data.list }}"
+       loop: "{% raw %}{{ csv_data.list }}{% endraw %}"
        vars:
-         source_location: "{{ item.uri }}"
+         source_location: "{% raw %}{{ item.uri }}{% endraw %}"
        # some_file_name.yaml should contain the list of tasks to loop over.
        include_tasks: some_file_name.yaml
        ```
