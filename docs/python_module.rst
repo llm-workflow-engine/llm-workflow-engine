@@ -42,3 +42,22 @@ To pass custom configuration to the ``ApiBackend``, use the ``Config`` class:
        print(response)
    else:
        raise RuntimeError(message)
+
+
+-----------------------------------------------
+GPT-4
+-----------------------------------------------
+
+To use GPT-4 within your Python code, you must use :ref:`presets_doc`.
+
+The code below uses the system-defined ``gpt-4-chatbot-responses`` preset:
+
+.. code-block:: python
+
+   from lwe import ApiBackend
+   from lwe.core.config import Config
+
+   config = Config()
+   config.set('model.default_preset', 'gpt-4-chatbot-responses')
+   bot = ApiBackend(config)
+   success, response, message = bot.ask("Hello, world!")
