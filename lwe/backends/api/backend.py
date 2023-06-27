@@ -35,6 +35,7 @@ class ApiBackend(Backend):
         self.override_provider = None
         self.override_preset = None
         self.override_llm = None
+        self.return_only = False
         self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.workflow_manager = WorkflowManager(self.config)
@@ -121,6 +122,11 @@ class ApiBackend(Backend):
             self.set_model(getattr(self.llm, self.provider.model_property_name))
         return success, provider, user_message
 
+    # TODO: This feels hacky, perhaps better to have a shell register itself
+    # for output from the backend?
+    def set_return_only(self, return_only=False):
+        self.return_only = return_only
+
     def set_model(self, model_name):
         self.log.debug(f"Setting model to: {model_name}")
         success, customizations, user_message = super().set_model(model_name)
@@ -136,7 +142,7 @@ class ApiBackend(Backend):
                 customizations = self.expand_functions(customizations)
                 success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
                 if success:
-                    if self.stream and self.should_stream():
+                    if self.stream and self.should_stream() and not self.return_only:
                         self.log.debug("Adding streaming-specific customizations to LLM request")
                         customizations.update(self.streaming_args(interrupt_handler=True))
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
@@ -369,8 +375,9 @@ class ApiBackend(Backend):
     def run_function(self, function_name, data):
         success, response, user_message = self.function_manager.run_function(function_name, data)
         json_obj = response if success else {'error': user_message}
-        util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}")
-        util.print_markdown(json_obj)
+        if not self.return_only:
+            util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}")
+            util.print_markdown(json_obj)
         return success, json_obj, user_message
 
     def post_response(self, response_obj, new_messages, request_overrides):
@@ -378,7 +385,8 @@ class ApiBackend(Backend):
         new_messages.append(response_message)
         if response_message['message_type'] == 'function_call':
             function_call = response_message['message']
-            util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
+            if not self.return_only:
+                util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
             if self.should_return_on_function_call():
                 function_definition = {
                     'name': function_call['name'],
@@ -599,7 +607,7 @@ class ApiBackend(Backend):
         provider = self.override_provider or self.provider
         llm = self.override_llm
         if not llm:
-            if self.stream and self.should_stream():
+            if self.stream and self.should_stream() and not self.return_only:
                 self.log.debug("Adding streaming-specific customizations to LLM request")
                 customizations.update(self.streaming_args(interrupt_handler=True))
             customizations = self.expand_functions(customizations)

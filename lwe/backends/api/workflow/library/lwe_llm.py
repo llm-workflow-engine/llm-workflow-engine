@@ -170,6 +170,7 @@ def run_module():
     config.set('backend_options.default_user', user)
     config.set('backend_options.default_conversation_id', conversation_id)
     gpt = ApiBackend(config)
+    gpt.set_return_only(True)
 
     gpt.log.info("[lwe_llm module]: Starting execution")
 
