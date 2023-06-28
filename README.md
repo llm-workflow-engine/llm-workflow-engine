@@ -644,7 +644,7 @@ Run the following commands:
 
 ```bash
 docker-compose build && docker-compose up -d
-docker exec -it chatgpt-wrapper-container /bin/bash -c "chatgpt"
+docker exec -it lwe-container /bin/bash -c "lwe"
 ```
 
 Follow the instructions to create the first user.

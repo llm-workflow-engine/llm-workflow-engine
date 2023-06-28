@@ -1,18 +1,17 @@
 version: '3.9'
 services:
-  chatgpt-wrapper:
+  llm-workflow-engine:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: chatgpt-wrapper-container
-    restart: always
+    container_name: lwe-container
+    # restart: always
     volumes:
       - ./:/src
       - ./tmp:/tmp
     environment:
-      - VNC_RESOLUTION=1600x900
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EDITOR=vim
     ports:
-      - 6901:6901 # Just for logging in with noVNC
       - 5000:5000 # Flask port
     command: "bash /src/docker-entrypoint.sh" # Run the entrypoint script
