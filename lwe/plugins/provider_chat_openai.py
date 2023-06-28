@@ -47,12 +47,6 @@ class ProviderChatOpenai(Provider):
                 'gpt-4-32k': {
                     'max_tokens': 32768,
                 },
-                'gpt-4-0314': {
-                    'max_tokens': 8192,
-                },
-                'gpt-4-32k-0314': {
-                    'max_tokens': 32768,
-                },
                 'gpt-4-0613': {
                     'max_tokens': 8192,
                 },
