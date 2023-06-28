@@ -25,8 +25,6 @@ The ``ask`` method takes a string argument representing the message to send to t
 #. ``response``: An object representing the response received *(usually just a string response from the LLM)*
 #. ``message``: User message describing the outcome of the operation.
 
-You may also stream the response as it comes in from the API using the ``ask_stream`` method.
-
 To pass custom configuration to the ``ApiBackend``, use the ``Config`` class:
 
 .. code-block:: python
@@ -36,6 +34,9 @@ To pass custom configuration to the ``ApiBackend``, use the ``Config`` class:
 
    config = Config()
    config.set('debug.log.enabled', True)
+   # You may also stream the response as it comes in from the API by
+   # setting the model.streaming attribute.
+   config.set('model.streaming', True)
    bot = ApiBackend(config)
    success, response, message = bot.ask("Hello, world!")
    if success:

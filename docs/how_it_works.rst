@@ -24,7 +24,7 @@ Get help for a command:
 
 
 -----------------------------------------------
-Conversations
+Conversation commands
 -----------------------------------------------
 
 Start a new conversation:
@@ -44,7 +44,7 @@ Switch to and show an old conversation:
 
 
 -----------------------------------------------
-Models/presets
+Model/preset commands
 -----------------------------------------------
 
 Show configuration of the current model:
@@ -69,7 +69,7 @@ Show configuration of the current preset:
 
 
 -----------------------------------------------
-Templates
+Template commands
 -----------------------------------------------
 
 List available templates:
@@ -84,7 +84,7 @@ Run a template and provide input:
 
 
 -----------------------------------------------
-Workflows
+Workflows commands
 -----------------------------------------------
 
 List available workflows:

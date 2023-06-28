@@ -392,7 +392,7 @@ plugins:
     - provider_openai
 ```
 
-See `/help providers` for a list of currently enabled providers.
+See `/providers` for a list of currently enabled providers.
 
 See `/help provider` for how to switch providers/models on the fly.
 

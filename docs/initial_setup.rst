@@ -17,7 +17,7 @@ Export the key into your local environment:
 
 Windows users, see `here <https://www.computerhope.com/issues/ch000549.htm>`_ for how to edit environment variables.
 
-To tweak the configuration for the current profile, see [Configuration](#configuration)
+To tweak the configuration for the current profile, see :ref:`configuration_doc`
 
 
 -----------------------------------------------
@@ -64,13 +64,15 @@ It will recognize no users have been created, and prompt you to create the first
 * **Email:** Optional
 * **Password:** Optional, if not provided the user can log in without a password
 
-Once the user is created, execute the ``/login`` command with the username:
+You should be automatically logged in and ready to go!
+
+Once you're logged in, you have full access to all commands.
+
+**NOTE:** Once multiple users are created, you'll need to execute the ``/login`` command with the username to log in:
 
 .. code-block:: bash
 
    /login [username]
-
-Once you're logged in, you have full access to all commands.
 
 **IMPORTANT NOTE:** The user authorization system from the command line is *admin party* -- meaning every logged in user has admin privileges, including editing and deleting other users.
 
