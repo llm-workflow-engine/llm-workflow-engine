@@ -518,9 +518,9 @@ Before you can start using the shell, you must create a new user.
         be used. Otherwise, a default value of {OPENAPI_MAX_TOKENS} will be used.
 
         Arguments:
-            max_submission_tokens: An integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and the
-                                   maximum value a model can accept. (chat providers only)
-            With no arguments, view the current max submission tokens.
+            max_submission_tokens: An integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and the maximum value a model can accept. (chat providers only)
+
+        With no arguments, view the current max submission tokens.
 
         Examples:
             {COMMAND}
@@ -635,10 +635,10 @@ Before you can start using the shell, you must create a new user.
         Arguments:
             preset_name: Required. The name of the preset
             [metadata_field]: Optional. The name of a metadata field, followed by the value
-                Valid metadata fields are:
-                    description: A description of the preset
-                    system_message: A system message to activate for the preset,
-                                    can be a configured alias or a custom message
+
+            Valid metadata fields are:
+                description: A description of the preset
+                system_message: A system message to activate for the preset, can be a configured alias or a custom message
 
         Examples:
             {COMMAND} mypreset

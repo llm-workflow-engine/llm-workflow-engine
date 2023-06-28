@@ -1,0 +1,14 @@
+body {
+    word-wrap: break-word;
+    background-color: #FDF6E3,
+}
+div.body p,
+div.body dd,
+div.body li,
+div.body blockquote {
+    hyphens: none;
+    word-break: normal;
+}
+div.sphinxsidebarwrapper p.logo {
+    text-align: left;
+}

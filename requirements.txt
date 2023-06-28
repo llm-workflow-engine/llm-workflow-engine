@@ -4,12 +4,12 @@ alembic
 ai21>=1.0.5
 beautifulsoup4
 cohere>=4.3.1
-docutils
+docutils>=0.20.1
 email-validator
 Flask
 huggingface-hub>=0.13.2
 Jinja2
-langchain==0.0.208
+langchain==0.0.217
 names
 numexpr>=2.8.4
 openai>=0.27.8

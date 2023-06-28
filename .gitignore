@@ -44,3 +44,6 @@ venv.bak/
 
 # Cython debug symbols
 cython_debug/
+
+# Sphinx documentation
+docs/_build/
