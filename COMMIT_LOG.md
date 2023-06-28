@@ -1,3 +1,28 @@
+### v0.13.1 - 27/06/2023
+
+* **Tue Jun 27 2023:** remove outdated openai chat models
+* **Tue Jun 27 2023:** touch up new Sphinx documentation
+* **Tue Jun 27 2023:** update doc for using GPT-4 in Python module
+* **Tue Jun 27 2023:** prevent function recursion when functions are forced (for now)
+* **Tue Jun 27 2023:** add function_call to model_kwargs
+* **Tue Jun 27 2023:** bump langchain dep
+* **Tue Jun 27 2023:** add return_only property to API backend, suppresses console output
+* **Tue Jun 27 2023:** escape jinja syntax in system message
+* **Tue Jun 27 2023:** manage override preset on override_llm invocation
+* **Tue Jun 27 2023:** tighten rules for workflow spec generation template
+* **Tue Jun 27 2023:** fine-tune workflow spec/generation templates
+* **Mon Jun 26 2023:** add doc for how it works, installation, initial setup, presets, python module
+* **Mon Jun 26 2023:** display playbook descriptions in /workflows command
+* **Mon Jun 26 2023:** add descriptions for system presets
+* **Mon Jun 26 2023:** tweak installation instructions
+* **Mon Jun 26 2023:** autosection labels, pygments highlighting
+* **Mon Jun 26 2023:** theme config, logo, index/installation pages
+* **Mon Jun 26 2023:** fix syntax for RST formatting
+* **Sun Jun 25 2023:** Sphinx documentation scaffolding
+* **Sun Jun 25 2023:** require at least version 0.20.1 of docutils
+* **Sun Jun 25 2023:** add support for langchain tools as functions
+* **Sun Jun 25 2023:** add remove_prefix util function
+
 ### v0.13.0 - 25/06/2023
 
 * **Sun Jun 25 2023:** documentation for OpenAI functions
