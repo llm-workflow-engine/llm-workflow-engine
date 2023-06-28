@@ -29,12 +29,6 @@ class ProviderChatOpenai(Provider):
                 'gpt-3.5-turbo-16k': {
                     'max_tokens': 16384,
                 },
-                'gpt-3.5-turbo-0301': {
-                    'max_tokens': 4096,
-                },
-                'gpt-3.5-turbo-16k-0301': {
-                    'max_tokens': 16384,
-                },
                 'gpt-3.5-turbo-0613': {
                     'max_tokens': 4096,
                 },
