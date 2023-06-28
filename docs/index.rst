@@ -2,6 +2,10 @@
 LLM Workflow Engine
 ===============================================
 
+Are you a process nerd who loves the command line and LLMs?
+
+Welcome home 😃
+
 LLM Workflow Engine (LWE) is a command-line tool and Python module that streamlines
 common LLM-related tasks, such as:
 
