@@ -2,7 +2,7 @@
 Templates
 ===============================================
 
-LWE comes with a full template management system.
+LWE comes with a full template management system, leveraging the power of the venerable `Jinja <https://jinja.palletsprojects.com/en/3.1.x/>`_ framework.
 
 Templates allow storing text in template files, and quickly leveraging the contents as your user input.
 

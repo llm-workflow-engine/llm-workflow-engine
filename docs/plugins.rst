@@ -11,6 +11,8 @@ Using plugins
     * The main ``plugins`` directory of this module
     * A ``plugins`` directory in your profile
 
+   Use the ``/config`` command and look in the ``File configuration`` section for a list of currently configured plugin paths.
+
 #. Enable the plugin in your configuration:
 
      .. code-block:: yaml
@@ -22,7 +24,7 @@ Using plugins
            # extension.
            - test
 
-   Note that setting ``plugins.enabled`` will overwrite the default enabled plugins. Use the ``/config`` command for a list of default enabled plugins.
+   Note that setting ``plugins.enabled`` will overwrite the default enabled plugins. Use the ``/config plugins`` command for a list of default enabled plugins.
 
 
 -----------------------------------------------
@@ -41,9 +43,9 @@ Core plugins
 Provider plugins
 -----------------------------------------------
 
-**NOTE:** Most provider plugins are *not* chat-based, and instead return a single response to any text input.
+*NOTE: Most provider plugins are NOT chat-based, and instead return a single response to any text input.
 These inputs and responses are still managed as 'conversations' for storage purposes, using the same storage
-mechanism the chat-based providers use.
+mechanism the chat-based providers use.*
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

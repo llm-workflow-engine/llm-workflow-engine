@@ -56,7 +56,7 @@ html_theme_options = {
     # 'logo': 'images/cog-brain-trimmed.png',
     'logo': 'images/lwe-logo.png',
     'logo_name': False,
-    'fixed_sidebar': True,
+    'fixed_sidebar': False,
     'show_powered_by': False,
     'show_relbars': True,
     'sidebar_collapse': True,
