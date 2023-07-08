@@ -1,3 +1,12 @@
+### v0.13.2 - 08/07/2023
+
+* **Sat Jul 08 2023:** support running workflows from CLI args, --workflow/--workflow-args
+* **Sat Jul 08 2023:** clean up display of workflows in /workflows command
+* **Sat Jul 08 2023:** bump textract version
+* **Sat Jul 08 2023:** add max_length param to text_extractor module
+* **Wed Jun 28 2023:** update docker base container, remove VNC access, API backend only
+* **Wed Jun 28 2023:** remove deprecated openai chat models
+
 ### v0.13.1 - 27/06/2023
 
 * **Tue Jun 27 2023:** remove outdated openai chat models
