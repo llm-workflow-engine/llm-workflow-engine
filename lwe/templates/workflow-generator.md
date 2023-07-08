@@ -127,6 +127,11 @@ request_overrides:
               - The path to the file or the URL of the HTML content.
           type: path
           required: true
+        max_length:
+          description:
+              - Limit the return of the extracted content to this length.
+          type: int
+          required: false
 
     SUPPORTED_FILE_EXTENSIONS:
 
@@ -151,13 +156,14 @@ request_overrides:
 
     EXAMPLES:
 
-    - name: Extract content from a local HTML file
+    - name: Extract content from a local PDF file
       text_extractor:
-        path: "/path/to/your/html_file.html"
+        path: "/path/to/your/file.pdf"
 
     - name: Extract content from a URL
       text_extractor:
         path: "https://example.com/sample.html"
+        max_length: 3000
 
     RETURN:
 

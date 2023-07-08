@@ -52,18 +52,24 @@ options:
           - The path to the file or the URL of the HTML content.
       type: path
       required: true
+    max_length:
+      description:
+          - Limit the return of the extracted content to this length.
+      type: int
+      required: false
 author:
     - Chad Phillips (@thehunmonkgroup)
 '''
 
 EXAMPLES = r'''
-  - name: Extract content from a local HTML file
+  - name: Extract content from a local PDF file
     text_extractor:
-      path: "/path/to/your/html_file.html"
+      path: "/path/to/your/file.pdf"
 
   - name: Extract content from a URL
     text_extractor:
       path: "https://example.com/sample.html"
+      max_length: 3000
 '''
 
 RETURN = r'''
@@ -89,10 +95,12 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             path=dict(type='path', required=True),
+            max_length=dict(type='int', required=False),
         ),
         supports_check_mode=True,
     )
     path = module.params['path']
+    max_length = module.params['max_length']
 
     if module.check_mode:
         module.exit_json(**result)
@@ -130,6 +138,8 @@ def main():
         with open(path, 'r', encoding='utf-8', errors='ignore') as f:
             # Get rid of any non-ascii characters.
             content = re.sub(r'[^\x00-\x7F]+', '', f.read())
+    if max_length:
+        content = content[:max_length]
     if cleanup_tmpfile_path:
         os.remove(cleanup_tmpfile_path)
     result['content'] = content
