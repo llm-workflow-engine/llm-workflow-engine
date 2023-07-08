@@ -92,6 +92,18 @@ def main():
         action="store",
         help=f"Database to store chat-related data (default: {dummy_config.get('database')})",
     )
+    parser.add_argument(
+        "-w",
+        "--workflow",
+        action="store",
+        help="Workflow to run",
+    )
+    parser.add_argument(
+        "--workflow-args",
+        default="",
+        action="store",
+        help="Arguments to pass to the workflow",
+    )
     user_directories = [
         'template',
         'preset',
@@ -218,7 +230,12 @@ def main():
         shell.default("\n\n".join(shell_prompt))
         exit(0)
     else:
-        shell.launch_backend()
+        if args.workflow is not None:
+            success, result, user_message = shell.backend.workflow_manager.run(args.workflow, args.workflow_args)
+            util.print_status_message(success, user_message)
+            exit(0)
+        else:
+            shell.launch_backend()
 
     shell.cmdloop()
     shell.cleanup()
