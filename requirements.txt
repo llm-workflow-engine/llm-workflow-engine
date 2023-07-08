@@ -22,6 +22,6 @@ pyperclip
 python-frontmatter
 PyYAML
 rich
-textract @ git+https://github.com/thehunmonkgroup/textract@490bd4e7b6d1b24f007a4cf1288215c3d45e5895
+textract @ git+https://github.com/thehunmonkgroup/textract@41c8a14de9facbfe21a1881cda49ced67b3bb5a4
 sqlalchemy>=1.4.48
 tiktoken
