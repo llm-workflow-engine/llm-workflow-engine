@@ -1,0 +1,11 @@
+metadata:
+ name: turbo
+ description: GPT-3.5 for general chatbot
+ provider: chat_openai
+model_customizations:
+ max_tokens: null
+ model_name: gpt-3.5-turbo
+ n: 1
+ request_timeout: 60
+ streaming: true
+ temperature: 0.7
