@@ -3,8 +3,6 @@ Functions
 ===============================================
 
 
-**NOTE: Alpha, subject to change**
-
 The wrapper supports `OpenAI functions <https://platform.openai.com/docs/guides/gpt/function-calling>`_ for all models that support it.
 
 Mutiple functions may be attached, and the LLM can choose to call any or all of the attached functions.
@@ -72,7 +70,8 @@ Alternatively, you may provide the function definition by creating a ``[function
 method.
 
 Finally, for full control, you may override the ``get_config()`` method of the base ``Function`` class, and return
-a dictionary of the function definition.
+a dictionary of the function definition. This approach allows passing much more robust function definitions to the LLM -- check out the
+example functions provided with the project for an example of overriding ``get_config()`` using `Pydantic <https://docs.pydantic.dev/latest/>`_ schemas.
 
 
 -----------------------------------------------
