@@ -34,3 +34,34 @@ From source (recommended for development)
 
       cd llm-workflow-engine
       pip install -e .
+
+-----------------------------------------------
+Installing examples
+-----------------------------------------------
+
+LWE provides several features that are controlled by adding correctly formatted configuration files to a specific configuration subdirectory:
+
+* Templates
+* Workflows
+* Model presets
+* OpenAI function definitions
+
+If you'd like to jump start your setup with some examples of each, you can use the ``examples`` plugin (enabled by default).
+
+To list the examples available, and where they will be installed:
+
+.. code-block:: bash
+
+   /examples list
+
+To install all the examples:
+
+.. code-block:: bash
+
+   /examples
+
+To install examples for a specific feature (e.g. templates):
+
+.. code-block:: bash
+
+   /examples templates
