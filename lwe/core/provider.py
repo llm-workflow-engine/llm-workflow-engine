@@ -263,7 +263,7 @@ class ProviderBase(Plugin):
         model_name = self.get_model()
         if model_name and model_name in models and 'max_tokens' in models[model_name]:
             return models[model_name]['max_tokens']
-        return constants.OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS
+        return constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
 
 class Provider(ProviderBase):
 

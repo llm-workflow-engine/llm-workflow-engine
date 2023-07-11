@@ -482,7 +482,7 @@ Before you can start using the shell, you must create a new user.
         The system message helps set the behavior of the assistant. Conversations begin with a system message to gently instruct the assistant.
 
         Arguments:
-            system_message: String, {OPENAPI_MIN_SUBMISSION_TOKENS} to {OPENAPI_DEFAULT_MAX_SUBMISSION_TOKENS} characters long, or a system message alias name from the configuration.
+            system_message: String, or a system message alias name from the configuration.
                             The special string 'default' will reset the system message to its default value.
                             With no arguments, show the currently set system message.
 
@@ -515,10 +515,10 @@ Before you can start using the shell, you must create a new user.
         For non-chat-based providers, this value can only be viewed, if available.
 
         If the provider configuration specifies a max tokens value for a model, it will
-        be used. Otherwise, a default value of {OPENAPI_MAX_TOKENS} will be used.
+        be used. Otherwise, a default value of {OPEN_AI_MAX_TOKENS} will be used.
 
         Arguments:
-            max_submission_tokens: An integer between {OPENAPI_MIN_SUBMISSION_TOKENS} and the maximum value a model can accept. (chat providers only)
+            max_submission_tokens: An integer between {OPEN_AI_MIN_SUBMISSION_TOKENS} and the maximum value a model can accept. (chat providers only)
 
         With no arguments, view the current max submission tokens.
 
@@ -526,7 +526,7 @@ Before you can start using the shell, you must create a new user.
             {COMMAND}
             {COMMAND} 256
         """
-        return self.get_set_backend_setting("int", "max_submission_tokens", max_submission_tokens, min=constants.OPENAPI_MIN_SUBMISSION_TOKENS)
+        return self.get_set_backend_setting("int", "max_submission_tokens", max_submission_tokens, min=constants.OPEN_AI_MIN_SUBMISSION_TOKENS)
 
     def do_providers(self, arg):
         """
