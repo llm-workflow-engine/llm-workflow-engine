@@ -527,8 +527,9 @@ class ApiBackend(Backend):
 
     def get_runtime_config(self):
         output = """
+* Max submission tokens: %s
 * System message: %s
-""" % (self.system_message)
+""" % (self.max_submission_tokens, self.system_message)
         return output
 
     def get_current_llm_config(self):
