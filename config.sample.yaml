@@ -137,6 +137,7 @@ plugins:
   enabled:
     # Core plugins, see README for more details.
     - echo
+    - examples
     #- awesome
     #- database
     #- data_query
