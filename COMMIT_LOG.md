@@ -1,3 +1,8 @@
+### v0.14.1 - 12/07/2023
+
+* **Wed Jul 12 2023:** fix bad variable when stripping out messages over max tokens
+* **Tue Jul 11 2023:** more rebranding renames
+
 ### v0.14.0 - 11/07/2023
 
 #### ChatGPT Wrapper has been re-branded to LLM Workflow Engine
