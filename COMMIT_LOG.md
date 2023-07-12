@@ -1,3 +1,9 @@
+### v0.14.2 - 12/07/2023
+
+* **Wed Jul 12 2023:** add RTD build config
+* **Wed Jul 12 2023:** more improvements to Sphinx doc
+* **Wed Jul 12 2023:** enable examples plugin by default
+
 ### v0.14.1 - 12/07/2023
 
 * **Wed Jul 12 2023:** fix bad variable when stripping out messages over max tokens
