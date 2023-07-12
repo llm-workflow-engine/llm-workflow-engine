@@ -203,9 +203,9 @@ class ApiRepl(Repl):
     def welcome_message(self):
         util.print_markdown(
 """
-# Welcome to the ChatGPT API shell!
+# Welcome to the LLM Workflow Engine shell!
 
-This shell interacts directly with the ChatGPT API, and stores conversations and messages in the configured database.
+This shell interacts directly with ChatGPT and other LLMs via their API, and stores conversations and messages in the configured database.
 
 Before you can start using the shell, you must create a new user.
 """

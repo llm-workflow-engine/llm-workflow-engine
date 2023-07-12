@@ -19,7 +19,7 @@ Run an interactive CLI in the terminal:
 
 Get help for a command:
 
-.. image:: https://github.com/mmabrouk/chatgpt-wrapper/assets/43772/1949ffa0-88fe-4292-8437-d7e26bbe7641
+.. image:: https://user-images.githubusercontent.com/43772/249009003-1949ffa0-88fe-4292-8437-d7e26bbe7641.png
   :alt: Get help for a command
 
 

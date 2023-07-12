@@ -14,14 +14,14 @@ with open(path.join(FILE_DIR, 'lwe', 'version.py')) as f:
     version = re.match(r'^__version__ = "([\w\.]+)"$', f.read().strip())[1]
 
 setup(
-    name="chatGPT",
+    name="llm-workflow-engine",
     version=version,
-    author="Mahmoud Mabrouk",
+    author="Mahmoud Mabrouk, Chad Phillips",
     author_email="mahmoudmabrouk.mail@gmail.com",
-    description="CLI wrapper around common LLMs, with a focus on OpenAI's models",
+    description="CLI tool and workflow manager for common LLMs, with a focus on OpenAI's models",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/mmabrouk/chatgpt-wrapper",
+    url="https://github.com/llm-workflow-engine/llm-workflow-engine",
     packages=find_packages(),
     package_data={
         'lwe': [
@@ -47,6 +47,7 @@ setup(
     python_requires=">=3.7",
     entry_points={
         "console_scripts": [
+            # TODO: Remove this after deprecation period.
             "chatgpt = lwe.main:main",
             "lwe = lwe.main:main",
         ],

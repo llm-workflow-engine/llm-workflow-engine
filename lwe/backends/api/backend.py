@@ -764,7 +764,7 @@ class ApiBackend(Backend):
 
     def ask(self, prompt, title=None, request_overrides=None):
         """
-        Send a message to chatGPT and return the response.
+        Send a message to the LLM and return the response.
 
         Args:
             message (str): The message to send.

@@ -138,9 +138,9 @@ def main():
     config_args = {
         'args': args,
     }
-    config_dir = args.config_dir or os.environ.get('CHATGPT_WRAPPER_CONFIG_DIR', None)
-    config_profile = args.config_profile or os.environ.get('CHATGPT_WRAPPER_CONFIG_PROFILE', None)
-    data_dir = args.data_dir or os.environ.get('CHATGPT_WRAPPER_DATA_DIR', None)
+    config_dir = args.config_dir or os.environ.get('LWE_CONFIG_DIR', None)
+    config_profile = args.config_profile or os.environ.get('LWE_CONFIG_PROFILE', None)
+    data_dir = args.data_dir or os.environ.get('LWE_DATA_DIR', None)
     if config_dir:
         config_args['config_dir'] = config_dir
     if config_profile:

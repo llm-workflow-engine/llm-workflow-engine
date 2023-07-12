@@ -85,7 +85,7 @@
 GPT-4 models are currently broken in the browser backend, due to increased 'anti-bot' security measures implemented by OpenAI on
 chat.openai.com
 
-If you'd like to help fix this issue, see https://github.com/mmabrouk/chatgpt-wrapper/issues/311
+If you'd like to help fix this issue, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/311
 
 #### Commit log
 

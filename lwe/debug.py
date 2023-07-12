@@ -1,7 +1,7 @@
 import pprint
 import tempfile
 
-LOG_FILE = '%s/%s' % (tempfile.gettempdir(), 'chatgpt-debug.log')
+LOG_FILE = '%s/%s' % (tempfile.gettempdir(), 'lwe-debug.log')
 
 pp = pprint.PrettyPrinter()
 pf = pprint.PrettyPrinter(stream=open(LOG_FILE, 'w'))

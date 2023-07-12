@@ -21,7 +21,8 @@ OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS = 4000
 
 # Config specific constants.
 DEFAULT_PROFILE = 'default'
-DEFAULT_CONFIG_DIR = 'chatgpt-wrapper'
+DEFAULT_CONFIG_DIR = 'llm-workflow-engine'
+LEGACY_DEFAULT_CONFIG_DIR = 'chatgpt-wrapper'
 DEFAULT_DATABASE_BASENAME = 'storage'
 CONFIG_PROFILES_DIR = 'profiles'
 DEFAULT_CONFIG = {
@@ -74,7 +75,7 @@ DEFAULT_CONFIG = {
     'chat': {
         'log': {
             'enabled': False,
-            'filepath': 'chatgpt.log',
+            'filepath': 'lwe.log',
         },
     },
     'log': {
@@ -91,7 +92,7 @@ DEFAULT_CONFIG = {
     'debug': {
         'log': {
             'enabled': False,
-            'filepath': '%s%schatgpt-debug.log' % (tempfile.gettempdir(), os.path.sep),
+            'filepath': '%s%slwe-debug.log' % (tempfile.gettempdir(), os.path.sep),
             'level': 'debug',
             'format': '%(name)s - %(asctime)s - %(levelname)s - %(message)s',
         },

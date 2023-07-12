@@ -46,7 +46,6 @@ class Repl():
 
     # our stuff
     prompt_number = 0
-    chatgpt = None
     message_map = {}
     logfile = None
 

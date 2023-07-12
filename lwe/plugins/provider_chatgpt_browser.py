@@ -84,7 +84,7 @@ class ProviderChatgptBrowser(Provider):
     def set_model(self, model_name):
         if model_name.startswith("gpt-4"):
             util.print_status_message(False, "GPT-4 models are currently broken in the browser backend, due to increased 'anti-bot' security measures implemented by OpenAI on chat.openai.com")
-            util.print_status_message(False, "If you'd like to help fix this issue, see https://github.com/mmabrouk/chatgpt-wrapper/issues/311")
+            util.print_status_message(False, "If you'd like to help fix this issue, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/311")
         return super().set_model(model_name)
 
     def incompatible_backends(self):
