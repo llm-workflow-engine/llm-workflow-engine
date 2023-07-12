@@ -34,7 +34,7 @@ What would you like to do?
 
 ## What happend to the original ChatGPT Wrapper project?
 
-The original ChatGPT Wrapper project (created by [mmabrouk](https://github.com/mmabrouk)) lives on in LWE, in the deprecated [browser backend](#playwright-browser-based-deprecated).
+The original ChatGPT Wrapper project (created by [mmabrouk](https://github.com/mmabrouk)) lives on in LWE, in the deprecated [browser backend](https://llm-workflow-engine.readthedocs.io/en/latest/configuration.html#using-browser-backend).
 
 While it can still be used, it's become less useful after the release of [OpenAI's Chat Completions API](https://platform.openai.com/docs/guides/gpt/chat-completions-api), and also become harder to maintain due to security lockdowns on [chat.openai.com](https://chat.openai.com).
 
@@ -52,9 +52,9 @@ It was an amazing tool for its time, thank you [mmabrouk](https://github.com/mma
 
 🗣 **Supports multiple LLM providers**. Provider plugins allow interacting with other LLMs (GPT-3, Cohere, Hugginface, etc.)
 
-🔄[**Build workflows**](#workflows). Easily integrate calls to an LLM into larger workflows via Ansible Playbooks
+🔄[**Build workflows**](https://llm-workflow-engine.readthedocs.io/en/latest/workflows.html). Easily integrate calls to an LLM into larger workflows via Ansible Playbooks
 
-𝑓(𝑥) [**Execute functions**](#functions). Support for [OpenAI functions](https://platform.openai.com/docs/guides/gpt/function-calling)
+𝑓(𝑥) [**Execute functions**](https://llm-workflow-engine.readthedocs.io/en/latest/functions.html). Support for [OpenAI functions](https://platform.openai.com/docs/guides/gpt/function-calling)
 
 🐳 **Docker image**. LWE is also available as a docker image. (experimental)
 
