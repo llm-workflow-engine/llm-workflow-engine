@@ -39,7 +39,7 @@ From the command line, simply run:
 Database
 -----------------------------------------------
 
-The API backend requires a database server to store conversation data. The wrapper leverages `SQLAlchemy <https://www.sqlalchemy.org/>`_ for this.
+The API backend requires a database server to store conversation data. LWE leverages `SQLAlchemy <https://www.sqlalchemy.org/>`_ for this.
 
 The simplest supported database is `SQLite <https://www.sqlite.org/>`_ (which is already installed on most modern operating systems), but you can use any database that is supported by SQLAlchemy.
 

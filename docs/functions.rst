@@ -3,7 +3,7 @@ Functions
 ===============================================
 
 
-The wrapper supports `OpenAI functions <https://platform.openai.com/docs/guides/gpt/function-calling>`_ for all models that support it.
+LWE supports `OpenAI functions <https://platform.openai.com/docs/guides/gpt/function-calling>`_ for all models that support it.
 
 Mutiple functions may be attached, and the LLM can choose to call any or all of the attached functions.
 

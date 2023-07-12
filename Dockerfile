@@ -15,7 +15,7 @@ RUN pip install -r /tmp/requirements.txt
 COPY . /src
 WORKDIR /src
 
-# Install wrapper
+# Install LWE
 RUN pip install -e .
 
 ENV PYTHONPATH=/src:$PYTHONPATH

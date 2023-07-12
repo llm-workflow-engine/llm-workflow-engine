@@ -4,7 +4,7 @@
 Workflows
 ===============================================
 
-The wrapper supports more complex linear workflows via built-in integration for `Ansible playbooks <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html>`_.
+LWE supports more complex linear workflows via built-in integration for `Ansible playbooks <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html>`_.
 
 If you chose to install the example workflows, you can run ``/workflows`` to list them, and ``/workflow-show workflowname`` to view the playbook configuration for a particular workflow.
 

@@ -15,11 +15,11 @@
 What would you like to do?
 
 * [Learn about the project](#summary-header)
-* [Install the wrapper](#requirements)
+* [Install LWE](#requirements)
 * [Learn more about configuration/features](#configuration)
 * [Learn how to use it](#usage)
 * [Troubleshoot common issues](#troubleshooting)
-* [Upgrade the wrapper](#upgrading)
+* [Upgrade LWE](#upgrading)
 * [Using GPT4](#gpt4)
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
@@ -41,7 +41,7 @@ It was an amazing tool for its time, thank you [mmabrouk](https://github.com/mma
 
 💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint (all supported models accessible by your OpenAI account)
 
-🔌 **Simple plugin architecture**. Extend the wrapper with custom functionality
+🔌 **Simple plugin architecture**. Extend LWE with custom functionality
 
 🗣 **Supports multiple LLM providers**. Provider plugins allow interacting with other LLMs (GPT-3, Cohere, Hugginface, etc.)
 
@@ -98,7 +98,7 @@ pip install git+https://github.com/llm-workflow-engine/llm-workflow-engine
 
 ### Backend
 
-The wrapper works with several different backends to connect to the OpenAI chat models, and installation is different for each backend.
+LWE works with several different backends to connect to the OpenAI chat models, and installation is different for each backend.
 
 #### API (REST-based): **DEFAULT**
 
@@ -125,7 +125,7 @@ To tweak the configuration for the current profile, see [Configuration](#configu
 
 ##### Database configuration
 
-The API backend requires a database server to store conversation data. The wrapper leverages [SQLAlchemy](https://www.sqlalchemy.org/) for this.
+The API backend requires a database server to store conversation data. LWE leverages [SQLAlchemy](https://www.sqlalchemy.org/) for this.
 
 The simplest supported database is SQLite (which is already installed on most modern operating systems), but you can use any database that is supported by SQLAlchemy.
 
@@ -324,7 +324,7 @@ See `/help` for the various other preset commands.
 
 ## Templates
 
-The wrapper comes with a full template management system.
+LWE comes with a full template management system.
 
 Templates allow storing text in template files, and quickly leveraging the contents as your user input.
 
@@ -339,7 +339,7 @@ See the various `/help template` commands for more information.
 
 ### Builtin variables
 
-The wrapper exposes some builtin variables that can be used in templates:
+LWE exposes some builtin variables that can be used in templates:
 
  * `{{ clipboard }}` - Insert the contents of the clipboard
 
@@ -513,7 +513,7 @@ else:
 
 **NOTE: Alpha, subject to change**
 
-The wrapper supports more complex linear workflows via built-in integration for [Ansible playbooks](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html).
+LWE supports more complex linear workflows via built-in integration for [Ansible playbooks](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html).
 
 Some example workflows are included, run `/workflows` to list them, and `/workflow-show workflowname` to view the playbook configuration for a particular workflow.
 
@@ -521,7 +521,7 @@ To execute a workflow, run `/workflow-run workflowname` -- depending on configur
 
 See `/help` for the various other workflow commands.
 
-The wrapper implements a custom Ansible module, `lwe_llm`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/lwe/backends/api/workflow/library/lwe_llm.py).
+LWE implements a custom Ansible module, `lwe_llm`, which handles communicating with the LLM and storing the response for each task execution. For supported arguments and return values, see the [module documentation](/lwe/backends/api/workflow/library/lwe_llm.py).
 
 It is also possible to execute workflows directly with `ansible-playbook`, by simply navigating to the `lwe/backends/api/workflow` directory:
 
@@ -533,7 +533,7 @@ ansible-playbook playbooks/hello-world.yaml
 
 **NOTE: Alpha, subject to change**
 
-The wrapper supports [OpenAI functions](https://platform.openai.com/docs/guides/gpt/function-calling) for all models that support it.
+LWE supports [OpenAI functions](https://platform.openai.com/docs/guides/gpt/function-calling) for all models that support it.
 
 Mutiple functions may be attached, and the LLM can choose to call any or all of the attached functions.
 

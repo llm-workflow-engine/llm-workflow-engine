@@ -20,7 +20,7 @@ See the various ``/help template`` commands for more information.
 Builtin variables
 -----------------------------------------------
 
-The wrapper exposes some builtin variables that can be used in templates:
+LWE exposes some builtin variables that can be used in templates:
 
  * ``{{ clipboard }}`` - Insert the contents of the clipboard
 
