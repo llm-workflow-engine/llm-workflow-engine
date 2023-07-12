@@ -702,7 +702,7 @@ class ApiBackend(Backend):
             while token_count > max_tokens and len(messages) > 1:
                 message = messages.pop(0)
                 token_count = self.get_num_tokens_from_messages(messages)
-                self.log.debug(f"Stripping message: {message['role']}, {message['content']} -- new token count: {token_count}")
+                self.log.debug(f"Stripping message: {message['role']}, {message['message']} -- new token count: {token_count}")
                 stripped_messages_count += 1
             token_count = self.get_num_tokens_from_messages(messages)
             if token_count > max_tokens:
