@@ -1,5 +1,5 @@
 <p align="center">
-  ![lwe-logo-small](https://github.com/llm-workflow-engine/llm-workflow-engine/assets/43772/6921deac-0964-41a9-84fd-7c2ebce198c0)
+  <img alt="lwe-logo-small" src="https://github.com/llm-workflow-engine/llm-workflow-engine/assets/43772/6921deac-0964-41a9-84fd-7c2ebce198c0" />
 </p>
 
 <h1>
