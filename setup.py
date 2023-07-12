@@ -48,7 +48,7 @@ setup(
     entry_points={
         "console_scripts": [
             # TODO: Remove this after deprecation period.
-            "chatgpt = lwe.main:main",
+            "chatgpt = lwe.main:main_chatgpt_deprecated",
             "lwe = lwe.main:main",
         ],
         "lwe_plugins": [],

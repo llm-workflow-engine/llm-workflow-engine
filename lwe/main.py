@@ -10,6 +10,10 @@ from lwe.backends.browser.backend import BrowserBackend
 from lwe.backends.browser.repl import BrowserRepl
 from lwe.backends.api.repl import ApiRepl
 
+def main_chatgpt_deprecated():
+    util.print_status_message(False, "The 'chatgpt' binary is deprecated, use 'lwe' instead.")
+    main()
+
 def main():
 
     dummy_config = Config()
