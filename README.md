@@ -14,10 +14,10 @@
 
 What would you like to do?
 
-* [Learn about the project](#summary-header)
+* [Learn about the project](#highlights)
 * [Install LWE](#requirements)
 * [Learn more about configuration/features](#configuration)
-* [Learn how to use it](#usage)
+* [Learn how to use it](#usage-1)
 * [Troubleshoot common issues](#troubleshooting)
 * [Upgrade LWE](#upgrading)
 * [Using GPT4](#gpt4)
