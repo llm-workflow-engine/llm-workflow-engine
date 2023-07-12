@@ -1,3 +1,33 @@
+### v0.14.0 - 11/07/2023
+
+#### ChatGPT Wrapper has been re-branded to LLM Workflow Engine
+
+Currently, all functionality is the same.
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+* Default configuration and data directories have changed
+  * A deprecation warning will be thrown on startup if the legacy directories are being used, with instructions on how to migrate to the new default locations.
+  * Legacy locations will continue to be supported until at least the next minor point release
+* Environment variable names have changed
+  * `CHATGPT_WRAPPER_CONFIG_DIR` renamed to `LWE_CONFIG_DIR`
+  * `CHATGPT_WRAPPER_CONFIG_PROFILE` renamed to `LWE_CONFIG_PROFILE`
+  * `CHATGPT_WRAPPER_DATA_DIR` renamed to `LWE_DATA_DIR`
+* Log file locations have changed: `chatgpt` -> `lwe`
+
+#### Commit log
+
+* **Tue Jul 11 2023:** add deprecation warning for chatgpt binary
+* **Tue Jul 11 2023:** ChatGPT Wrapper -> LLM Workflow Engine rebranding
+* **Tue Jul 11 2023:** throw warning messages for legacy config/data dirs
+* **Tue Jul 11 2023:** display max submission tokens in runtime config
+* **Tue Jul 11 2023:** fix spelling error
+* **Mon Jul 10 2023:** document installing examples
+* **Mon Jul 10 2023:** mention more examples in features list
+* **Mon Jul 10 2023:** polish functions doc
+* **Sun Jul 09 2023:** flesh out workflow doc
+* **Sun Jul 09 2023:** examples plugin, installs example config files, plus more example files
+
 ### v0.13.2 - 08/07/2023
 
 * **Sat Jul 08 2023:** support running workflows from CLI args, --workflow/--workflow-args
