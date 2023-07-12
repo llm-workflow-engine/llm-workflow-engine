@@ -8,6 +8,8 @@
   </p>
 </h1>
 
+<p id="summary-header" align="center">LLM Workflow Engine (LWE) is a <b>Power CLI</b> and <b>Workflow manager</b> for LLMs.</p>
+
 ## Welcome!
 
 What would you like to do?
@@ -22,8 +24,6 @@ What would you like to do?
 * [Report a bug](ISSUES.md)
 * [Get support](SUPPORT.md)
 
-
-<p id="summary-header" align="center">LLM Workflow Engine (LWE) is a <b>Power CLI</b> and <b>Workflow manager</b> for LLMs.</p>
 
 ## What happend to the original ChatGPT Wrapper project?
 
