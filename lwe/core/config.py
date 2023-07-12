@@ -37,6 +37,11 @@ class Config:
         else:
             base_path = os.path.join(os.path.expanduser("~"), ".config")
         config_dir = os.path.join(base_path, constants.DEFAULT_CONFIG_DIR)
+        legacy_config_dir = os.path.join(base_path, constants.LEGACY_DEFAULT_CONFIG_DIR)
+        if os.path.exists(legacy_config_dir):
+            util.print_status_message(False, f"Using legacy config directory: {legacy_config_dir}")
+            util.print_status_message(False, f"To dismiss this warning, move your configuration to the new default directory: {config_dir}")
+            return legacy_config_dir
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
         return config_dir
@@ -47,6 +52,11 @@ class Config:
         else:
             base_path = os.path.join(os.path.expanduser("~"), ".local", "share")
         data_dir = os.path.join(base_path, constants.DEFAULT_CONFIG_DIR)
+        legacy_data_dir = os.path.join(base_path, constants.LEGACY_DEFAULT_CONFIG_DIR)
+        if os.path.exists(legacy_data_dir):
+            util.print_status_message(False, f"Using legacy data directory: {legacy_data_dir}")
+            util.print_status_message(False, f"To dismiss this warning, move your data to the new default directory: {data_dir}")
+            return legacy_data_dir
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         return data_dir
