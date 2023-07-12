@@ -62,3 +62,20 @@ The code below uses the system-defined ``gpt-4-chatbot-responses`` preset:
    config.set('model.default_preset', 'gpt-4-chatbot-responses')
    bot = ApiBackend(config)
    success, response, message = bot.ask("Hello, world!")
+
+
+-----------------------------------------------
+Advanced Python module usage
+-----------------------------------------------
+
+The ``ApiBackend`` class has full access to most of the features available in the LWE shell:
+
+* Templates
+* Presets
+* Workflows
+* OpenAI functions
+* etc...
+
+If you're a moderately skilled Python programmer, you should be able to figure out how to
+make use of these features using the ``ApiBackend`` class by looking at the
+:ref:`core shell module <lwe.core.repl module>` and :ref:`API shell module <lwe.backends.api.repl module>` code.

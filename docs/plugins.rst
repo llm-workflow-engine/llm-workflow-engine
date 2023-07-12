@@ -24,7 +24,7 @@ Using plugins
            # extension.
            - test
 
-   Note that setting ``plugins.enabled`` will overwrite the default enabled plugins. Use the ``/config plugins`` command for a list of default enabled plugins.
+   Note that setting ``plugins.enabled`` will overwrite the default enabled plugins. Use the ``/config plugins`` command for a list of currently enabled plugins.
 
 
 -----------------------------------------------

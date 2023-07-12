@@ -96,4 +96,76 @@ document. While some attributes can be displayed via command completion in the
 shell, you are advised to consult the API documentation for the specific provider
 for a full list of available attributes and their values.*
 
+-----------------------------------------------
+Using browser backend
+-----------------------------------------------
 
+**This backend is deprecated, and may be removed in a future release.**
+
+**NOTE:** Support will not be provided for using the ``BrowserBackend`` class of this backend directly.
+
+The browser backend runs a headless browser, providing CLI access to https://chat.openai.com
+
+In your profile configuration file, you'll want to make sure the backend is set to the following in order to use the browser backend:
+
+.. code-block:: yaml
+
+   backend: 'browser'
+
+To tweak the configuration for the current profile, see :ref:`Configuration`
+
+Install a browser in playwright (if you haven't already). The program will use firefox by default.
+
+.. code-block:: bash
+
+   playwright install firefox
+
+Start up the program in `install` mode:
+
+.. code-block:: bash
+
+   lwe install
+
+This opens up a browser window. Log in to ChatGPT in the browser window, walk through all the intro screens, then exit program.
+
+.. code-block:: bash
+
+   1> /exit
+
+Restart the program without the `install` parameter to begin using it.
+
+.. code-block:: bash
+
+   lwe
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using ChatGPT Plugins (alpha)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Officially approved ChatGPT plugins can be configured for use with the browser backend.
+
+**NOTE:** This requires your OpenAI login account to have access to ChatGPT plugins.
+
+To use plugins:
+
+1. You must use a model that supports plugins: ``/model model_name gpt-4-plugins``
+2. Browse the plugins: ``/plugins``, or a filter the full list by a phrase, ``/plugins youtube``
+3. To enable the plugin by default, add the plugin ID to the ``browser.plugins`` list in your configuration file:
+
+   .. code-block:: yaml
+
+      browser:
+        plugins:
+          - plugin-d1d6eb04-3375-40aa-940a-c2fc57ce0f51
+
+4. You can also dynamically enable/disable plugins, see the help for ``/plugin-enable`` and ``/plugin-disable``
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using ChatGPT with browsing (alpha)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ChatGPT with browsing can be used with the browser backend.
+
+**NOTE:** This requires your OpenAI login account to have access to ChatGPT with browsing.
+
+To use ChatGPT with browsing, you must use a model that supports browsing: ``/model model_name gpt-4-browsing``

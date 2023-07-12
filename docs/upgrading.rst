@@ -26,7 +26,7 @@ Until an official release exists, you'll need to uninstall and reinstall:
 .. code-block:: bash
 
    pip uninstall -y llm-workflow-engine
-   pip install llm-workflow-engine
+   pip install git+https://github.com/llm-workflow-engine/llm-workflow-engine
 
 
 -----------------------------------------------

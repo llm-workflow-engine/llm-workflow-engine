@@ -1,5 +1,5 @@
 ===============================================
-Docker (experimental)
+Docker
 ===============================================
 
 Build a docker image for testing ``lwe``:
