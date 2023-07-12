@@ -42,7 +42,7 @@ class Echo(Plugin):
         commands[util.command_with_leader('echo')] = util.list_to_completion_hash(['one', 'two', 'three'])
         return commands
 
-    def do_echo(self, arg):
+    def command_echo(self, arg):
         """
         Echo command, a simple plugin example
 

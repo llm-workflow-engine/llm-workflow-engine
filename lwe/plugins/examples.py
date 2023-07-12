@@ -84,7 +84,7 @@ class Examples(Plugin):
             util.print_status_message(False, str(e))
             self.log.error(f"Error installing examples: {str(e)}")
 
-    def do_examples(self, arg):
+    def command_examples(self, arg):
         """
         List or install example files
 

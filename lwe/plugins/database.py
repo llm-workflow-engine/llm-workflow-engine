@@ -49,7 +49,7 @@ class Database(Plugin):
         self.database = None
         self.agent = None
 
-    def do_database(self, arg):
+    def command_database(self, arg):
         """
         Send natural language commands to a database
 

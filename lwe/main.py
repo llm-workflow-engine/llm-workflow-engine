@@ -214,7 +214,7 @@ def main():
     shell.setup()
 
     if command == 'config':
-        shell.do_config("")
+        shell.command_config("")
         exit(0)
 
     shell_prompt = []

@@ -23,7 +23,7 @@ class Zap(Plugin):
         self.zapier = ZapierNLAWrapper()
         self.agent_verbose = self.config.get('plugins.zap.agent.verbose')
 
-    def do_zap(self, arg):
+    def command_zap(self, arg):
         """
         Send natural language commands to Zapier actions
 

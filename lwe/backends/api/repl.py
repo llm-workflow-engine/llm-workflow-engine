@@ -123,7 +123,7 @@ class ApiRepl(Repl):
         return True, default_preset
 
     # Overriding default implementation because API should use UUIDs.
-    def do_context(self, arg):
+    def command_context(self, arg):
         """
         Load an old context from the log
 
@@ -148,7 +148,7 @@ class ApiRepl(Repl):
         self._update_message_map()
         self._write_log_context()
 
-    def do_user_register(self, username=None):
+    def command_user_register(self, username=None):
         """
         Register a new user
 
@@ -212,7 +212,7 @@ Before you can start using the shell, you must create a new user.
         )
 
     def create_first_user(self):
-        success, user, message = self.do_user_register()
+        success, user, message = self.command_user_register()
         util.print_status_message(success, message)
         if success:
             success, _user, message = self.login(user)
@@ -257,7 +257,7 @@ Before you can start using the shell, you must create a new user.
             self.backend.new_conversation()
         return success, user, message
 
-    def do_user_login(self, identifier=None):
+    def command_user_login(self, identifier=None):
         """
         Login in as a user
 
@@ -283,7 +283,7 @@ Before you can start using the shell, you must create a new user.
         else:
             return success, user, message
 
-    def do_login(self, identifier=None):
+    def command_login(self, identifier=None):
         """
         Alias of '{COMMAND_LEADER}user-login'
 
@@ -297,9 +297,9 @@ Before you can start using the shell, you must create a new user.
             {COMMAND} myusername
             {COMMAND} email@example.com
         """
-        return self.do_user_login(identifier)
+        return self.command_user_login(identifier)
 
-    def do_user_logout(self, _):
+    def command_user_logout(self, _):
         """
         Logout the current user.
 
@@ -311,7 +311,7 @@ Before you can start using the shell, you must create a new user.
         self.set_logged_in_user()
         return True, None, "Logout successful."
 
-    def do_logout(self, _):
+    def command_logout(self, _):
         """
         Alias of '{COMMAND_LEADER}user-logout'
 
@@ -320,7 +320,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND}
         """
-        return self.do_user_logout(None)
+        return self.command_user_logout(None)
 
     def display_user(self, user):
         output = """
@@ -332,7 +332,7 @@ Before you can start using the shell, you must create a new user.
         """ % (user.username, user.email, "set" if user.password else "Not set", user.default_preset if user.default_preset else "Global default")
         util.print_markdown(output)
 
-    def do_user(self, username=None):
+    def command_user(self, username=None):
         """
         Show user information
 
@@ -358,7 +358,7 @@ Before you can start using the shell, you must create a new user.
             return self.display_user(self.logged_in_user)
         return False, None, "User not found."
 
-    def do_users(self, _):
+    def command_users(self, _):
         """
         Show information for all users
 
@@ -400,7 +400,7 @@ Before you can start using the shell, you must create a new user.
                 self.backend.set_current_user(user)
         return success, user, user_message
 
-    def do_user_edit(self, username=None):
+    def command_user_edit(self, username=None):
         """
         Edit the current user's information
 
@@ -424,7 +424,7 @@ Before you can start using the shell, you must create a new user.
             return self.edit_user(self.logged_in_user)
         return False, "User not found."
 
-    def do_user_delete(self, username=None):
+    def command_user_delete(self, username=None):
         """
         Delete a user
 
@@ -475,7 +475,7 @@ Before you can start using the shell, you must create a new user.
             value = getattr(self.backend, setting)
             util.print_markdown(f"* Current {setting}: {value}")
 
-    def do_system_message(self, alias=None):
+    def command_system_message(self, alias=None):
         """
         Set the system message sent for conversations.
 
@@ -505,7 +505,7 @@ Before you can start using the shell, you must create a new user.
             output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join(sorted(alias_list)))
             util.print_markdown(output)
 
-    def do_max_submission_tokens(self, max_submission_tokens=None):
+    def command_max_submission_tokens(self, max_submission_tokens=None):
         """
         The maximum number of tokens that can be submitted to the model.
 
@@ -528,7 +528,7 @@ Before you can start using the shell, you must create a new user.
         """
         return self.get_set_backend_setting("int", "max_submission_tokens", max_submission_tokens, min=constants.OPEN_AI_MIN_SUBMISSION_TOKENS)
 
-    def do_providers(self, arg):
+    def command_providers(self, arg):
         """
         List currently enabled providers
 
@@ -539,7 +539,7 @@ Before you can start using the shell, you must create a new user.
         provider_plugins = [f"* {provider.display_name()}" for provider in self.backend.provider_manager.provider_plugins.values()]
         util.print_markdown("## Providers:\n\n%s" % "\n".join(sorted(provider_plugins)))
 
-    def do_provider(self, arg):
+    def command_provider(self, arg):
         """
         View or set the current LLM provider
 
@@ -568,9 +568,9 @@ Before you can start using the shell, you must create a new user.
                 self.rebuild_completions()
             return success, provider, user_message
         else:
-            return self.do_model('')
+            return self.command_model('')
 
-    def do_presets(self, arg):
+    def command_presets(self, arg):
         """
         List available presets
 
@@ -606,7 +606,7 @@ Before you can start using the shell, you must create a new user.
                 preset_names.append(content)
         util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(preset_names)))
 
-    def do_preset_show(self, preset_name):
+    def command_preset_show(self, preset_name):
         """
         Display a preset
 
@@ -628,7 +628,7 @@ Before you can start using the shell, you must create a new user.
         util.print_markdown("### Model customizations\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False))
         util.print_markdown("### Metadata\n```yaml\n%s\n```" % yaml.dump(metadata, default_flow_style=False))
 
-    def do_preset_save(self, args):
+    def command_preset_save(self, args):
         """
         Create a new preset, or update an existing preset
 
@@ -671,13 +671,13 @@ Before you can start using the shell, you must create a new user.
             success, presets, user_message = self.backend.preset_manager.load_presets()
             if not success:
                 return success, presets, user_message
-            success, preset, load_preset_message = self.do_preset_load(preset_name)
+            success, preset, load_preset_message = self.command_preset_load(preset_name)
             if not success:
                 return success, preset, load_preset_message
         return success, file_path, user_message
 
 
-    def do_preset_edit(self, preset_name):
+    def command_preset_edit(self, preset_name):
         """
         Edit an existing preset
 
@@ -707,7 +707,7 @@ Before you can start using the shell, you must create a new user.
             return success, preset, user_message
         return True, preset_name, f"Edited preset: {preset_name}"
 
-    def do_preset_load(self, preset_name):
+    def command_preset_load(self, preset_name):
         """
         Load an existing preset
 
@@ -725,7 +725,7 @@ Before you can start using the shell, you must create a new user.
             self.rebuild_completions()
         return success, preset, user_message
 
-    def do_preset_delete(self, preset_name):
+    def command_preset_delete(self, preset_name):
         """
         Deletes an existing preset
 
@@ -755,7 +755,7 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, preset_name, "Deletion aborted"
 
-    def do_workflows(self, arg):
+    def command_workflows(self, arg):
         """
         List available workflows
 
@@ -802,7 +802,7 @@ Before you can start using the shell, you must create a new user.
                         include_files.append(content)
         util.print_markdown("## Workflows:\n\n%s\n\n## Include files:\n\n%s" % ("\n".join(sorted(workflows)), "\n".join(sorted(include_files))))
 
-    def do_workflow_run(self, args):
+    def command_workflow_run(self, args):
         """
         Run a workflow
 
@@ -824,7 +824,7 @@ Before you can start using the shell, you must create a new user.
         success, result, user_message = self.backend.workflow_manager.run(workflow_name, workflow_args)
         return success, result, user_message
 
-    def do_workflow_show(self, workflow_name):
+    def command_workflow_show(self, workflow_name):
         """
         Display a workflow
 
@@ -844,7 +844,7 @@ Before you can start using the shell, you must create a new user.
         util.print_markdown(f"\n## Workflow '{workflow_name}'")
         util.print_markdown("```yaml\n%s\n```" % workflow_content)
 
-    def do_workflow_edit(self, workflow_name):
+    def command_workflow_edit(self, workflow_name):
         """
         Create a new workflow, or edit an existing workflow
 
@@ -868,7 +868,7 @@ Before you can start using the shell, you must create a new user.
         self.backend.workflow_manager.load_workflows()
         self.rebuild_completions()
 
-    def do_workflow_delete(self, workflow_name):
+    def command_workflow_delete(self, workflow_name):
         """
         Deletes an existing workflow
 
@@ -893,7 +893,7 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, workflow_name, "Deletion aborted"
 
-    def do_functions(self, arg):
+    def command_functions(self, arg):
         """
         List available functions
 

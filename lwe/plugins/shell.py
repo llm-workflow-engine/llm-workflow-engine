@@ -109,7 +109,7 @@ Return ONLY the command, no other explanation, words, code highlighting, or text
             output = f"{stderr}\n\n{output}"
         return output
 
-    def do_shell(self, arg):
+    def command_shell(self, arg):
         """
         Execute a shell command built by the LLM based on the text prompt provided.
 

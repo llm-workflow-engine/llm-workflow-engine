@@ -23,7 +23,7 @@ class BrowserRepl(Repl):
     def build_shell_user_prefix(self):
         return f"{self.backend.model} "
 
-    def do_session(self, _):
+    def command_session(self, _):
         """
         Refresh session information
 
@@ -58,7 +58,7 @@ class BrowserRepl(Repl):
             content += f"\n* Description: *{data['description']}*"
         return content
 
-    def do_plugins(self, arg):
+    def command_plugins(self, arg):
         """
         Retrieve information on available plugins
 
@@ -83,7 +83,7 @@ class BrowserRepl(Repl):
                 plugin_list.append(content)
         util.print_markdown("## Plugins:\n\n%s" % "\n".join(plugin_list))
 
-    def do_plugins_enabled(self, _):
+    def command_plugins_enabled(self, _):
         """
         List enabled plugins
 
@@ -101,7 +101,7 @@ class BrowserRepl(Repl):
                 plugin_list.append(content)
         util.print_markdown("## Enabled plugins:\n\n%s" % "\n".join(plugin_list))
 
-    def do_plugin_enable(self, arg):
+    def command_plugin_enable(self, arg):
         """
         Dynamically enable a plugin
 
@@ -120,7 +120,7 @@ class BrowserRepl(Repl):
             return False, arg, f"Plugin {arg} not found, or invalid ID"
         return self.backend.enable_plugin(arg)
 
-    def do_plugin_disable(self, arg):
+    def command_plugin_disable(self, arg):
         """
         Dynamically disable a plugin
 

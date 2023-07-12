@@ -166,7 +166,7 @@ class Repl():
         builtin_variables = self.backend.template_manager.template_builtin_variables()
         user_variables = list(set([v for v in variables if v not in builtin_variables]))
         if user_variables:
-            self.do_template(template_name)
+            self.command_template(template_name)
             util.print_markdown("##### Enter variables:\n")
             self.log.debug(f"Collecting variable values for: {template_name}")
             for variable in user_variables:
@@ -313,12 +313,12 @@ class Repl():
         success, conversation, message = self.backend.delete_conversation()
         if success:
             util.print_status_message(True, "Deleted current conversation")
-            self.do_new(None)
+            self.command_new(None)
         else:
             util.print_status_message(False, "Failed to delete current conversation")
 
 
-    def do_stream(self, _):
+    def command_stream(self, _):
         """
         Toggle streaming mode
 
@@ -335,7 +335,7 @@ class Repl():
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
 
-    def do_new(self, _):
+    def command_new(self, _):
         """
         Start a new conversation
 
@@ -347,7 +347,7 @@ class Repl():
         self._update_message_map()
         self._write_log_context()
 
-    def do_delete(self, arg):
+    def command_delete(self, arg):
         """
         Delete one or more conversations
 
@@ -389,7 +389,7 @@ class Repl():
         else:
             self._delete_current_conversation()
 
-    def do_copy(self, _):
+    def command_copy(self, _):
         """
         Copy last conversation message to clipboard
 
@@ -402,7 +402,7 @@ class Repl():
             return True, clipboard, "Copied last message to clipboard"
         return False, None, "No message to copy"
 
-    def do_history(self, arg):
+    def command_history(self, arg):
         """
         Show recent conversation history
 
@@ -441,7 +441,7 @@ class Repl():
         else:
             return success, history, message
 
-    def do_nav(self, arg):
+    def command_nav(self, arg):
         """
         Navigate to a past point in the conversation
 
@@ -483,7 +483,7 @@ class Repl():
             f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
         )
 
-    def do_title(self, arg):
+    def command_title(self, arg):
         """
         Show or set title
 
@@ -547,7 +547,7 @@ class Repl():
             else:
                 return False, None, "Current conversation has no title, you must send information first"
 
-    def do_chat(self, arg):
+    def command_chat(self, arg):
         """
         Retrieve chat content
 
@@ -615,7 +615,7 @@ class Repl():
         else:
             return success, conversation_data, message
 
-    def do_switch(self, arg):
+    def command_switch(self, arg):
         """
         Switch to chat
 
@@ -678,7 +678,7 @@ class Repl():
         else:
             return success, conversation_data, message
 
-    def do_ask(self, line):
+    def command_ask(self, line):
         """
         Ask a question
 
@@ -714,7 +714,7 @@ class Repl():
         self._write_log(line, response)
         self._update_message_map()
 
-    def do_read(self, _):
+    def command_read(self, _):
         """
         Begin reading multi-line input
 
@@ -740,7 +740,7 @@ class Repl():
 
         self.default(prompt)
 
-    def do_editor(self, args):
+    def command_editor(self, args):
         """
         Open an editor for entering a command
 
@@ -757,7 +757,7 @@ class Repl():
         print(output)
         self.default(output)
 
-    def do_file(self, arg):
+    def command_file(self, arg):
         """
         Send a prompt read from the named file
 
@@ -785,7 +785,7 @@ class Repl():
             return False
         return True
 
-    def do_log(self, arg):
+    def command_log(self, arg):
         """
         Enable/disable logging to a file
 
@@ -803,7 +803,7 @@ class Repl():
             self.logfile = None
             util.print_markdown("* Logging is now disabled.")
 
-    def do_context(self, arg):
+    def command_context(self, arg):
         """
         Load an old context from the log
 
@@ -828,7 +828,7 @@ class Repl():
         self._update_message_map()
         self._write_log_context()
 
-    def do_model(self, arg):
+    def command_model(self, arg):
         """
         View or set attributes on the current LLM model
 
@@ -871,7 +871,7 @@ class Repl():
             customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
             util.print_markdown("## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data))
 
-    def do_templates(self, arg):
+    def command_templates(self, arg):
         """
         List available templates
 
@@ -904,7 +904,7 @@ class Repl():
                 templates.append(content)
         util.print_markdown("## Templates:\n\n%s" % "\n".join(sorted(templates)))
 
-    def do_template(self, template_name):
+    def command_template(self, template_name):
         """
         Display a template
 
@@ -922,7 +922,7 @@ class Repl():
             util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False))
         util.print_markdown(f"\n\n{source.content}")
 
-    def do_template_edit(self, template_name):
+    def command_template_edit(self, template_name):
         """
         Create a new template, or edit an existing template
 
@@ -939,7 +939,7 @@ class Repl():
         self.backend.template_manager.load_templates()
         self.rebuild_completions()
 
-    def do_template_copy(self, template_names):
+    def command_template_copy(self, template_names):
         """
         Copies an existing template and saves it as a new template
 
@@ -960,7 +960,7 @@ class Repl():
         self.rebuild_completions()
         return True, new_filepath, f"Copied {old_name} to {new_filepath}"
 
-    def do_template_delete(self, template_name):
+    def command_template_delete(self, template_name):
         """
         Deletes an existing template
 
@@ -979,7 +979,7 @@ class Repl():
         else:
             return False, template_name, "Deletion aborted"
 
-    def do_template_run(self, template_name):
+    def command_template_run(self, template_name):
         """
         Run a template
 
@@ -997,7 +997,7 @@ class Repl():
         _template, variables, substitutions = response
         return self.run_template(template_name, substitutions)
 
-    def do_template_prompt_run(self, template_name):
+    def command_template_prompt_run(self, template_name):
         """
         Prompt for template variable values, then run
 
@@ -1017,7 +1017,7 @@ class Repl():
         substitutions = self.collect_template_variable_values(template_name, variables)
         return self.run_template(template_name, substitutions)
 
-    def do_template_edit_run(self, template_name):
+    def command_template_edit_run(self, template_name):
         """
         Open a template for final editing, then run it
 
@@ -1033,9 +1033,9 @@ class Repl():
         success, message, user_message = self.backend.template_manager.render_template(template_name)
         if not success:
             return success, template_name, user_message
-        return self.do_editor(message)
+        return self.command_editor(message)
 
-    def do_template_prompt_edit_run(self, template_name):
+    def command_template_prompt_edit_run(self, template_name):
         """
         Prompts for a value for each variable in the template, sustitutes the values
         in the template, opens an editor for final edits, and sends the final content
@@ -1053,7 +1053,7 @@ class Repl():
         template, variables, _substitutions = response
         substitutions = self.collect_template_variable_values(template_name, variables)
         message = template.render(**substitutions)
-        return self.do_editor(message)
+        return self.command_editor(message)
 
     def show_full_config(self):
         output = """
@@ -1111,7 +1111,7 @@ class Repl():
 """ % (section, config_data)
         util.print_markdown(output)
 
-    def do_config(self, arg):
+    def command_config(self, arg):
         """
         Show or edit the current configuration
 
@@ -1134,7 +1134,7 @@ class Repl():
         else:
             self.show_full_config()
 
-    def do_exit(self, _):
+    def command_exit(self, _):
         """
         Exit the shell
 
@@ -1143,7 +1143,7 @@ class Repl():
         """
         pass
 
-    def do_quit(self, _):
+    def command_quit(self, _):
         """
         Exit the shell
 
@@ -1153,15 +1153,15 @@ class Repl():
         pass
 
     def get_command_method(self, command):
-        do_command = f"do_{command}"
-        method = util.get_class_command_method(self.__class__, do_command)
+        command_command = f"command_{command}"
+        method = util.get_class_command_method(self.__class__, command_command)
         if method:
             return method, self
         for plugin in self.plugins.values():
-            method = util.get_class_command_method(plugin.__class__, do_command)
+            method = util.get_class_command_method(plugin.__class__, command_command)
             if method:
                 return method, plugin
-        raise AttributeError(f"{do_command} method not found in any shell class")
+        raise AttributeError(f"{command_command} method not found in any shell class")
 
     def run_command(self, command, argument):
         command = util.dash_to_underscore(command)

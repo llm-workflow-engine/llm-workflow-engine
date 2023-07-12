@@ -29,10 +29,10 @@ from lwe.core.config import Config
 
 class TestClass:
     class DummyClass:
-        def do_command1(self):
+        def command_command1(self):
             pass
 
-        def do_command2(self):
+        def command_command2(self):
             pass
 
     def test_introspect_commands(self):
