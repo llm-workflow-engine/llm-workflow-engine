@@ -50,9 +50,7 @@ class Repl():
     logfile = None
 
     def __init__(self, config=None):
-        self.config = config or Config()
-        self.log = Logger(self.__class__.__name__, self.config)
-        self.debug = self.config.get('log.console.level').lower() == 'debug'
+        self.initialize_repl(config)
         self.history = self.get_shell_history()
         self.style = self.get_styles()
         self.prompt_session = PromptSession(
@@ -62,8 +60,21 @@ class Repl():
             # auto_suggest=AutoSuggestFromHistory(),
             style=self.style,
         )
-        self._set_logging()
         self._setup_signal_handlers()
+
+    def initialize_repl(self, config=None):
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.debug = self.config.get('log.console.level').lower() == 'debug'
+        self._set_logging()
+
+
+    def reload_repl(self):
+        util.print_status_message(True, "Reloading configuration...")
+        self.config.load_from_file()
+        self.initialize_repl(self.config)
+        self.backend.initialize_backend(self.config)
+        self.setup()
 
     @property
     def stream(self):
@@ -1071,7 +1082,7 @@ class Repl():
 
 # Profile '%s' configuration:
 
-```
+```yaml
 %s
 ```
 
@@ -1121,8 +1132,8 @@ class Repl():
         if arg:
             if arg == 'edit':
                 file_editor(self.config.config_file)
-                self.rebuild_completions()
-                return False, None, "Restart to apply changes"
+                self.reload_repl()
+                return True, None, "Reloaded configuration"
             else:
                 section_data = self.config.get(arg)
                 if section_data:

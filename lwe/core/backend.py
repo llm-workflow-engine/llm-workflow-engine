@@ -32,7 +32,7 @@ class Backend(ABC):
     Base class/interface for all backends.
     """
 
-    def __init__(self, config=None):
+    def initialize_backend(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.provider_name = None

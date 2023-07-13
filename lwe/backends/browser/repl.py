@@ -15,13 +15,14 @@ class BrowserRepl(Repl):
         return {}
 
     def configure_backend(self):
-        self.backend = BrowserBackend(self.config)
+        if not getattr(self, 'backend', None):
+            self.backend = BrowserBackend(self.config)
 
     def launch_backend(self, interactive=True):
         self.backend.launch_browser()
 
     def build_shell_user_prefix(self):
-        return f"{self.backend.model} "
+        return f"{self.backend.provider.get_model()} "
 
     def command_session(self, _):
         """
