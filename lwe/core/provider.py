@@ -179,6 +179,7 @@ class ProviderBase(Plugin):
 
     def get_customizations(self, customizations=None):
         customizations = self.customizations if customizations is None else customizations
+        # _type key exists in the Langchain output of dict(llm), and must be filtered out.
         customizations = {k: v for k, v in customizations.items() if k != '_type'}
         return customizations
 
