@@ -55,15 +55,15 @@ These plugins add additional commands to the shell:
 * **awesome:** Use prompts from `Awesome ChatGPT Prompts <https://github.com/f/awesome-chatgpt-prompts>`_
    https://github.com/llm-workflow-engine/lwe-plugin-awesome
 * **database:** Send natural language commands to a database **WARNING: POTENTIALLY DANGEROUS -- DATA INTEGRITY CANNOT BE GUARANTEED.**
-   https://github.com/llm-workflow-engine/database
+   https://github.com/llm-workflow-engine/lwe-plugin-database
 * **data_query:** Send natural language commands to a loaded file of structured data
-   https://github.com/llm-workflow-engine/data-query
+   https://github.com/llm-workflow-engine/lwe-plugin-data-query
 * **shell:** Transform natural language into a shell command, and optionally execute it **WARNING: POTENTIALLY DANGEROUS -- YOU ARE RESPONSIBLE FOR VALIDATING THE COMMAND RETURNED BY THE LLM, AND THE OUTCOME OF ITS EXECUTION.**
-   https://github.com/llm-workflow-engine/shell
+   https://github.com/llm-workflow-engine/lwe-plugin-shell
 * **test:** Test plugin, echos back the command you give it
    https://github.com/llm-workflow-engine/lwe-plugin-test
 * **zap:** Send natural language commands to Zapier actions: https://nla.zapier.com/get-started/
-   https://github.com/llm-workflow-engine/zap
+   https://github.com/llm-workflow-engine/lwe-plugin-zap
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,26 +84,29 @@ Supported providers
 **NOTE:** While these provider integrations are working, none have been well-tested yet.
 
 * **provider_ai21:** Access to `AI21 <https://docs.ai21.com/docs/jurassic-2-models>`_ models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-ai21
 * **provider_cohere:** Access to `Cohere <https://docs.cohere.com/docs/models>`_ models
-* **provider_huggingface_hub:** Access to `Huggingface Hub <https://huggingface.co/models>`_ models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-cohere
+* **provider_huggingface_hub:** Access to `Hugging Face Hub <https://huggingface.co/models>`_ models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-huggingface-hub
 * **provider_openai:** Access to non-chat `OpenAI <https://platform.openai.com/docs/models)>`_ models (GPT-3, etc.)
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-openai
 
 
 """""""""""""""""""""""""""""""""""""""""""""""
 Usage
 """""""""""""""""""""""""""""""""""""""""""""""
 
-To enable a supported provider, add it to ``plugins.enabled`` list in your configuration.
-
-.. code-block:: yaml
-
-   plugins:
-     enabled:
-       - provider_openai
-
 Use the ``/providers`` command for a list of currently enabled providers.
 
-Use the ``/help provider`` command for how to switch providers/models on the fly.
+See ``/help provider`` command for how to switch providers/models on the fly.
+
+Example:
+
+.. code-block:: bash
+
+   /provider openai
+   /model model_name text-davinci-003
 
 
 -----------------------------------------------
