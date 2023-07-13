@@ -1,5 +1,15 @@
 ### v0.14.3 - 12/07/2023
 
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+Most plugins have been moved to their own repository.
+
+If you have any plugins enabled, you'll need to visit the repository for that plugin and follow the installation instructions.
+
+See here for a list of plugins that moved, and their repository links: https://llm-workflow-engine.readthedocs.io/en/latest/plugins.html#lwe-maintained-plugins
+
+#### Commit log
+
 * **Wed Jul 12 2023:** migrate non-core provider plugins to separate packages
 * **Wed Jul 12 2023:** clarify non-core plugins must be installed
 * **Wed Jul 12 2023:** migrate shell command plugins to separate packages
