@@ -34,6 +34,11 @@ options:
         required: false
         default: None
         type: str
+    preset_overrides:
+        description: A dictionary of metadata and model customization overrides to apply to the preset when running the template.
+        required: false
+        default: None
+        type: dict
     system_message:
         description: The LWE system message to use, either an alias or custom message.
         required: false
@@ -95,12 +100,18 @@ EXAMPLES = r'''
         foo: bar
         baz: bang
 
-# Use the 'test' profile, and a pre-configured provider/model preset 'mypreset'
+# Use the 'test' profile, a pre-configured provider/model preset 'mypreset',
+# and override some of the preset configuration.
 - name: Continue conversation
   lwe_llm:
     message: "Say three things about bacon"
     profile: test
     preset: mypreset
+    preset_overrides:
+        metadata:
+            return_on_function_call: true
+        model_customizations:
+            temperature: 1
 
 '''
 
@@ -126,6 +137,7 @@ def run_module():
         # provider=dict(type='str', required=False, default='chat_openai'),
         # model=dict(type='str', required=False, default='gpt-3.5-turbo'),
         preset=dict(type='str', required=False),
+        preset_overrides=dict(type='dict', required=False),
         system_message=dict(type='str', required=False),
         template=dict(type='str', required=False),
         template_vars=dict(type='dict', required=False),
@@ -148,6 +160,7 @@ def run_module():
     # provider = module.params['provider']
     # model = module.params['model']
     preset = module.params['preset']
+    preset_overrides = module.params['preset_overrides']
     system_message = module.params['system_message']
     template_name = module.params['template']
     template_vars = module.params['template_vars'] or {}
@@ -177,6 +190,8 @@ def run_module():
     overrides = {
         "request_overrides": {},
     }
+    if preset_overrides:
+        overrides['request_overrides']['preset_overrides'] = preset_overrides
     if system_message:
         overrides['request_overrides']['system_message'] = system_message
     if template_name is not None:
@@ -195,7 +210,6 @@ def run_module():
         util.merge_dicts(overrides, template_overrides)
         gpt.log.info(f"[lwe_llm module]: Running template: {template_name}")
         success, response, user_message = gpt.run_template_compiled(message, preset_name, overrides)
-        gpt.set_override_llm()
         if not success:
             gpt.log.error(f"[lwe_llm module]: {user_message}")
             module.fail_json(msg=user_message, **result)

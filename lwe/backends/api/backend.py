@@ -133,12 +133,19 @@ class ApiBackend(Backend):
         self.set_max_submission_tokens(force=True)
         return success, customizations, user_message
 
-    def set_override_llm(self, preset_name=None):
+    def set_override_llm(self, preset_name=None, preset_overrides=None):
         if preset_name:
             self.log.info(f"Setting override LLM to preset: {preset_name}")
             success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
             if success:
                 metadata, customizations = preset
+                if preset_overrides:
+                    if 'metadata' in preset_overrides:
+                        self.log.info(f"Merging preset overrides for metadata: {preset_overrides['metadata']}")
+                        metadata = util.merge_dicts(metadata, preset_overrides['metadata'])
+                    if 'model_customizations' in preset_overrides:
+                        self.log.info(f"Merging preset overrides for model customizations: {preset_overrides['model_customizations']}")
+                        customizations = util.merge_dicts(customizations, preset_overrides['model_customizations'])
                 customizations = self.expand_functions(customizations)
                 success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
                 if success:
@@ -621,8 +628,8 @@ class ApiBackend(Backend):
             raise Exception(user_message)
         return message
 
-    def _build_chat_request(self, messages, customizations=None):
-        customizations = customizations or {}
+    def _build_chat_request(self, messages):
+        customizations = {}
         provider = self.override_provider or self.provider
         llm = self.override_llm
         if not llm:
@@ -639,10 +646,20 @@ class ApiBackend(Backend):
         messages = provider.prepare_messages_for_llm(messages)
         return llm, messages
 
-    def _call_llm(self, messages, customizations=None):
-        customizations = customizations or {}
+    def _call_llm(self, messages, request_overrides=None):
+        request_overrides = request_overrides or {}
+        if not self.override_llm:
+            success, response, user_message = self.extract_preset_configuration_from_overrides({'request_overrides': request_overrides})
+            if not success:
+                return success, None, user_message
+            preset_name, preset_overrides, _overrides = response
+            if preset_overrides:
+                self.log.info(f"Preset overrides provided in request, overriding LLM: {preset_overrides}")
+                success, _llm, user_message = self.set_override_llm(preset_name, preset_overrides)
+                if not success:
+                    return success, None, user_message
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
-        llm, messages = self._build_chat_request(messages, customizations)
+        llm, messages = self._build_chat_request(messages)
         try:
             response = llm(messages)
         except ValueError as e:
@@ -757,6 +774,7 @@ class ApiBackend(Backend):
         if stream:
             # End streaming loop.
             self.streaming = False
+        self.set_override_llm()
         return self._handle_response(success, response_obj, user_message)
 
     def ask_stream(self, prompt, title=None, request_overrides=None):

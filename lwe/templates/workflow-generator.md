@@ -33,6 +33,11 @@ request_overrides:
             required: false
             default: None
             type: str
+        preset_overrides:
+            description: A dictionary of metadata and model customization overrides to apply to the preset when running the template.
+            required: false
+            default: None
+            type: dict
         system_message:
             description: The LWE system message to use, either an alias or custom message.
             required: false
@@ -91,12 +96,18 @@ request_overrides:
             foo: bar
             baz: bang
 
-    # Use the 'test' profile, and a pre-configured provider/model preset 'mypreset'
+    # Use the 'test' profile, a pre-configured provider/model preset 'mypreset',
+    # and override some of the preset configuration.
     - name: Continue conversation
       lwe_llm:
         message: "Say three things about bacon"
         profile: test
         preset: mypreset
+        preset_overrides:
+            metadata:
+                return_on_function_call: true
+            model_customizations:
+                temperature: 1
 
     RETURN:
 

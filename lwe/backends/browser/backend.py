@@ -74,7 +74,7 @@ class BrowserBackend(Backend):
             self.provider = provider
         return success, provider, user_message
 
-    def set_override_llm(self, preset_name=None):
+    def set_override_llm(self, preset_name=None, preset_overrides=None):
         if preset_name:
             if preset_name not in self.provider.available_models:
                 return False, None, f"Preset {preset_name} not an available model"
@@ -713,6 +713,7 @@ class BrowserBackend(Backend):
         llm = self.override_llm or self.make_llm(customizations)
         try:
             response = llm([HumanMessage(content=message)])
+            self.set_override_llm()
         except ValueError as e:
             return False, message, e
         return True, response.content, "Response received"

@@ -113,14 +113,31 @@ class Backend(ABC):
     def get_runtime_config(self):
         return ""
 
+    def extract_preset_configuration_from_overrides(self, overrides):
+        preset_name = None
+        preset_overrides = None
+        if 'request_overrides' in overrides and ('preset' in overrides['request_overrides'] or 'preset_overrides' in overrides['request_overrides']):
+            if 'preset' in overrides['request_overrides']:
+                preset_name = overrides['request_overrides'].pop('preset')
+            else:
+                preset_name = self.active_preset_name
+            if not preset_name:
+                return False, (preset_name, preset_overrides, overrides), "No active preset to override"
+            if 'preset_overrides' in overrides['request_overrides']:
+                preset_overrides = overrides['request_overrides'].pop('preset_overrides')
+        return True, (preset_name, preset_overrides, overrides), f"Extracted preset configuration from request overrides: {overrides}"
+
     def run_template_setup(self, template_name, substitutions=None):
         self.log.info(f"Setting up run of template: {template_name}")
         substitutions = substitutions or {}
         message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
         preset_name = None
-        if 'request_overrides' in overrides and 'preset' in overrides['request_overrides']:
-            preset_name = overrides['request_overrides'].pop('preset')
-            success, llm, user_message = self.set_override_llm(preset_name)
+        success, response, user_message = self.extract_preset_configuration_from_overrides(overrides)
+        if not success:
+            return success, (message, preset_name, overrides), user_message
+        preset_name, preset_overrides, overrides = response
+        if preset_name:
+            success, llm, user_message = self.set_override_llm(preset_name, preset_overrides)
             if success:
                 self.log.info(f"Switching to preset '{preset_name}' for template: {template_name}")
             else:
@@ -131,8 +148,6 @@ class Backend(ABC):
         overrides = overrides or {}
         self.log.info("Running template")
         response = self._ask(message, **overrides)
-        if preset_name:
-            self.set_override_llm()
         return response
 
     def run_template(self, template_name, substitutions=None):
@@ -164,7 +179,7 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    def set_override_llm(self, preset_name=None):
+    def set_override_llm(self, preset_name=None, preset_overrides=None):
         pass
 
     @abstractmethod

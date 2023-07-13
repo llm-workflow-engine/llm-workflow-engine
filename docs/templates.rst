@@ -36,7 +36,10 @@ These front matter attributes have special functionality:
 * ``title``: Sets the title of new conversations to this value
 * ``description``: Displayed in the output of ``/templates``
 * ``request_overrides``: A hash of model customizations to apply when the template is run:
-   * ``preset``: An existing preset for the provider/model configuration to use when running the template (see :ref:`presets_doc`)
    * ``system_message``: An existing system message alias, or a custom system message to use when running the template
+   * ``preset``: An existing preset for the provider/model configuration to use when running the template (see :ref:`presets_doc`)
+   * ``preset_overrides``: A dictionary of metadata and model customization overrides to apply to the preset when running the template
+     * ``metadata``: A dictionary of metadata overrides
+     * ``model_customizations```: A dictionary of model customization overrides
 
 All other attributes will be passed to the template as variable substitutions.

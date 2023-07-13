@@ -156,8 +156,6 @@ class Repl():
         print(message)
         self.log.info("Running template")
         response = self.default(message, **overrides)
-        if preset_name:
-            self.backend.set_override_llm()
         return response
 
     def collect_template_variable_values(self, template_name, variables=None):
