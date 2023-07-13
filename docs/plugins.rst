@@ -41,7 +41,9 @@ These plugins are built into LWE core:
 LWE maintained plugins
 -----------------------------------------------
 
-These plugins are maintained by the LWE team:
+These plugins are maintained by the LWE team, and are not part of LWE core -- they must be installed.
+
+Instructions for installing and configuring each plugin can be found at the referenced repository for each plugin.
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
