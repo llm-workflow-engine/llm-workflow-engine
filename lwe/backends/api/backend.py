@@ -27,14 +27,15 @@ class ApiBackend(Backend):
     name = "api"
 
     def __init__(self, config=None):
+        super().__init__(config)
+        self.current_user = None
         self.initialize_backend(config)
-
-    def initialize_backend(self, config=None):
-        super().initialize_backend(config)
         self.user_manager = UserManager(self.config)
         self.conversation = ConversationManager(self.config)
         self.message = MessageManager(self.config)
-        self.current_user = None
+
+    def initialize_backend(self, config=None):
+        super().initialize_backend(config)
         self.override_provider = None
         self.override_preset = None
         self.override_llm = None

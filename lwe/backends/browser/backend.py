@@ -42,6 +42,7 @@ class BrowserBackend(Backend):
     session_div_id = "lwe-session-data"
 
     def __init__(self, config=None):
+        super().__init__(config)
         self.play = None
         self.user_data_dir = None
         self.page = None

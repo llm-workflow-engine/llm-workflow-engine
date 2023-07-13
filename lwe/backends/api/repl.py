@@ -82,7 +82,8 @@ class ApiRepl(Repl):
         return final_completions
 
     def configure_backend(self):
-        self.backend = ApiBackend(self.config)
+        if not getattr(self, 'backend', None):
+            self.backend = ApiBackend(self.config)
         database = Database(self.config)
         database.create_schema()
         self.user_management = UserManager(self.config)

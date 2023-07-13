@@ -32,18 +32,20 @@ class Backend(ABC):
     Base class/interface for all backends.
     """
 
+    def __init__(self, config=None):
+        self.parent_message_id = None
+        self.conversation_id = None
+        self.conversation_title_set = None
+        self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
+        self.stream = False
+
     def initialize_backend(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.provider_name = None
         self.provider = None
-        self.parent_message_id = None
-        self.conversation_id = None
-        self.conversation_title_set = None
         self.message_clipboard = None
-        self.stream = False
         self.streaming = False
-        self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
         self.template_manager = TemplateManager(self.config)
         self.preset_manager = PresetManager(self.config)
 
