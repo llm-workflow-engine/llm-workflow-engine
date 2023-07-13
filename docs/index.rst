@@ -1,3 +1,5 @@
+.. include:: substitutions.rst
+
 ===============================================
 LLM Workflow Engine
 ===============================================
@@ -11,6 +13,8 @@ LLM Workflow Engine (LWE) is a Power CLI and Workflow manager for LLMs:
 * Design reusable, templated prompts
 * Stress-test prompts across different LLM configurations
 * Build multi-step workflows that involve LLMs.
+
+|LWE Intro Video|
 
 At its heart, LWE has four main components:
 
