@@ -1,3 +1,12 @@
+### v0.14.3 - 12/07/2023
+
+* **Wed Jul 12 2023:** migrate non-core provider plugins to separate packages
+* **Wed Jul 12 2023:** clarify non-core plugins must be installed
+* **Wed Jul 12 2023:** migrate shell command plugins to separate packages
+* **Wed Jul 12 2023:** do_ -> command_ for command method prefix
+* **Wed Jul 12 2023:** fix some broken docs links
+* **Wed Jul 12 2023:** switch to Sphinx/RTD documentation
+
 ### v0.14.2 - 12/07/2023
 
 * **Wed Jul 12 2023:** add RTD build config
