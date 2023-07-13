@@ -93,8 +93,7 @@ class Examples(Plugin):
 
         Arguments:
             list: List all example files, and where they will be installed.
-            type: The type of example files to install (default is all
-                  configured types).
+            type: The type of example files to install (default is all configured types).
 
         Examples:
             {COMMAND} list

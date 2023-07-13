@@ -31,26 +31,53 @@ Using plugins
 Core plugins
 -----------------------------------------------
 
-* **test:** Test plugin, echos back the command you give it
-* **awesome:** Use a prompt from Awesome ChatGPT Prompts: https://github.com/f/awesome-chatgpt-prompts
+These plugins are built into LWE core:
+
+* **echo:** Simple echo plugin, echos back the text you give it
+* **examples:** Easily install example configuration files (see :ref:`Installing examples`)
+
+
+-----------------------------------------------
+LWE maintained plugins
+-----------------------------------------------
+
+These plugins are maintained by the LWE team:
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Shell command plugins
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These plugins add additional commands to the shell:
+
+* **awesome:** Use prompts from `Awesome ChatGPT Prompts <https://github.com/f/awesome-chatgpt-prompts>`_
+   https://github.com/llm-workflow-engine/lwe-plugin-awesome
 * **database:** Send natural language commands to a database **WARNING: POTENTIALLY DANGEROUS -- DATA INTEGRITY CANNOT BE GUARANTEED.**
+   https://github.com/llm-workflow-engine/database
 * **data_query:** Send natural language commands to a loaded file of structured data
+   https://github.com/llm-workflow-engine/data-query
 * **shell:** Transform natural language into a shell command, and optionally execute it **WARNING: POTENTIALLY DANGEROUS -- YOU ARE RESPONSIBLE FOR VALIDATING THE COMMAND RETURNED BY THE LLM, AND THE OUTCOME OF ITS EXECUTION.**
+   https://github.com/llm-workflow-engine/shell
+* **test:** Test plugin, echos back the command you give it
+   https://github.com/llm-workflow-engine/lwe-plugin-test
 * **zap:** Send natural language commands to Zapier actions: https://nla.zapier.com/get-started/
+   https://github.com/llm-workflow-engine/zap
 
 
------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Provider plugins
------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These plugins add additional LLM providers:
 
 *NOTE: Most provider plugins are NOT chat-based, and instead return a single response to any text input.
 These inputs and responses are still managed as 'conversations' for storage purposes, using the same storage
 mechanism the chat-based providers use.*
 
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""
 Supported providers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""
 
 **NOTE:** While these provider integrations are working, none have been well-tested yet.
 
@@ -60,9 +87,9 @@ Supported providers
 * **provider_openai:** Access to non-chat `OpenAI <https://platform.openai.com/docs/models)>`_ models (GPT-3, etc.)
 
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""
 Usage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""
 
 To enable a supported provider, add it to ``plugins.enabled`` list in your configuration.
 
