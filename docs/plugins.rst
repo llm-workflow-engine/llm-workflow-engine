@@ -58,6 +58,8 @@ These plugins add additional commands to the shell:
    https://github.com/llm-workflow-engine/lwe-plugin-database
 * **data_query:** Send natural language commands to a loaded file of structured data
    https://github.com/llm-workflow-engine/lwe-plugin-data-query
+* **pastebin:** Post a conversation to https://pastebin.com
+   https://github.com/llm-workflow-engine/lwe-plugin-pastebin
 * **shell:** Transform natural language into a shell command, and optionally execute it **WARNING: POTENTIALLY DANGEROUS -- YOU ARE RESPONSIBLE FOR VALIDATING THE COMMAND RETURNED BY THE LLM, AND THE OUTCOME OF ITS EXECUTION.**
    https://github.com/llm-workflow-engine/lwe-plugin-shell
 * **test:** Test plugin, echos back the command you give it
