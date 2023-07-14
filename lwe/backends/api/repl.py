@@ -212,12 +212,21 @@ Before you can start using the shell, you must create a new user.
 """
         )
 
+    def add_examples(self):
+        if 'examples' in self.backend.plugin_manager.plugins:
+            from lwe.plugins.examples import TYPES as example_types
+            examples = self.backend.plugin_manager.plugins['examples']
+            confirmation = input(f"Would you like to install example configurations for: {', '.join(example_types)}? [y/N] ").strip()
+            if confirmation.lower() in ["yes", "y"]:
+                examples.install_examples()
+
     def create_first_user(self):
         success, user, message = self.command_user_register()
         util.print_status_message(success, message)
         if success:
             success, _user, message = self.login(user)
             util.print_status_message(success, message)
+            self.add_examples()
         else:
             self.create_first_user()
 

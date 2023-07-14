@@ -61,16 +61,25 @@ class Examples(Plugin):
             util.print_status_message(False, str(e))
             self.log.error(f"Error installing {example_file}: {str(e)}")
 
+    def confirm_install(self, example_types):
+        confirm = input(f"Are you sure you want to install examples for the following types? {', '.join(example_types)} (y/n): ")
+        if confirm.lower() not in ["yes", "y"]:
+            message = "Skipping installation"
+            util.print_status_message(False, message)
+            self.log.info(message)
+            return False
+        return True
+
+    def install_examples_confirm(self, example_type=None):
+        example_types = [example_type] if example_type else self.default_types
+        if not self.confirm_install(example_types):
+            return
+        self.install_examples(example_type)
+
     def install_examples(self, example_type=None):
         """Install example files."""
         try:
             example_types = [example_type] if example_type else self.default_types
-            confirm = input(f"Are you sure you want to install examples for the following types? {', '.join(example_types)} (y/n): ")
-            if confirm.lower() != 'y':
-                message = "Skipping installation"
-                util.print_status_message(False, message)
-                self.log.info(message)
-                return
             for example_type in example_types:
                 message = f"Installing examples for: {example_type}"
                 util.print_status_message(True, message)
@@ -102,7 +111,7 @@ class Examples(Plugin):
         if arg:
             if arg in self.default_types:
                 self.log.info(f"Installing examples for: {arg}")
-                self.install_examples(arg)
+                self.install_examples_confirm(arg)
             elif arg == "list":
                 for t in self.default_types:
                     self.log.debug(f"Listing examples for: {t}")
@@ -113,4 +122,4 @@ class Examples(Plugin):
                 return False, arg, "Invalid example type"
         else:
             self.log.info(f"Installing examples for: {', '.join(self.default_types)}")
-            self.install_examples()
+            self.install_examples_confirm()
