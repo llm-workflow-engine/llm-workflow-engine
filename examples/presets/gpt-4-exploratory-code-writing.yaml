@@ -1,0 +1,13 @@
+metadata:
+  name: gpt-4-exploratory-code-writing
+  description: GPT-4 for creative code writing
+  provider: chat_openai
+model_customizations:
+  max_tokens: null
+  model_kwargs:
+    top_p: 0.7
+  model_name: gpt-4
+  n: 1
+  request_timeout: 60
+  streaming: true
+  temperature: 0.6
