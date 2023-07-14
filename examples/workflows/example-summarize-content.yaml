@@ -13,6 +13,8 @@
     - name: Extract content from {{ path }}
       text_extractor:
         path: "{{ path }}"
+        # Truncate really long content to avoid going over token limit.
+        max_length: 18000
       register: content
     - name: "Summarise content for {{ path }}"
       lwe_llm:

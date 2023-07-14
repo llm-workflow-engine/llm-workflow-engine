@@ -24,7 +24,7 @@
     - name: Display answer
       debug:
         var: answer
-    - name: Critical feedback
+    - name: "Critical feedback on answer to question: {{ question }}"
       lwe_llm:
         message: |-
           Given this question: {{ question }}

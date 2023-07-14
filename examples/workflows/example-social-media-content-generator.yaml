@@ -32,6 +32,10 @@
         user: "{{ user }}"
       register: initial_post
 
+    - name: Show initial post
+      ansible.builtin.debug:
+        var: initial_post.response
+
     - name: Generate critical feedback
       lwe_llm:
         message: |-
@@ -40,6 +44,11 @@
           Offer three specific suggestions to improve its reach and clarity.
         user: "{{ user }}"
         conversation_id: "{{ initial_post.conversation_id }}"
+      register: critical_feedback
+
+    - name: Show critical feedback
+      ansible.builtin.debug:
+        var: critical_feedback.response
 
     - name: Generate revised post based on LWE feedback
       lwe_llm:
@@ -73,6 +82,10 @@
         user: "{{ user }}"
         conversation_id: "{{ initial_post.conversation_id }}"
       register: final_post
+
+    - name: Display final post
+      ansible.builtin.debug:
+        var: final_post.response
 
     # NOTE: This doesn't actually post to Twitter, you'd need to integrate
     # some kind of script that manages Oauth.
@@ -113,9 +126,7 @@
         msg: |-
           NOTE: Twitter and Facebook posts were not actually submitted, this workflow submits the post to dummy locations for example purposes only!
 
-          Final post, length {{ final_post.response | length }} characters:
-
-          {{ final_post.response }}
+          Final post length: {{ final_post.response | length }} characters:
 
       when: not twitter_response.failed and not facebook_response.failed
 

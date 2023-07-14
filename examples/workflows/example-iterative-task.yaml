@@ -1,4 +1,4 @@
-# This file is included in the llm-iterative-tasks.yaml playbook.
+# This file is included in the example-iterative.yaml playbook.
 #
 # Separating it out allows the file to include itself for infinite loops
 # until the user indicates they are done.
@@ -20,11 +20,11 @@
     debug:
       var: llm_output
 
-  - name: Gather facts
+  - name: Gather facts (updates Ansible timestamp)
     ansible.builtin.setup:
 
   - name: Get task output filename
-    command: echo "/tmp/llm-task-output-{{ ansible_date_time.epoch_int }}.txt"
+    command: echo "{{ file_storage_dir }}/llm-task-output-{{ ansible_date_time.epoch_int }}.txt"
     register: task_output_filename
 
   - name: "Save LLM task/output to file: {{ task_output_filename.stdout }}"
@@ -40,6 +40,6 @@
       dest: "{{ task_output_filename.stdout }}"
 
   - name: "Performing next task"
-    include_tasks: iterative-task-include.yaml
+    include_tasks: example-iterative-task.yaml
 
   when: llm_task.user_input | lower | trim not in ['done', 'complete', 'finished', 'quit', 'exit']

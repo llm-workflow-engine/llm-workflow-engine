@@ -9,8 +9,10 @@
 - name: Iterative tasks until done
   hosts: localhost
   gather_facts: false
+  vars:
+    file_storage_dir: /tmp
 
   tasks:
 
     - name: Perform LLM tasks until user indicates they are done
-      include_tasks: iterative-task-include.yaml
+      include_tasks: example-iterative-task.yaml
