@@ -206,10 +206,10 @@ def run_module():
         if not success:
             gpt.log.error(f"[lwe_llm module]: {user_message}")
             module.fail_json(msg=user_message, **result)
-        message, preset_name, template_overrides = response
+        message, template_overrides = response
         util.merge_dicts(overrides, template_overrides)
         gpt.log.info(f"[lwe_llm module]: Running template: {template_name}")
-        success, response, user_message = gpt.run_template_compiled(message, preset_name, overrides)
+        success, response, user_message = gpt.run_template_compiled(message, overrides)
         if not success:
             gpt.log.error(f"[lwe_llm module]: {user_message}")
             module.fail_json(msg=user_message, **result)

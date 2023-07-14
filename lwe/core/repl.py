@@ -162,7 +162,7 @@ class Repl():
         success, response, user_message = self.backend.run_template_setup(template_name, substitutions)
         if not success:
             return success, response, user_message
-        message, preset_name, overrides = response
+        message, overrides = response
         print("")
         print(message)
         self.log.info("Running template")
