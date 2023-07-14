@@ -23,10 +23,19 @@ ADDITIONAL_PLUGINS = [
 ]
 
 class ApiBackend(Backend):
+    """Backend implementation using direct API access.
+    """
 
     name = "api"
 
     def __init__(self, config=None):
+        """
+        Initializes the Backend instance.
+
+        This method sets up attributes that should only be initialized once.
+
+        :param config: Optional configuration for the backend. If not provided, it uses a default configuration.
+        """
         super().__init__(config)
         self.current_user = None
         self.user_manager = UserManager(config)
@@ -35,6 +44,15 @@ class ApiBackend(Backend):
         self.initialize_backend(config)
 
     def initialize_backend(self, config=None):
+        """
+        Initializes the backend with provided or default configuration,
+        and sets up necessary attributes.
+
+        This method is safe to call for dynamically reloading backends.
+
+        :param config: Backend configuration options
+        :type config: dict, optional
+        """
         super().initialize_backend(config)
         self.override_provider = None
         self.override_preset = None
@@ -62,6 +80,12 @@ class ApiBackend(Backend):
             self.load_conversation(default_conversation_id)
 
     def load_user(self, identifier):
+        """Load a user by id or username/email.
+
+        :param identifier: User id or username/email
+        :type identifier: int, str
+        :raises Exception: If user not found
+        """
         if isinstance(identifier, int):
             success, user, user_message = self.user_manager.get_by_user_id(identifier)
         else:
@@ -71,6 +95,12 @@ class ApiBackend(Backend):
         self.set_current_user(user)
 
     def load_conversation(self, conversation_id):
+        """
+        Load a conversation by id.
+
+        :param conversation_id: Conversation id
+        :type conversation_id: int
+        """
         success, conversation_data, user_message = self.get_conversation(conversation_id)
         if success:
             if conversation_data:
@@ -83,15 +113,18 @@ class ApiBackend(Backend):
         raise Exception(user_message)
 
     def init_system_message(self):
+        """Initialize the system message from config."""
         success, _alias, user_message = self.set_system_message(self.config.get('model.default_system_message'))
         if not success:
             util.print_status_message(success, user_message)
             self.set_system_message()
 
     def get_providers(self):
+        """Get available provider plugins."""
         return self.provider_manager.get_provider_plugins()
 
     def init_provider(self):
+        """Initialize the default provider and model."""
         self.init_system_message()
         self.active_preset = None
         self.active_preset_name = None
@@ -104,6 +137,18 @@ class ApiBackend(Backend):
         self.set_provider('provider_chat_openai')
 
     def set_provider(self, provider_name, customizations=None, reset=False):
+        """
+        Set the active provider plugin.
+
+        :param provider_name: Name of provider plugin
+        :type provider_name: str
+        :param customizations: Customizations for provider, defaults to None
+        :type customizations: dict, optional
+        :param reset: Whether to reset provider, defaults to False
+        :type reset: bool, optional
+        :returns: success, provider, message
+        :rtype: tuple
+        """
         self.log.debug(f"Setting provider to: {provider_name}, with customizations: {customizations}, reset: {reset}")
         self.active_preset = None
         self.active_preset_name = None
@@ -132,12 +177,30 @@ class ApiBackend(Backend):
         self.return_only = return_only
 
     def set_model(self, model_name):
+        """
+        Set the active model.
+
+        :param model_name: Name of model
+        :type model_name: str
+        :returns: success, customizations, message
+        :rtype: tuple
+        """
         self.log.debug(f"Setting model to: {model_name}")
         success, customizations, user_message = super().set_model(model_name)
         self.set_max_submission_tokens(force=True)
         return success, customizations, user_message
 
     def set_override_llm(self, preset_name=None, preset_overrides=None):
+        """
+        Set override LLM based on preset.
+
+        :param preset_name: Name of preset, defaults to None
+        :type preset_name: str, optional
+        :param preset_overrides: Overrides for preset, defaults to None
+        :type preset_overrides: dict, optional
+        :returns: success, llm, message
+        :rtype: tuple
+        """
         if preset_name:
             self.log.info(f"Setting override LLM to preset: {preset_name}")
             success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
@@ -173,6 +236,7 @@ class ApiBackend(Backend):
             return True, None, message
 
     def init_function_cache(self):
+        """Initialize the function cache."""
         success, _functions, user_message = self.function_manager.load_functions()
         if not success:
             raise RuntimeError(user_message)
@@ -184,6 +248,7 @@ class ApiBackend(Backend):
                     self.function_cache.append(function)
 
     def function_cache_add(self, function_name):
+        """Add a function to the cache if valid."""
         if self.function_manager.is_langchain_tool(function_name):
             if not self.function_manager.get_langchain_tool(function_name):
                 return False
@@ -195,6 +260,7 @@ class ApiBackend(Backend):
         return True
 
     def add_message_functions_to_cache(self, messages):
+        """Add any function calls in messages to cache."""
         filtered_messages = []
         for message in messages:
             m_type = message['message_type']
@@ -214,6 +280,7 @@ class ApiBackend(Backend):
         return filtered_messages
 
     def expand_functions(self, customizations):
+        """Expand any configured functions to their full definition."""
         self.init_function_cache()
         # Necessary to seed function cache.
         self.retrieve_old_messages(self.conversation_id)
@@ -232,16 +299,26 @@ class ApiBackend(Backend):
         return customizations
 
     def compact_functions(self, customizations):
+        """Compact expanded functions to just their name."""
         if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
             customizations['model_kwargs']['functions'] = [f['name'] for f in customizations['model_kwargs']['functions']]
         return customizations
 
     def make_preset(self):
+        """Make preset from current provider customizations."""
         metadata, customizations = parse_llm_dict(self.provider.customizations)
         customizations = self.compact_functions(customizations)
         return metadata, customizations
 
     def activate_preset(self, preset_name):
+        """
+        Activate a preset.
+
+        :param preset_name: Name of preset
+        :type preset_name: str
+        :returns: success, preset, message
+        :rtype: tuple
+        """
         self.log.debug(f"Activating preset: {preset_name}")
         success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
         if not success:
@@ -256,11 +333,34 @@ class ApiBackend(Backend):
         return success, preset, user_message
 
     def _handle_response(self, success, obj, message):
+        """
+        Handle response tuple.
+
+        Logs errors if not successful.
+
+        :param success: If request was successful
+        :type success: bool
+        :param obj: Returned object
+        :param message: Message
+        :type message: str
+        :returns: success, obj, message
+        :rtype: tuple
+        """
         if not success:
             self.log.error(message)
         return success, obj, message
 
     def get_token_encoding(self, model="gpt-3.5-turbo"):
+        """
+        Get token encoding for a model.
+
+        :param model: Model name, defaults to "gpt-3.5-turbo"
+        :type model: str, optional
+        :raises NotImplementedError: If unsupported model
+        :raises Exception: If error getting encoding
+        :returns: Encoding object
+        :rtype: Encoding
+        """
         if model not in self.available_models:
             raise NotImplementedError("Unsupported engine {self.engine}")
         try:
@@ -272,9 +372,18 @@ class ApiBackend(Backend):
         return encoding
 
     def get_num_tokens_from_messages(self, messages, encoding=None):
+        """
+        Get number of tokens for a list of messages.
+
+        :param messages: List of messages
+        :type messages: list
+        :param encoding: Encoding to use, defaults to None to auto-detect
+        :type encoding: Encoding, optional
+        :returns: Number of tokens
+        :rtype: int
+        """
         if not encoding:
             encoding = self.get_token_encoding()
-        """Returns the number of tokens used by a list of messages."""
         num_tokens = 0
         self.init_function_cache()
         messages = self.add_message_functions_to_cache(messages)
@@ -295,6 +404,12 @@ class ApiBackend(Backend):
         return num_tokens
 
     def set_conversation_tokens(self, tokens):
+        """
+        Set current conversation token count.
+
+        :param tokens: Number of conversation tokens
+        :type tokens: int
+        """
         if self.conversation_id is None:
             provider = self.provider
         else:
@@ -308,6 +423,14 @@ class ApiBackend(Backend):
             self.conversation_tokens = None
 
     def switch_to_conversation(self, conversation_id, parent_message_id):
+        """
+        Switch to a conversation.
+
+        :param conversation_id: Conversation id
+        :type conversation_id: int
+        :param parent_message_id: Parent message id
+        :type parent_message_id: int
+        """
         super().switch_to_conversation(conversation_id, parent_message_id)
         success, last_message, user_message = self.message.get_last_message(self.conversation_id)
         if not success:
@@ -334,6 +457,13 @@ class ApiBackend(Backend):
         self.set_conversation_tokens(tokens)
 
     def get_conversation_token_count(self, conversation_id=None):
+        """Get token count for a conversation.
+
+        :param conversation_id: Conversation id, defaults to current
+        :type conversation_id: int, optional
+        :returns: Number of tokens
+        :rtype: int
+        """
         conversation_id = conversation_id or self.conversation_id
         success, old_messages, user_message = self.message.get_messages(conversation_id)
         if not success:
@@ -342,6 +472,14 @@ class ApiBackend(Backend):
         return tokens
 
     def extract_system_message_from_overrides(self, request_overrides):
+        """
+        Extract system message from request overrides.
+
+        :param request_overrides: Request overrides dict
+        :type request_overrides: dict
+        :returns: system message, updated overrides
+        :rtype: tuple
+        """
         system_message = None
         if 'system_message' in request_overrides:
             system_message = request_overrides.pop('system_message')
@@ -349,6 +487,12 @@ class ApiBackend(Backend):
         return system_message, request_overrides
 
     def should_return_on_function_call(self):
+        """
+        Check if should return on function call.
+
+        :returns: Whether to return on function call
+        :rtype: bool
+        """
         preset = self.override_preset or self.active_preset
         if preset:
             metadata, _customizations = preset
@@ -357,9 +501,26 @@ class ApiBackend(Backend):
         return False
 
     def is_function_response_message(self, message):
+        """Check if a message is a function response.
+
+        :param message: The message
+        :type message: dict
+        :returns: True if function response
+        :rtype: bool
+        """
         return message['message_type'] == 'function_response'
 
     def check_return_on_function_response(self, new_messages):
+        """
+        Check for return on function response.
+
+        Supports multiple function calls.
+
+        :param new_messages: List of new messages
+        :type new_messages: list
+        :returns: Function response or None, updated messages
+        :rtype: tuple
+        """
         preset = self.override_preset or self.active_preset
         if preset:
             metadata, _customizations = preset
@@ -384,6 +545,11 @@ class ApiBackend(Backend):
         return None, new_messages
 
     def check_forced_function(self):
+        """Check if a function call is forced.
+
+        :returns: True if forced function
+        :rtype: bool
+        """
         preset = self.override_preset or self.active_preset
         if preset:
             _metadata, customizations = preset
@@ -392,6 +558,15 @@ class ApiBackend(Backend):
         return False
 
     def run_function(self, function_name, data):
+        """Run a function.
+
+        :param function_name: Function name
+        :type function_name: str
+        :param data: Function arguments
+        :type data: dict
+        :returns: success, response, message
+        :rtype: tuple
+        """
         success, response, user_message = self.function_manager.run_function(function_name, data)
         json_obj = response if success else {'error': user_message}
         if not self.return_only:
@@ -400,6 +575,16 @@ class ApiBackend(Backend):
         return success, json_obj, user_message
 
     def post_response(self, response_obj, new_messages, request_overrides):
+        """Post-process the model response.
+
+        :param response_obj: Raw response object
+        :param new_messages: Generated messages
+        :type new_messages: list
+        :param request_overrides: Request overrides
+        :type request_overrides: dict
+        :returns: Response, updated messages
+        :rtype: tuple
+        """
         response_message = self._extract_message_content(response_obj)
         new_messages.append(response_message)
         if response_message['message_type'] == 'function_call':
@@ -441,6 +626,14 @@ class ApiBackend(Backend):
         return response_message['message'], new_messages
 
     def transform_messages_to_chat_messages(self, messages):
+        """
+        Transform messages to chat messages.
+
+        :param messages: List of messages
+        :type messages: list
+        :returns: List of chat messages
+        :rtype: list
+        """
         chat_messages = []
         for message in messages:
             role = message['role']
@@ -465,12 +658,28 @@ class ApiBackend(Backend):
         return chat_messages
 
     def message_content_from_dict(self, message):
+        """
+        Extract the content from a message dict.
+
+        :param message: Message
+        :type message: dict
+        :returns: Content
+        :rtype: str
+        """
         content = message['content']
         if message['message_type'] == 'function_call':
             content = json.dumps(message['function_call'])
         return content
 
     def _extract_message_content(self, message):
+        """
+        Extract the content from an LLM message.
+
+        :param message: Message
+        :type message: dict
+        :returns: Content
+        :rtype: str
+        """
         if isinstance(message, BaseMessage):
             message_dict = _convert_message_to_dict(message)
             content = message_dict['content']
@@ -485,6 +694,14 @@ class ApiBackend(Backend):
         return self.message.build_message('assistant', message)
 
     def gen_title_thread(self, conversation):
+        """
+        Generate the title for a conversation in a separate thread.
+
+        :param conversation: Conversation
+        :type conversation: Conversation
+        :returns: Title
+        :rtype: str
+        """
         self.log.info(f"Generating title for conversation {conversation.id}")
         # NOTE: This might need to be smarter in the future, but for now
         # it should be reasonable to assume that the second record is the
@@ -513,16 +730,36 @@ class ApiBackend(Backend):
         self.log.info(f"Failed to generate title for conversation: {str(user_message)}")
 
     def gen_title(self, conversation):
+        """
+        Generate the title for a conversation.
+
+        :param conversation: Conversation
+        :type conversation: Conversation
+        """
         thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
         thread.start()
 
     def get_system_message(self, system_message='default'):
+        """
+        Get the system message.
+
+        :param system_message: System message alias
+        :type system_message: str
+        :returns: System message
+        :rtype: str
+        """
         aliases = self.get_system_message_aliases()
         if system_message in aliases:
             system_message = aliases[system_message]
         return system_message
 
     def set_system_message(self, system_message='default'):
+        """
+        Set the system message.
+
+        :param system_message: System message or alias
+        :type system_message: str
+        """
         self.system_message = self.get_system_message(system_message)
         self.system_message_alias = system_message if system_message in self.get_system_message_aliases() else None
         message = f"System message set to: {self.system_message}"
@@ -530,6 +767,14 @@ class ApiBackend(Backend):
         return True, system_message, message
 
     def set_max_submission_tokens(self, max_submission_tokens=None, force=False):
+        """
+        Set the max submission tokens.
+
+        :param max_submission_tokens: Max submission tokens
+        :type max_submission_tokens: int
+        :param force: Force setting max submission tokens
+        :type force: bool
+        """
         chat = self.provider.get_capability('chat')
         if chat or force:
             self.max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()
@@ -537,6 +782,12 @@ class ApiBackend(Backend):
         return False, None, "Setting max submission tokens not supported for this provider"
 
     def get_runtime_config(self):
+        """
+        Get the runtime configuration.
+
+        :returns: Runtime configuration
+        :rtype: str
+        """
         output = """
 * Max submission tokens: %s
 * System message: %s
@@ -544,17 +795,42 @@ class ApiBackend(Backend):
         return output
 
     def get_current_llm_config(self):
+        """
+        Get current LLM, provider and model name.
+
+        :returns: LLM object, provider, model name
+        :rtype: tuple
+        """
         llm = self.override_llm or self.llm
         provider = self.override_provider or self.provider
         model_name = getattr(llm, provider.model_property_name)
         return llm, provider, model_name
 
     def get_system_message_aliases(self):
+        """
+        Get system message aliases from config.
+
+        :returns: Dict of message aliases
+        :rtype: dict
+        """
         aliases = self.config.get('model.system_message')
         aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
         return aliases
 
     def build_chat_message(self, role, content, message_type='content', message_metadata=''):
+        """Build a chat message dict.
+
+        :param role: Message role
+        :type role: str
+        :param content: Message content
+        :type content: str
+        :param message_type: Message type, defaults to 'content'
+        :type message_type: str, optional
+        :param message_metadata: Message metadata, defaults to ''
+        :type message_metadata: str, optional
+        :returns: Message object
+        :rtype: dict
+        """
         message = None
         if message_type == 'function_call':
             if role == 'assistant':
@@ -580,6 +856,16 @@ class ApiBackend(Backend):
 
 
     def retrieve_old_messages(self, conversation_id=None, target_id=None):
+        """
+        Retrieve old messages for a conversation.
+
+        :param conversation_id: Conversation id, defaults to current
+        :type conversation_id: int, optional
+        :param target_id: Target message id, defaults to None
+        :type target_id: int, optional
+        :returns: List of messages
+        :rtype: list
+        """
         old_messages = []
         if conversation_id:
             success, old_messages, message = self.message.get_messages(conversation_id, target_id=target_id)
@@ -589,6 +875,20 @@ class ApiBackend(Backend):
         return old_messages
 
     def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None, system_message=None):
+        """
+        Prepare prompt conversation messages.
+
+        :param prompt: Message to send to the LLM
+        :type prompt: str
+        :param conversation_id: Conversation id, defaults to current
+        :type conversation_id: int, optional
+        :param target_id: Target message id, defaults to None
+        :type target_id: int, optional
+        :param system_message: System message, defaults to None
+        :type system_message: str, optional
+        :returns: List of messages
+        :rtype: list
+        """
         new_messages = []
         old_messages = self.retrieve_old_messages(conversation_id, target_id)
         if len(old_messages) == 0:
@@ -598,6 +898,16 @@ class ApiBackend(Backend):
         return old_messages, new_messages
 
     def create_new_conversation_if_needed(self, conversation_id=None, title=None):
+        """
+        Create new conversation if it doesn't exist.
+
+        :param conversation_id: Conversation id, defaults to current
+        :type conversation_id: int, optional
+        :param title: Conversation title, defaults to None
+        :type title: str, optional
+        :returns: Conversation object
+        :rtype: Conversation
+        """
         conversation_id = conversation_id or self.conversation_id
         if conversation_id:
             success, conversation, message = self.conversation.get_conversation(conversation_id)
@@ -611,6 +921,17 @@ class ApiBackend(Backend):
         return conversation
 
     def add_new_messages_to_conversation(self, conversation_id, new_messages, title=None):
+        """Add new messages to a conversation.
+
+        :param conversation_id: Conversation id
+        :type conversation_id: int
+        :param new_messages: New messages
+        :type new_messages: list
+        :param title: Conversation title, defaults to None
+        :type title: str, optional
+        :returns: Conversation, last message
+        :rtype: tuple
+        """
         conversation = self.create_new_conversation_if_needed(conversation_id, title)
         _llm, provider, model_name = self.get_current_llm_config()
         preset = self.active_preset_name or ''
@@ -624,6 +945,22 @@ class ApiBackend(Backend):
         return conversation, last_message
 
     def add_message(self, role, message, message_type, metadata, conversation_id=None):
+        """
+        Add a new message to a conversation.
+
+        :param role: Message role
+        :type role: str
+        :param message: Message content
+        :type message: str
+        :param message_type: Message type
+        :type message_type: str
+        :param metadata: Message metadata
+        :type metadata: dict
+        :param conversation_id: Conversation id, defaults to current
+        :type conversation_id: int, optional
+        :returns: Added message
+        :rtype: Message
+        """
         conversation_id = conversation_id or self.conversation_id
         _llm, provider, model_name = self.get_current_llm_config()
         preset = self.active_preset_name or ''
@@ -633,6 +970,14 @@ class ApiBackend(Backend):
         return message
 
     def _build_chat_request(self, messages):
+        """
+        Build chat request for LLM.
+
+        :param messages: Messages
+        :type messages: list
+        :returns: LLM, prepared messages
+        :rtype: tuple
+        """
         customizations = {}
         provider = self.override_provider or self.provider
         llm = self.override_llm
@@ -651,6 +996,16 @@ class ApiBackend(Backend):
         return llm, messages
 
     def _call_llm(self, messages, request_overrides=None):
+        """
+        Call the LLM.
+
+        :param messages: Messages
+        :type messages: list
+        :param request_overrides: Request overrides, defaults to None
+        :type request_overrides: dict, optional
+        :returns: success, response, message
+        :rtype: tuple
+        """
         request_overrides = request_overrides or {}
         if not self.override_llm:
             success, response, user_message = self.extract_preset_configuration_from_overrides({'request_overrides': request_overrides})
@@ -671,6 +1026,14 @@ class ApiBackend(Backend):
         return True, response, "Response received"
 
     def set_current_user(self, user=None):
+        """
+        Set the current user.
+
+        :param user: User object, defaults to None
+        :type user: User, optional
+        :returns: success, preset, message on preset activation, otherwise init the provider
+        :rtype: tuple
+        """
         self.log.debug(f"Setting current user to {user.username if user else None}")
         self.current_user = user
         if self.current_user:
@@ -680,19 +1043,56 @@ class ApiBackend(Backend):
         return self.init_provider()
 
     def conversation_data_to_messages(self, conversation_data):
+        """
+        Convert conversation data to list of messages.
+
+        :param conversation_data: Conversation data dict
+        :type conversation_data: dict
+        :returns: List of messages
+        :rtype: list
+        """
         return conversation_data['messages']
 
     def delete_conversation(self, conversation_id=None):
+        """Delete a conversation.
+
+        :param conversation_id: Conversation id, defaults to current
+        :type conversation_id: int, optional
+        :returns: success, conversation, message
+        :rtype: tuple
+        """
         conversation_id = conversation_id if conversation_id else self.conversation_id
         success, conversation, message = self.conversation.delete_conversation(conversation_id)
         return self._handle_response(success, conversation, message)
 
     def set_title(self, title, conversation_id=None):
+        """
+        Set conversation title.
+
+        :param title: New title
+        :type title: str
+        :param conversation_id: Conversation id, defaults to current
+        :type conversation_id: int, optional
+        :returns: success, conversation, message
+        :rtype: tuple
+        """
         conversation_id = conversation_id if conversation_id else self.conversation_id
         success, conversation, user_message = self.conversation.edit_conversation_title(conversation_id, title)
         return self._handle_response(success, conversation, user_message)
 
     def get_history(self, limit=20, offset=0, user_id=None):
+        """
+        Get conversation history.
+
+        :param limit: Number of results, defaults to 20
+        :type limit: int, optional
+        :param offset: Result offset, defaults to 0
+        :type offset: int, optional
+        :param user_id: User id, defaults to current
+        :type user_id: int, optional
+        :returns: success, history dict, message
+        :rtype: tuple
+        """
         user_id = user_id if user_id else self.current_user.id
         success, conversations, message = self.conversation.get_conversations(user_id, limit=limit, offset=offset)
         if success:
@@ -701,6 +1101,14 @@ class ApiBackend(Backend):
         return self._handle_response(success, conversations, message)
 
     def get_conversation(self, id=None):
+        """
+        Get a conversation.
+
+        :param id: Conversation id, defaults to current
+        :type id: int, optional
+        :returns: success, conversation dict, message
+        :rtype: tuple
+        """
         id = id if id else self.conversation_id
         success, conversation, message = self.conversation.get_conversation(id)
         if success:
@@ -714,10 +1122,23 @@ class ApiBackend(Backend):
         return self._handle_response(success, conversation, message)
 
     def new_conversation(self):
+        """Start a new conversation."""
         super().new_conversation()
         self.set_conversation_tokens(0)
 
     def _strip_out_messages_over_max_tokens(self, messages, token_count, max_tokens):
+        """
+        Recursively strip out messages over max tokens.
+
+        :param messages: Messages
+        :type messages: list
+        :param token_count: Token count
+        :type token_count: int
+        :param max_tokens: Max tokens
+        :type max_tokens: int
+        :returns: Messages
+        :rtype: list
+        """
         if token_count is not None:
             stripped_messages_count = 0
             while token_count > max_tokens and len(messages) > 1:
@@ -735,12 +1156,36 @@ class ApiBackend(Backend):
         return messages
 
     def _prepare_ask_request(self, prompt, system_message=None):
+        """
+        Prepare the request for the LLM.
+
+        :param prompt: Message to send to the LLM
+        :type prompt: str
+        :param system_message: System message
+        :type system_message: str
+        :returns: New messages, messages
+        :rtype: tuple
+        """
         old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id, system_message=system_message)
         messages = old_messages + new_messages
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
         return new_messages, messages
 
     def _store_conversation_messages(self, conversation_id, new_messages, response_content, title=None):
+        """
+        Store conversation messages.
+
+        :param conversation_id: Conversation id
+        :type conversation_id: int
+        :param new_messages: New messages
+        :type new_messages: list
+        :param response_content: Response content
+        :type response_content: str
+        :param title: Title
+        :type title: str, optional
+        :returns: success, conversation, message
+        :rtype: tuple
+        """
         conversation_id = conversation_id or self.conversation_id
         self.log.debug(f"Storing conversation messages for conversation {conversation_id}")
         if self.current_user:
@@ -755,6 +1200,18 @@ class ApiBackend(Backend):
             return True, response_content, "No current user, conversation not saved"
 
     def _ask(self, prompt, title=None, request_overrides=None):
+        """
+        Ask the LLM a question, return and optionally stream a response.
+
+        :param prompt: Message to send to the LLM
+        :type prompt: str
+        :param title: Conversation title, defaults to None
+        :type title: str, optional
+        :param request_overrides: Request overrides, defaults to None
+        :type request_overrides: dict, optional
+        :returns: success, LLM response, message
+        :rtype: tuple
+        """
         stream = self.stream and self.should_stream()
         self.log.info(f"Starting {stream and 'streaming' or 'non-streaming'} request")
         request_overrides = request_overrides or {}
@@ -782,16 +1239,31 @@ class ApiBackend(Backend):
         return self._handle_response(success, response_obj, user_message)
 
     def ask_stream(self, prompt, title=None, request_overrides=None):
+        """
+        Ask the LLM a question and stream a response.
+
+        :param prompt: Message to send to the LLM
+        :type prompt: str
+        :param title: Conversation title, defaults to None
+        :type title: str, optional
+        :param request_overrides: Request overrides, defaults to None
+        :type request_overrides: dict, optional
+        :returns: success, LLM response, message
+        :rtype: tuple
+        """
         return self._ask(prompt, title, request_overrides)
 
     def ask(self, prompt, title=None, request_overrides=None):
         """
-        Send a message to the LLM and return the response.
+        Ask the LLM a question and return response.
 
-        Args:
-            message (str): The message to send.
-
-        Returns:
-            str: The response received from the model.
+        :param prompt: Message to send to the LLM
+        :type prompt: str
+        :param title: Conversation title, defaults to None
+        :type title: str, optional
+        :param request_overrides: Request overrides, defaults to None
+        :type request_overrides: dict, optional
+        :returns: success, LLM response, message
+        :rtype: tuple
         """
         return self._ask(prompt, title, request_overrides)
