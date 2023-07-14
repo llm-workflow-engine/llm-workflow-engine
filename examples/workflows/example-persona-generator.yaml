@@ -1,6 +1,8 @@
 # A robust workflow that generates a short description of a person (persona)
 # based on a a randomly selected set of characteristics.
 #
+# Inspired by https://github.com/daveshap/Automated_Consensus
+#
 # The characteristics are provided in a JSON file accessible from a URL. See
 # the default characteristics file for the data structure -- it's easy to
 # provide your own characteristics JSON file to generate different kinds of
