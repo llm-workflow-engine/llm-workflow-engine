@@ -9,6 +9,7 @@ from datetime import datetime
 import tempfile
 import platform
 import pyperclip
+import urllib.parse
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -325,3 +326,7 @@ Examples listed demonstrate how to use the module in an Ansible playbook.
     markdown += f"```yaml{examples}```\n"
 
     return markdown
+
+def is_valid_url(url):
+    parsed = urllib.parse.urlparse(url)
+    return bool(parsed.scheme and parsed.netloc)
