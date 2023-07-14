@@ -61,6 +61,16 @@ class WorkflowManager():
         self.log.debug(message)
         return True, self.workflows[workflow_name], message
 
+    def ensure_runnable_workflow(self, workflow_name):
+        success, workflow, user_message = self.load_workflow(workflow_name)
+        if not success:
+            return success, workflow, user_message
+        if len(workflow) > 0:
+            if 'tasks' in workflow[0]:
+                return True, workflow, f"Workflow '{workflow_name}' has a valid play with tasks"
+            return False, workflow, f"Workflow '{workflow_name}' has no tasks, are you trying to run an 'include' file?"
+        return False, workflow, f"Workflow '{workflow_name}' has invalid format"
+
     def make_user_workflow_dirs(self):
         for workflow_dir in self.user_workflow_dirs:
             if not os.path.exists(workflow_dir):
@@ -117,6 +127,9 @@ class WorkflowManager():
         return ""
 
     def run(self, workflow_name, workflow_args):
+        success, _, user_message = self.ensure_runnable_workflow(workflow_name)
+        if not success:
+            return success, workflow_name, user_message
         self.set_workflow_environment()
         success, workflow_file, message = self.ensure_workflow(workflow_name)
         if not success:
