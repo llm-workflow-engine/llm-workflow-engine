@@ -1,0 +1,39 @@
+# Illustrates a directory-based data pipeline.
+#
+# Inspired by https://github.com/daveshap/Quickly_Extract_Science_Papers
+#
+# Files placed in a directory are processed as follows:
+#
+# 1. Extract the text from the file
+# 2. Pass the text to the LLM as context
+# 3. Ask the LLM three questions about the reference text
+# 4. Store the results in a summary file
+#
+# Summary files are only written once -- if the summary file for a reference
+# file already exists, it's skipped.
+---
+- name: Summarize the contents of all files in a directory
+  hosts: localhost
+  vars:
+    user_id: 1
+    preset: "gpt-4-chatbot-responses"
+    content_directory: "/tmp/file-content"
+    content_max_length: 22000
+    summaries_directory: "/tmp/file-summaries"
+    question_1: "Can you give me a very clear explanation of the core assertions, implications, and mechanics elucidated in this paper?"
+    question_2: "Can you explain the value of this in basic terms? Like you're talking to a CEO. So what? What's the bottom line here?"
+    question_3: "Can you give me an analogy or metaphor that will help explain this to a broad audience."
+  tasks:
+    - name: Find all files in the content directory
+      find:
+        paths: "{{ content_directory }}"
+        recurse: yes
+        file_type: file
+      register: files_to_summarize
+
+    - name: Process each file
+      include_tasks: example-file-summarizer-summarize-file.yaml
+      loop: "{{ files_to_summarize.files }}"
+      loop_control:
+        loop_var: current_file
+...

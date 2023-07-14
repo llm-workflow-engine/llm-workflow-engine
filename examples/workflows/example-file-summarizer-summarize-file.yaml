@@ -1,0 +1,94 @@
+# This file is included in the example-file-summarizer.yaml workflow.
+---
+- name: Check if summary file exists
+  stat:
+    path: "{{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
+  register: summary_file
+
+- block:
+    - name: "Extract text from file: {{ current_file.path }}, max length: {{ content_max_length }}"
+      text_extractor:
+        path: "{{ current_file.path }}"
+        max_length: "{{ content_max_length }}"
+      register: extracted_text
+
+    - name: "Ask first question: {{ question_1 }}"
+      lwe_llm:
+        preset: "{{ preset }}"
+        user: "{{ user_id }}"
+        system_message: "{{ extracted_text.content }}"
+        message: "{{ question_1 }}"
+      register: response_1
+      until: "response_1 is not failed"
+      retries: 10
+      delay: 3
+
+    - name: First answer
+      debug:
+        msg: "{{ response_1.response }}"
+
+    - name: "Ask second question: {{ question_2 }}"
+      lwe_llm:
+        preset: "{{ preset }}"
+        user: "{{ user_id }}"
+        conversation_id: "{{ response_1.conversation_id }}"
+        message: "{{ question_2 }}"
+      register: response_2
+      until: "response_2 is not failed"
+      retries: 10
+      delay: 3
+
+    - name: Second answer
+      debug:
+        msg: "{{ response_2.response }}"
+
+    - name: "Ask third question: {{ question_3 }}"
+      lwe_llm:
+        preset: "{{ preset }}"
+        user: "{{ user_id }}"
+        conversation_id: "{{ response_2.conversation_id }}"
+        message: "{{ question_3 }}"
+      register: response_3
+      until: "response_3 is not failed"
+      retries: 10
+      delay: 3
+
+    - name: Third answer
+      debug:
+        msg: "{{ response_3.response }}"
+
+    - name: "Write summary to file: {{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
+      copy:
+        content: |
+          #################################################################
+
+          QUESTION 1:
+
+          {{ question_1 }}
+
+          ANSWER 1:
+
+          {{ response_1.response }}
+
+          #################################################################
+
+          QUESTION 2:
+
+          {{ question_2 }}
+
+          ANSWER 2:
+
+          {{ response_2.response }}
+
+          #################################################################
+
+          QUESTION 3:
+
+          {{ question_3 }}
+
+          ANSWER 3:
+
+          {{ response_3.response }}
+        dest: "{{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
+  when: not summary_file.stat.exists
+...

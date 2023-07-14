@@ -1,0 +1,41 @@
+# A robust workflow that generates a short description of a person (persona)
+# based on a a randomly selected set of characteristics.
+#
+# The characteristics are provided in a JSON file accessible from a URL. See
+# the default characteristics file for the data structure -- it's easy to
+# provide your own characteristics JSON file to generate different kinds of
+# personas.
+#
+# The number of personas generated is controlled by the 'iterations' variable.
+#
+# Once a persona iteration file is generated, it will be skipped on future runs,
+# Allowing selective removal and regeneration of personas.
+---
+- name: "Generate personas based on a provided 'characteristics' JSON spec."
+  hosts: localhost
+  gather_facts: no
+  vars:
+    preset: "gpt-4-creative-writing"
+    url: "https://raw.githubusercontent.com/daveshap/Automated_Consensus/main/persona_traits.json"
+    iterations: 5
+    output_dir: "/tmp/personas"
+
+  tasks:
+    - name: "Retrieve JSON persona data from URL: {{ url }}"
+      uri:
+        url: "{{ url }}"
+        return_content: yes
+      register: result
+
+    - name: Convert JSON data to usable format
+      set_fact:
+        data: "{{ result.content | from_json }}"
+
+    - name: Loop to generate personas
+      loop: "{{ range(1, iterations + 1) }}"
+      loop_control:
+        loop_var: iteration
+      vars:
+        iteration: "{{ item }}"
+      include_tasks: example-persona-generator-create-persona.yaml
+...

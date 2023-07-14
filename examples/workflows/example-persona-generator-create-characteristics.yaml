@@ -1,0 +1,12 @@
+# This file is included in the persona-generator-create-persona.yaml workflow.
+#
+# It simply iterates each of the characteristis and selects a value at random.
+---
+- name: "Pick random value for characteristic: {{ key }}"
+  set_fact:
+    value: "{{ data[key] | random }}"
+
+- name: "Add  '{{ key }}: {{ value }}' to characteristics list"
+  set_fact:
+    characteristics: "{{ characteristics + [key + ': ' + value] }}"
+...

@@ -1,0 +1,83 @@
+# This file is included in the persona-generator.yaml workflow.
+#
+# This is the meat of the work being done:
+#
+# 1. Collection random values for all the characteristics
+# 2. Assembling the final characteristics list
+# 3. Pass it to the LLM for persona generation
+# 4. Saving the generated persona
+---
+- name: Output current iteration
+  debug:
+    msg: "Iteration: {{ iteration }}"
+
+- name: "Check if persona file persona-{{ iteration }} exists"
+  stat:
+    path: "{{ output_dir }}/persona-{{ iteration }}"
+  register: persona_file
+
+- block:
+
+    - name: "Initialize characteristics list for persona {{ iteration }}"
+      set_fact:
+        characteristics: []
+
+    - name: "Loop over keys in JSON data for persona {{ iteration }}"
+      loop: "{{ data.keys() | list }}"
+      loop_control:
+        loop_var: key
+      vars:
+        key: "{{ item }}"
+      include_tasks: example-persona-generator-create-characteristics.yaml
+
+    - name: "Format characteristics for persona {{ iteration }}"
+      set_fact:
+        characteristics_string: "{{ characteristics | join('\n') }}"
+
+    - name: "Output assembled characteristics for persona {{ iteration }}"
+      debug:
+        msg: |
+          CHARACTERISTICS:
+
+          {{ characteristics_string }}
+
+    - name: "Generate persona {{ iteration }} using LLM"
+      lwe_llm:
+        preset: "{{ preset }}"
+        message: |
+          Generate a 100-200 word persona for someone with the following characteristics:
+
+          {{ characteristics_string }}
+
+          Also generate both a first and last name for the persona. The full name should be highly unique, and stand out as uncommon.
+
+          The output format of the persona should be as follows:
+
+          Name: [first_name] [last_name]
+
+          [persona_description]
+      register: llm_result
+      until: llm_result is succeeded
+      delay: 10
+      retries: 3
+
+    - name: "Output generated persona {{ iteration }}"
+      debug:
+        msg: |
+          PERSONA:
+
+          {{ llm_result.response }}
+
+    - name: "Store characteristics and persona in file for persona {{ iteration }}"
+      copy:
+        dest: "{{ output_dir }}/persona-{{ iteration }}"
+        content: |
+          CHARACTERISTICS:
+
+          {{ characteristics_string }}
+
+          PERSONA:
+
+          {{ llm_result.response }}
+
+  when: not persona_file.stat.exists
