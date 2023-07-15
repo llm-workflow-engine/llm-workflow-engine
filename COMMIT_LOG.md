@@ -1,3 +1,32 @@
+### v0.14.4 - 15/07/2023
+
+* **Sat Jul 15 2023:** always append to existing debug log
+* **Sat Jul 15 2023:** kill flask API
+* **Sat Jul 15 2023:** example workflow, voicemail transcription sentiment analysis
+* **Sat Jul 15 2023:** better name ansible module loggers
+* **Sat Jul 15 2023:** sort examples in list
+* **Sat Jul 15 2023:** add lwe_sqlite_query Ansible module, example SQLite db
+* **Sat Jul 15 2023:** add description property to plugins, add /plugins command to list enabled plugins
+* **Sat Jul 15 2023:** rename /plugin* commands to /chatgpt-plugin* on browser backend
+* **Sat Jul 15 2023:** return failure when no conversation id provided
+* **Fri Jul 14 2023:** add more example templates
+* **Fri Jul 14 2023:** add exploratory code writing example preset
+* **Fri Jul 14 2023:** tweak turbo example preset
+* **Fri Jul 14 2023:** add attribution for persona generator workflow
+* **Fri Jul 14 2023:** add file summarizer and persona generator example workflows
+* **Fri Jul 14 2023:** validate workflow has a runnable format before running
+* **Fri Jul 14 2023:** touch up workflow examples, more clear names
+* **Fri Jul 14 2023:** doc for API backend
+* **Fri Jul 14 2023:** clean up template setup return vals, add backend class doc
+* **Fri Jul 14 2023:** add doc for pastebin plugin
+* **Fri Jul 14 2023:** util.is_valid_url()
+* **Thu Jul 13 2023:** add doc for using LWE with shell pipelines
+* **Thu Jul 13 2023:** fix init order in backend
+* **Thu Jul 13 2023:** option to install examples on initial install
+* **Thu Jul 13 2023:** add intro video links
+* **Thu Jul 13 2023:** dynamic reload of REPL after config edit
+* **Thu Jul 13 2023:** override preset metadata/model_customizations in templates/requests via request_overrides['preset_overrides'] dict
+
 ### v0.14.3 - 12/07/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
