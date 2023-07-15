@@ -1110,6 +1110,8 @@ class ApiBackend(Backend):
         :rtype: tuple
         """
         id = id if id else self.conversation_id
+        if not id:
+            return False, None, "No current conversation"
         success, conversation, message = self.conversation.get_conversation(id)
         if success:
             success, messages, message = self.message.get_messages(id)
