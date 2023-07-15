@@ -149,7 +149,7 @@ Officially approved ChatGPT plugins can be configured for use with the browser b
 To use plugins:
 
 1. You must use a model that supports plugins: ``/model model_name gpt-4-plugins``
-2. Browse the plugins: ``/plugins``, or a filter the full list by a phrase, ``/plugins youtube``
+2. Browse the plugins: ``/chatgpt-plugins``, or a filter the full list by a phrase, ``/chatgpt-plugins youtube``
 3. To enable the plugin by default, add the plugin ID to the ``browser.plugins`` list in your configuration file:
 
    .. code-block:: yaml
@@ -158,7 +158,7 @@ To use plugins:
         plugins:
           - plugin-d1d6eb04-3375-40aa-940a-c2fc57ce0f51
 
-4. You can also dynamically enable/disable plugins, see the help for ``/plugin-enable`` and ``/plugin-disable``
+4. You can also dynamically enable/disable plugins, see the help for ``/chatgpt-plugin-enable`` and ``/chatgpt-plugin-disable``
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Using ChatGPT with browsing (alpha)

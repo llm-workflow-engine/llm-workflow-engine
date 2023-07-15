@@ -59,9 +59,9 @@ class BrowserRepl(Repl):
             content += f"\n* Description: *{data['description']}*"
         return content
 
-    def command_plugins(self, arg):
+    def command_chatgpt_plugins(self, arg):
         """
-        Retrieve information on available plugins
+        Retrieve information on available ChatGPT plugins
 
         Plugins are retrieved from OpenAI's official approved plugins list.
 
@@ -84,9 +84,9 @@ class BrowserRepl(Repl):
                 plugin_list.append(content)
         util.print_markdown("## Plugins:\n\n%s" % "\n".join(plugin_list))
 
-    def command_plugins_enabled(self, _):
+    def command_chatgpt_plugins_enabled(self, _):
         """
-        List enabled plugins
+        List enabled ChatGPT plugins
 
         Examples:
             {COMMAND}
@@ -102,9 +102,9 @@ class BrowserRepl(Repl):
                 plugin_list.append(content)
         util.print_markdown("## Enabled plugins:\n\n%s" % "\n".join(plugin_list))
 
-    def command_plugin_enable(self, arg):
+    def command_chatgpt_plugin_enable(self, arg):
         """
-        Dynamically enable a plugin
+        Dynamically enable a ChatGPT plugin
 
         Arguments:
             id: The ID of the plugin to enable (IDs available in plugin list)
@@ -121,9 +121,9 @@ class BrowserRepl(Repl):
             return False, arg, f"Plugin {arg} not found, or invalid ID"
         return self.backend.enable_plugin(arg)
 
-    def command_plugin_disable(self, arg):
+    def command_chatgpt_plugin_disable(self, arg):
         """
-        Dynamically disable a plugin
+        Dynamically disable a ChatGPT plugin
 
         Arguments:
             id: The ID of the plugin to disable (IDs available in plugin list)
