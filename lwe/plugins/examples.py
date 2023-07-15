@@ -116,7 +116,7 @@ class Examples(Plugin):
                 for t in self.default_types:
                     self.log.debug(f"Listing examples for: {t}")
                     install_dir = f"{self.profile_dir}/{t}"
-                    file_list = "\n".join([f"* {f}" for f in self.get_examples(t)])
+                    file_list = "\n".join([f"* {f}" for f in sorted(self.get_examples(t))])
                     util.print_markdown("## %s\nInstall to: %s\n%s" % (t, install_dir, file_list))
             else:
                 return False, arg, "Invalid example type"
