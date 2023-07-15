@@ -1,0 +1,49 @@
+# Illustrates a very complex call to the LLM:
+#
+# 1. Leverages a preset provider/model configuration
+# 2. Overrides the preset and injects an OpenAI function, instructing
+#    the LLM to always return a call to that function
+# 3. Uses a template to instruct the LLM how to perform the analysis
+# 4. Injects the transcription into the template as a variable.
+#
+# Because an OpenAI function is passed the LLM is instructed to
+# always return a call to store_sentiment_and_topics, it guarantees
+# the LLM will always return a response in the expected format.
+#
+# After a response is received, the sentiment and analysis are stored
+# with the transcription in the database, and the transcription is
+# marked as 'analyzed' to prevent duplicate analysis.
+- name: Query the LLM for sentiment and topics
+  lwe_llm:
+    preset: turbo
+    preset_overrides:
+      model_customizations:
+        model_kwargs:
+          function_call:
+            name: store_sentiment_and_topics
+          functions:
+            - store_sentiment_and_topics
+    template: example-voicemail-sentiment-analysis.md
+    template_vars:
+      transcription: "{{ transcription_text }}"
+  register: llm_response
+  until: "llm_response is not failed"
+  retries: 10
+  delay: 3
+
+- name: Display the LLM response
+  debug:
+    var: llm_response
+
+- name: Update the transcription row in the database
+  lwe_sqlite_query:
+    db: "{{ db_local_directory }}/{{ db_file }}"
+    query: "UPDATE {{ database_table }} SET sentiment = ?, topics = ?, analyzed = 1 WHERE id = ?"
+    query_params:
+      - "{{ llm_response.response.sentiments | to_json }}"
+      - "{{ llm_response.response.topics | to_json }}"
+      - "{{ transcription_id }}"
+
+- name: Display the transcription id, sentiment, and topics
+  debug:
+    msg: "Transcription ID {{ transcription_id }} updated, sentiments: {{ llm_response.response.sentiments | join(', ') }}, topics: {{ llm_response.response.topics | join(', ') }}"

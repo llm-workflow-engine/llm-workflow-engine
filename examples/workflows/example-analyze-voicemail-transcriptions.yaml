@@ -1,0 +1,60 @@
+# A very robust workflow that shows off a lot of features.
+#
+# 1. Checks for the reference SQLite databse
+# 2. If not found, download and extract it
+# 3. Query the database for all unanalyzed transcriptions
+# 4. Process each transcription (see include file for details)
+#
+# NOTE: The example workflow uses a template and preset from the
+# existing examples, that can be installed using the examples plugin.
+---
+- name: Analyze Voicemail Transcriptions
+  hosts: localhost
+  gather_facts: no
+  vars:
+    db_remote_directory: "https://github.com/llm-workflow-engine/llm-workflow-engine/raw/main/examples/data"
+    db_local_directory: "/tmp"
+    db_file: "voicemail_transcriptions.db"
+    database_table: "transcriptions"
+  tasks:
+    - name: "Check if the database file '{{ db_local_directory }}/{{ db_file }}' exists"
+      stat:
+        path: "{{ db_local_directory }}/{{ db_file }}"
+      register: db_file_check
+
+    - name: Download and unzip the database file if it does not exist
+      block:
+
+        - name: "Download the gzipped database file from '{{ db_remote_directory }}/{{ db_file }}.tar.gz'"
+          get_url:
+            url: "{{ db_remote_directory }}/{{ db_file }}.tar.gz"
+            dest: "{{ db_local_directory }}/"
+
+        - name: "Unzip the database file to '{{ db_local_directory }}/{{ db_file }}'"
+          unarchive:
+            src: "{{ db_local_directory }}/{{ db_file }}.tar.gz"
+            dest: "{{ db_local_directory }}/"
+      when: not db_file_check.stat.exists
+
+    - name: Query all rows from the transcriptions table
+      lwe_sqlite_query:
+        db: "{{ db_local_directory }}/{{ db_file }}"
+        query: "SELECT * FROM {{ database_table }} WHERE analyzed = 0"
+      register: unanalyzed_transcriptions
+
+    - name: Display first row of database results
+      debug:
+        var: unanalyzed_transcriptions.data.0
+      when: unanalyzed_transcriptions.data
+
+    - name: Process each transcription
+      include_tasks: example-analyze-voicemail-transcriptions-process-row.yaml
+      loop: "{{ unanalyzed_transcriptions.data }}"
+      vars:
+        transcription_id: "{{ item.id }}"
+        transcription_text: "{{ item.transcription }}"
+
+    - name: Display the total number of processed transcriptions
+      debug:
+        msg: "Total transcriptions processed: {{ unanalyzed_transcriptions.row_count }}"
+...
