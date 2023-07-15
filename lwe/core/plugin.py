@@ -12,6 +12,12 @@ class PluginBase(ABC):
     def plugin_type(self):
         return 'plugin'
 
+    @property
+    def description(self):
+        if self.__class__.__doc__:
+            return self.__class__.__doc__.strip().split('\n')[0]
+        return ""
+
     def set_name(self, name):
         self.name = name
 

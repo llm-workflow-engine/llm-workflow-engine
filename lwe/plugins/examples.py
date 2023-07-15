@@ -13,7 +13,7 @@ TYPES = [
 
 class Examples(Plugin):
     """
-    Provides support for easily installing examples.
+    Easily install example configuration files
     """
 
     def default_config(self):

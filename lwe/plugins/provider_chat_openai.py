@@ -16,6 +16,9 @@ class CustomChatOpenAI(ChatOpenAI):
         return starter_dict
 
 class ProviderChatOpenai(Provider):
+    """
+    Access to OpenAI chat models via the OpenAI API
+    """
 
     @property
     def capabilities(self):

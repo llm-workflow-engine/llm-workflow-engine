@@ -80,6 +80,9 @@ def make_llm_class(klass):
     return BrowserBackendLLM
 
 class ProviderChatgptBrowser(Provider):
+    """
+    Access to ChatGPT website via browser automation
+    """
 
     def set_model(self, model_name):
         if model_name.startswith("gpt-4"):

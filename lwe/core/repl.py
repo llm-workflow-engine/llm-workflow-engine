@@ -1064,6 +1064,36 @@ class Repl():
         message = template.render(**substitutions)
         return self.command_editor(message)
 
+    def command_plugins(self, arg):
+        """
+        List installed plugins
+
+        Plugins are enabled by adding their name to the list of enabled plugins
+        in the profile configuration.
+
+        Arguments:
+            filter_string: Optional. String to filter plugins by. Name and description are matched.
+
+        Examples:
+            {COMMAND}
+            {COMMAND} shell
+        """
+        plugin_list = []
+        provider_plugin_list = []
+        for plugin in self.plugins.values():
+            content = f"* {plugin.name}"
+            if plugin.description:
+                content += f": *{plugin.description}*"
+            if not arg or arg.lower() in content.lower():
+                if plugin.plugin_type == "provider":
+                    provider_plugin_list.append(content)
+                else:
+                    plugin_list.append(content)
+        plugin_list.sort()
+        provider_plugin_list.sort()
+        util.print_markdown("## Enabled shell plugins:\n\n%s" % "\n".join(plugin_list))
+        util.print_markdown("## Enabled provider plugins:\n\n%s" % "\n".join(provider_plugin_list))
+
     def show_full_config(self):
         output = """
 # Backend configuration: %s
