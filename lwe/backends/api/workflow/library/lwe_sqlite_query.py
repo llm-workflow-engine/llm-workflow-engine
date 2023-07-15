@@ -8,7 +8,7 @@ from lwe.core.logger import Logger
 
 config = Config()
 config.set('debug.log.enabled', True)
-log = Logger(__name__, config)
+log = Logger('lwe_sqlite_query', config)
 
 DOCUMENTATION = r'''
 ---

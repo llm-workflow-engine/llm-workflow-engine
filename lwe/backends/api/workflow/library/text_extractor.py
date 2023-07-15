@@ -15,7 +15,7 @@ from lwe.core.logger import Logger
 
 config = Config()
 config.set('debug.log.enabled', True)
-log = Logger(__name__, config)
+log = Logger('text_extractor', config)
 
 SUPPORTED_FILE_EXTENSIONS = [
     # Microsoft Office formats
