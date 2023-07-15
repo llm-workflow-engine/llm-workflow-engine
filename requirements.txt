@@ -4,7 +4,6 @@ alembic
 beautifulsoup4
 docutils>=0.20.1
 email-validator
-Flask
 Jinja2
 langchain==0.0.217
 names

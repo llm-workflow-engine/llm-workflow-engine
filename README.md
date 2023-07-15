@@ -66,8 +66,6 @@ It was an amazing tool for its time, thank you [mmabrouk](https://github.com/mma
 
 🐍**Python API**. LWE also has a Python library that lets you use ChatGPT/GPT4 in your Python scripts.
 
-:test_tube: **Flask API**. You can use LWE as an API. (experimental)
-
 ## Projects built with the original ChatGPT Wrapper
 
 - [bookast: ChatGPT Podcast Generator For Books](https://github.com/SamMethnani/bookast)

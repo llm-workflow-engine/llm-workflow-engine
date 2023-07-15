@@ -12,6 +12,4 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - EDITOR=vim
-    ports:
-      - 5000:5000 # Flask port
     command: "bash /src/docker-entrypoint.sh" # Run the entrypoint script
