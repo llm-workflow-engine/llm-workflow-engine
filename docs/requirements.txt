@@ -31,6 +31,10 @@ requests==2.31.0
 snowballstemmer==2.2.0
     # via sphinx
 sphinx==7.0.1
+    # via
+    #   -r requirements.in
+    #   sphinx-copybutton
+sphinx-copybutton==0.5.2
     # via -r requirements.in
 sphinxcontrib-applehelp==1.0.4
     # via sphinx

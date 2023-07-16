@@ -38,6 +38,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosectionlabel",
+    'sphinx_copybutton',
 ]
 
 templates_path = ['_templates']
@@ -81,3 +82,5 @@ html_sidebars = {
 html_css_files = [
     'css/custom.css',
 ]
+
+copybutton_exclude = '.linenos, .gp, .go'
