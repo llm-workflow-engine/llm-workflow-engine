@@ -43,8 +43,8 @@ Other LWE nicities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. **Plugins:**
-    * Command plugins: Write a command for LWE that accomplishes some new task
-    * Provider plugins: Easily add new LLM providers into the LWE ecosystem
+    * **Command plugins:** Write a command for LWE that accomplishes some new task
+    * **Provider plugins:** Easily add new LLM providers into the LWE ecosystem
 #. **Custom system messages:** Easily create and use different system messages for supported providers
 #. **Command completion:** Tab completion for most commands and arguments
 #. **Managed database updates:** Automatic database upgrades for new releases
