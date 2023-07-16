@@ -14,6 +14,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import NestedCompleter, PathCompleter
+from prompt_toolkit.shortcuts import CompleteStyle
 from prompt_toolkit.styles import Style
 import prompt_toolkit.document as document
 
@@ -1277,6 +1278,8 @@ class Repl():
                     user_input = self.prompt_session.prompt(
                         self.prompt,
                         completer=self.command_completer,
+                        complete_style=CompleteStyle.MULTI_COLUMN,
+                        reserve_space_for_menu=3,
                     )
                 except KeyboardInterrupt:
                     user_input_queue.put(KeyboardInterrupt)
