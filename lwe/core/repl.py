@@ -1092,7 +1092,7 @@ class Repl():
                     plugin_list.append(content)
         plugin_list.sort()
         provider_plugin_list.sort()
-        util.print_markdown("## Enabled shell plugins:\n\n%s" % "\n".join(plugin_list))
+        util.print_markdown("## Enabled command plugins:\n\n%s" % "\n".join(plugin_list))
         util.print_markdown("## Enabled provider plugins:\n\n%s" % "\n".join(provider_plugin_list))
 
     def show_backend_config(self):
