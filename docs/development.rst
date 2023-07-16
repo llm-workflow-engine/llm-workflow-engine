@@ -1,5 +1,5 @@
 ===============================================
-Contributing
+Development
 ===============================================
 
 We welcome contributions to LWE!

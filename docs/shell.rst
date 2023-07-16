@@ -36,13 +36,13 @@ To run the CLI in interactive mode, execute it with no additional arguments:
 
 Once the interactive shell is running, you can see a list of all commands with:
 
-.. code-block:: bash
+.. code-block:: console
 
    /help
 
 ...or get help for a specific command with:
 
-.. code-block:: bash
+.. code-block:: console
 
    /help <command>
 

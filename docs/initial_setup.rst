@@ -70,7 +70,7 @@ Once you're logged in, you have full access to all commands.
 
 **NOTE:** Once multiple users are created, you'll need to execute the ``/login`` command with the username to log in:
 
-.. code-block:: bash
+.. code-block:: console
 
    /login [username]
 

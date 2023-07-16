@@ -10,7 +10,7 @@ If you chose to install the example workflows, you can run ``/workflows`` to lis
 
 To execute a workflow from within the program:
 
-.. code-block:: bash
+.. code-block:: console
 
    /workflow-run workflowname
 
@@ -107,13 +107,13 @@ Here's how to use the templates to generate workflows:
 
 #. Start a new conversation
 
-   .. code-block:: bash
+   .. code-block:: console
 
       /new
 
 #. Generate a workflow spec based on your goals. At this point the goal is NOT to generate the final workflow, but instead to generate a specification that the LLM can use later as a complete reference for building the workflow.
 
-   .. code-block:: bash
+   .. code-block:: console
 
       /template-edit-run workflow-spec-generator.md
 
@@ -127,13 +127,13 @@ Here's how to use the templates to generate workflows:
 
 #. Start a new conversation
 
-   .. code-block:: bash
+   .. code-block:: console
 
       /new
 
 #. Generate the workflow based on the goal and the previous spec produced by the LLM.
 
-   .. code-block:: bash
+   .. code-block:: console
 
       /template-edit-run workflow-generator.md
 
@@ -145,7 +145,7 @@ Here's how to use the templates to generate workflows:
 
 #. Create your new workflow(s)
 
-   .. code-block:: bash
+   .. code-block:: console
 
       /workflow-edit workflowname
 
@@ -155,7 +155,7 @@ Here's how to use the templates to generate workflows:
 
 #. Run workflow
 
-   .. code-block:: bash
+   .. code-block:: console
 
       /workflow-run workflowname
 

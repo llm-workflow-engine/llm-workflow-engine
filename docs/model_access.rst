@@ -13,7 +13,7 @@ To use GPT-4, you must have been granted access to the model in your OpenAI acco
 
 NOTE: If you have not been granted access, you'll probably see an error like this:
 
-.. code-block:: bash
+.. code-block:: console
 
    InvalidRequestError(message='The model: `gpt-4` does not exist', param=None, code='model_not_found', http_status=404, request_id=None)
 
@@ -43,13 +43,13 @@ Method 2: Dynamically switch
 
 From within the shell, execute this command:
 
-.. code-block:: bash
+.. code-block:: console
 
    /model model_name gpt-4
 
 ...or... if you're not currently using the 'chat_openai' provider:
 
-.. code-block:: bash
+.. code-block:: console
 
    /provider chat_openai gpt-4
 

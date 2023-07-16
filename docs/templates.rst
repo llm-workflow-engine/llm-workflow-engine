@@ -8,8 +8,8 @@ Templates allow storing text in template files, and quickly leveraging the conte
 
 Features:
 
- * Per-profile templates
  * Create/edit templates
+ * Per-profile templates
  * ``{{ variable }}`` syntax substitution
  * Five different workflows for collecting variable values, editing, and running
 
@@ -41,5 +41,7 @@ These front matter attributes have special functionality:
    * ``preset_overrides``: A dictionary of metadata and model customization overrides to apply to the preset when running the template
       * ``metadata``: A dictionary of metadata overrides
       * ``model_customizations```: A dictionary of model customization overrides
+     This dictionary is recursively merged with the struture of the preset configuration. To see the exact structure of a preset,
+     use the ``/preset-edit`` command.
 
 All other attributes will be passed to the template as variable substitutions.

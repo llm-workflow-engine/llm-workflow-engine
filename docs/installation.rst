@@ -37,6 +37,7 @@ From source (recommended for development)
    .. code-block:: bash
 
       git clone https://github.com/llm-workflow-engine/llm-workflow-engine.git
+
 * Install the development package:
    .. code-block:: bash
 
@@ -70,18 +71,18 @@ If you'd like to jump start your setup with some examples of each, you can use t
 
 To list the examples available, and where they will be installed:
 
-.. code-block:: bash
+.. code-block:: console
 
    /examples list
 
 To install all the examples:
 
-.. code-block:: bash
+.. code-block:: console
 
    /examples
 
 To install examples for a specific feature (e.g. templates):
 
-.. code-block:: bash
+.. code-block:: console
 
    /examples templates

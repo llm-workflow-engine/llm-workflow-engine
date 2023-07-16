@@ -78,4 +78,5 @@ The ``ApiBackend`` class has full access to most of the features available in th
 
 If you're a moderately skilled Python programmer, you should be able to figure out how to
 make use of these features using the ``ApiBackend`` class by looking at the
-:ref:`core shell module <lwe.core.repl module>` and :ref:`API shell module <lwe.backends.api.repl module>` code.
+:ref:`core shell module <lwe.core.repl module>` and :ref:`API shell module <lwe.backends.api.repl module>` code,
+or examining the documentation for :ref:`ApiBackend <lwe.backends.api.backend module>`.
