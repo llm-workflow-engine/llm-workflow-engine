@@ -3,10 +3,18 @@ Installation
 ===============================================
 
 -----------------------------------------------
+Project code
+-----------------------------------------------
+
+Project code can be found at https://github.com/llm-workflow-engine/llm-workflow-engine
+
+A list of available plugins can be found at https://llm-workflow-engine.readthedocs.io/en/latest/plugins.html#core-plugins
+
+-----------------------------------------------
 Requirements
 -----------------------------------------------
 
-To use this repository, you need:
+To use this project, you need:
 
 * ``setuptools`` installed. You can install it using ``pip install setuptools``. Make sure that you have the last version of pip: ``pip install --upgrade pip``
 * A database backend (`SQLite <https://www.sqlite.org/>`_ by default, any configurable in `SQLAlchemy <https://www.sqlalchemy.org/>`_ allowed).

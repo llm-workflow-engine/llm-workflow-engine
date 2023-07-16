@@ -17,7 +17,7 @@
 </h4>
 
 <h4 id="intro-video" align="center">
-  <a href="https://www.youtube.com/watch?v=pWxRCYPaoW4" target="_blank">
+  <a href="https://www.youtube.com/watch?v=-FiYQiS5nY4" target="_blank">
     WATCH INTRO VIDEO
   </a>
 </h4>
