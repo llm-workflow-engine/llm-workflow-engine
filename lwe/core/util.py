@@ -330,3 +330,7 @@ Examples listed demonstrate how to use the module in an Ansible playbook.
 def is_valid_url(url):
     parsed = urllib.parse.urlparse(url)
     return bool(parsed.scheme and parsed.netloc)
+
+def list_to_markdown_list(list_obj, indent=2):
+    spaces = ' ' * indent
+    return "\n".join([f"{spaces}* {x}" for x in list_obj])

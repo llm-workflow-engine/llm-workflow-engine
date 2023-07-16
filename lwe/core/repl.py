@@ -126,7 +126,7 @@ class Repl():
         commands_with_leader = {}
         for command in self.all_commands:
             commands_with_leader[util.command_with_leader(command)] = None
-        config_args = ['edit'] + list(self.config.get().keys())
+        config_args = sorted(['edit', 'files', 'profile', 'runtime'] + list(self.config.get().keys()))
         commands_with_leader[util.command_with_leader('config')] = util.list_to_completion_hash(config_args)
         commands_with_leader[util.command_with_leader('help')] = util.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
@@ -1094,45 +1094,66 @@ class Repl():
         util.print_markdown("## Enabled shell plugins:\n\n%s" % "\n".join(plugin_list))
         util.print_markdown("## Enabled provider plugins:\n\n%s" % "\n".join(provider_plugin_list))
 
-    def show_full_config(self):
+    def show_backend_config(self):
         output = """
 # Backend configuration: %s
-# File configuration
-
-* Config dir: %s
-* Config profile dir: %s
-* Config file: %s
-* Data dir: %s
-* Data profile dir: %s
-* Database: %s
-* Template dirs: %s
-* Preset dirs: %s
-* Workflow dirs: %s
-* Function dirs: %s
-
-# Profile '%s' configuration:
-
-```yaml
-%s
-```
-
-# Runtime configuration
-
-* Streaming: %s
-* Logging to: %s
 """ % (
             self.backend.name,
+        )
+        util.print_markdown(output)
+
+    def show_files_config(self):
+        output = """
+# File configuration
+
+* **Config dir:** %s
+* **Config profile dir:** %s
+* **Config file:** %s
+* **Data dir:** %s
+* **Data profile dir:** %s
+* **Database:** %s
+* **Template dirs:**
+%s
+* **Preset dirs:**
+%s
+* **Workflow dirs:**
+%s
+* **Function dirs:**
+%s
+""" % (
             self.config.config_dir,
             self.config.config_profile_dir,
             self.config.config_file or "None",
             self.config.data_dir,
             self.config.data_profile_dir,
             self.config.get('database'),
-            ", ".join(self.backend.template_manager.user_template_dirs),
-            ", ".join(self.backend.preset_manager.user_preset_dirs),
-            ", ".join(self.backend.workflow_manager.user_workflow_dirs) if getattr(self.backend, "workflow_manager", None) else "",
-            ", ".join(self.backend.function_manager.user_function_dirs) if getattr(self.backend, "function_manager", None) else "",
-            self.config.profile, yaml.dump(self.config.get(), default_flow_style=False),
+            util.list_to_markdown_list(self.backend.template_manager.user_template_dirs),
+            util.list_to_markdown_list(self.backend.preset_manager.user_preset_dirs),
+            util.list_to_markdown_list(self.backend.workflow_manager.user_workflow_dirs) if getattr(self.backend, "workflow_manager", None) else "",
+            util.list_to_markdown_list(self.backend.function_manager.user_function_dirs) if getattr(self.backend, "function_manager", None) else "",
+        )
+        util.print_markdown(output)
+
+    def show_profile_config(self):
+        output = """
+# Profile '%s' configuration:
+
+```yaml
+%s
+```
+""" % (
+            self.config.profile,
+            yaml.dump(self.config.get(), default_flow_style=False),
+        )
+        util.print_markdown(output)
+
+    def show_runtime_config(self):
+        output = """
+# Runtime configuration
+
+* Streaming: %s
+* Logging to: %s
+""" % (
             str(self.stream),
             self.logfile and self.logfile.name or "None",
         )
@@ -1150,20 +1171,35 @@ class Repl():
 """ % (section, config_data)
         util.print_markdown(output)
 
+    def show_full_config(self):
+        self.show_backend_config()
+        self.show_files_config()
+        self.show_profile_config()
+        self.show_runtime_config()
+
     def command_config(self, arg):
         """
         Show or edit the current configuration
 
         Examples:
             Show all: {COMMAND}
-            Show section: {COMMAND} backend
             Edit config: {COMMAND} edit
+            Show files config: {COMMAND} files
+            Show profile config: {COMMAND} profile
+            Show runtime config: {COMMAND} runtime
+            Show section: {COMMAND} debug
         """
         if arg:
             if arg == 'edit':
                 file_editor(self.config.config_file)
                 self.reload_repl()
                 return True, None, "Reloaded configuration"
+            elif arg == 'files':
+                return self.show_files_config()
+            elif arg == 'profile':
+                return self.show_profile_config()
+            elif arg == 'runtime':
+                return self.show_runtime_config()
             else:
                 section_data = self.config.get(arg)
                 if section_data:

@@ -176,7 +176,7 @@ def main():
         config.set('model.default_system_message', args.system_message)
 
     command = None
-    if len(args.params) == 1 and args.params[0] in constants.SHELL_ONE_SHOT_COMMANDS:
+    if len(args.params) > 0 and args.params[0] in constants.SHELL_ONE_SHOT_COMMANDS:
         command = args.params[0]
 
     backend = config.get('backend')
@@ -214,7 +214,8 @@ def main():
     shell.setup()
 
     if command == 'config':
-        shell.command_config("")
+        config_args = " ".join(args.params[1:]) if len(args.params) > 1 else ""
+        shell.command_config(config_args)
         exit(0)
 
     shell_prompt = []
