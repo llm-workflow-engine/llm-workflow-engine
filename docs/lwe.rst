@@ -22,14 +22,6 @@ lwe.debug module
    :undoc-members:
    :show-inheritance:
 
-lwe.gpt\_api module
--------------------
-
-.. automodule:: lwe.gpt_api
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 lwe.main module
 ---------------
 
