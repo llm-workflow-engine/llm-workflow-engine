@@ -86,11 +86,6 @@ class ProviderBase(Plugin):
     def available_models(self):
         return self.get_capability('models', {}).keys()
 
-    def incompatible_backends(self):
-        return [
-            'browser',
-        ]
-
     def setup(self):
         self.set_customizations(self.default_customizations())
 

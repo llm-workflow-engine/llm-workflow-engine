@@ -6,17 +6,6 @@ class Echo(Plugin):
     Simple echo plugin, echos back the text you give it
     """
 
-    def incompatible_backends(self):
-        """
-           If the plugin is incompatible with any backends, they can be listed here,
-           and attempting to load the plugin using those backends will log an error
-           and skip loading the plugin.
-        """
-        return [
-            # 'browser',
-            # 'api',
-        ]
-
     def default_config(self):
         """
            The default configuration for this plugin.
