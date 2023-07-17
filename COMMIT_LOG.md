@@ -1,3 +1,26 @@
+### v0.15.0 - 17/07/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+The following deprecated items have been removed:
+
+* Browser backend: This backend became to brittle and difficult to support, thus the developers made the decision to remove it. Users should consider switching to the more stable API backend.
+* `chatgpt` binary: Use the `lwe` binary instead to start the program
+
+#### Commit log
+
+* **Mon Jul 17 2023:** remove incompatible_backend() from Plugin subclass
+* **Mon Jul 17 2023:** remove deprecated browser backend, deprecated legacy command leader, deprecated chatgpt binary
+* **Mon Jul 17 2023:** kill API example
+* **Mon Jul 17 2023:** enable PDF/ePub builds
+* **Mon Jul 17 2023:** add research dir, first paper
+* **Sun Jul 16 2023:** numerous doc improvements
+* **Sun Jul 16 2023:** shell -> command
+* **Sun Jul 16 2023:** update installation video links
+* **Sun Jul 16 2023:** add code doc example template
+* **Sun Jul 16 2023:** switch to multi-column autocomplete menu
+* **Sun Jul 16 2023:** improve config display, add options to output individual sections
+
 ### v0.14.4 - 15/07/2023
 
 * **Sat Jul 15 2023:** always append to existing debug log
