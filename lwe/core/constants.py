@@ -58,11 +58,6 @@ DEFAULT_CONFIG = {
         'history_file': '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep),
     },
     'database': None,
-    'browser': {
-        'provider': 'firefox',
-        'debug': False,
-        'plugins': [],
-    },
     'model': {
         'default_preset': None,
         'default_system_message': 'default',
@@ -103,12 +98,9 @@ DEFAULT_CONFIG = {
 # Shell specific constants.
 COMMAND_LEADER = '/'
 ACTIVE_ITEM_INDICATOR = "\U0001F7E2"  # Green circle.
-LEGACY_COMMAND_LEADER = '!'
 DEFAULT_COMMAND = 'ask'
 DEFAULT_HISTORY_LIMIT = 20
 SHELL_ONE_SHOT_COMMANDS = [
-    'install',
-    'reinstall',
     'config',
 ]
 

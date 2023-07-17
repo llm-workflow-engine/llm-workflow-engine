@@ -47,11 +47,9 @@ setup(
     python_requires=">=3.7",
     entry_points={
         "console_scripts": [
-            # TODO: Remove this after deprecation period.
-            "chatgpt = lwe.main:main_chatgpt_deprecated",
             "lwe = lwe.main:main",
         ],
         "lwe_plugins": [],
     },
-    scripts=["postinstall.sh"],
+    scripts=[],
 )

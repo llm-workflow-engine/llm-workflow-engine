@@ -28,14 +28,6 @@ lwe.plugins.provider\_chat\_openai module
    :undoc-members:
    :show-inheritance:
 
-lwe.plugins.provider\_chatgpt\_browser module
----------------------------------------------
-
-.. automodule:: lwe.plugins.provider_chatgpt_browser
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 lwe.plugins Module contents
 ---------------------------
 

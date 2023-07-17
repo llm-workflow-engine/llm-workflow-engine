@@ -15,7 +15,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 import lwe.core.constants as constants
-from lwe.core.error import NoInputError, LegacyCommandLeaderError
+from lwe.core.error import NoInputError
 from lwe import debug
 if False:
     debug.console(None)
@@ -34,11 +34,6 @@ def introspect_commands(klass):
 def command_with_leader(command):
     key = "%s%s" % (constants.COMMAND_LEADER, command)
     return key
-
-def legacy_command_leader_warning(command):
-    print_status_message(False, "\nWarning: The legacy command leader '%s' has been removed.\n"
-                                "Use the new command leader '%s' instead, e.g. %s%s\n" % (
-                                    constants.LEGACY_COMMAND_LEADER, constants.COMMAND_LEADER, constants.COMMAND_LEADER, command))
 
 def merge_dicts(dict1, dict2):
     for key in dict2:
@@ -151,14 +146,11 @@ def parse_shell_input(user_input):
     if not text:
         raise NoInputError
     leader = text[0]
-    if leader == constants.COMMAND_LEADER or leader == constants.LEGACY_COMMAND_LEADER:
+    if leader == constants.COMMAND_LEADER:
         text = text[1:]
         parts = [arg.strip() for arg in text.split(maxsplit=1)]
         command = parts[0]
         argument = parts[1] if len(parts) > 1 else ''
-        if leader == constants.LEGACY_COMMAND_LEADER:
-            legacy_command_leader_warning(command)
-            raise LegacyCommandLeaderError
         if command == "exit" or command == "quit":
             raise EOFError
     else:

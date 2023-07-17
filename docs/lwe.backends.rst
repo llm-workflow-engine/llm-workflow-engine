@@ -8,7 +8,6 @@ lwe.backends Subpackages
    :maxdepth: 4
 
    lwe.backends.api
-   lwe.backends.browser
 
 lwe.backends Module contents
 ----------------------------

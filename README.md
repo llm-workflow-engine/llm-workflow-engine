@@ -40,11 +40,9 @@ What would you like to do?
 
 ## What happend to the original ChatGPT Wrapper project?
 
-The original ChatGPT Wrapper project (created by [mmabrouk](https://github.com/mmabrouk)) lives on in LWE, in the deprecated [browser backend](https://llm-workflow-engine.readthedocs.io/en/latest/configuration.html#using-browser-backend).
+See [CHATGPT_WRAPPER.md](CHATGPT_WRAPPER.md)
 
-While it can still be used, it's become less useful after the release of [OpenAI's Chat Completions API](https://platform.openai.com/docs/guides/gpt/chat-completions-api), and also become harder to maintain due to security lockdowns on [chat.openai.com](https://chat.openai.com).
-
-It was an amazing tool for its time, thank you [mmabrouk](https://github.com/mmabrouk) for all your hard work, it lives on in a new form :)
+ChatGPT Wrapper was an amazing tool for its time, thank you to its original creator [mmabrouk](https://github.com/mmabrouk) for all your hard work, it lives on in a new form :)
 
 ## Highlights
 
@@ -86,7 +84,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - The original ChatGPT Wrapper project (which LWE grew from) was created and maintained by [mmabrouk](https://github.com/mmabrouk) 
-- The original 'browser' backend is a modification from [Taranjeet](https://github.com/taranjeet/chatgpt-api) code which is a modification of [Daniel Gross](https://github.com/danielgross/whatsapp-gpt) code.
+- The original ChatGPT Wrapper project is a modification from [Taranjeet](https://github.com/taranjeet/chatgpt-api) code which is a modification of [Daniel Gross](https://github.com/danielgross/whatsapp-gpt) code.
 
 ## Star History
 

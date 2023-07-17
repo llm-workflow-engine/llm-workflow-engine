@@ -6,13 +6,7 @@ from lwe.version import __version__
 import lwe.core.constants as constants
 from lwe.core.config import Config
 from lwe.core import util
-from lwe.backends.browser.backend import BrowserBackend
-from lwe.backends.browser.repl import BrowserRepl
 from lwe.backends.api.repl import ApiRepl
-
-def main_chatgpt_deprecated():
-    util.print_status_message(False, "The 'chatgpt' binary is deprecated, use 'lwe' instead.")
-    main()
 
 def main():
 
@@ -28,7 +22,7 @@ def main():
     parser.add_argument(
         "params",
         nargs="*",
-        help="Use 'install' for install mode, 'config' to see current configuration, or provide a prompt.",
+        help="Use 'config' to see current configuration, or provide a prompt.",
     )
     parser.add_argument(
         "-c",
@@ -86,12 +80,6 @@ def main():
         help="Disable streaming mode",
     )
     parser.add_argument(
-        "-b",
-        "--browser",
-        action="store",
-        help="Set preferred browser; 'firefox' 'chromium' or 'webkit'",
-    )
-    parser.add_argument(
         "--database",
         action="store",
         help=f"Database to store chat-related data (default: {dummy_config.get('database')})",
@@ -127,7 +115,7 @@ def main():
         "-d",
         "--debug",
         action="store_true",
-        help="Enable debug mode in which the browser window is not hidden",
+        help="Enable debug mode",
     )
     parser.add_argument(
         "-e",
@@ -163,10 +151,7 @@ def main():
     if args.debug_log is not None:
         config.set('debug.log.enabled', True)
         config.set('debug.log.filepath', args.debug_log)
-    if args.browser is not None:
-        config.set('browser.provider', args.browser)
     if args.debug:
-        config.set('browser.debug', True)
         config.set('log.console.level', 'debug')
         config.set('debug.log.enabled', True)
         config.set('debug.log.level', 'debug')
@@ -180,34 +165,7 @@ def main():
         command = args.params[0]
 
     backend = config.get('backend')
-    # TODO: Remove this deprecation warning later.
-    def backend_deprecation_warning(old, new):
-        util.print_status_message(False, f"WARNING: backend '{old}' has been renamed to '{new}', and support for the old name will be removed in a future release. Please update your config file to use '{new}' for the 'backend:' setting.")
-    if backend == 'chatgpt-browser':
-        backend_deprecation_warning('chatgpt-browser', 'browser')
-    if backend == 'chatgpt-api':
-        backend_deprecation_warning('chatgpt-api', 'api')
-    if backend == 'browser' or backend == 'chatgpt-browser':
-        if command == 'reinstall':
-            print('Reinstalling...')
-            temp_backend = BrowserBackend(config)
-            temp_backend.destroy_primary_profile()
-            del temp_backend
-        if command in ['install', 'reinstall']:
-            print(
-                "\n"
-                "Install mode: Log in to ChatGPT in the browser that pops up, and click\n"
-                "through all the dialogs, etc. Once that is achieved, exit and restart\n"
-                "this program without the 'install' parameter.\n"
-            )
-            config.set('browser.debug', True)
-        shell = BrowserRepl(config)
-    elif backend == 'api' or backend == 'chatgpt-api':
-        if command in ['install', 'reinstall']:
-            print(
-                "\n"
-                "Install mode: The API backend is already configured.\n"
-            )
+    if backend == 'api':
         shell = ApiRepl(config)
     else:
         raise RuntimeError(f"Unknown backend: {backend}")

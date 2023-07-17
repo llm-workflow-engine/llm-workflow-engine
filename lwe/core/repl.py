@@ -7,8 +7,6 @@ import traceback
 import signal
 import frontmatter
 import pyperclip
-import threading
-import queue
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -22,7 +20,7 @@ import lwe.core.constants as constants
 import lwe.core.util as util
 from lwe.core.config import Config
 from lwe.core.logger import Logger
-from lwe.core.error import NoInputError, LegacyCommandLeaderError
+from lwe.core.error import NoInputError
 from lwe.core.editor import file_editor, pipe_editor
 
 # Monkey patch _FIND_WORD_RE in the document module.
@@ -364,25 +362,23 @@ class Repl():
         Can delete by conversation ID, history ID, or current conversation.
 
         Arguments:
-            conversation_id: The ID of the conversation
             history_id : The history ID
 
         Arguments can be mixed and matched as in the examples below.
 
         Examples:
             Current conversation: {COMMAND}
-            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {COMMAND} 3
+            Delete one: {COMMAND} 3
             Multiple IDs: {COMMAND} 1,5
             Ranges: {COMMAND} 1-5
-            Complex: {COMMAND} 1,3-5,5eea79ce-b70e-11ed-b50e-532160c725b2
+            Complex: {COMMAND} 1,3-5
         """
         if arg:
             result = util.parse_conversation_ids(arg)
             if isinstance(result, list):
                 success, conversations, message = self._fetch_history()
                 if success:
-                    history_list = [c for c in conversations.values()]
+                    history_list = list(conversations.values())
                     for item in result:
                         if isinstance(item, str) and len(item) == 36:
                             self._delete_conversation(item)
@@ -451,47 +447,48 @@ class Repl():
         else:
             return success, history, message
 
-    def command_nav(self, arg):
-        """
-        Navigate to a past point in the conversation
+    # TODO: Decide if reviving this is a good idea.
+    # def command_nav(self, arg):
+    #     """
+    #     Navigate to a past point in the conversation
 
-        Arguments:
-            id: prompt ID
+    #     Arguments:
+    #         id: prompt ID
 
-        Examples:
-            {COMMAND} 2
-        """
+    #     Examples:
+    #         {COMMAND} 2
+    #     """
 
-        try:
-            msg_id = int(arg)
-        except Exception:
-            util.print_markdown("The argument to nav must be an integer.")
-            return
+    #     try:
+    #         msg_id = int(arg)
+    #     except Exception:
+    #         util.print_markdown("The argument to nav must be an integer.")
+    #         return
 
-        if msg_id == self.prompt_number:
-            util.print_markdown("You are already using prompt {msg_id}.")
-            return
+    #     if msg_id == self.prompt_number:
+    #         util.print_markdown("You are already using prompt {msg_id}.")
+    #         return
 
-        if msg_id not in self.message_map:
-            util.print_markdown(
-                "The argument to `nav` contained an unknown prompt number."
-            )
-            return
-        elif self.message_map[msg_id][0] is None:
-            util.print_markdown(
-                f"Cannot navigate to prompt number {msg_id}, no conversation present, try next prompt."
-            )
-            return
+    #     if msg_id not in self.message_map:
+    #         util.print_markdown(
+    #             "The argument to `nav` contained an unknown prompt number."
+    #         )
+    #         return
+    #     elif self.message_map[msg_id][0] is None:
+    #         util.print_markdown(
+    #             f"Cannot navigate to prompt number {msg_id}, no conversation present, try next prompt."
+    #         )
+    #         return
 
-        (
-            self.backend.conversation_id,
-            self.backend.parent_message_id,
-        ) = self.message_map[msg_id]
-        self._update_message_map()
-        self._write_log_context()
-        util.print_markdown(
-            f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
-        )
+    #     (
+    #         self.backend.conversation_id,
+    #         self.backend.parent_message_id,
+    #     ) = self.message_map[msg_id]
+    #     self._update_message_map()
+    #     self._write_log_context()
+    #     util.print_markdown(
+    #         f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
+    #     )
 
     def command_title(self, arg):
         """
@@ -515,13 +512,10 @@ class Repl():
                 pass
             kwargs = {}
             if id:
-                # TODO: History on browser backend is sometimes returning a few less items than asked for,
-                # pad it for now.
-                kwargs['limit'] = id + 5
-                # kwargs['limit'] = id
+                kwargs['limit'] = id
             success, conversations, message = self._fetch_history(**kwargs)
             if success:
-                history_list = [c for c in conversations.values()]
+                history_list = list(conversations.values())
                 conversation = None
                 if id:
                     if id <= len(history_list):
@@ -541,8 +535,6 @@ class Repl():
                         new_title = arg
                     else:
                         return False, None, "Current conversation has no title, you must send information first"
-                # Browser backend doesn't return a full conversation object,
-                # so adjust and re-use the current one.
                 conversation['title'] = new_title
                 return self._set_title(new_title, conversation)
             else:
@@ -562,15 +554,12 @@ class Repl():
         Retrieve chat content
 
         Arguments:
-            conversation_id: The ID of the conversation
-            ...or...
             history_id: The history ID
             With no arguments, show content of the current conversation.
 
         Examples:
             Current conversation: {COMMAND}
-            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {COMMAND} 2
+            Older conversation: {COMMAND} 2
         """
         conversation = None
         conversation_id = None
@@ -587,13 +576,10 @@ class Repl():
                     return False, None, f"Invalid chat history item {arg}, must be in integer"
                 kwargs = {}
                 if id:
-                    # TODO: History on browser backend is sometimes returning a few less items than asked for,
-                    # pad it for now.
-                    kwargs['limit'] = id + 5
-                    # kwargs['limit'] = id
+                    kwargs['limit'] = id
                 success, conversations, message = self._fetch_history(**kwargs)
                 if success:
-                    history_list = [h for h in conversations.values()]
+                    history_list = list(conversations.values())
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
                         title = conversation["title"] or constants.NO_TITLE_TEXT
@@ -630,13 +616,10 @@ class Repl():
         Switch to chat
 
         Arguments:
-            conversation_id: The ID of the conversation
-            ...or...
-            history_id: The history ID
+            history_id: The history ID of the conversation
 
         Examples:
-            By conversation ID: {COMMAND} 5eea79ce-b70e-11ed-b50e-532160c725b2
-            By history ID: {COMMAND} 2
+            {COMMAND} 2
         """
         conversation = None
         conversation_id = None
@@ -653,13 +636,10 @@ class Repl():
                     return False, None, f"Invalid chat history item {arg}, must be in integer"
                 kwargs = {}
                 if id:
-                    # TODO: History on browser backend is sometimes returning a few less items than asked for,
-                    # pad it for now.
-                    kwargs['limit'] = id + 5
-                    # kwargs['limit'] = id
+                    kwargs['limit'] = id
                 success, conversations, message = self._fetch_history(**kwargs)
                 if success:
-                    history_list = [c for c in conversations.values()]
+                    history_list = list(conversations.values())
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
                         title = conversation["title"] or constants.NO_TITLE_TEXT
@@ -813,30 +793,31 @@ class Repl():
             self.logfile = None
             util.print_markdown("* Logging is now disabled.")
 
-    def command_context(self, arg):
-        """
-        Load an old context from the log
+    # TODO: Decide if this should be revived.
+    # def command_context(self, arg):
+    #     """
+    #     Load an old context from the log
 
-        Arguments:
-            context_string: a context string from logs
+    #     Arguments:
+    #         context_string: a context string from logs
 
-        Examples:
-            {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
-        """
-        try:
-            (conversation_id, parent_message_id) = arg.split(":")
-            assert conversation_id == "None" or len(conversation_id) == 36
-            assert len(parent_message_id) == 36
-        except Exception:
-            util.print_markdown("Invalid parameter to `context`.")
-            return
-        util.print_markdown("* Loaded specified context.")
-        self.backend.conversation_id = (
-            conversation_id if conversation_id != "None" else None
-        )
-        self.backend.parent_message_id = parent_message_id
-        self._update_message_map()
-        self._write_log_context()
+    #     Examples:
+    #         {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+    #     """
+    #     try:
+    #         (conversation_id, parent_message_id) = arg.split(":")
+    #         assert conversation_id == "None" or len(conversation_id) == 36
+    #         assert len(parent_message_id) == 36
+    #     except Exception:
+    #         util.print_markdown("Invalid parameter to `context`.")
+    #         return
+    #     util.print_markdown("* Loaded specified context.")
+    #     self.backend.conversation_id = (
+    #         conversation_id if conversation_id != "None" else None
+    #     )
+    #     self.backend.parent_message_id = parent_message_id
+    #     self._update_message_map()
+    #     self._write_log_context()
 
     def command_model(self, arg):
         """
@@ -1262,41 +1243,15 @@ class Repl():
         util.print_markdown("### %s" % self.intro)
         while True:
             self.set_user_prompt()
-            # This extra threading and queuing dance is necessary because
-            # the browser backend starts an event loop, and prompt_tookit
-            # barfs when it tries to start the application when an event
-            # loop is already running.
-            # Converting to prompt_async doesn't seem to help, because
-            # then Playwright complains that it needs to be run in an async
-            # context as well.
-            # Happy to accept a better solution to this promblem if it's
-            # presented.
-            user_input_queue = queue.Queue()
-            def prompt_session():
-                user_input = None
-                try:
-                    user_input = self.prompt_session.prompt(
-                        self.prompt,
-                        completer=self.command_completer,
-                        complete_style=CompleteStyle.MULTI_COLUMN,
-                        reserve_space_for_menu=3,
-                    )
-                except KeyboardInterrupt:
-                    user_input_queue.put(KeyboardInterrupt)
-                except EOFError:
-                    user_input_queue.put(EOFError)
-                if user_input is not None:
-                    user_input_queue.put(user_input)
-            t = threading.Thread(target=prompt_session)
-            t.start()
-            user_input = user_input_queue.get()
-            if user_input is KeyboardInterrupt:
-                continue
-            elif user_input is EOFError:
-                break
+            user_input = self.prompt_session.prompt(
+                self.prompt,
+                completer=self.command_completer,
+                complete_style=CompleteStyle.MULTI_COLUMN,
+                reserve_space_for_menu=3,
+            )
             try:
                 command, argument = util.parse_shell_input(user_input)
-            except (NoInputError, LegacyCommandLeaderError):
+            except (NoInputError):
                 continue
             except EOFError:
                 break

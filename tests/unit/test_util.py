@@ -24,7 +24,7 @@ from lwe.core.util import (introspect_commands,
                                        get_package_root,
                                        )
 import lwe.core.constants as constants
-from lwe.core.error import NoInputError, LegacyCommandLeaderError
+from lwe.core.error import NoInputError
 from lwe.core.config import Config
 
 class TestClass:
@@ -137,8 +137,6 @@ class TestClass:
             parse_shell_input("/exit")
         with pytest.raises(EOFError):
             parse_shell_input("/quit")
-        with pytest.raises(LegacyCommandLeaderError):
-            parse_shell_input("!exit")
         with pytest.raises(NoInputError):
             parse_shell_input("")
         assert parse_shell_input("?") == ('help', '')
