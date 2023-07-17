@@ -19,7 +19,7 @@ This document presents an exploration of integrating the capabilities of Large L
 
 ## Introduction
 
-Automation is key to efficient system management and deployment workflows. The incorporation of an AI in the form of LLMs opens up the possibility for more dynamic, intelligent decision-making in these automation processes. The proposed 'lwe_llm' Ansible module is a step in this direction, acting as an interface between the Ansible tasks and the LLM.
+Automation is key to efficient system management and deployment workflows. The incorporation of AI in the form of LLMs opens up the possibility for more dynamic, intelligent decision-making in these automation processes. The proposed 'lwe_llm' Ansible module is a step in this direction, acting as an interface between Ansible tasks and the LLM.
 
 ## The 'lwe_llm' Module
 
