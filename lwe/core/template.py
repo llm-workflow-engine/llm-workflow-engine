@@ -14,6 +14,12 @@ class TemplateManager():
     """
 
     def __init__(self, config=None):
+        """
+        Initializes the class with the given configuration.
+
+        :param config: Configuration settings. If not provided, a default Config object is used.
+        :type config: Config, optional
+        """
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_template_dirs = self.config.args.template_dir or util.get_environment_variable_list('template_dir') or self.config.get('directories.templates')
@@ -26,11 +32,25 @@ class TemplateManager():
         self.templates_env = None
 
     def template_builtin_variables(self):
+        """
+        This method returns a dictionary of built-in variables.
+
+        :return: A dictionary where the key is the variable name and the value is the function associated with it.
+        :rtype: dict
+        """
         return {
             'clipboard': util.paste_from_clipboard,
         }
 
     def ensure_template(self, template_name):
+        """
+        Checks if a template exists.
+
+        :param template_name: The name of the template to check.
+        :type template_name: str
+        :return: A tuple containing a boolean indicating if the template exists, the template name, and a message.
+        :rtype: tuple
+        """
         if not template_name:
             return False, None, "No template name specified"
         self.log.debug(f"Ensuring template {template_name} exists")
@@ -42,6 +62,14 @@ class TemplateManager():
         return True, template_name, message
 
     def get_template_variables_substitutions(self, template_name):
+        """
+        Get template variables and their substitutions.
+
+        :param template_name: The name of the template
+        :type template_name: str
+        :return: A tuple containing a boolean indicating success, the template with its variables and substitutions, and a user message
+        :rtype: tuple
+        """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
@@ -50,6 +78,14 @@ class TemplateManager():
         return True, (template, variables, substitutions), f"Loaded template substitutions: {template_name}"
 
     def render_template(self, template_name):
+        """
+        Render a template with variable substitutions.
+
+        :param template_name: The name of the template to render
+        :type template_name: str
+        :return: A tuple containing a success flag, the rendered message or template name, and a user message
+        :rtype: tuple
+        """
         success, response, user_message = self.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
@@ -58,6 +94,14 @@ class TemplateManager():
         return True, message, f"Rendered template: {template_name}"
 
     def get_template_source(self, template_name):
+        """
+        Get the source of a specified template.
+
+        :param template_name: The name of the template
+        :type template_name: str
+        :return: A tuple containing a boolean indicating success, the source of the template if successful, and a user message
+        :rtype: tuple
+        """
         success, template_name, user_message = self.ensure_template(template_name)
         if not success:
             return success, template_name, user_message
@@ -66,6 +110,14 @@ class TemplateManager():
         return True, source, f"Loaded template source: {template_name}"
 
     def get_template_editable_filepath(self, template_name):
+        """
+        Get the editable file path for a given template.
+
+        :param template_name: The name of the template
+        :type template_name: str
+        :return: A tuple containing a boolean indicating if the template is editable, the file path of the template, and a message
+        :rtype: tuple
+        """
         if not template_name:
             return False, template_name, "No template name specified"
         template, _ = self.get_template_and_variables(template_name)
@@ -78,6 +130,16 @@ class TemplateManager():
         return True, filename, f"Template {filename} can be edited"
 
     def copy_template(self, old_name, new_name):
+        """
+        Copies a template file to a new location.
+
+        :param old_name: The name of the existing template file.
+        :type old_name: str
+        :param new_name: The name for the new template file.
+        :type new_name: str
+        :return: A tuple containing a boolean indicating success or failure, the new file path, and a status message.
+        :rtype: tuple
+        """
         template, _ = self.get_template_and_variables(old_name)
         if not template:
             return False, old_name, f"{old_name} does not exist"
@@ -91,6 +153,14 @@ class TemplateManager():
         return True, new_filepath, f"Copied template {old_filepath} to {new_filepath}"
 
     def template_can_delete(self, template_name):
+        """
+        Checks if a template can be deleted.
+
+        :param template_name: The name of the template to check
+        :type template_name: str
+        :return: A tuple containing a boolean indicating if the template can be deleted, the template name or filename, and a message
+        :rtype: tuple
+        """
         if not template_name:
             return False, template_name, "No template name specified"
         template, _ = self.get_template_and_variables(template_name)
@@ -103,11 +173,29 @@ class TemplateManager():
         return True, filename, f"Template {filename} can be deleted"
 
     def template_delete(self, filename):
+        """
+        Deletes a specified template file and reloads the templates.
+
+        :param filename: The name of the file to be deleted.
+        :type filename: str
+        :return: A tuple containing a boolean indicating success, the filename, and a message.
+        :rtype: tuple
+        """
         os.remove(filename)
         self.load_templates()
         return True, filename, f"Deleted {filename}"
 
     def extract_metadata_keys(self, keys, metadata):
+        """
+        Extracts specified keys from the metadata.
+
+        :param keys: Keys to be extracted from the metadata.
+        :type keys: list
+        :param metadata: The metadata from which keys are to be extracted.
+        :type metadata: dict
+        :return: A tuple containing the updated metadata and the extracted keys.
+        :rtype: tuple
+        """
         extracted_keys = {}
         for key in keys:
             if key in metadata:
@@ -116,6 +204,14 @@ class TemplateManager():
         return metadata, extracted_keys
 
     def extract_template_run_overrides(self, metadata):
+        """
+        Extracts template run overrides from metadata.
+
+        :param metadata: The metadata from which to extract overrides.
+        :type metadata: dict
+        :return: A tuple containing the updated metadata and the extracted overrides.
+        :rtype: tuple
+        """
         override_keys = [
             'title',
             'request_overrides',
@@ -128,6 +224,16 @@ class TemplateManager():
         return metadata, overrides
 
     def build_message_from_template(self, template_name, substitutions=None):
+        """
+        Build a message from a given template and substitutions.
+
+        :param template_name: The name of the template to use.
+        :type template_name: str
+        :param substitutions: The substitutions to apply to the template. Defaults to None.
+        :type substitutions: dict, optional
+        :return: The rendered message and any overrides.
+        :rtype: tuple
+        """
         substitutions = substitutions or {}
         template, _ = self.get_template_and_variables(template_name)
         source = frontmatter.load(template.filename)
@@ -139,6 +245,16 @@ class TemplateManager():
         return message, overrides
 
     def process_template_builtin_variables(self, template_name, variables=None):
+        """
+        Process the built-in variables in a template.
+
+        :param template_name: The name of the template
+        :type template_name: str
+        :param variables: The variables to be processed, defaults to None
+        :type variables: list, optional
+        :return: A dictionary of substitutions for the variables
+        :rtype: dict
+        """
         variables = variables or []
         builtin_variables = self.template_builtin_variables()
         substitutions = {}
@@ -149,11 +265,21 @@ class TemplateManager():
         return substitutions
 
     def make_user_template_dirs(self):
+        """
+        Create directories for user templates if they do not exist.
+
+        :return: None
+        """
         for template_dir in self.user_template_dirs:
             if not os.path.exists(template_dir):
                 os.makedirs(template_dir)
 
     def load_templates(self):
+        """
+        Load templates from directories.
+
+        :return: None
+        """
         self.log.debug("Loading templates from dirs: %s" % ", ".join(self.all_template_dirs))
         jinja_env = Environment(loader=FileSystemLoader(self.all_template_dirs))
         filenames = jinja_env.list_templates()
@@ -161,6 +287,14 @@ class TemplateManager():
         self.templates = filenames or []
 
     def get_template_and_variables(self, template_name):
+        """
+        Fetches a template and its variables.
+
+        :param template_name: The name of the template to fetch
+        :type template_name: str
+        :return: The fetched template and its variables, or (None, None) if the template is not found
+        :rtype: tuple
+        """
         try:
             template = self.templates_env.get_template(template_name)
         except TemplateNotFound:
@@ -171,6 +305,14 @@ class TemplateManager():
         return template, variables
 
     def is_system_template(self, filepath):
+        """
+        Check if a file is a system template.
+
+        :param filepath: The path of the file to check
+        :type filepath: str
+        :return: True if the file is a system template, False otherwise
+        :rtype: bool
+        """
         for dir in self.system_template_dirs:
             if filepath.startswith(dir):
                 return True
