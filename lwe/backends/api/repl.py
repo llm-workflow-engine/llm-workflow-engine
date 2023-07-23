@@ -124,30 +124,28 @@ class ApiRepl(Repl):
         return True, default_preset
 
     # Overriding default implementation because API should use UUIDs.
-    def command_context(self, arg):
-        """
-        Load an old context from the log
+    # def command_context(self, arg):
+    #     """
+    #     Load an old context from the log
 
-        Arguments:
-            context_string: a context string from logs
+    #     Arguments:
+    #         context_string: a context string from logs
 
-        Examples:
-            {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
-        """
-        try:
-            (conversation_id, parent_message_id) = arg.split(":")
-            assert conversation_id == "None" or int(conversation_id) > 0
-            assert int(parent_message_id) > 0
-        except Exception:
-            util.print_markdown("Invalid parameter to `context`.")
-            return
-        util.print_markdown("* Loaded specified context.")
-        self.backend.conversation_id = (
-            conversation_id if conversation_id != "None" else None
-        )
-        self.backend.parent_message_id = parent_message_id
-        self._update_message_map()
-        self._write_log_context()
+    #     Examples:
+    #         {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
+    #     """
+    #     try:
+    #         conversation_id = arg
+    #         assert conversation_id == "None" or int(conversation_id) > 0
+    #     except Exception:
+    #         util.print_markdown("Invalid parameter to `context`.")
+    #         return
+    #     util.print_markdown("* Loaded specified context.")
+    #     self.backend.conversation_id = (
+    #         conversation_id if conversation_id != "None" else None
+    #     )
+    #     self._update_message_map()
+    #     self._write_log_context()
 
     def command_user_register(self, username=None):
         """
@@ -230,10 +228,23 @@ Before you can start using the shell, you must create a new user.
         else:
             self.create_first_user()
 
+    def get_current_conversation_title(self):
+        if self.backend.conversation_id:
+            if self.backend.conversation_title:
+                title = self.backend.conversation_title[:constants.SHORT_TITLE_LENGTH]
+                if len(self.backend.conversation_title) > constants.SHORT_TITLE_LENGTH:
+                    title += "..."
+            else:
+                title = ""
+        else:
+            title = "New conversation"
+        return title
+
     def build_shell_user_prefix(self):
         if not self.logged_in_user:
             return ''
         prompt_prefix = self.config.get("shell.prompt_prefix")
+        prompt_prefix = prompt_prefix.replace("$TITLE", self.get_current_conversation_title())
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace("$PRESET_OR_MODEL", self.backend.active_preset_name if self.backend.active_preset_name else self.backend.model)

@@ -57,8 +57,8 @@ class Backend(ABC):
 
         :param config: Optional configuration for the backend. If not provided, it uses a default configuration.
         """
-        self.parent_message_id = None
         self.conversation_id = None
+        self.conversation_title = None
         self.conversation_title_set = None
         self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
         self.stream = False
@@ -165,8 +165,8 @@ class Backend(ABC):
         Resets all attributes related to a conversation, such that a new
         conversation is started.
         """
-        self.parent_message_id = None
         self.conversation_id = None
+        self.conversation_title = None
         self.conversation_title_set = None
         self.message_clipboard = None
 
@@ -180,16 +180,6 @@ class Backend(ABC):
         self.log.info("Received signal to terminate stream")
         if self.streaming:
             self.streaming = False
-
-    def switch_to_conversation(self, conversation_id, parent_message_id):
-        """
-        Switches to a different conversation.
-
-        :param conversation_id: ID of the conversation to switch to.
-        :param parent_message_id: ID of the parent message.
-        """
-        self.conversation_id = conversation_id
-        self.parent_message_id = parent_message_id
 
     def get_runtime_config(self):
         """

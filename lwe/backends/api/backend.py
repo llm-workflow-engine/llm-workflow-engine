@@ -104,9 +104,7 @@ class ApiBackend(Backend):
         success, conversation_data, user_message = self.get_conversation(conversation_id)
         if success:
             if conversation_data:
-                messages = self.conversation_data_to_messages(conversation_data)
-                message = messages.pop()
-                self.switch_to_conversation(conversation_id, message['id'])
+                self.switch_to_conversation(conversation_id)
                 return
             else:
                 user_message = "Missing conversation data"
@@ -422,16 +420,19 @@ class ApiBackend(Backend):
         else:
             self.conversation_tokens = None
 
-    def switch_to_conversation(self, conversation_id, parent_message_id):
+    def switch_to_conversation(self, conversation_id):
         """
         Switch to a conversation.
 
         :param conversation_id: Conversation id
         :type conversation_id: int
-        :param parent_message_id: Parent message id
-        :type parent_message_id: int
         """
-        super().switch_to_conversation(conversation_id, parent_message_id)
+        success, conversation, user_message = self.get_conversation(conversation_id)
+        if success:
+            self.conversation_id = conversation_id
+            self.conversation_title = conversation['conversation']['title']
+        else:
+            raise ValueError(user_message)
         success, last_message, user_message = self.message.get_last_message(self.conversation_id)
         if not success:
             raise ValueError(user_message)
@@ -719,11 +720,12 @@ class ApiBackend(Backend):
             try:
                 result = llm(new_messages)
                 title = self._extract_message_content(result)['message']
-                title = title.replace("\n", ", ").strip()
+                title = title.replace("\n", ", ").strip().strip('\'"')
                 self.log.info(f"Title generated for conversation {conversation.id}: {title}")
                 success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
                 if success:
                     self.log.debug(f"Title saved for conversation {conversation.id}")
+                    self.conversation_title = conversation.title
                     return
             except ValueError as e:
                 return False, new_messages, e
@@ -874,7 +876,7 @@ class ApiBackend(Backend):
             old_messages = self.add_message_functions_to_cache(old_messages)
         return old_messages
 
-    def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, target_id=None, system_message=None):
+    def prepare_prompt_conversation_messages(self, prompt, conversation_id=None, system_message=None):
         """
         Prepare prompt conversation messages.
 
@@ -882,15 +884,13 @@ class ApiBackend(Backend):
         :type prompt: str
         :param conversation_id: Conversation id, defaults to current
         :type conversation_id: int, optional
-        :param target_id: Target message id, defaults to None
-        :type target_id: int, optional
         :param system_message: System message, defaults to None
         :type system_message: str, optional
         :returns: List of messages
         :rtype: list
         """
         new_messages = []
-        old_messages = self.retrieve_old_messages(conversation_id, target_id)
+        old_messages = self.retrieve_old_messages(conversation_id)
         if len(old_messages) == 0:
             system_message = system_message or self.system_message
             new_messages.append(self.message.build_message('system', system_message))
@@ -918,6 +918,7 @@ class ApiBackend(Backend):
             if not success:
                 raise Exception(message)
         self.conversation_id = conversation.id
+        self.conversation_title = conversation.title
         return conversation
 
     def add_new_messages_to_conversation(self, conversation_id, new_messages, title=None):
@@ -1078,6 +1079,8 @@ class ApiBackend(Backend):
         """
         conversation_id = conversation_id if conversation_id else self.conversation_id
         success, conversation, user_message = self.conversation.edit_conversation_title(conversation_id, title)
+        if success:
+            self.conversation_title = conversation.title
         return self._handle_response(success, conversation, user_message)
 
     def get_history(self, limit=20, offset=0, user_id=None):
@@ -1168,7 +1171,7 @@ class ApiBackend(Backend):
         :returns: New messages, messages
         :rtype: tuple
         """
-        old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, self.parent_message_id, system_message=system_message)
+        old_messages, new_messages = self.prepare_prompt_conversation_messages(prompt, self.conversation_id, system_message=system_message)
         messages = old_messages + new_messages
         messages = self._strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
         return new_messages, messages
@@ -1192,7 +1195,6 @@ class ApiBackend(Backend):
         self.log.debug(f"Storing conversation messages for conversation {conversation_id}")
         if self.current_user:
             conversation, last_message = self.add_new_messages_to_conversation(conversation_id, new_messages, title)
-            self.parent_message_id = last_message.id
             if conversation.title:
                 self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
             else:

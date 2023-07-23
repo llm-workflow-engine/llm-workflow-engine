@@ -14,6 +14,7 @@ SYSTEM_MESSAGE_CREATIVE_WRITER = "You are a creative writing assistant."
 DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT = 'You write short 3-5 word titles for any content'
 DEFAULT_TITLE_GENERATION_USER_PROMPT = 'Write a title for this content:'
 TITLE_GENERATION_MAX_CHARACTERS = 1500
+SHORT_TITLE_LENGTH = 30
 
 OPEN_AI_MAX_TOKENS = 4096
 OPEN_AI_MIN_SUBMISSION_TOKENS = 1
@@ -54,7 +55,7 @@ DEFAULT_CONFIG = {
         ],
     },
     'shell': {
-        'prompt_prefix': '($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS): $SYSTEM_MESSAGE_ALIAS$NEWLINE$USER@$PRESET_OR_MODEL',
+        'prompt_prefix': '$TITLE$NEWLINE($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS): $SYSTEM_MESSAGE_ALIAS$NEWLINE$USER@$PRESET_OR_MODEL',
         'history_file': '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep),
     },
     'database': None,

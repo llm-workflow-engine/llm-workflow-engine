@@ -242,7 +242,6 @@ class Repl():
         self.prompt_number += 1
         self.message_map[self.prompt_number] = (
             self.backend.conversation_id,
-            self.backend.parent_message_id,
         )
         self._set_prompt()
 
@@ -254,7 +253,7 @@ class Repl():
     def _write_log_context(self):
         if self.logfile is not None:
             self.logfile.write(
-                f"## context {self.backend.conversation_id}:{self.backend.parent_message_id}\n"
+                f"## context {self.backend.conversation_id}\n"
             )
             self.logfile.flush()
 
@@ -482,7 +481,6 @@ class Repl():
 
     #     (
     #         self.backend.conversation_id,
-    #         self.backend.parent_message_id,
     #     ) = self.message_map[msg_id]
     #     self._update_message_map()
     #     self._write_log_context()
@@ -656,9 +654,7 @@ class Repl():
         success, conversation_data, message = self.backend.get_conversation(conversation_id)
         if success:
             if conversation_data:
-                messages = self.backend.conversation_data_to_messages(conversation_data)
-                message = messages.pop()
-                self.backend.switch_to_conversation(conversation_id, message['id'])
+                self.backend.switch_to_conversation(conversation_id)
                 self._update_message_map()
                 self._write_log_context()
                 if title:
@@ -805,9 +801,8 @@ class Repl():
     #         {COMMAND} 67d1a04b-4cde-481e-843f-16fdb8fd3366:0244082e-8253-43f3-a00a-e2a82a33cba6
     #     """
     #     try:
-    #         (conversation_id, parent_message_id) = arg.split(":")
+    #         conversation_id = arg
     #         assert conversation_id == "None" or len(conversation_id) == 36
-    #         assert len(parent_message_id) == 36
     #     except Exception:
     #         util.print_markdown("Invalid parameter to `context`.")
     #         return
@@ -815,7 +810,6 @@ class Repl():
     #     self.backend.conversation_id = (
     #         conversation_id if conversation_id != "None" else None
     #     )
-    #     self.backend.parent_message_id = parent_message_id
     #     self._update_message_map()
     #     self._write_log_context()
 
