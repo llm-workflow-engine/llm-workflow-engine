@@ -597,6 +597,7 @@ class ApiBackend(Backend):
                     'name': function_call['name'],
                     'arguments': function_call['arguments'],
                 }
+                self.log.info(f"Returning directly on function call: {function_call['name']}")
                 return function_definition, new_messages
             success, function_response, user_message = self.run_function(function_call['name'], function_call['arguments'])
             if success:
@@ -623,6 +624,7 @@ class ApiBackend(Backend):
                 return user_message, new_messages
         function_response, new_messages = self.check_return_on_function_response(new_messages)
         if function_response:
+            self.log.info(f"Returning directly on function response: {function_call['name']}")
             return function_response, new_messages
         return response_message['message'], new_messages
 
@@ -687,7 +689,7 @@ class ApiBackend(Backend):
             message_type = 'content'
             if 'function_call' in message_dict:
                 message_type = 'function_call'
-                message_dict['function_call']['arguments'] = json.loads(message_dict['function_call']['arguments'])
+                message_dict['function_call']['arguments'] = json.loads(message_dict['function_call']['arguments'], strict=False)
                 content = message_dict['function_call']
             elif message_dict['role'] == 'function':
                 message_type = 'function_response'
@@ -838,11 +840,11 @@ class ApiBackend(Backend):
             if role == 'assistant':
                 message = {
                     "content": "",
-                    "function_call": json.loads(content),
+                    "function_call": json.loads(content, strict=False),
                 }
         elif message_type == 'function_response':
             if role == 'function':
-                metadata = json.loads(message_metadata)
+                metadata = json.loads(message_metadata, strict=False)
                 message = {
                     "content": content,
                     "name": metadata['name'],

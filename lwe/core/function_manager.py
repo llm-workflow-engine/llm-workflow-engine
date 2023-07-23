@@ -155,7 +155,7 @@ class FunctionManager():
 
     def run_function(self, function_name, input_data):
         if isinstance(input_data, str):
-            input_data = json.loads(input_data)
+            input_data = json.loads(input_data, strict=False)
         if self.is_langchain_tool(function_name):
             return self.run_langchain_tool(function_name, input_data)
         self.log.debug(f"Running function: {function_name} with data: {input_data}")

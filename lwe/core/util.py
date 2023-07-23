@@ -244,7 +244,7 @@ def get_ansible_module_doc(module_name):
             text=True,
             check=True
         )
-        data = json.loads(result.stdout)
+        data = json.loads(result.stdout, strict=False)
         return data
     except subprocess.CalledProcessError as e:
         raise subprocess.CalledProcessError(f"Error parsing Ansible doc: {e}")

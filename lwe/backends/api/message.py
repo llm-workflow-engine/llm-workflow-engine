@@ -32,7 +32,7 @@ class MessageManager(Manager):
         if isinstance(message, Message):
             message = {c.key: getattr(message, c.key) for c in object_mapper(message).columns}
         if message['message_type'] in JSON_MESSAGE_TYPES:
-            message['message'] = json.loads(message['message'])
+            message['message'] = json.loads(message['message'], strict=False)
         message['message_metadata'] = json.loads(message['message_metadata']) if message['message_metadata'] else None
         return message
 
