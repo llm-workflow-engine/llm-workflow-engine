@@ -235,9 +235,9 @@ Before you can start using the shell, you must create a new user.
                 if len(self.backend.conversation_title) > constants.SHORT_TITLE_LENGTH:
                     title += "..."
             else:
-                title = ""
+                title = constants.UNTITLED_CONVERSATION
         else:
-            title = "New conversation"
+            title = constants.NEW_CONVERSATION_TITLE
         return title
 
     def build_shell_user_prefix(self):
