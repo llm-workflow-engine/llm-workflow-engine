@@ -62,7 +62,8 @@ def _handle_event(
                 )
             else:
                 logger.warning(
-                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                    f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
+                    f" callback: {e}"
                 )
         except Exception as e:
             logger.warning(
@@ -90,17 +91,20 @@ def _generate(
         response = self.completion_with_retry(messages=message_dicts, **params)
         try:
             for stream_resp in response:
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token or ""
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    run_manager.on_llm_new_token(token)
+                if len(stream_resp["choices"]) > 0:
+                    role = stream_resp["choices"][0]["delta"].get("role", role)
+                    token = stream_resp["choices"][0]["delta"].get("content") or ""
+                    inner_completion += token
+                    _function_call = stream_resp["choices"][0]["delta"].get(
+                        "function_call"
+                    )
+                    if _function_call:
+                        if function_call is None:
+                            function_call = _function_call
+                        else:
+                            function_call["arguments"] += _function_call["arguments"]
+                    if run_manager:
+                        run_manager.on_llm_new_token(token)
         except StreamInterruption as e:
             logger.warning(e)
         finally:
