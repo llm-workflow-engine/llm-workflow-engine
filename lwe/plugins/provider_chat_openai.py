@@ -9,12 +9,6 @@ class CustomChatOpenAI(ChatOpenAI):
         """Return type of llm."""
         return "chat_openai"
 
-    def dict(self, **kwargs):
-        """Return a dictionary of the LLM."""
-        starter_dict = dict(self._identifying_params)
-        starter_dict["_type"] = self._llm_type
-        return starter_dict
-
 class ProviderChatOpenai(Provider):
     """
     Access to OpenAI chat models via the OpenAI API
