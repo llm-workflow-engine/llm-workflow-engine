@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import shutil
 import copy
 import shlex
 import yaml
@@ -199,6 +200,31 @@ class WorkflowManager():
             message = f"An error occurred while loading workflows: {e}"
             self.log.error(message)
             return False, None, message
+
+    def copy_workflow(self, old_name, new_name):
+        """
+        Copies a workflow file to a new location.
+
+        :param old_name: The name of the existing workflow file.
+        :type old_name: str
+        :param new_name: The name for the new workflow file.
+        :type new_name: str
+        :return: A tuple containing a boolean indicating success or failure, the new file path, and a status message.
+        :rtype: tuple
+        """
+        success, workflow_file, user_message = self.ensure_workflow(old_name)
+        if not success:
+            return success, workflow_file, user_message
+        old_filepath = workflow_file
+        base_filepath = self.user_workflow_dirs[-1] if self.is_system_workflow(old_filepath) else os.path.dirname(old_filepath)
+        if not new_name.endswith('.yaml') and not new_name.endswith('.yml'):
+            new_name += '.yaml'
+        new_filepath = os.path.join(base_filepath, new_name)
+        if os.path.exists(new_filepath):
+            return False, new_filepath, f"{new_filepath} already exists"
+        shutil.copy2(old_filepath, new_filepath)
+        self.load_workflows()
+        return True, new_filepath, f"Copied workflow {old_filepath} to {new_filepath}"
 
     def delete_workflow(self, workflow_name, workflow_dir=None):
         success, workflow_file, user_message = self.ensure_workflow(workflow_name)

@@ -74,6 +74,7 @@ class ApiRepl(Repl):
         subcommands = [
             'run',
             'show',
+            'copy',
             'edit',
             'delete',
         ]
@@ -864,6 +865,27 @@ Before you can start using the shell, you must create a new user.
             workflow_content = f.read()
         util.print_markdown(f"\n## Workflow '{workflow_name}'")
         util.print_markdown("```yaml\n%s\n```" % workflow_content)
+
+    def command_workflow_copy(self, workflow_names):
+        """
+        Copies an existing workflow and saves it as a new workflow
+
+        Arguments:
+            workflow_names: Required. The name of the old and new workflows separated by whitespace,
+
+        Examples:
+            {COMMAND} old_workflow new_workflow
+        """
+        try:
+            old_name, new_name = workflow_names.split()
+        except ValueError:
+            return False, workflow_names, "Old and new workflow name required"
+
+        success, new_filepath, user_message = self.backend.workflow_manager.copy_workflow(old_name, new_name)
+        if not success:
+            return success, new_filepath, user_message
+        self.rebuild_completions()
+        return True, new_filepath, f"Copied {old_name} to {new_filepath}"
 
     def command_workflow_edit(self, workflow_name):
         """
