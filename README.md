@@ -52,7 +52,7 @@ ChatGPT Wrapper was an amazing tool for its time, thank you to its original crea
 
 💻  **Supports official ChatGPT API**. Make API calls directly to the OpenAI ChatGPT endpoint (all supported models accessible by your OpenAI account)
 
-🔌 **Simple plugin architecture**. Extend LWE with custom functionality
+🔌 [**Simple plugin architecture**](https://llm-workflow-engine.readthedocs.io/en/latest/plugins.html#core-plugins). Extend LWE with custom functionality
 
 🗣 **Supports multiple LLM providers**. Provider plugins allow interacting with other LLMs (GPT-3, Cohere, Hugginface, etc.)
 
