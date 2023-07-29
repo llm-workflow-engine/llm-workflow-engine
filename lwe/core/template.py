@@ -1,12 +1,15 @@
 import os
 import frontmatter
 import shutil
+import tempfile
 
 from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound, meta
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 import lwe.core.util as util
+
+TEMP_TEMPLATE_DIR = "lwe-temp-templates"
 
 class TemplateManager():
     """
@@ -22,12 +25,13 @@ class TemplateManager():
         """
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
+        self.temp_template_dir = self.make_temp_template_dir()
         self.user_template_dirs = self.config.args.template_dir or util.get_environment_variable_list('template_dir') or self.config.get('directories.templates')
         self.make_user_template_dirs()
         self.system_template_dirs = [
             os.path.join(util.get_package_root(self), 'templates'),
         ]
-        self.all_template_dirs = self.user_template_dirs + self.system_template_dirs
+        self.all_template_dirs = self.user_template_dirs + self.system_template_dirs + [self.temp_template_dir]
         self.templates = []
         self.templates_env = None
 
@@ -273,6 +277,43 @@ class TemplateManager():
         for template_dir in self.user_template_dirs:
             if not os.path.exists(template_dir):
                 os.makedirs(template_dir)
+
+    def make_temp_template_dir(self):
+        """
+        Create directory for temporary templates if it does not exist.
+
+        :return: None
+        """
+        temp_dir = os.path.join(tempfile.gettempdir(), TEMP_TEMPLATE_DIR)
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+        return temp_dir
+
+    def make_temp_template(self, template_contents, suffix='md'):
+        """
+        Create a temporary template.
+
+        :param template_contents: The contents to be written to the temporary template
+        :type template_contents: str
+        :param suffix: The suffix for the temporary file, defaults to 'md'
+        :type suffix: str, optional
+        :return: The basename and the full path of the temporary template
+        :rtype: tuple
+        """
+        filepath = util.write_temp_file(template_contents, suffix='md', dir=self.temp_template_dir)
+        return os.path.basename(filepath), filepath
+
+    def remove_temp_template(self, template_name):
+        """
+        Remove a temporary template.
+
+        :param template_name: The name of the temporary template
+        :type template_name: str
+        :return: None
+        """
+        filepath = os.path.join(self.temp_template_dir, template_name)
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
     def load_templates(self):
         """

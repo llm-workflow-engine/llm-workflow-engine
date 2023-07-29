@@ -20,7 +20,7 @@ from lwe.core.util import (introspect_commands,
                                        parse_shell_input,
                                        get_class_command_method,
                                        output_response,
-                                       open_temp_file,
+                                       write_temp_file,
                                        get_package_root,
                                        )
 import lwe.core.constants as constants
@@ -164,9 +164,9 @@ class TestClass:
         captured = capsys.readouterr()
         assert "Failure message" in captured.out
 
-    def test_open_temp_file(self):
+    def test_write_temp_file(self):
         input_data = "test content"
-        temp_path = open_temp_file(input_data=input_data, suffix='txt')
+        temp_path = write_temp_file(input_data=input_data, suffix='txt')
         with open(temp_path, 'r') as f:
             content = f.read()
         assert content == input_data

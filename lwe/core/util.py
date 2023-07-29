@@ -181,8 +181,13 @@ def output_response(response):
         else:
             print_markdown(response)
 
-def open_temp_file(input_data='', suffix=None):
-    kwargs = {'suffix': f'.{suffix}'} if suffix else {}
+def write_temp_file(input_data='', suffix=None, prefix=None, dir=None):
+    kwargs = {
+        'prefix': prefix,
+        'dir': dir
+    }
+    if suffix:
+        kwargs['suffix'] = f".{suffix}"
     _, filepath = tempfile.mkstemp(**kwargs)
     with open(filepath, 'w') as f:
         f.write(input_data)

@@ -168,6 +168,13 @@ class Repl():
         response = self.default(message, **overrides)
         return response
 
+    def edit_run_template(self, template_content, suffix='md'):
+        template_name, filepath = self.backend.template_manager.make_temp_template(template_content, suffix)
+        file_editor(filepath)
+        response = self.run_template(template_name)
+        self.backend.template_manager.remove_temp_template(template_name)
+        return response
+
     def collect_template_variable_values(self, template_name, variables=None):
         variables = variables or []
         substitutions = {}
@@ -1015,10 +1022,10 @@ class Repl():
         Examples:
             {COMMAND} mytemplate.md
         """
-        success, message, user_message = self.backend.template_manager.render_template(template_name)
+        success, template_content, user_message = self.backend.template_manager.render_template(template_name)
         if not success:
             return success, template_name, user_message
-        return self.command_editor(message)
+        return self.edit_run_template(template_content)
 
     def command_template_prompt_edit_run(self, template_name):
         """
@@ -1037,8 +1044,8 @@ class Repl():
             return success, template_name, user_message
         template, variables, _substitutions = response
         substitutions = self.collect_template_variable_values(template_name, variables)
-        message = template.render(**substitutions)
-        return self.command_editor(message)
+        template_content = template.render(**substitutions)
+        return self.edit_run_template(template_content)
 
     def command_plugins(self, arg):
         """

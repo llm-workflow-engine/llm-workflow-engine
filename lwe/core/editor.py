@@ -42,7 +42,7 @@ def file_editor(filepath):
     subprocess.call(command_parts)
 
 def pipe_editor(input_data='', suffix=None):
-    filepath = util.open_temp_file(input_data, suffix)
+    filepath = util.write_temp_file(input_data, suffix)
     file_editor(filepath)
     with open(filepath, 'r') as f:
         output_data = f.read()
