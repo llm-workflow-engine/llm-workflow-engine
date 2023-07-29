@@ -1,3 +1,15 @@
+### v0.15.1 - 29/07/2023
+
+* **Sat Jul 29 2023:** fix /template-edit* commands to properly re-parse edited template
+* **Fri Jul 28 2023:** add vertex provider plugins to list
+* **Wed Jul 26 2023:** /workflow-copy command
+* **Tue Jul 25 2023:** bump langchain to 0.0.242
+* **Tue Jul 25 2023:** remove unneeded override method
+* **Mon Jul 24 2023:** add constants for new/untitled title
+* **Sun Jul 23 2023:** relax JSON parsing from strict mode, add some logging for function call/response only returns
+* **Sun Jul 23 2023:** add code doc for template manager
+* **Sat Jul 22 2023:** add prompt prefix token, kill parent_messsage_id
+
 ### v0.15.0 - 17/07/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
