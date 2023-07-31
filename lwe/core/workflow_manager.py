@@ -24,31 +24,12 @@ class WorkflowManager():
             os.path.join(util.get_package_root(self), 'workflows'),
         ]
         self.all_workflow_dirs = self.system_workflow_dirs + self.user_workflow_dirs
-        self.create_runner_dir()
         self.load_workflows()
-
-    def create_runner_dir(self):
-        runner_dir = self.get_runner_dir()
-        if not os.path.exists(runner_dir):
-            os.makedirs(runner_dir)
-        runner_env_dir = os.path.join(runner_dir, 'env')
-        if not os.path.exists(runner_env_dir):
-            os.makedirs(runner_env_dir)
-            # Ansible Runner creates these files dynamically and fills them with values
-            # from the first run.
-            # We don't want this, so provide our own empty files.
-            for file in ['envvars', 'extravars']:
-                with open(os.path.join(runner_env_dir, file), 'w') as f:
-                    f.write('{}')
 
     def get_workflow_dir(self):
         package_root = util.get_package_root(self)
         workflow_dir = os.path.join(package_root, 'backends', 'api', 'workflow')
         return workflow_dir
-
-    def get_runner_dir(self):
-        runner_dir = os.path.join(self.config.data_profile_dir, 'ansible-runner')
-        return runner_dir
 
     def ensure_workflow(self, workflow_name):
         if not workflow_name:
