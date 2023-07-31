@@ -1,4 +1,5 @@
 import os
+import copy
 import yaml
 import platform
 
@@ -11,7 +12,8 @@ class Config:
         self.args = args or util.NoneAttrs()
         self.system = platform.system()
         self.profile = profile
-        self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)
+        self.default_config = copy.deepcopy(constants.DEFAULT_CONFIG)
+        self.config = self._merge_configs(self.default_config, config)
         self.config_file = None
         if config_dir:
             if not os.path.exists(config_dir):
@@ -73,9 +75,9 @@ class Config:
         try:
             with open(self.config_file, "r") as f:
                 config = yaml.safe_load(f) or {}
-            self.config = self._merge_configs(constants.DEFAULT_CONFIG, config)
+            self.config = self._merge_configs(self.default_config, config)
         except FileNotFoundError:
-            self.config = constants.DEFAULT_CONFIG
+            self.config = self.default_config
         self._transform_config()
 
     def _transform_config(self):
