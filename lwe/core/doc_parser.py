@@ -29,7 +29,7 @@ def func_to_openai_function_spec(name, func):
     argspec = inspect.getfullargspec(func)
     func_doc = inspect.getdoc(func)
     parsed_doc = parse_docstring(func_doc)
-    func_description = parsed_doc.get("description", "")
+    func_description = parsed_doc.get("__description", "")
     params = argspec.annotations
     if 'return' in params.keys():
         del params['return']
@@ -102,5 +102,5 @@ def parse_docstring(docstring: str) -> Dict[str, Dict[str, Any]]:
                     parsed_elements['return'] = {'description': field_body}
                 elif prefix == 'rtype':
                     parsed_elements['return'].update(parse_type(field_body))
-    parsed_elements['description'] = ' '.join(description)
+    parsed_elements['__description'] = ' '.join(description)
     return parsed_elements
