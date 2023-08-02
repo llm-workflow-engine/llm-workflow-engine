@@ -9,12 +9,13 @@ request_overrides:
 
     ## FORMAT
 
-    Your final output should be the SPECIFICATION, adhering to the following principles:
-      1. A linear list of steps describing how the programming code should be structured.
-      2. Use structured text, such as numbered lists.
-      3. Remember, the specification will be consumed by another system, so it must be self-contained and complete, containing enough context and explanation for another system to correctly interpret. 
+    Your final output should be:
 
-    IF the user requests a summary of the final GOAL developed through discussion, provide this as well.
+      1. A summary of the final GOAL developed through discussion
+      2. The SPECIFICATION, adhering to the following principles:
+        1. A linear list of steps describing how the programming code should be structured.
+        2. Use structured text, such as numbered lists.
+        3. Remember, the specification will be consumed by another system, so it must be self-contained and complete, containing enough context and explanation for another system to correctly interpret. 
 
     ## CHATBOT BEHAVIORS
 
