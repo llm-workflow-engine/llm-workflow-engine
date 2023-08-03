@@ -253,19 +253,28 @@ class Backend(ABC):
         response = self._ask(message, **overrides)
         return response
 
-    def run_template(self, template_name, substitutions=None):
+    def run_template(self, template_name, template_vars=None, overrides=None):
         """
-        Runs the given template with the provided substitutions.
+        Runs the given template with the provided variables and overrides.
 
         :param template_name: Name of the template to run.
-        :param substitutions: Optional dictionary of substitutions.
+        :param template_vars: Optional dictionary of template variables, will merged with any set in the template.
+        :param overrides: Optional dictionary of overrides, will be merged with any set in the template.
         :return: The response tuple from the template run.
         """
+        template_vars = template_vars or {}
+        overrides = overrides or {}
+        success, response, user_message = self.template_manager.get_template_variables_substitutions(template_name)
+        if not success:
+            return success, response, user_message
+        _template, _variables, substitutions = response
+        util.merge_dicts(substitutions, template_vars)
         success, response, user_message = self.run_template_setup(template_name, substitutions)
         if not success:
             return success, response, user_message
-        message, overrides = response
-        response = self.backend.run_template_compiled(message, overrides)
+        message, template_overrides = response
+        util.merge_dicts(template_overrides, overrides)
+        response = self.backend.run_template_compiled(message, template_overrides)
         return response
 
     @abstractmethod
