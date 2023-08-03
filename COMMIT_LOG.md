@@ -1,3 +1,13 @@
+### v0.15.2 - 02/08/2023
+
+* **Wed Aug 02 2023:** add 'activate_preset' option to request_overrides for templates, allows switching to template-defined preset as default
+* **Wed Aug 02 2023:** add example code generator template, generates code based on written spec
+* **Wed Aug 02 2023:** tweak example code spec generator template
+* **Wed Aug 02 2023:** add example code spec generator template
+* **Tue Aug 01 2023:** fix namespace collision for 'description' arguments
+* **Mon Jul 31 2023:** fix user directories always using 'default' profile path
+* **Mon Jul 31 2023:** rip out unneeded Ansible Runner code
+
 ### v0.15.1 - 29/07/2023
 
 * **Sat Jul 29 2023:** fix /template-edit* commands to properly re-parse edited template
