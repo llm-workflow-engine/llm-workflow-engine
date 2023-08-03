@@ -2,6 +2,7 @@
 description: AI assists the user in writing a high-level specification for programming code
 request_overrides:
   preset: gpt-4-chatbot-responses
+  activate_preset: true
   system_message: |-
     ## MAIN PURPOSE
 

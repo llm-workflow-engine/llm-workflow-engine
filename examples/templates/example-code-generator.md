@@ -2,6 +2,7 @@
 description: AI assists the user in writing programming code based on a specification.
 request_overrides:
   preset: gpt-4-code-generation
+  activate_preset: true
   system_message: |-
     ## MAIN PURPOSE
 

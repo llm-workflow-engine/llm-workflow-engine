@@ -201,6 +201,12 @@ class Backend(ABC):
         if 'request_overrides' in overrides and ('preset' in overrides['request_overrides'] or 'preset_overrides' in overrides['request_overrides']):
             if 'preset' in overrides['request_overrides']:
                 preset_name = overrides['request_overrides'].pop('preset')
+                if 'activate_preset' in overrides['request_overrides']:
+                    activate_preset = overrides['request_overrides'].pop('activate_preset')
+                    if activate_preset:
+                        # TODO: activate_preset() currently lives in the API backend, and so should not
+                        # strictly be called here.
+                        self.activate_preset(preset_name)
             else:
                 preset_name = self.active_preset_name
             if not preset_name:

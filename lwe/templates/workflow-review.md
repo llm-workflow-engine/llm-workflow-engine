@@ -2,6 +2,7 @@
 description: AI reviews and corrects issues with an Ansible playbook
 request_overrides:
   preset: gpt-4-code-generation
+  activate_preset: true
   system_message: |-
     MAIN PURPOSE
     You are an expert at writing Ansible playbooks, and can easily review a playbook to spot errors
