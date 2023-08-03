@@ -671,7 +671,7 @@ class Repl():
         else:
             return success, conversation_data, message
 
-    def command_ask(self, line):
+    def command_ask(self, input):
         """
         Ask a question
 
@@ -680,31 +680,31 @@ class Repl():
         Examples:
             {COMMAND} what is 6+6 (is the same as 'what is 6+6')
         """
-        return self.default(line)
+        return self.default(input)
 
-    def default(self, line, title=None, request_overrides=None):
+    def default(self, input, request_overrides=None):
         # TODO: This signal is recognized on Windows, and calls the callback, but the entire
         # process is still killed.
         signal.signal(signal.SIGINT, self.catch_ctrl_c)
-        if not line:
+        if not input:
             return
 
         request_overrides = request_overrides or {}
         if self.stream and self.backend.should_stream():
             print("")
-            success, response, user_message = self.backend.ask_stream(line, title=title, request_overrides=request_overrides)
+            success, response, user_message = self.backend.ask_stream(input, request_overrides=request_overrides)
             print("\n")
             if not success:
                 return success, response, user_message
         else:
-            success, response, user_message = self.backend.ask(line, title=title, request_overrides=request_overrides)
+            success, response, user_message = self.backend.ask(input, request_overrides=request_overrides)
             if success:
                 print("")
                 util.print_markdown(response)
             else:
                 return success, response, user_message
 
-        self._write_log(line, response)
+        self._write_log(input, response)
         self._update_message_map()
 
     def command_read(self, _):

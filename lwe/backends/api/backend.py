@@ -472,21 +472,6 @@ class ApiBackend(Backend):
         tokens = self.get_num_tokens_from_messages(old_messages)
         return tokens
 
-    def extract_system_message_from_overrides(self, request_overrides):
-        """
-        Extract system message from request overrides.
-
-        :param request_overrides: Request overrides dict
-        :type request_overrides: dict
-        :returns: system message, updated overrides
-        :rtype: tuple
-        """
-        system_message = None
-        if 'system_message' in request_overrides:
-            system_message = request_overrides.pop('system_message')
-            system_message = self.get_system_message(system_message)
-        return system_message, request_overrides
-
     def should_return_on_function_call(self):
         """
         Check if should return on function call.
@@ -1205,14 +1190,12 @@ class ApiBackend(Backend):
         else:
             return True, response_content, "No current user, conversation not saved"
 
-    def _ask(self, prompt, title=None, request_overrides=None):
+    def _ask(self, prompt, request_overrides=None):
         """
         Ask the LLM a question, return and optionally stream a response.
 
         :param prompt: Message to send to the LLM
         :type prompt: str
-        :param title: Conversation title, defaults to None
-        :type title: str, optional
         :param request_overrides: Request overrides, defaults to None
         :type request_overrides: dict, optional
         :returns: success, LLM response, message
@@ -1221,7 +1204,7 @@ class ApiBackend(Backend):
         stream = self.stream and self.should_stream()
         self.log.info(f"Starting {stream and 'streaming' or 'non-streaming'} request")
         request_overrides = request_overrides or {}
-        system_message, request_overrides = self.extract_system_message_from_overrides(request_overrides)
+        system_message = request_overrides.get('system_message')
         new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
         if stream:
             # Start streaming loop.
@@ -1235,6 +1218,7 @@ class ApiBackend(Backend):
         if success:
             response_content, new_messages = self.post_response(response_obj, new_messages, request_overrides)
             self.message_clipboard = response_content
+            title = request_overrides.get('title')
             success, response_obj, user_message = self._store_conversation_messages(self.conversation_id, new_messages, response_content, title)
             if success:
                 response_obj = response_content
@@ -1244,32 +1228,28 @@ class ApiBackend(Backend):
         self.set_override_llm()
         return self._handle_response(success, response_obj, user_message)
 
-    def ask_stream(self, prompt, title=None, request_overrides=None):
+    def ask_stream(self, prompt, request_overrides=None):
         """
         Ask the LLM a question and stream a response.
 
         :param prompt: Message to send to the LLM
         :type prompt: str
-        :param title: Conversation title, defaults to None
-        :type title: str, optional
         :param request_overrides: Request overrides, defaults to None
         :type request_overrides: dict, optional
         :returns: success, LLM response, message
         :rtype: tuple
         """
-        return self._ask(prompt, title, request_overrides)
+        return self._ask(prompt, request_overrides)
 
-    def ask(self, prompt, title=None, request_overrides=None):
+    def ask(self, prompt, request_overrides=None):
         """
         Ask the LLM a question and return response.
 
         :param prompt: Message to send to the LLM
         :type prompt: str
-        :param title: Conversation title, defaults to None
-        :type title: str, optional
         :param request_overrides: Request overrides, defaults to None
         :type request_overrides: dict, optional
         :returns: success, LLM response, message
         :rtype: tuple
         """
-        return self._ask(prompt, title, request_overrides)
+        return self._ask(prompt, request_overrides)

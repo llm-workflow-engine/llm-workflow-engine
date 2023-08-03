@@ -198,21 +198,22 @@ class Backend(ABC):
         """
         preset_name = None
         preset_overrides = None
+        self.log.debug(f"Extracting preset configuration from overrides: {overrides}")
         if 'request_overrides' in overrides and ('preset' in overrides['request_overrides'] or 'preset_overrides' in overrides['request_overrides']):
             if 'preset' in overrides['request_overrides']:
-                preset_name = overrides['request_overrides'].pop('preset')
-                if 'activate_preset' in overrides['request_overrides']:
-                    activate_preset = overrides['request_overrides'].pop('activate_preset')
-                    if activate_preset:
-                        # TODO: activate_preset() currently lives in the API backend, and so should not
-                        # strictly be called here.
-                        self.activate_preset(preset_name)
+                preset_name = overrides['request_overrides']['preset']
+                self.log.debug(f"Preset extracted from overrides: {preset_name}")
+                if 'activate_preset' in overrides['request_overrides'] and overrides['request_overrides']['activate_preset']:
+                    # TODO: activate_preset() currently lives in the API backend, and so should not
+                    # strictly be called here.
+                    self.log.info(f"Activating preset from overrides: {preset_name}")
+                    self.activate_preset(preset_name)
             else:
                 preset_name = self.active_preset_name
             if not preset_name:
                 return False, (preset_name, preset_overrides, overrides), "No active preset to override"
             if 'preset_overrides' in overrides['request_overrides']:
-                preset_overrides = overrides['request_overrides'].pop('preset_overrides')
+                preset_overrides = overrides['request_overrides']['preset_overrides']
         return True, (preset_name, preset_overrides, overrides), f"Extracted preset configuration from request overrides: {overrides}"
 
     def run_template_setup(self, template_name, substitutions=None):

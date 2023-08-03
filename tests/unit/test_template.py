@@ -79,21 +79,24 @@ def test_extract_metadata_keys(template_manager):
 
 def test_extract_template_run_overrides(template_manager):
     metadata = {
-        'title': 'Test Title',
         'description': 'Test Description',
-        'request_overrides': {'option': 'value'},
+        'request_overrides': {
+            'title': 'Test Title',
+            'option': 'value',
+        },
         'custom': 'Custom Value'
     }
     metadata, overrides = template_manager.extract_template_run_overrides(metadata)
     assert metadata == {'custom': 'Custom Value'}
-    assert overrides == {'title': 'Test Title', 'request_overrides': {'option': 'value'}}
+    assert overrides == {'request_overrides': {'title': 'Test Title', 'option': 'value'}}
 
 
 def test_build_message_from_template(template_manager):
     template_name = "hello.md"
     template_content = """
 ---
-title: Existent Template
+request_overrides:
+  title: Existent Template
 ---
 Hello, {{ name }}
 """
@@ -101,7 +104,7 @@ Hello, {{ name }}
     message, overrides = template_manager.build_message_from_template(template_name, {'name': 'John Doe'})
     remove_template_file(template_manager, template_name)
     assert 'Hello, John Doe' in message
-    assert overrides == {'title': 'Existent Template'}
+    assert overrides == {'request_overrides': {'title': 'Existent Template'}}
 
 
 def test_process_template_builtin_variables(template_manager, monkeypatch):

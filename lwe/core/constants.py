@@ -18,6 +18,7 @@ TITLE_GENERATION_MAX_CHARACTERS = 1500
 # Titles.
 NEW_CONVERSATION_TITLE = '[New Conversation]'
 UNTITLED_CONVERSATION = '[Untitled]'
+NO_TITLE_TEXT = "No title"
 SHORT_TITLE_LENGTH = 30
 
 OPEN_AI_MAX_TOKENS = 4096
@@ -110,7 +111,6 @@ SHELL_ONE_SHOT_COMMANDS = [
 ]
 
 # Interface-specific constants.
-NO_TITLE_TEXT = "No title"
 # These are the variables in this file that are available for substitution in
 # help messages.
 HELP_TOKEN_VARIABLE_SUBSTITUTIONS = [

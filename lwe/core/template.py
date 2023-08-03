@@ -217,7 +217,6 @@ class TemplateManager():
         :rtype: tuple
         """
         override_keys = [
-            'title',
             'request_overrides',
         ]
         builtin_keys = [
