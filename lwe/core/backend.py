@@ -335,19 +335,29 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    def ask_stream(self, prompt: str):
+    def ask_stream(self, input: str, request_overrides: dict):
         """
-        Stream a response from the LLM. Must be implemented by the child class.
+        Ask the LLM a question and stream a response.
 
-        :param prompt: The prompt to be sent to the stream.
+        :param input: The input to be sent to the LLM.
+        :type input: str
+        :request_overrides: Overrides for this specific request.
+        :type request_overrides: dict, optional
+        :returns: success, LLM response, message
+        :rtype: tuple
         """
         pass
 
     @abstractmethod
-    def ask(self, message: str):
+    def ask(self, input: str, request_overrides: dict):
         """
         Get a response from the LLM (non-streaming). Must be implemented by the child class.
 
-        :param message: The message to be sent to the backend.
+        :param input: The input to be sent to the LLM.
+        :type input: str
+        :request_overrides: Overrides for this specific request.
+        :type request_overrides: dict, optional
+        :returns: success, LLM response, message
+        :rtype: tuple
         """
         pass

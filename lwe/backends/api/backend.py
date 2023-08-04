@@ -1190,13 +1190,13 @@ class ApiBackend(Backend):
         else:
             return True, response_content, "No current user, conversation not saved"
 
-    def _ask(self, prompt, request_overrides=None):
+    def _ask(self, input, request_overrides: dict = None):
         """
         Ask the LLM a question, return and optionally stream a response.
 
-        :param prompt: Message to send to the LLM
-        :type prompt: str
-        :param request_overrides: Request overrides, defaults to None
+        :param input: The input to be sent to the LLM.
+        :type input: str
+        :request_overrides: Overrides for this specific request.
         :type request_overrides: dict, optional
         :returns: success, LLM response, message
         :rtype: tuple
@@ -1205,7 +1205,7 @@ class ApiBackend(Backend):
         self.log.info(f"Starting {stream and 'streaming' or 'non-streaming'} request")
         request_overrides = request_overrides or {}
         system_message = request_overrides.get('system_message')
-        new_messages, messages = self._prepare_ask_request(prompt, system_message=system_message)
+        new_messages, messages = self._prepare_ask_request(input, system_message=system_message)
         if stream:
             # Start streaming loop.
             self.streaming = True
@@ -1228,28 +1228,28 @@ class ApiBackend(Backend):
         self.set_override_llm()
         return self._handle_response(success, response_obj, user_message)
 
-    def ask_stream(self, prompt, request_overrides=None):
+    def ask_stream(self, input: str, request_overrides: dict = None):
         """
         Ask the LLM a question and stream a response.
 
-        :param prompt: Message to send to the LLM
-        :type prompt: str
-        :param request_overrides: Request overrides, defaults to None
+        :param input: The input to be sent to the LLM.
+        :type input: str
+        :request_overrides: Overrides for this specific request.
         :type request_overrides: dict, optional
         :returns: success, LLM response, message
         :rtype: tuple
         """
-        return self._ask(prompt, request_overrides)
+        return self._ask(input, request_overrides)
 
-    def ask(self, prompt, request_overrides=None):
+    def ask(self, input: str, request_overrides: dict = None):
         """
         Ask the LLM a question and return response.
 
-        :param prompt: Message to send to the LLM
-        :type prompt: str
-        :param request_overrides: Request overrides, defaults to None
+        :param input: The input to be sent to the LLM.
+        :type input: str
+        :request_overrides: Overrides for this specific request.
         :type request_overrides: dict, optional
         :returns: success, LLM response, message
         :rtype: tuple
         """
-        return self._ask(prompt, request_overrides)
+        return self._ask(input, request_overrides)
