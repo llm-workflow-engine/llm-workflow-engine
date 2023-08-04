@@ -1,3 +1,24 @@
+### v0.16.0 - 03/08/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+`ApiBackend` `ask()` / `ask_stream()` method signatures changed:
+
+* `title` argument was removed
+* `title` key added to `request_overrides` arg
+
+Template `title` declaration syntax changed:
+
+Top level `title` key moved under `request_overrides` key.
+
+#### Commit log
+
+* **Thu Aug 03 2023:** fix function signatures for ask/ask_stream
+* **Thu Aug 03 2023:** fix call to run_template_compiled()
+* **Thu Aug 03 2023:** backend run_template() should accept template vars
+* **Thu Aug 03 2023:** fix order of overrides merge
+* **Thu Aug 03 2023:** move title override into request_overrides dict
+
 ### v0.15.2 - 02/08/2023
 
 * **Wed Aug 02 2023:** add 'activate_preset' option to request_overrides for templates, allows switching to template-defined preset as default
