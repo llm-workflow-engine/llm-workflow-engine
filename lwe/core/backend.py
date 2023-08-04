@@ -274,7 +274,7 @@ class Backend(ABC):
             return success, response, user_message
         message, template_overrides = response
         util.merge_dicts(template_overrides, overrides)
-        response = self.backend.run_template_compiled(message, template_overrides)
+        response = self.run_template_compiled(message, template_overrides)
         return response
 
     @abstractmethod
