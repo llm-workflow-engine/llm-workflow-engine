@@ -42,6 +42,7 @@ These front matter attributes have special functionality:
    * ``preset_overrides``: A dictionary of metadata and model customization overrides to apply to the preset when running the template
       * ``metadata``: A dictionary of metadata overrides
       * ``model_customizations```: A dictionary of model customization overrides
+
      This dictionary is recursively merged with the struture of the preset configuration. To see the exact structure of a preset,
      use the ``/preset-edit`` command.
 
