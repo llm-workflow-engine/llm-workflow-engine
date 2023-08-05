@@ -107,7 +107,7 @@ Hello, {{ name }}
     assert overrides == {'request_overrides': {'title': 'Existent Template'}}
 
 
-def test_process_template_builtin_variables(template_manager, monkeypatch):
+def test_process_template_builtin_variables(template_manager):
     pyperclip.copy("clipboard_text")
     variables = ['clipboard']
     substitutions = template_manager.process_template_builtin_variables("existent_template.md", variables)
