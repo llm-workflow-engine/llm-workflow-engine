@@ -31,6 +31,17 @@ class Config:
         self.data_profile_dir = self.make_profile_dir(self.data_dir, self.profile)
         self._transform_config()
 
+    @property
+    def properties(self):
+        return [
+            'config_dir',
+            'config_file',
+            'config_profile_dir',
+            'data_dir',
+            'data_profile_dir',
+            'system',
+        ]
+
     def _default_config_dir(self):
         if self.system == "Windows":
             base_path = os.environ["APPDATA"]

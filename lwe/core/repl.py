@@ -125,7 +125,7 @@ class Repl():
         commands_with_leader = {}
         for command in self.all_commands:
             commands_with_leader[util.command_with_leader(command)] = None
-        config_args = sorted(['edit', 'files', 'profile', 'runtime'] + list(self.config.get().keys()))
+        config_args = sorted(['edit', 'files', 'profile', 'runtime'] + list(self.config.get().keys()) + self.config.properties)
         commands_with_leader[util.command_with_leader('config')] = util.list_to_completion_hash(config_args)
         commands_with_leader[util.command_with_leader('help')] = util.list_to_completion_hash(self.dashed_commands)
         for command in ['file', 'log']:
@@ -1173,6 +1173,9 @@ class Repl():
             Show section: {COMMAND} debug
         """
         if arg:
+            if arg in self.config.properties:
+                property = getattr(self.config, arg, None)
+                print(property)
             if arg == 'edit':
                 file_editor(self.config.config_file)
                 self.reload_repl()
