@@ -76,14 +76,6 @@ lwe.core.logger module
    :undoc-members:
    :show-inheritance:
 
-lwe.core.monkey\_patch module
------------------------------
-
-.. automodule:: lwe.core.monkey_patch
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 lwe.core.plugin module
 ----------------------
 

@@ -1,47 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any
-
-import lwe.core.monkey_patch
-
-from langchain.callbacks.manager import CallbackManager, StreamInterruption
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 from lwe.core.template import TemplateManager
 from lwe.core.preset_manager import PresetManager
 from lwe.core import util
-
-class VerboseStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
-    """
-    This class is an extension of the StreamingStdOutCallbackHandler that
-    always calls verbose callbacks even if verbose is False.
-    """
-    @property
-    def always_verbose(self) -> bool:
-        """
-        Property that indicates whether to call verbose callbacks
-        even if verbose is set to False.
-
-        :return: Always returns True indicating verbose callbacks are always called.
-        """
-        return True
-
-def make_interrupt_streaming_callback_handler(backend):
-    """
-    Factory function to create an instance of the
-    InterruptStreamingCallbackHandler class.
-
-    :param backend: The backend instance to which the handler is associated.
-    :return: An instance of InterruptStreamingCallbackHandler.
-    """
-    class InterruptStreamingCallbackHandler(VerboseStreamingStdOutCallbackHandler):
-        def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-            if not backend.streaming:
-                message = "Request to interrupt streaming"
-                backend.log.info(message)
-                raise StreamInterruption(message)
-    return InterruptStreamingCallbackHandler()
 
 class Backend(ABC):
     """
@@ -60,7 +23,6 @@ class Backend(ABC):
         self.conversation_id = None
         self.conversation_title = None
         self.conversation_title_set = None
-        self.interrupt_streaming_callback_handler = make_interrupt_streaming_callback_handler(self)
         self.stream = False
 
     def initialize_backend(self, config=None):
@@ -121,21 +83,14 @@ class Backend(ABC):
         self.log.debug(f"Provider should_stream: {should_stream_result}")
         return should_stream_result
 
-    def streaming_args(self, interrupt_handler=False):
+    def streaming_args(self):
         """
         Returns a dictionary of streaming arguments.
 
-        :param interrupt_handler: Boolean value indicating whether to include interrupt handler in callback handlers.
         :return: Dictionary of streaming arguments.
         """
-        calback_handlers = [
-            VerboseStreamingStdOutCallbackHandler(),
-        ]
-        if interrupt_handler:
-            calback_handlers.append(self.interrupt_streaming_callback_handler)
         args = {
             'streaming': True,
-            'callback_manager': CallbackManager(calback_handlers),
         }
         return args
 

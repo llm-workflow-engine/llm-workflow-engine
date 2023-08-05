@@ -216,7 +216,7 @@ class ApiBackend(Backend):
                 if success:
                     if self.stream and self.should_stream() and not self.return_only:
                         self.log.debug("Adding streaming-specific customizations to LLM request")
-                        customizations.update(self.streaming_args(interrupt_handler=True))
+                        customizations.update(self.streaming_args())
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
                     self.override_provider = provider
                     self.override_preset = preset
@@ -972,7 +972,7 @@ class ApiBackend(Backend):
         if not llm:
             if self.stream and self.should_stream() and not self.return_only:
                 self.log.debug("Adding streaming-specific customizations to LLM request")
-                customizations.update(self.streaming_args(interrupt_handler=True))
+                customizations.update(self.streaming_args())
             customizations = self.expand_functions(customizations)
             llm = self.make_llm(customizations)
             self.llm = llm
@@ -982,6 +982,35 @@ class ApiBackend(Backend):
         messages = self.transform_messages_to_chat_messages(messages)
         messages = provider.prepare_messages_for_llm(messages)
         return llm, messages
+
+    def _execute_llm_streaming(self, llm, messages):
+        self.log.debug(f"Started streaming request at {util.current_datetime().isoformat()}")
+        response = ""
+        # Start streaming loop.
+        self.streaming = True
+        try:
+            for chunk in llm.stream(messages):
+                content = chunk.content
+                response += content
+                print(content, end="", flush=True)
+                if not self.streaming:
+                    util.print_status_message(False, "Generation stopped")
+                    break
+        except ValueError as e:
+            return False, messages, e
+        finally:
+            # End streaming loop.
+            self.streaming = False
+        self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
+        return True, response, "Response received"
+
+    def _execute_llm_non_streaming(self, llm, messages):
+        self.log.info("Starting non-streaming request")
+        try:
+            response = llm(messages)
+        except ValueError as e:
+            return False, messages, e
+        return True, response, "Response received"
 
     def _call_llm(self, messages, request_overrides=None):
         """
@@ -1007,11 +1036,11 @@ class ApiBackend(Backend):
                     return success, None, user_message
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
         llm, messages = self._build_chat_request(messages)
-        try:
-            response = llm(messages)
-        except ValueError as e:
-            return False, messages, e
-        return True, response, "Response received"
+        stream = self.stream and self.should_stream()
+        if stream:
+            return self._execute_llm_streaming(llm, messages)
+        else:
+            return self._execute_llm_non_streaming(llm, messages)
 
     def set_current_user(self, user=None):
         """
@@ -1201,20 +1230,11 @@ class ApiBackend(Backend):
         :returns: success, LLM response, message
         :rtype: tuple
         """
-        stream = self.stream and self.should_stream()
-        self.log.info(f"Starting {stream and 'streaming' or 'non-streaming'} request")
+        self.log.info("Starting 'ask' request")
         request_overrides = request_overrides or {}
         system_message = request_overrides.get('system_message')
         new_messages, messages = self._prepare_ask_request(input, system_message=system_message)
-        if stream:
-            # Start streaming loop.
-            self.streaming = True
-            self.log.debug(f"Started streaming response at {util.current_datetime().isoformat()}")
         success, response_obj, user_message = self._call_llm(messages, request_overrides)
-        if stream:
-            self.log.debug(f"Stopped streaming response at {util.current_datetime().isoformat()}")
-            if success and not self.streaming:
-                util.print_status_message(False, "Generation stopped")
         if success:
             response_content, new_messages = self.post_response(response_obj, new_messages, request_overrides)
             self.message_clipboard = response_content
@@ -1222,9 +1242,6 @@ class ApiBackend(Backend):
             success, response_obj, user_message = self._store_conversation_messages(self.conversation_id, new_messages, response_content, title)
             if success:
                 response_obj = response_content
-        if stream:
-            # End streaming loop.
-            self.streaming = False
         self.set_override_llm()
         return self._handle_response(success, response_obj, user_message)
 
