@@ -1,3 +1,8 @@
+### v0.16.1 - 05/08/2023
+
+* **Sat Aug 05 2023:** rip out langchain monkey patching, switch to using .stream()
+* **Sat Aug 05 2023:** add config.properties, '/config config_dir', etc.
+
 ### v0.16.0 - 03/08/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
