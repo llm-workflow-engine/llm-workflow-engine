@@ -920,13 +920,15 @@ class Repl():
 
         Templates are pre-configured text content that can be customized before sending a message to the model.
 
+        'Running' a template sends its content (after variable substitutions) to the model as your input.
+
         Available actions:
             copy: Copy a template
             delete: Delete a template
-            edit: Edit a template
-            edit-run: Edit a template, then run it
-            prompt-edit-run: Collect values for template variables, then open in an editor, then run
-            prompt-run: Collect values for template variables, then run
+            edit: Open or create a template for editing
+            edit-run: Open the template in an editor, then run it on editor save and close.
+            prompt-edit-run: Collect values for template variables, then open in an editor, then run it on editor save and close
+            prompt-run: Collect values for template variables, then run it
             run: Run a template
             show: Show a template
 
@@ -949,13 +951,10 @@ class Repl():
 
     def action_template_show(self, template_name):
         """
-        Display a template
+        Display a template.
 
-        Arguments:
-            template_name: Required. The name of the template
-
-        Examples:
-            {COMMAND} mytemplate.md
+        :param template_name: The name of the template.
+        :type template_name: str
         """
         success, source, user_message = self.backend.template_manager.get_template_source(template_name)
         if not success:
@@ -967,13 +966,10 @@ class Repl():
 
     def action_template_edit(self, template_name):
         """
-        Create a new template, or edit an existing template
+        Create a new template, or edit an existing template.
 
-        Arguments:
-            template_name: Required. The name of the template
-
-        Examples:
-            {COMMAND} mytemplate.md
+        :param template_name: The name of the template.
+        :type template_name: str
         """
         success, filepath, user_message = self.backend.template_manager.get_template_editable_filepath(template_name)
         if not success:
@@ -984,13 +980,12 @@ class Repl():
 
     def action_template_copy(self, *template_names):
         """
-        Copies an existing template and saves it as a new template
+        Copies an existing template and saves it as a new template.
 
-        Arguments:
-            template_names: Required. The name of the old and new templates separated by whitespace,
-
-        Examples:
-            {COMMAND} old_template.md new_template.md
+        :param template_names: The names of the old and new templates.
+        :type template_names: list
+        :return: Success status, new file path, and user message.
+        :rtype: tuple
         """
         try:
             old_name, new_name = template_names
@@ -1005,13 +1000,10 @@ class Repl():
 
     def action_template_delete(self, template_name):
         """
-        Deletes an existing template
+        Deletes an existing template.
 
-        Arguments:
-            template_name: Required. The name of the template to delete
-
-        Examples:
-            {COMMAND} mytemplate.md
+        :param template_name: The name of the template to delete.
+        :type template_name: str
         """
         success, filename, user_message = self.backend.template_manager.template_can_delete(template_name)
         if not success:
@@ -1024,15 +1016,10 @@ class Repl():
 
     def action_template_run(self, template_name):
         """
-        Run a template
+        Run a template.
 
-        Running a template sends the content of it to the model as your input.
-
-        Arguments:
-            template_name: Required. The name of the template.
-
-        Examples:
-            {COMMAND} mytemplate.md
+        :param template_name: The name of the template.
+        :type template_name: str
         """
         success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
@@ -1042,16 +1029,10 @@ class Repl():
 
     def action_template_prompt_run(self, template_name):
         """
-        Prompt for template variable values, then run
+        Prompt for template variable values, then run.
 
-        Prompts for a value for each variable in the template, sustitutes the values
-        in the template, and sends the final content to the model as your input.
-
-        Arguments:
-            template_name: Required. The name of the template.
-
-        Examples:
-            {COMMAND} mytemplate.md
+        :param template_name: The name of the template.
+        :type template_name: str
         """
         success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
@@ -1062,16 +1043,10 @@ class Repl():
 
     def action_template_edit_run(self, template_name):
         """
-        Open a template for final editing, then run it
+        Open a template for final editing, then run it.
 
-        Open the template in an editor, and upon editor exit, send the final content
-        to the model as your input.
-
-        Arguments:
-            template_name: Required. The name of the template.
-
-        Examples:
-            {COMMAND} mytemplate.md
+        :param template_name: The name of the template.
+        :type template_name: str
         """
         success, template_content, user_message = self.backend.template_manager.render_template(template_name)
         if not success:
@@ -1084,11 +1059,8 @@ class Repl():
         in the template, opens an editor for final edits, and sends the final content
         to the model as your input.
 
-        Arguments:
-            template_name: Required. The name of the template.
-
-        Examples:
-            {COMMAND} mytemplate.md
+        :param template_name: The name of the template.
+        :type template_name: str
         """
         success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
