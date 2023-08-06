@@ -286,6 +286,7 @@ class TemplateManager():
         temp_dir = os.path.join(tempfile.gettempdir(), TEMP_TEMPLATE_DIR)
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
+        util.clean_directory(temp_dir)
         return temp_dir
 
     def make_temp_template(self, template_contents, suffix='md'):

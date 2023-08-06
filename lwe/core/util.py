@@ -10,6 +10,7 @@ import tempfile
 import platform
 import pyperclip
 import urllib.parse
+import glob
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -336,3 +337,8 @@ def is_valid_url(url):
 def list_to_markdown_list(list_obj, indent=2):
     spaces = ' ' * indent
     return "\n".join([f"{spaces}* {x}" for x in list_obj])
+
+def clean_directory(directory):
+    files = glob.glob(f"{directory}/*")
+    for f in files:
+        os.remove(f)

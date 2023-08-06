@@ -901,13 +901,19 @@ class Repl():
             {COMMAND}
             {COMMAND} filterstring
         """
+        # Clean out temporary templates.
+        self.backend.template_manager.make_temp_template_dir()
         self.backend.template_manager.load_templates()
         self.rebuild_completions()
         templates = []
         for template_name in self.backend.template_manager.templates:
             content = f"* **{template_name}**"
             template, _ = self.backend.template_manager.get_template_and_variables(template_name)
-            source = frontmatter.load(template.filename)
+            try:
+                source = frontmatter.load(template.filename)
+            except yaml.parser.ParserError:
+                util.print_status_message(False, f"Failed to parse template: {template_name}")
+                continue
             if 'description' in source.metadata:
                 content += f": *{source.metadata['description']}*"
             if not arg or arg.lower() in content.lower():
