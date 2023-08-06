@@ -31,6 +31,11 @@ class NoneAttrs:
 def introspect_commands(klass):
     return [method[8:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("command_")]
 
+def introspect_command_actions(klass, command):
+    action_command = f"action_{command}_"
+    prefix = len(action_command)
+    return [method[prefix:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith(action_command)]
+
 def command_with_leader(command):
     key = "%s%s" % (constants.COMMAND_LEADER, command)
     return key
@@ -162,7 +167,7 @@ def parse_shell_input(user_input):
             argument = text
     return command, argument
 
-def get_class_command_method(klass, command_command):
+def get_class_method(klass, command_command):
     mro = getattr(klass, '__mro__')
     for klass in mro:
         method = getattr(klass, command_command, None)

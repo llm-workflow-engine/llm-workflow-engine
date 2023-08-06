@@ -131,9 +131,7 @@ class Repl():
         for command in ['file', 'log']:
             commands_with_leader[util.command_with_leader(command)] = PathCompleter()
         template_completions = util.list_to_completion_hash(self.backend.template_manager.templates)
-        template_commands = [c for c in self.dashed_commands if c.startswith('template') and c != 'templates']
-        for command in template_commands:
-            commands_with_leader[util.command_with_leader(command)] = template_completions
+        commands_with_leader[util.command_with_leader('template')] = {c: template_completions for c in self.get_command_actions('template', dashed=True)}
         self.base_shell_completions = commands_with_leader
 
     def rebuild_completions(self):
@@ -331,6 +329,26 @@ class Repl():
         else:
             util.print_status_message(False, "Failed to delete current conversation")
 
+    def dispatch_command_action(self, command, args):
+        try:
+            action, *action_args = args.split()
+        except ValueError:
+            return False, None, f"Action required for {constants.COMMAND_LEADER}{command} command"
+        try:
+            method, klass = self.get_command_action_method(command, action)
+        except AttributeError:
+            return False, None, f"Invalid action {action} for {constants.COMMAND_LEADER}{command} command"
+        action_args.insert(0, klass)
+        return method(*action_args)
+
+    def get_command_actions(self, command, dashed=False):
+        command_actions = util.introspect_command_actions(__class__, command)
+        for plugin in self.plugins.values():
+            plugin_command_actions = util.introspect_command_actions(plugin.__class__, command)
+            command_actions.extend(plugin_command_actions)
+        if dashed:
+            command_actions = list(map(util.underscore_to_dash, command_actions))
+        return command_actions
 
     def command_stream(self, _):
         """
@@ -896,7 +914,40 @@ class Repl():
                 templates.append(content)
         util.print_markdown("## Templates:\n\n%s" % "\n".join(sorted(templates)))
 
-    def command_template(self, template_name):
+    def command_template(self, args):
+        """
+        Run actions on available templates
+
+        Templates are pre-configured text content that can be customized before sending a message to the model.
+
+        Available actions:
+            copy: Copy a template
+            delete: Delete a template
+            edit: Edit a template
+            edit-run: Edit a template, then run it
+            prompt-edit-run: Collect values for template variables, then open in an editor, then run
+            prompt-run: Collect values for template variables, then run
+            run: Run a template
+            show: Show a template
+
+        Arguments:
+            template_name: Required. The name of the template.
+
+            For copy, a new template name is also required.
+
+        Examples:
+            {COMMAND} copy mytemplate.md mytemplate_copy.md
+            {COMMAND} delete mytemplate.md
+            {COMMAND} edit mytemplate.md
+            {COMMAND} edit-run mytemplate.md
+            {COMMAND} prompt-edit-run mytemplate.md
+            {COMMAND} prompt-run mytemplate.md
+            {COMMAND} run mytemplate.md
+            {COMMAND} show mytemplate.md
+        """
+        return self.dispatch_command_action("template", args)
+
+    def action_template_show(self, template_name):
         """
         Display a template
 
@@ -914,7 +965,7 @@ class Repl():
             util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False))
         util.print_markdown(f"\n\n{source.content}")
 
-    def command_template_edit(self, template_name):
+    def action_template_edit(self, template_name):
         """
         Create a new template, or edit an existing template
 
@@ -931,7 +982,7 @@ class Repl():
         self.backend.template_manager.load_templates()
         self.rebuild_completions()
 
-    def command_template_copy(self, template_names):
+    def action_template_copy(self, *template_names):
         """
         Copies an existing template and saves it as a new template
 
@@ -942,7 +993,7 @@ class Repl():
             {COMMAND} old_template.md new_template.md
         """
         try:
-            old_name, new_name = template_names.split()
+            old_name, new_name = template_names
         except ValueError:
             return False, template_names, "Old and new template name required"
 
@@ -952,7 +1003,7 @@ class Repl():
         self.rebuild_completions()
         return True, new_filepath, f"Copied {old_name} to {new_filepath}"
 
-    def command_template_delete(self, template_name):
+    def action_template_delete(self, template_name):
         """
         Deletes an existing template
 
@@ -971,7 +1022,7 @@ class Repl():
         else:
             return False, template_name, "Deletion aborted"
 
-    def command_template_run(self, template_name):
+    def action_template_run(self, template_name):
         """
         Run a template
 
@@ -989,7 +1040,7 @@ class Repl():
         _template, variables, substitutions = response
         return self.run_template(template_name, substitutions)
 
-    def command_template_prompt_run(self, template_name):
+    def action_template_prompt_run(self, template_name):
         """
         Prompt for template variable values, then run
 
@@ -1009,7 +1060,7 @@ class Repl():
         substitutions = self.collect_template_variable_values(template_name, variables)
         return self.run_template(template_name, substitutions)
 
-    def command_template_edit_run(self, template_name):
+    def action_template_edit_run(self, template_name):
         """
         Open a template for final editing, then run it
 
@@ -1027,7 +1078,7 @@ class Repl():
             return success, template_name, user_message
         return self.edit_run_template(template_content)
 
-    def command_template_prompt_edit_run(self, template_name):
+    def action_template_prompt_edit_run(self, template_name):
         """
         Prompts for a value for each variable in the template, sustitutes the values
         in the template, opens an editor for final edits, and sends the final content
@@ -1214,15 +1265,20 @@ class Repl():
         pass
 
     def get_command_method(self, command):
-        command_command = f"command_{command}"
-        method = util.get_class_command_method(self.__class__, command_command)
+        return self.get_shell_method(f"command_{command}")
+
+    def get_command_action_method(self, command, action):
+        return self.get_shell_method(util.dash_to_underscore(f"action_{command}_{action}"))
+
+    def get_shell_method(self, method_string):
+        method = util.get_class_method(self.__class__, method_string)
         if method:
             return method, self
         for plugin in self.plugins.values():
-            method = util.get_class_command_method(plugin.__class__, command_command)
+            method = util.get_class_method(plugin.__class__, method_string)
             if method:
                 return method, plugin
-        raise AttributeError(f"{command_command} method not found in any shell class")
+        raise AttributeError(f"{method_string} method not found in any shell class")
 
     def run_command(self, command, argument):
         command = util.dash_to_underscore(command)

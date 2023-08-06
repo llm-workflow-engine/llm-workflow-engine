@@ -18,7 +18,7 @@ from lwe.core.util import (introspect_commands,
                                        parse_conversation_ids,
                                        conversation_from_messages,
                                        parse_shell_input,
-                                       get_class_command_method,
+                                       get_class_method,
                                        output_response,
                                        write_temp_file,
                                        get_package_root,
@@ -147,8 +147,8 @@ class TestClass:
         def sample_method(self):
             pass
 
-    def test_get_class_command_method(self):
-        method = get_class_command_method(self.SampleClass, 'sample_method')
+    def test_get_class_method(self):
+        method = get_class_method(self.SampleClass, 'sample_method')
         assert method == self.SampleClass.sample_method
 
     def test_output_response(self, capsys):
