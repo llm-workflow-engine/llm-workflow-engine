@@ -342,7 +342,7 @@ class Repl():
         return method(*action_args)
 
     def get_command_actions(self, command, dashed=False):
-        command_actions = util.introspect_command_actions(__class__, command)
+        command_actions = util.introspect_command_actions(self.__class__, command)
         for plugin in self.plugins.values():
             plugin_command_actions = util.introspect_command_actions(plugin.__class__, command)
             command_actions.extend(plugin_command_actions)
