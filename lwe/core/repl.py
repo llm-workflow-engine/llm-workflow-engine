@@ -989,7 +989,7 @@ class Repl():
         Copies an existing template and saves it as a new template.
 
         :param template_names: The names of the old and new templates.
-        :type template_names: list
+        :type template_names: tuple
         :return: Success status, new file path, and user message.
         :rtype: tuple
         """
