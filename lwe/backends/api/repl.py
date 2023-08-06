@@ -66,10 +66,9 @@ class ApiRepl(Repl):
             util.command_with_leader('provider'): provider_completions,
         }
         preset_keys = self.backend.preset_manager.presets.keys()
-        for subcmd in ['save', 'load', 'edit', 'delete', 'show']:
-            final_completions[util.command_with_leader(f"preset-{subcmd}")] = util.list_to_completion_hash(preset_keys) if preset_keys else None
+        final_completions[util.command_with_leader('preset')] = {c: util.list_to_completion_hash(preset_keys) for c in self.get_command_actions('preset', dashed=True)}
         for preset_name in preset_keys:
-            final_completions[util.command_with_leader("preset-save")][preset_name] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
+            final_completions[util.command_with_leader("preset")]['save'][preset_name] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
         final_completions[util.command_with_leader('workflows')] = None
         subcommands = [
             'run',
@@ -628,15 +627,41 @@ Before you can start using the shell, you must create a new user.
                 preset_names.append(content)
         util.print_markdown("## Presets:\n\n%s" % "\n".join(sorted(preset_names)))
 
-    def command_preset_show(self, preset_name):
+    def command_preset(self, args):
+        """
+        Run actions on presets
+
+        Presets are saved provider/model configurations.
+
+        Available actions:
+            delete: Delete a preset
+            load: Load a preset (makes it the active preset)
+            edit: Open a preset for editing
+            save: Save the existing configuration to a preset, and/or set metadata on the preset
+            show: Show a preset
+
+        Arguments:
+            preset_name: Required. The name of the preset.
+
+        Examples:
+            {COMMAND} delete mypreset
+            {COMMAND} load mypreset
+            {COMMAND} edit mypreset
+            {COMMAND} save mypreset
+            {COMMAND} save mypreset description This is my description
+            {COMMAND} show mypreset
+        """
+        return self.dispatch_command_action("preset", args)
+
+    def action_preset_show(self, preset_name=None):
         """
         Display a preset
 
-        Arguments:
-            preset_name: Optional. The name of the preset to show (default: active preset)
+        :param preset_name: Optional. The name of the preset to show (default: active preset)
+        :type preset_name: str
 
-        Examples:
-            {COMMAND} mypreset
+        :return: A tuple containing the success status, the preset, and a user message
+        :rtype: tuple
         """
         if not preset_name:
             if not self.backend.active_preset_name:
@@ -650,25 +675,23 @@ Before you can start using the shell, you must create a new user.
         util.print_markdown("### Model customizations\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False))
         util.print_markdown("### Metadata\n```yaml\n%s\n```" % yaml.dump(metadata, default_flow_style=False))
 
-    def command_preset_save(self, args):
+    def action_preset_save(self, *args):
         """
         Create a new preset, or update an existing preset
 
-        Arguments:
-            preset_name: Required. The name of the preset
-            [metadata_field]: Optional. The name of a metadata field, followed by the value
+        :param args: The arguments passed to the method, first must be the preset name,
+                     second is the metadata name, and others are the metadata value to be saved
+        :type args: tuple
 
-            Valid metadata fields are:
-                description: A description of the preset
-                system_message: A system message to activate for the preset, can be a configured alias or a custom message
-
-        Examples:
-            {COMMAND} mypreset
+        :return: A tuple containing the success status, the preset, and a user message
+        :rtype: tuple
         """
+        args = list(args)
         if not args:
             return False, args, "No preset name specified"
+        preset_name = args.pop(0)
         extra_metadata = {}
-        success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(args.split()[0])
+        success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if success:
             existing_metadata, _customizations = existing_preset
             if self.backend.preset_manager.is_system_preset(existing_metadata['filepath']):
@@ -677,37 +700,35 @@ Before you can start using the shell, you must create a new user.
                 if key in existing_metadata:
                     extra_metadata[key] = existing_metadata[key]
         metadata, customizations = self.backend.make_preset()
-        try:
-            preset_name, metadata_field, *rest = args.split()
+        if args:
+            metadata_field, *rest = args
             if metadata_field not in self.backend.preset_manager.user_metadata_fields():
                 return False, metadata_field, f"Invalid metadata field: {metadata_field}"
             if not rest:
                 del extra_metadata[metadata_field]
             else:
                 extra_metadata[metadata_field] = " ".join(rest)
-        except ValueError:
-            preset_name = args
         metadata.update(extra_metadata)
         success, file_path, user_message = self.backend.preset_manager.save_preset(preset_name, metadata, customizations)
         if success:
             success, presets, user_message = self.backend.preset_manager.load_presets()
             if not success:
                 return success, presets, user_message
-            success, preset, load_preset_message = self.command_preset_load(preset_name)
+            success, preset, load_preset_message = self.action_preset_load(preset_name)
             if not success:
                 return success, preset, load_preset_message
         return success, file_path, user_message
 
 
-    def command_preset_edit(self, preset_name):
+    def action_preset_edit(self, preset_name=None):
         """
         Edit an existing preset
 
-        Arguments:
-            preset_name: Required. The name of the preset
+        :param preset_name: Required. The name of the preset
+        :type preset_name: str
 
-        Examples:
-            {COMMAND} mypreset
+        :return: A tuple containing the success status, the preset name, and a user message
+        :rtype: tuple
         """
         if not preset_name:
             return False, preset_name, "No preset name specified"
@@ -729,34 +750,38 @@ Before you can start using the shell, you must create a new user.
             return success, preset, user_message
         return True, preset_name, f"Edited preset: {preset_name}"
 
-    def command_preset_load(self, preset_name):
+    def action_preset_load(self, preset_name=None):
         """
         Load an existing preset
 
         This activates the provider and model customizations stored in the preset as the current
         configuration.
 
-        Arguments:
-            preset_name: Required. The name of the preset to load.
+        :param preset_name: Required. The name of the preset to load.
+        :type preset_name: str
 
-        Examples:
-            {COMMAND} mypreset
+        :return: A tuple containing the success status, the preset, and a user message
+        :rtype: tuple
         """
+        if not preset_name:
+            return False, preset_name, "No preset name specified"
         success, preset, user_message = self.backend.activate_preset(preset_name)
         if success:
             self.rebuild_completions()
         return success, preset, user_message
 
-    def command_preset_delete(self, preset_name):
+    def action_preset_delete(self, preset_name=None):
         """
         Deletes an existing preset
 
-        Arguments:
-            preset_name: Required. The name of the preset to delete
+        :param preset_name: Required. The name of the preset to delete
+        :type preset_name: str
 
-        Examples:
-            {COMMAND} mypreset
+        :return: A tuple containing the success status, the preset name, and a user message
+        :rtype: tuple
         """
+        if not preset_name:
+            return False, preset_name, "No preset name specified"
         success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if success:
             metadata, _customizations = preset
