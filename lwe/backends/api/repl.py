@@ -634,22 +634,22 @@ Before you can start using the shell, you must create a new user.
         Presets are saved provider/model configurations.
 
         Available actions:
-            delete: Delete a preset
-            load: Load a preset (makes it the active preset)
-            edit: Open a preset for editing
-            save: Save the existing configuration to a preset, and/or set metadata on the preset
-            show: Show a preset
+            * delete: Delete a preset
+            * load: Load a preset (makes it the active preset)
+            * edit: Open a preset for editing
+            * save: Save the existing configuration to a preset, and/or set metadata on the preset
+            * show: Show a preset
 
         Arguments:
             preset_name: Required. The name of the preset.
 
         Examples:
-            {COMMAND} delete mypreset
-            {COMMAND} load mypreset
-            {COMMAND} edit mypreset
-            {COMMAND} save mypreset
-            {COMMAND} save mypreset description This is my description
-            {COMMAND} show mypreset
+            * /preset delete mypreset
+            * /preset load mypreset
+            * /preset edit mypreset
+            * /preset save mypreset
+            * /preset save mypreset description This is my description
+            * /preset show mypreset
         """
         return self.dispatch_command_action("preset", args)
 

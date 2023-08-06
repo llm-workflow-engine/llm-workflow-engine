@@ -929,14 +929,14 @@ class Repl():
         'Running' a template sends its content (after variable substitutions) to the model as your input.
 
         Available actions:
-            copy: Copy a template
-            delete: Delete a template
-            edit: Open or create a template for editing
-            edit-run: Open the template in an editor, then run it on editor save and close.
-            prompt-edit-run: Collect values for template variables, then open in an editor, then run it on editor save and close
-            prompt-run: Collect values for template variables, then run it
-            run: Run a template
-            show: Show a template
+            * copy: Copy a template
+            * delete: Delete a template
+            * edit: Open or create a template for editing
+            * edit-run: Open the template in an editor, then run it on editor save and close.
+            * prompt-edit-run: Collect values for template variables, then open in an editor, then run it on editor save and close
+            * prompt-run: Collect values for template variables, then run it
+            * run: Run a template
+            * show: Show a template
 
         Arguments:
             template_name: Required. The name of the template.
@@ -944,14 +944,14 @@ class Repl():
             For copy, a new template name is also required.
 
         Examples:
-            {COMMAND} copy mytemplate.md mytemplate_copy.md
-            {COMMAND} delete mytemplate.md
-            {COMMAND} edit mytemplate.md
-            {COMMAND} edit-run mytemplate.md
-            {COMMAND} prompt-edit-run mytemplate.md
-            {COMMAND} prompt-run mytemplate.md
-            {COMMAND} run mytemplate.md
-            {COMMAND} show mytemplate.md
+            * /template copy mytemplate.md mytemplate_copy.md
+            * /template delete mytemplate.md
+            * /template edit mytemplate.md
+            * /template edit-run mytemplate.md
+            * /template prompt-edit-run mytemplate.md
+            * /template prompt-run mytemplate.md
+            * /template run mytemplate.md
+            * /template show mytemplate.md
         """
         return self.dispatch_command_action("template", args)
 
