@@ -1,3 +1,26 @@
+### v0.17.0 - 07/08/2023
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+Command syntax changes for `/user*`, `/template*`, `/preset*`, `/workflow*`:
+
+* `/user` -> `/user show`
+* `/user-[action]` -> `/user [action]`
+* `/template` -> `/template show`
+* `/template-[action]` -> `/template [action]`
+* `/preset-[action]` -> `/preset [action]`
+* `/workflow-[action]` -> `/workflow [action]`
+
+#### Commit log
+
+* **Mon Aug 07 2023:** convert /user-* commands to '/user [action]'
+* **Mon Aug 07 2023:** convert /workflow-* commands to '/workflow [action]'
+* **Sun Aug 06 2023:** convert /preset-* to '/preset [action]'
+* **Sun Aug 06 2023:** reference class instance for actions
+* **Sun Aug 06 2023:** clean temporary templates, catch template parsing errors
+* **Sun Aug 06 2023:** fix template / action_template doc
+* **Sun Aug 06 2023:** convert /template-* commands to '/template [action]'
+
 ### v0.16.1 - 05/08/2023
 
 * **Sat Aug 05 2023:** rip out langchain monkey patching, switch to using .stream()
