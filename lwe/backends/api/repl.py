@@ -41,21 +41,13 @@ class ApiRepl(Repl):
         self.commands = util.introspect_commands(__class__)
 
     def get_custom_shell_completions(self):
-        user_commands = [
-            'login',
-            'user',
-            'user-delete',
-            'user-edit',
-            'user-login',
-        ]
+        user_commands = sorted(self.get_command_actions('user', dashed=True))
         success, users, user_message = self.user_management.get_users()
         if not success:
             raise Exception(user_message)
-        if users:
-            usernames = [u.username for u in users]
-            for command in user_commands:
-                # Overwriting the commands directly, as merging still includes deleted users.
-                self.base_shell_completions["%s%s" % (constants.COMMAND_LEADER, command)] = {username: None for username in usernames}
+        usernames = {u.username: None for u in users} if users else None
+        # Overwriting the commands directly, as merging still includes deleted users.
+        self.base_shell_completions[util.command_with_leader("user")] = {c: None if c == 'logout' else usernames for c in user_commands}
         self.base_shell_completions[util.command_with_leader('model')] = self.backend.provider.customizations_to_completions()
         provider_completions = {}
         for _name, provider in self.backend.get_providers().items():
@@ -139,7 +131,7 @@ class ApiRepl(Repl):
     #     self._update_message_map()
     #     self._write_log_context()
 
-    def command_user_register(self, username=None):
+    def action_user_register(self, username=None):
         """
         Register a new user
 
@@ -149,12 +141,11 @@ class ApiRepl(Repl):
             email: Optional, valid email
             password: Optional, if given will be required for login
 
-        Arguments:
-            username: The username of the new user
+        :param username: The username of the new user
+        :type username: str
 
-        Examples:
-            {COMMAND}
-            {COMMAND} myusername
+        :return: A tuple containing the success status, user object, and a message
+        :rtype: tuple[bool, User, str]
         """
         if not username:
             username = input("Enter username (no spaces): ").strip() or None
@@ -179,6 +170,11 @@ class ApiRepl(Repl):
 
 
     def check_login(self):
+        """
+        Check if a user is logged in
+
+        :return: None
+        """
         user_count = self.session.query(User).count()
         if user_count == 0:
             util.print_status_message(False, "No users in database. Creating one...")
@@ -192,6 +188,11 @@ class ApiRepl(Repl):
                 return self.login(user)
 
     def welcome_message(self):
+        """
+        Print the welcome message
+
+        :return: None
+        """
         util.print_markdown(
 """
 # Welcome to the LLM Workflow Engine shell!
@@ -203,6 +204,11 @@ Before you can start using the shell, you must create a new user.
         )
 
     def add_examples(self):
+        """
+        Add example configurations
+
+        :return: None
+        """
         if 'examples' in self.backend.plugin_manager.plugins:
             from lwe.plugins.examples import TYPES as example_types
             examples = self.backend.plugin_manager.plugins['examples']
@@ -211,7 +217,12 @@ Before you can start using the shell, you must create a new user.
                 examples.install_examples()
 
     def create_first_user(self):
-        success, user, message = self.command_user_register()
+        """
+        Create the first user
+
+        :return: None
+        """
+        success, user, message = self.action_user_register()
         util.print_status_message(success, message)
         if success:
             success, _user, message = self.login(user)
@@ -221,6 +232,12 @@ Before you can start using the shell, you must create a new user.
             self.create_first_user()
 
     def get_current_conversation_title(self):
+        """
+        Get the title of the current conversation
+
+        :return: The title of the current conversation
+        :rtype: str
+        """
         if self.backend.conversation_id:
             if self.backend.conversation_title:
                 title = self.backend.conversation_title[:constants.SHORT_TITLE_LENGTH]
@@ -233,6 +250,12 @@ Before you can start using the shell, you must create a new user.
         return title
 
     def build_shell_user_prefix(self):
+        """
+        Build the prefix for the shell prompt
+
+        :return: The prefix for the shell prompt
+        :rtype: str
+        """
         if not self.logged_in_user:
             return ''
         prompt_prefix = self.config.get("shell.prompt_prefix")
@@ -249,6 +272,12 @@ Before you can start using the shell, you must create a new user.
         return f"{prompt_prefix} "
 
     def get_model_temperature(self):
+        """
+        Get the temperature of the model
+
+        :return: The temperature of the model
+        :rtype: str
+        """
         temperature = 'N/A'
         success, temperature, _user_message = self.backend.provider.get_customization_value('temperature')
         if success:
@@ -256,10 +285,56 @@ Before you can start using the shell, you must create a new user.
         return str(temperature)
 
     def set_logged_in_user(self, user=None):
+        """
+        Set the logged in user
+
+        :param user: The user object to set as the logged in user
+        :type user: User
+
+        :return: None
+        """
         self.logged_in_user = user
         self.backend.set_current_user(user)
 
+    def command_user(self, args):
+        """
+        Run actions on users
+
+        Available actions:
+            * delete: Delete a user
+            * edit: Edit a user
+            * login: Log in a user
+            * logout: Log out a user
+            * register: Register a new user
+            * show: Show a user
+
+        Arguments:
+            user_name: Optional, will be prompted for if necessary, defaults to currently logged in user
+
+            When registering, you can optionally supply email/password -- no password is passwordless login.
+
+            Login can be username or email.
+
+        Examples:
+            * /user delete [myuser]
+            * /user edit [myuser]
+            * /user login [myuser]
+            * /user logout
+            * /user register [myuser]
+            * /user show [myuser]
+        """
+        return self.dispatch_command_action("user", args)
+
     def login(self, user):
+        """
+        Log in as a user
+
+        :param user: The user to log in as
+        :type user: User
+
+        :return: A tuple containing the success status, user object, and a message
+        :rtype: tuple[bool, User, str]
+        """
         if user.password:
             password = getpass.getpass(prompt='Enter password: ')
             success, user, message = self.user_management.login(user.username, password)
@@ -270,20 +345,18 @@ Before you can start using the shell, you must create a new user.
             self.backend.new_conversation()
         return success, user, message
 
-    def command_user_login(self, identifier=None):
+    def action_user_login(self, identifier=None):
         """
         Login in as a user
 
         If the 'identifier' argument is not provided, you will be prompted for either a username or email.
         You will be prompted for a password if one is set for the user.
 
-        Arguments:
-            identifier: The username or email
+        :param identifier: The username or email
+        :type identifier: str
 
-        Examples:
-            {COMMAND}
-            {COMMAND} myusername
-            {COMMAND} email@example.com
+        :return: A tuple containing the success status, user object, and a message
+        :rtype: tuple[bool, User, str]
         """
         if not identifier:
             identifier = input("Enter username or email: ")
@@ -302,22 +375,20 @@ Before you can start using the shell, you must create a new user.
 
         Login in as a user.
 
-        Arguments:
-            identifier: The username or email
+        :param identifier: The username or email
+        :type identifier: str
 
-        Examples:
-            {COMMAND}
-            {COMMAND} myusername
-            {COMMAND} email@example.com
+        :return: The result of the action_user_login method
+        :rtype: Any
         """
-        return self.command_user_login(identifier)
+        return self.action_user_login(identifier)
 
-    def command_user_logout(self, _):
+    def action_user_logout(self):
         """
         Logout the current user.
 
-        Examples:
-            {COMMAND}
+        :return: A tuple containing the success status, None, and a message
+        :rtype: tuple[bool, None, str]
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -330,12 +401,22 @@ Before you can start using the shell, you must create a new user.
 
         Logout the current user.
 
-        Examples:
-            {COMMAND}
+        :param _: Unused argument
+
+        :return: The result of the action_user_logout method
+        :rtype: Any
         """
-        return self.command_user_logout(None)
+        return self.action_user_logout()
 
     def display_user(self, user):
+        """
+        Display user information
+
+        :param user: The user object to display information for
+        :type user: User
+
+        :return: None
+        """
         output = """
 ## Username: %s
 
@@ -345,16 +426,15 @@ Before you can start using the shell, you must create a new user.
         """ % (user.username, user.email, "set" if user.password else "Not set", user.default_preset if user.default_preset else "Global default")
         util.print_markdown(output)
 
-    def command_user(self, username=None):
+    def action_user_show(self, username=None):
         """
         Show user information
 
-        Arguments:
-            username: The username of the user to show, if not provided, the logged in user will be used.
+        :param username: The username of the user to show, if not provided, the logged in user will be used.
+        :type username: str
 
-        Examples:
-            {COMMAND}
-            {COMMAND} ausername
+        :return: The result of the display_user method
+        :rtype: Any
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -375,8 +455,10 @@ Before you can start using the shell, you must create a new user.
         """
         Show information for all users
 
-        Examples:
-            {COMMAND}
+        :param _: Unused argument
+
+        :return: The result of the user_management.get_users method
+        :rtype: Any
         """
         success, users, message = self.user_management.get_users()
         if success:
@@ -387,6 +469,15 @@ Before you can start using the shell, you must create a new user.
             return success, users, message
 
     def edit_user(self, user):
+        """
+        Edit user information
+
+        :param user: The user object to edit
+        :type user: User
+
+        :return: A tuple containing the success status, user object, and a message
+        :rtype: tuple[bool, User, str]
+        """
         util.print_markdown(f"## Editing user: {user.username}")
         username = input(f"New username {SKIP_MESSAGE}: ").strip() or None
         email = input(f"New email {SKIP_MESSAGE}: ").strip() or None
@@ -413,15 +504,15 @@ Before you can start using the shell, you must create a new user.
                 self.backend.set_current_user(user)
         return success, user, user_message
 
-    def command_user_edit(self, username=None):
+    def action_user_edit(self, username=None):
         """
         Edit the current user's information
 
-        You will be prompted to enter new values for the username, email, password, and default model.
-        You can skip any prompt by pressing enter.
+        :param username: The username of the user to edit, if not provided, the logged in user will be used.
+        :type username: str
 
-        Examples:
-            {COMMAND}
+        :return: The result of the edit_user method
+        :rtype: Any
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
@@ -437,19 +528,15 @@ Before you can start using the shell, you must create a new user.
             return self.edit_user(self.logged_in_user)
         return False, "User not found."
 
-    def command_user_delete(self, username=None):
+    def action_user_delete(self, username=None):
         """
         Delete a user
 
-        If the 'username' argument is not provided, you will be prompted for it.
-        The currently logged in user cannot be deleted.
+        :param username: The username of the user to be deleted
+        :type username: str
 
-        Arguments:
-            username: The username of the user to be deleted
-
-        Examples:
-            {COMMAND}
-            {COMMAND} myusername
+        :return: A tuple containing the success status, user object, and a message
+        :rtype: tuple[bool, User, str]
         """
         if not self._is_logged_in():
             return False, None, "Not logged in."
