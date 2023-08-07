@@ -69,16 +69,8 @@ class ApiRepl(Repl):
         final_completions[util.command_with_leader('preset')] = {c: util.list_to_completion_hash(preset_keys) for c in self.get_command_actions('preset', dashed=True)}
         for preset_name in preset_keys:
             final_completions[util.command_with_leader("preset")]['save'][preset_name] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
-        final_completions[util.command_with_leader('workflows')] = None
-        subcommands = [
-            'run',
-            'show',
-            'copy',
-            'edit',
-            'delete',
-        ]
-        for subcommand in subcommands:
-            final_completions[util.command_with_leader(f"workflow-{subcommand}")] = util.list_to_completion_hash(self.backend.workflow_manager.workflows.keys())
+        workflow_keys = util.list_to_completion_hash(self.backend.workflow_manager.workflows.keys())
+        final_completions[util.command_with_leader('workflow')] = {c: workflow_keys for c in self.get_command_actions('workflow', dashed=True)}
         return final_completions
 
     def configure_backend(self):
@@ -849,7 +841,39 @@ Before you can start using the shell, you must create a new user.
                         include_files.append(content)
         util.print_markdown("## Workflows:\n\n%s\n\n## Include files:\n\n%s" % ("\n".join(sorted(workflows)), "\n".join(sorted(include_files))))
 
-    def command_workflow_run(self, args):
+    def command_workflow(self, args):
+        """
+        Run actions on workflows
+
+        Workflows enable multi-step interaction with LLMs, with simple decision-making
+        abilities.
+
+        Available actions:
+            * copy: Copy a workflow
+            * delete: Delete a workflow
+            * edit: Open or create a workflow for editing
+            * run: Run a workflow
+            * show: Show a workflow
+
+        Arguments:
+            workflow_name: Required. The name of the workflow.
+
+            For copy, a new workflow name is also required.
+
+            For run, arguments may be supplied in key=value format, these will override
+            default vars in the workflow.
+
+        Examples:
+            * /workflow copy myworkflow myworkflow_copy
+            * /workflow delete myworkflow
+            * /workflow edit myworkflow
+            * /workflow run myworkflow
+            * /workflow run myworkflow argument="some value"
+            * /workflow show myworkflow
+        """
+        return self.dispatch_command_action("workflow", args)
+
+    def action_workflow_run(self, *args):
         """
         Run a workflow
 
@@ -861,17 +885,15 @@ Before you can start using the shell, you must create a new user.
             {COMMAND} myworkflow
             {COMMAND} myworkflow foo=bar baz="bang bong"
         """
+        args = list(args)
         if not args:
             return False, args, "No workflow name specified"
-        try:
-            workflow_name, workflow_args = args.split(" ", 1)[0], args.split(" ", 1)[1]
-        except IndexError:
-            workflow_name = args.strip()
-            workflow_args = ""
+        workflow_name = args.pop(0)
+        workflow_args = ' '.join(args)
         success, result, user_message = self.backend.workflow_manager.run(workflow_name, workflow_args)
         return success, result, user_message
 
-    def command_workflow_show(self, workflow_name):
+    def action_workflow_show(self, workflow_name=None):
         """
         Display a workflow
 
@@ -891,7 +913,7 @@ Before you can start using the shell, you must create a new user.
         util.print_markdown(f"\n## Workflow '{workflow_name}'")
         util.print_markdown("```yaml\n%s\n```" % workflow_content)
 
-    def command_workflow_copy(self, workflow_names):
+    def action_workflow_copy(self, *workflow_names):
         """
         Copies an existing workflow and saves it as a new workflow
 
@@ -902,7 +924,7 @@ Before you can start using the shell, you must create a new user.
             {COMMAND} old_workflow new_workflow
         """
         try:
-            old_name, new_name = workflow_names.split()
+            old_name, new_name = workflow_names
         except ValueError:
             return False, workflow_names, "Old and new workflow name required"
 
@@ -912,7 +934,7 @@ Before you can start using the shell, you must create a new user.
         self.rebuild_completions()
         return True, new_filepath, f"Copied {old_name} to {new_filepath}"
 
-    def command_workflow_edit(self, workflow_name):
+    def action_workflow_edit(self, workflow_name=None):
         """
         Create a new workflow, or edit an existing workflow
 
@@ -936,7 +958,7 @@ Before you can start using the shell, you must create a new user.
         self.backend.workflow_manager.load_workflows()
         self.rebuild_completions()
 
-    def command_workflow_delete(self, workflow_name):
+    def action_workflow_delete(self, workflow_name=None):
         """
         Deletes an existing workflow
 
