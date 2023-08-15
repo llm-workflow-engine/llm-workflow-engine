@@ -11,9 +11,17 @@
 ##########################################################
 # The backend the shell should use. For now, this should always be: api
 backend: api
+# Additional options to pass to the backend.
+backend_options:
+  # Load this user when bootstrapping the backend. Can be user_id or username.
+  default_user: None
+  # Load this conversation when bootstrapping the backend. Must be an existing conversation id.
+  default_conversation_id: None
+
 # The database connection string, in a format SQLAlchemy understands.
 # DO NOT USE THE LINE AS IT IS WRITTEN BELOW, IT ONLY ILLUSTRATES THE DEFAULT LOCATION.
 # database: sqlite:////home/[username]/.local/share/llm-workflow-engine/profiles/default/storage.db
+
 
 
 ##########################################################
