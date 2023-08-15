@@ -49,51 +49,6 @@ class Backend(ABC):
         """
         self.available_models = self.provider.available_models
 
-    def set_provider_streaming(self, stream=None):
-        """
-        Sets the streaming capability of the provider.
-
-        :param stream: Optional argument to set the streaming capability.
-        """
-        self.log.debug("Setting provider streaming")
-        if self.provider.can_stream():
-            self.log.debug("Provider can stream")
-            if stream is not None:
-                self.stream = stream
-            self.provider.set_customization_value('streaming', self.stream)
-        else:
-            self.log.debug("Provider cannot stream")
-            if stream is not None:
-                self.stream = stream
-        self.log.info(f"Provider streaming is now: {self.stream}")
-
-    def should_stream(self):
-        """
-        Determines whether the provider should stream or not.
-
-        :return: Boolean indicating whether the provider should stream.
-        """
-        # NOTE: No override_provider on some backends, this allows support
-        # across backends.
-        provider = getattr(self, 'override_provider', None) or self.provider
-        can_stream = provider.can_stream()
-        customizations = provider.get_customizations()
-        should_stream = customizations.get('streaming', False)
-        should_stream_result = can_stream and should_stream
-        self.log.debug(f"Provider should_stream: {should_stream_result}")
-        return should_stream_result
-
-    def streaming_args(self):
-        """
-        Returns a dictionary of streaming arguments.
-
-        :return: Dictionary of streaming arguments.
-        """
-        args = {
-            'streaming': True,
-        }
-        return args
-
     def make_llm(self, customizations=None):
         """
         Creates a Language Model (llm) using the provider.

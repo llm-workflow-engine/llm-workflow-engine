@@ -75,10 +75,6 @@ class Repl():
         self.backend.initialize_backend(self.config)
         self.setup()
 
-    @property
-    def stream(self):
-        return self.backend.stream
-
     def terminate_stream(self, _signal, _frame):
         self.backend.terminate_stream(_signal, _frame)
 
@@ -285,7 +281,7 @@ class Repl():
     def setup(self):
         self.configure_backend()
         self.configure_plugins()
-        self.backend.set_provider_streaming(self.config.get('model.streaming'))
+        self.stream = self.config.get('shell.streaming')
         self.backend.template_manager.load_templates()
         self.configure_shell_commands()
         self.configure_commands()
@@ -360,9 +356,7 @@ class Repl():
         Examples:
             {COMMAND}
         """
-        if not self.backend.provider.can_stream():
-            return False, None, f"{self.backend.provider.name} does not support streaming"
-        self.backend.set_provider_streaming(not self.stream)
+        self.stream = not self.stream
         util.print_markdown(
             f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
         )
@@ -708,7 +702,8 @@ class Repl():
             return
 
         request_overrides = request_overrides or {}
-        if self.stream and self.backend.should_stream():
+        if self.stream:
+            request_overrides['print_stream'] = True
             print("")
             success, response, user_message = self.backend.ask_stream(input, request_overrides=request_overrides)
             print("\n")

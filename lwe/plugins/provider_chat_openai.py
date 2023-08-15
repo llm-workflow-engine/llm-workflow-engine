@@ -17,7 +17,6 @@ class ProviderChatOpenai(Provider):
     @property
     def capabilities(self):
         return {
-            'streaming': True,
             'chat': True,
             'models': {
                 'gpt-3.5-turbo': {
@@ -66,7 +65,6 @@ class ProviderChatOpenai(Provider):
             'openai_organization': PresetValue(str, include_none=True, private=True),
             'request_timeout': PresetValue(int),
             'max_retries': PresetValue(int, 1, 10),
-            'streaming': PresetValue(bool),
             'n': PresetValue(int, 1, 10),
             'max_tokens': PresetValue(int, include_none=True),
             'model_kwargs': {

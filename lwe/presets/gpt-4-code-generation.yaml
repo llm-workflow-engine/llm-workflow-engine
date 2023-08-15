@@ -10,5 +10,4 @@ model_customizations:
   model_name: gpt-4
   n: 1
   request_timeout: 60
-  streaming: true
   temperature: 0.2

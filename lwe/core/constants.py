@@ -62,12 +62,12 @@ DEFAULT_CONFIG = {
     'shell': {
         'prompt_prefix': '$TITLE$NEWLINE($TEMPERATURE/$MAX_SUBMISSION_TOKENS/$CURRENT_CONVERSATION_TOKENS): $SYSTEM_MESSAGE_ALIAS$NEWLINE$USER@$PRESET_OR_MODEL',
         'history_file': '%s%srepl_history.log' % (tempfile.gettempdir(), os.path.sep),
+        'streaming': False,
     },
     'database': None,
     'model': {
         'default_preset': None,
         'default_system_message': 'default',
-        'streaming': False,
         'system_message': {
             'programmer': SYSTEM_MESSAGE_PROGRAMMER,
             'creative_writer': SYSTEM_MESSAGE_CREATIVE_WRITER,

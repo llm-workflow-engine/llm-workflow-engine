@@ -163,8 +163,6 @@ class ApiBackend(Backend):
                     success, customizations, customization_message = self.provider.set_customization_value(key, value)
                     if not success:
                         return success, customizations, customization_message
-            if not customizations or 'streaming' not in customizations:
-                self.set_provider_streaming()
             self.llm = self.make_llm()
             self.set_model(getattr(self.llm, self.provider.model_property_name))
         return success, provider, user_message
@@ -214,9 +212,6 @@ class ApiBackend(Backend):
                 customizations = self.expand_functions(customizations)
                 success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
                 if success:
-                    if self.stream and self.should_stream() and not self.return_only:
-                        self.log.debug("Adding streaming-specific customizations to LLM request")
-                        customizations.update(self.streaming_args())
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
                     self.override_provider = provider
                     self.override_preset = preset
@@ -970,9 +965,6 @@ class ApiBackend(Backend):
         provider = self.override_provider or self.provider
         llm = self.override_llm
         if not llm:
-            if self.stream and self.should_stream() and not self.return_only:
-                self.log.debug("Adding streaming-specific customizations to LLM request")
-                customizations.update(self.streaming_args())
             customizations = self.expand_functions(customizations)
             llm = self.make_llm(customizations)
             self.llm = llm
@@ -983,16 +975,21 @@ class ApiBackend(Backend):
         messages = provider.prepare_messages_for_llm(messages)
         return llm, messages
 
-    def _execute_llm_streaming(self, llm, messages):
+    def _execute_llm_streaming(self, llm, messages, request_overrides):
         self.log.debug(f"Started streaming request at {util.current_datetime().isoformat()}")
         response = ""
+        print_stream = request_overrides.get('print_stream', False)
+        stream_callback = request_overrides.get('stream_callback', None)
         # Start streaming loop.
         self.streaming = True
         try:
             for chunk in llm.stream(messages):
                 content = chunk.content
                 response += content
-                print(content, end="", flush=True)
+                if print_stream:
+                    print(content, end="", flush=True)
+                if stream_callback:
+                    stream_callback(content)
                 if not self.streaming:
                     util.print_status_message(False, "Generation stopped")
                     break
@@ -1024,6 +1021,7 @@ class ApiBackend(Backend):
         :rtype: tuple
         """
         request_overrides = request_overrides or {}
+        stream = request_overrides.get('stream', False)
         if not self.override_llm:
             success, response, user_message = self.extract_preset_configuration_from_overrides({'request_overrides': request_overrides})
             if not success:
@@ -1036,9 +1034,8 @@ class ApiBackend(Backend):
                     return success, None, user_message
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
         llm, messages = self._build_chat_request(messages)
-        stream = self.stream and self.should_stream()
         if stream:
-            return self._execute_llm_streaming(llm, messages)
+            return self._execute_llm_streaming(llm, messages, request_overrides)
         else:
             return self._execute_llm_non_streaming(llm, messages)
 
@@ -1256,6 +1253,8 @@ class ApiBackend(Backend):
         :returns: success, LLM response, message
         :rtype: tuple
         """
+        request_overrides = request_overrides or {}
+        request_overrides['stream'] = True
         return self._ask(input, request_overrides)
 
     def ask(self, input: str, request_overrides: dict = None):

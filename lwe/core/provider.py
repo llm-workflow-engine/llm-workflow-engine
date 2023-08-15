@@ -223,9 +223,6 @@ class ProviderBase(Plugin):
         else:
             return False, None, f"Invalid model {model_name}"
 
-    def can_stream(self):
-        return self.get_capability('streaming')
-
     def make_llm(self, customizations=None, use_defaults=False):
         customizations = customizations or {}
         final_customizations = self.get_customizations(self.default_customizations()) if use_defaults else self.get_customizations()
