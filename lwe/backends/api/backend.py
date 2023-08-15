@@ -1158,6 +1158,7 @@ class ApiBackend(Backend):
         :rtype: list
         """
         if token_count is not None:
+            self.log.debug(f"Stripping messages over max tokens: {max_tokens}")
             stripped_messages_count = 0
             while token_count > max_tokens and len(messages) > 1:
                 message = messages.pop(0)
