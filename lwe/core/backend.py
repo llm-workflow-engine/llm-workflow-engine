@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import copy
+
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 from lwe.core.template import TemplateManager
@@ -123,7 +125,7 @@ class Backend(ABC):
             if not preset_name:
                 return False, (preset_name, preset_overrides, overrides), "No active preset to override"
             if 'preset_overrides' in overrides['request_overrides']:
-                preset_overrides = overrides['request_overrides']['preset_overrides']
+                preset_overrides = copy.deepcopy(overrides['request_overrides']['preset_overrides'])
         return True, (preset_name, preset_overrides, overrides), f"Extracted preset configuration from request overrides: {overrides}"
 
     def run_template_setup(self, template_name, substitutions=None):
