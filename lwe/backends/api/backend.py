@@ -1,6 +1,7 @@
 import json
 import threading
 import tiktoken
+import copy
 
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import BaseMessage
@@ -202,6 +203,7 @@ class ApiBackend(Backend):
             success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
             if success:
                 metadata, customizations = preset
+                customizations = copy.deepcopy(customizations)
                 if preset_overrides:
                     if 'metadata' in preset_overrides:
                         self.log.info(f"Merging preset overrides for metadata: {preset_overrides['metadata']}")
@@ -214,7 +216,7 @@ class ApiBackend(Backend):
                 if success:
                     self.override_llm = provider.make_llm(customizations, use_defaults=True)
                     self.override_provider = provider
-                    self.override_preset = preset
+                    self.override_preset = (metadata, customizations)
                     message = f"Set override LLM based on preset {preset_name}"
                     self.log.debug(message)
                     return True, self.override_llm, message
@@ -317,6 +319,7 @@ class ApiBackend(Backend):
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
+        customizations = copy.deepcopy(customizations)
         success, provider, user_message = self.set_provider(metadata['provider'], customizations, reset=True)
         if success:
             self.active_preset = preset
