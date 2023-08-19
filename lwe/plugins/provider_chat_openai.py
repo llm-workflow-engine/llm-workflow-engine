@@ -1,9 +1,10 @@
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models import ChatLiteLLM
 
 from lwe.core.provider import Provider, PresetValue
 from lwe.core import constants
 
-class CustomChatOpenAI(ChatOpenAI):
+class CustomChatOpenAI(ChatLiteLLM):
     @property
     def _llm_type(self):
         """Return type of llm."""

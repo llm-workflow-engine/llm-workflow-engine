@@ -3,6 +3,7 @@ import threading
 import tiktoken
 
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models import ChatLiteLLM
 from langchain.schema import BaseMessage
 from langchain.chat_models.openai import _convert_message_to_dict
 
@@ -698,7 +699,7 @@ class ApiBackend(Backend):
             ]
             new_messages = self.transform_messages_to_chat_messages(new_messages)
             new_messages = self.provider.prepare_messages_for_llm_chat(new_messages)
-            llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
+            llm = ChatLiteLLM(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
             try:
                 result = llm(new_messages)
                 title = self._extract_message_content(result)['message']
