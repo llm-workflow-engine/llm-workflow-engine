@@ -239,9 +239,10 @@ Before you can start using the shell, you must create a new user.
         :rtype: str
         """
         if self.backend.conversation_id:
-            if self.backend.conversation_title:
-                title = self.backend.conversation_title[:constants.SHORT_TITLE_LENGTH]
-                if len(self.backend.conversation_title) > constants.SHORT_TITLE_LENGTH:
+            conversation_title = self.backend.get_current_conversation_title()
+            if conversation_title:
+                title = conversation_title[:constants.SHORT_TITLE_LENGTH]
+                if len(conversation_title) > constants.SHORT_TITLE_LENGTH:
                     title += "..."
             else:
                 title = constants.UNTITLED_CONVERSATION

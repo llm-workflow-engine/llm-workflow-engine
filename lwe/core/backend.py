@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-import copy
-
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 from lwe.core.template import TemplateManager
@@ -101,33 +99,6 @@ class Backend(ABC):
         """
         return ""
 
-    def extract_preset_configuration_from_overrides(self, overrides):
-        """
-        Extracts preset configuration from the given overrides.
-
-        :param overrides: The overrides from which to extract preset configuration.
-        :return: A tuple containing a success indicator, preset configuration, and a user message.
-        """
-        preset_name = None
-        preset_overrides = None
-        self.log.debug(f"Extracting preset configuration from overrides: {overrides}")
-        if 'request_overrides' in overrides and ('preset' in overrides['request_overrides'] or 'preset_overrides' in overrides['request_overrides']):
-            if 'preset' in overrides['request_overrides']:
-                preset_name = overrides['request_overrides']['preset']
-                self.log.debug(f"Preset extracted from overrides: {preset_name}")
-                if 'activate_preset' in overrides['request_overrides'] and overrides['request_overrides']['activate_preset']:
-                    # TODO: activate_preset() currently lives in the API backend, and so should not
-                    # strictly be called here.
-                    self.log.info(f"Activating preset from overrides: {preset_name}")
-                    self.activate_preset(preset_name)
-            else:
-                preset_name = self.active_preset_name
-            if not preset_name:
-                return False, (preset_name, preset_overrides, overrides), "No active preset to override"
-            if 'preset_overrides' in overrides['request_overrides']:
-                preset_overrides = copy.deepcopy(overrides['request_overrides']['preset_overrides'])
-        return True, (preset_name, preset_overrides, overrides), f"Extracted preset configuration from request overrides: {overrides}"
-
     def run_template_setup(self, template_name, substitutions=None):
         """
         Sets up the run of a template.
@@ -139,17 +110,6 @@ class Backend(ABC):
         self.log.info(f"Setting up run of template: {template_name}")
         substitutions = substitutions or {}
         message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
-        preset_name = None
-        success, response, user_message = self.extract_preset_configuration_from_overrides(overrides)
-        if not success:
-            return success, (message, preset_name, overrides), user_message
-        preset_name, preset_overrides, overrides = response
-        if preset_name:
-            success, llm, user_message = self.set_override_llm(preset_name, preset_overrides)
-            if success:
-                self.log.info(f"Switching to preset '{preset_name}' for template: {template_name}")
-            else:
-                return success, llm, user_message
         return True, (message, overrides), f"Set up of template run complete: {template_name}"
 
     def run_template_compiled(self, message, overrides=None):

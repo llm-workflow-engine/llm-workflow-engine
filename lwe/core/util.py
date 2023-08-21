@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import copy
 import subprocess
 import inspect
 import shutil
@@ -342,3 +343,72 @@ def clean_directory(directory):
     files = glob.glob(f"{directory}/*")
     for f in files:
         os.remove(f)
+
+def transform_messages_to_chat_messages(messages):
+    """
+    Transform messages to chat messages.
+
+    :param messages: List of messages
+    :type messages: list
+    :returns: List of chat messages
+    :rtype: list
+    """
+    chat_messages = []
+    for message in messages:
+        role = message['role']
+        next_message = {
+            'role': role,
+        }
+        if role == "assistant":
+            if message['message_type'] == "function_call":
+                next_message['function_call'] = {
+                    'name': message['message']['name'],
+                    'arguments': json.dumps(message['message']['arguments'], indent=2),
+                }
+                next_message['content'] = ""
+            else:
+                next_message['content'] = message['message']
+        elif role == "function":
+            next_message['content'] = json.dumps(message['message'])
+            next_message['name'] = message['message_metadata']['name']
+        else:
+            next_message['content'] = message['message']
+        chat_messages.append(next_message)
+    return chat_messages
+
+def message_content_from_dict(message):
+    """
+    Extract the content from a message dict.
+
+    :param message: Message
+    :type message: dict
+    :returns: Content
+    :rtype: str
+    """
+    content = message['content']
+    if message['message_type'] == 'function_call':
+        content = json.dumps(message['function_call'])
+    return content
+
+def extract_preset_configuration_from_request_overrides(request_overrides, active_preset_name=None):
+    """
+    Extracts preset configuration from the given request overrides.
+
+    :param request_overrides: The request overrides from which to extract preset configuration.
+    :return: A tuple containing a success indicator, preset/preset_overrides/activate_preset configuration, and a user message.
+    """
+    preset_name = None
+    preset_overrides = None
+    activate_preset = False
+    if 'preset' in request_overrides or 'preset_overrides' in request_overrides:
+        if 'preset' in request_overrides:
+            preset_name = request_overrides['preset']
+            if 'activate_preset' in request_overrides and request_overrides['activate_preset']:
+                activate_preset = True
+        else:
+            preset_name = active_preset_name
+        if not preset_name:
+            return False, (preset_name, preset_overrides, activate_preset), "No active preset to override"
+        if 'preset_overrides' in request_overrides:
+            preset_overrides = copy.deepcopy(request_overrides['preset_overrides'])
+    return True, (preset_name, preset_overrides, activate_preset), f"Extracted preset configuration from request overrides: {request_overrides}"
