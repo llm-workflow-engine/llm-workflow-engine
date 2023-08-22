@@ -4,7 +4,7 @@ import tiktoken
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 
-from lwe.core.util import util
+from lwe.core import util
 
 class TokenManager:
     """Manage functions in a cache.
@@ -62,8 +62,8 @@ class TokenManager:
                 if key == "name":  # if there's a name, the role is omitted
                     num_tokens += -1  # role is always required and always 1 token
         num_tokens += 2  # every reply is primed with <im_start>assistant
-        if len(self.function_cache) > 0:
-            functions = [self.function_cache.function_manager.get_function_config(function_name) for function_name in self.function_cache]
+        if len(self.function_cache.functions) > 0:
+            functions = [self.function_cache.function_manager.get_function_config(function_name) for function_name in self.function_cache.functions]
             functions_string = json.dumps(functions, indent=2)
             num_tokens += len(encoding.encode(functions_string))
         return num_tokens

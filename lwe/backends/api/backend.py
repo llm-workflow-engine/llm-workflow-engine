@@ -12,7 +12,7 @@ from lwe.backends.api.conversation_storage_manager import ConversationStorageMan
 from lwe.backends.api.user import UserManager
 from lwe.backends.api.conversation import ConversationManager
 from lwe.backends.api.message import MessageManager
-from lwe.backends.orm import Conversation
+from lwe.backends.api.orm import Conversation
 from lwe.core.preset_manager import parse_llm_dict
 
 ADDITIONAL_PLUGINS = [
@@ -259,6 +259,7 @@ class ApiBackend(Backend):
         :param conversation_id: Conversation id
         :type conversation_id: int
         """
+        self.log.debug(f"Switching to conversation {conversation_id}")
         success, conversation, user_message = self.get_conversation(conversation_id)
         if success:
             self.conversation_id = conversation_id
@@ -269,7 +270,9 @@ class ApiBackend(Backend):
         if not success:
             raise ValueError(user_message)
         model_configured = False
+        self.log.debug(f"Retrieved last message {last_message}")
         if last_message['preset']:
+            self.log.debug(f"Last message has preset: {last_message['preset']}")
             success, _preset, user_message = self.activate_preset(last_message['preset'])
             if success:
                 model_configured = True
@@ -277,6 +280,7 @@ class ApiBackend(Backend):
                 util.print_status_message(False, f"Unable to switch conversation to previous preset '{last_message['preset']}' -- ERROR: {user_message}, falling back to provider: {last_message['provider']}, model: {last_message['model']}")
         if not model_configured:
             if last_message['provider'] and last_message['model']:
+                self.log.debug(f"Last message has provider: {last_message['provider']}, model: {last_message['model']}")
                 success, _provider, _user_message = self.set_provider(last_message['provider'], reset=True)
                 if success:
                     success, _customizations, _user_message = self.set_model(last_message['model'])
@@ -284,7 +288,9 @@ class ApiBackend(Backend):
                         self.init_system_message()
                         model_configured = True
         if not model_configured:
-            util.print_status_message(False, "Invalid conversation provider/model, falling back to default provider/model")
+            message = "Invalid conversation provider/model, falling back to default provider/model"
+            self.log.warning(message)
+            util.print_status_message(False, message)
             self.init_provider()
         conversation_storage_manager = ConversationStorageManager(self.config,
                                                                   self.function_manager,
@@ -333,11 +339,8 @@ class ApiBackend(Backend):
         :param force: Force setting max submission tokens
         :type force: bool
         """
-        chat = self.provider.get_capability('chat')
-        if chat or force:
-            self.max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()
-            return True, self.max_submission_tokens, f"Max submission tokens set to {self.max_submission_tokens}"
-        return False, None, "Setting max submission tokens not supported for this provider"
+        self.max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()
+        return True, self.max_submission_tokens, f"Max submission tokens set to {self.max_submission_tokens}"
 
     def get_runtime_config(self):
         """
@@ -508,13 +511,14 @@ class ApiBackend(Backend):
         self.log.info("Starting 'ask' request")
         request_overrides = request_overrides or {}
         old_messages = self.retrieve_old_messages(self.conversation_id)
-        self.log.debug(f"Extracting activate preset configuration from request_overrides: {self.request_overrides}")
-        success, response, user_message = util.extract_preset_configuration_from_request_overrides(self.request_overrides, self.active_preset_name)
+        self.log.debug(f"Extracting activate preset configuration from request_overrides: {request_overrides}")
+        success, response, user_message = util.extract_preset_configuration_from_request_overrides(request_overrides, self.active_preset_name)
         if not success:
             return success, response, user_message
         preset_name, _preset_overrides, activate_preset = response
         request = ApiRequest(self.config,
                              self.provider,
+                             self.provider_manager,
                              self.function_manager,
                              input,
                              self.active_preset,
@@ -567,7 +571,7 @@ class ApiBackend(Backend):
         """
         request_overrides = request_overrides or {}
         request_overrides['stream'] = True
-        return self._ask(input, request_overrides)
+        return self.make_request(input, request_overrides)
 
     def ask(self, input: str, request_overrides: dict = None):
         """
@@ -580,4 +584,4 @@ class ApiBackend(Backend):
         :returns: success, LLM response, message
         :rtype: tuple
         """
-        return self._ask(input, request_overrides)
+        return self.make_request(input, request_overrides)

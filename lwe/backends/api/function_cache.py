@@ -21,8 +21,8 @@ class FunctionCache:
     def add_customizations_functions(self):
         if self.customizations:
             if 'model_kwargs' in self.customizations and 'functions' in self.customizations['model_kwargs']:
-                for function in self.customizations['model_kwargs']['functions']:
-                    self.functions.append(function)
+                for function_name in self.customizations['model_kwargs']['functions']:
+                    self.add(function_name)
 
     def add(self, function_name):
         """Add a function to the cache if valid."""

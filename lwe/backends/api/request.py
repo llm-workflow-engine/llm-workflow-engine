@@ -20,6 +20,7 @@ class ApiRequest:
     def __init__(self,
                  config=None,
                  provider=None,
+                 provider_manager=None,
                  function_manager=None,
                  input=None,
                  preset=None,
@@ -34,6 +35,7 @@ class ApiRequest:
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
         self.default_provider = provider
+        self.provider_manager = provider_manager
         self.function_manager = function_manager
         self.input = input
         self.default_preset = preset
@@ -54,7 +56,6 @@ class ApiRequest:
         success, response, user_message = self.build_llm(preset_name, preset_overrides, metadata, customizations)
         if not success:
             return success, response, user_message
-        self.token_manager = TokenManager(self.config, self.provider, self.function_cache)
 
     def extract_metadata_customizations(self):
         self.log.debug(f"Extracting preset configuration from request_overrides: {self.request_overrides}")
@@ -126,14 +127,15 @@ class ApiRequest:
         self.preset = (metadata, customizations)
         self.preset_name = metadata.get('name', '')
         self.model_name = getattr(self.llm, self.provider.model_property_name)
-        message = f"Built LLM based on preset_name: {preset_name}, metadata: {metadata}, customizations: {customizations}, preset_overrides: {preset_overrides}"
+        self.token_manager = TokenManager(self.config, self.provider, self.model_name, self.function_cache)
+        message = f"Built LLM based on preset_name: {self.preset_name}, metadata: {metadata}, customizations: {customizations}, preset_overrides: {preset_overrides}"
         self.log.debug(message)
         return True, self.llm, message
 
     def expand_functions(self, customizations):
         """Expand any configured functions to their full definition."""
         self.function_cache = FunctionCache(self.config, self.function_manager, customizations)
-        self.function_cache.add_message_functions(self.conversation_id)
+        self.function_cache.add_message_functions(self.old_messages)
         already_configured_functions = []
         if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
             for idx, function_name in enumerate(customizations['model_kwargs']['functions']):
@@ -315,9 +317,9 @@ class ApiRequest:
                 #    the first call.
                 if self.check_forced_function():
                     return function_response, new_messages
-                success, response_obj, user_message = self._call_llm(new_messages, request_overrides)
+                success, response_obj, user_message = self.call_llm(new_messages, self.request_overrides)
                 if success:
-                    return self.post_response(response_obj, new_messages, request_overrides)
+                    return self.post_response(response_obj, new_messages, self.request_overrides)
                 else:
                     return user_message, new_messages
             else:

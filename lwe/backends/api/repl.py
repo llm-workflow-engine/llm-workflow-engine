@@ -193,15 +193,13 @@ class ApiRepl(Repl):
 
         :return: None
         """
-        util.print_markdown(
-"""
+        util.print_markdown("""
 # Welcome to the LLM Workflow Engine shell!
 
 This shell interacts directly with ChatGPT and other LLMs via their API, and stores conversations and messages in the configured database.
 
 Before you can start using the shell, you must create a new user.
-"""
-        )
+""")
 
     def add_examples(self):
         """

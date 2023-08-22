@@ -122,7 +122,7 @@ class Backend(ABC):
         """
         overrides = overrides or {}
         self.log.info("Running template")
-        response = self._ask(message, **overrides)
+        response = self.make_request(message, **overrides)
         return response
 
     def run_template(self, template_name, template_vars=None, overrides=None):
@@ -193,16 +193,6 @@ class Backend(ABC):
         Retrieves a conversation. Must be implemented by the child class.
 
         :param uuid: Optional unique identifier of the conversation.
-        """
-        pass
-
-    @abstractmethod
-    def set_override_llm(self, preset_name=None, preset_overrides=None):
-        """
-        Sets an override Language Model (llm) for the request. Must be implemented by the child class.
-
-        :param preset_name: Optional name of the preset.
-        :param preset_overrides: Optional dictionary of preset overrides.
         """
         pass
 
