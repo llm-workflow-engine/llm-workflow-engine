@@ -27,7 +27,6 @@ class ApiRequest:
                  preset_manager=None,
                  system_message=constants.SYSTEM_MESSAGE_DEFAULT,
                  old_messages=None,
-                 conversation_tokens=0,
                  max_submission_tokens=constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS,
                  request_overrides=None,
                  return_only=False,
@@ -42,7 +41,6 @@ class ApiRequest:
         self.preset_manager = preset_manager
         self.system_message = system_message
         self.old_messages = old_messages or []
-        self.conversation_tokens = conversation_tokens
         self.max_submission_tokens = max_submission_tokens
         self.request_overrides = request_overrides or {}
         self.return_only = return_only
@@ -160,54 +158,49 @@ class ApiRequest:
         new_messages = []
         if len(self.old_messages) == 0:
             new_messages.append(self.message.build_message('system', self.request_overrides.get('system_message') or self.system_message))
-        new_messages.append(self.message.build_message('user', input))
+        new_messages.append(self.message.build_message('user', self.input))
         return new_messages
 
     def prepare_ask_request(self):
         """
         Prepare the request for the LLM.
 
-        :param input: Message to send to the LLM
-        :type input: str
-        :param system_message: System message
-        :type system_message: str
         :returns: New messages, messages
         :rtype: tuple
         """
         new_messages = self.prepare_new_conversation_messages()
         old_messages = self.function_cache.add_message_functions(self.old_messages)
         messages = old_messages + new_messages
-        messages = self.strip_out_messages_over_max_tokens(messages, self.conversation_tokens, self.max_submission_tokens)
+        messages = self.strip_out_messages_over_max_tokens(messages, self.max_submission_tokens)
         return new_messages, messages
 
-    def strip_out_messages_over_max_tokens(self, messages, token_count, max_tokens):
+    def strip_out_messages_over_max_tokens(self, messages, max_tokens):
         """
         Recursively strip out messages over max tokens.
 
         :param messages: Messages
         :type messages: list
-        :param token_count: Token count
-        :type token_count: int
         :param max_tokens: Max tokens
         :type max_tokens: int
         :returns: Messages
         :rtype: list
         """
-        if token_count is not None:
-            self.log.debug(f"Stripping messages over max tokens: {max_tokens}")
-            stripped_messages_count = 0
-            while token_count > max_tokens and len(messages) > 1:
-                message = messages.pop(0)
-                token_count = self.token_manager.get_num_tokens_from_messages(messages)
-                self.log.debug(f"Stripping message: {message['role']}, {message['message']} -- new token count: {token_count}")
-                stripped_messages_count += 1
+        messages = copy.deepcopy(messages)
+        token_count = self.token_manager.get_num_tokens_from_messages(messages)
+        self.log.debug(f"Stripping messages over max tokens: {max_tokens}, initial token count: {token_count}")
+        stripped_messages_count = 0
+        while token_count > max_tokens and len(messages) > 1:
+            message = messages.pop(0)
             token_count = self.token_manager.get_num_tokens_from_messages(messages)
-            if token_count > max_tokens:
-                raise Exception(f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}")
-            if stripped_messages_count > 0:
-                max_tokens_exceeded_warning = f"Conversation exceeded max submission tokens ({max_tokens}), stripped out {stripped_messages_count} oldest messages before sending, sent {token_count} tokens instead"
-                self.log.warning(max_tokens_exceeded_warning)
-                util.print_status_message(False, max_tokens_exceeded_warning)
+            self.log.debug(f"Stripping message: {message['role']}, {message['message']} -- new token count: {token_count}")
+            stripped_messages_count += 1
+        token_count = self.token_manager.get_num_tokens_from_messages(messages)
+        if token_count > max_tokens:
+            raise Exception(f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}")
+        if stripped_messages_count > 0:
+            max_tokens_exceeded_warning = f"Conversation exceeded max submission tokens ({max_tokens}), stripped out {stripped_messages_count} oldest messages before sending, sent {token_count} tokens instead"
+            self.log.warning(max_tokens_exceeded_warning)
+            util.print_status_message(False, max_tokens_exceeded_warning)
         return messages
 
     def call_llm(self, messages):
@@ -221,7 +214,7 @@ class ApiRequest:
         """
         stream = self.request_overrides.get('stream', False)
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
-        llm, messages = self.build_chat_request(messages)
+        messages = self.build_chat_request(messages)
         if stream:
             return self.execute_llm_streaming(messages)
         else:
@@ -236,9 +229,7 @@ class ApiRequest:
         :returns: Prepared messages
         :rtype: list
         """
-        # TODO: More elegant way to do this, probably on provider.
-        model_configuration = {k: str(v) for k, v in dict(self.llm).items()}
-        self.log.debug(f"LLM request with message count: {len(messages)}, model configuration: {json.dumps(model_configuration)}")
+        self.log.debug(f"Building messages for LLM, message count: {len(messages)}")
         messages = util.transform_messages_to_chat_messages(messages)
         messages = self.provider.prepare_messages_for_llm(messages)
         return messages

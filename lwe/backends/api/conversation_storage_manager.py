@@ -121,9 +121,7 @@ class ConversationStorageManager:
         :returns: success, added message, user message
         :rtype: tuple
         """
-        success, message, user_message = self.message.add_message(self.conversation_id, role, message, message_type, metadata, self.provider.name, self.model_name, self.preset_name)
-        if not success:
-            return success, message, user_message
+        return self.message.add_message(self.conversation_id, role, message, message_type, metadata, self.provider.name, self.model_name, self.preset_name)
 
     def gen_title_thread(self, conversation):
         """

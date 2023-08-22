@@ -490,7 +490,7 @@ class ApiBackend(Backend):
         if self.conversation_title:
             return self.conversation_title
         success, conversation, message = self.conversation.get_conversation(self.conversation_id)
-        return success and conversation.id or None
+        return success and conversation.title or None
 
     def new_conversation(self):
         """Start a new conversation."""
@@ -525,7 +525,6 @@ class ApiBackend(Backend):
                              self.preset_manager,
                              self.system_message,
                              old_messages,
-                             self.conversation_tokens,
                              self.max_submission_tokens,
                              request_overrides,
                              )
