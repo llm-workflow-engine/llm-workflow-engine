@@ -34,6 +34,7 @@ class ApiRequest:
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
         self.default_provider = provider
+        self.provider = self.default_provider
         self.provider_manager = provider_manager
         self.function_manager = function_manager
         self.input = input
@@ -75,6 +76,7 @@ class ApiRequest:
             metadata, customizations = self.default_preset
         else:
             self.log.debug("Using current provider")
+            metadata['provider'] = self.provider.name
             customizations = self.provider.get_customizations()
         return success, (preset_name, preset_overrides, metadata, customizations), "Extracted metadata and customizations"
 
@@ -106,7 +108,6 @@ class ApiRequest:
         preset_overrides = preset_overrides or {}
         metadata = copy.deepcopy(metadata)
         customizations = copy.deepcopy(customizations)
-        self.provider = self.default_provider
         if preset_name is None:
             success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
             if success:
@@ -243,7 +244,7 @@ class ApiRequest:
         self.streaming = True
         try:
             for chunk in self.llm.stream(messages):
-                content = chunk.content
+                content = chunk if isinstance(chunk, str) else chunk.content
                 response += content
                 if print_stream:
                     print(content, end="", flush=True)
