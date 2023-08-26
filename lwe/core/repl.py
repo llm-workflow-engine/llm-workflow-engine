@@ -1035,6 +1035,9 @@ class Repl():
         :param template_name: The name of the template.
         :type template_name: str
         """
+        response = self.action_template_show(template_name)
+        if response:
+            return response
         success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
@@ -1063,6 +1066,9 @@ class Repl():
         :param template_name: The name of the template.
         :type template_name: str
         """
+        response = self.action_template_show(template_name)
+        if response:
+            return response
         success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
