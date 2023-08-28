@@ -40,9 +40,24 @@ def test_function_cache_add(function_manager):
     function_cache = make_function_cache(function_manager)
     function_manager.functions = {}
     assert function_cache.add('test_function') is False
+    assert len(function_cache.functions) == 0
     function_manager.functions = {'test_function': 'test_function_path'}
     assert function_cache.add('test_function') is True
     assert 'test_function' in function_cache.functions
+    assert len(function_cache.functions) == 1
+    assert function_cache.add('test_function') is True
+    assert len(function_cache.functions) == 1
+
+
+def test_function_cache_add_langchain_tool(function_manager):
+    function_cache = make_function_cache(function_manager)
+    function_manager.functions = {'Langchain-BadTool': 'test_function_path'}
+    assert function_cache.add('Langchain-BadTool') is False
+    assert len(function_cache.functions) == 0
+    function_manager.functions = {'Langchain-ShellTool': 'test_function_path'}
+    assert function_cache.add('Langchain-ShellTool') is True
+    assert 'Langchain-ShellTool' in function_cache.functions
+    assert len(function_cache.functions) == 1
 
 
 def test_function_cache_add_message_functions(function_manager):

@@ -69,8 +69,8 @@ class FunctionManager():
     def get_langchain_tool(self, function_name):
         self.log.debug(f"Loading Langchain tool: {function_name}")
         tool_name = util.remove_prefix(function_name, LANGCHAIN_TOOL_PREFIX)
-        tool = getattr(langchain.tools, tool_name)
         try:
+            tool = getattr(langchain.tools, tool_name)
             tool_instance = tool()
             return tool_instance
         except Exception as e:
