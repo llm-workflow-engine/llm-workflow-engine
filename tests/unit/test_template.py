@@ -1,30 +1,16 @@
 import os
-import tempfile
 import pytest
 import pyperclip
 
 from jinja2 import Environment, Template
 
-from lwe.core.config import Config
 from lwe.core.template import TemplateManager
 import lwe.core.util as util
-
-TEST_DIR = os.path.join(tempfile.gettempdir(), 'lwe_test')
-TEST_CONFIG_DIR = os.path.join(TEST_DIR, 'config')
-TEST_DATA_DIR = os.path.join(TEST_DIR, 'data')
-TEST_PROFILE = 'test'
+from ..base import test_config  # noqa: F401
 
 
 @pytest.fixture
-def test_config():
-    util.remove_and_create_dir(TEST_CONFIG_DIR)
-    util.remove_and_create_dir(TEST_DATA_DIR)
-    config = Config(TEST_CONFIG_DIR, TEST_DATA_DIR, profile=TEST_PROFILE)
-    return config
-
-
-@pytest.fixture
-def template_manager(test_config):
+def template_manager(test_config):  # noqa: F811
     template_manager = TemplateManager(config=test_config)
     template_manager.load_templates()
     return template_manager
