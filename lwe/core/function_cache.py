@@ -44,7 +44,7 @@ class FunctionCache:
             if m_type in ['function_call', 'function_response']:
                 if m_type == 'function_call':
                     function_name = message['message']['name']
-                if m_type == 'function_response':
+                elif m_type == 'function_response':
                     function_name = message['message_metadata']['name']
                 if self.add(function_name):
                     filtered_messages.append(message)
