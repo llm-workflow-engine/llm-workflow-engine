@@ -1,6 +1,9 @@
 from lwe.core.function import Function
 
 class TestFunction(Function):
+    # Ignore for pytest.
+    __test__ = False
+
     def __call__(self, word: str, repeats: int, enclose_with: str = '') -> dict:
         """
         Repeat the provided word a number of times.
