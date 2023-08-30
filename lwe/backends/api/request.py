@@ -309,9 +309,9 @@ class ApiRequest:
                 #    the first call.
                 if self.check_forced_function():
                     return function_response, new_messages
-                success, response_obj, user_message = self.call_llm(new_messages, self.request_overrides)
+                success, response_obj, user_message = self.call_llm(new_messages)
                 if success:
-                    return self.post_response(response_obj, new_messages, self.request_overrides)
+                    return self.post_response(response_obj, new_messages)
                 else:
                     return user_message, new_messages
             else:
