@@ -13,7 +13,7 @@ from lwe.backends.api.conversation import ConversationManager
 from lwe.backends.api.message import MessageManager
 from lwe.backends.api.request import ApiRequest
 
-from langchain.chat_models.openai import _convert_dict_to_message
+from langchain.adapters.openai import convert_dict_to_message
 
 class ConversationStorageManager:
     """Manage conversation storage.
@@ -144,7 +144,7 @@ class ConversationStorageManager:
                 self.message.build_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
             ]
             new_messages = util.transform_messages_to_chat_messages(new_messages)
-            new_messages = [_convert_dict_to_message(m) for m in new_messages]
+            new_messages = [convert_dict_to_message(m) for m in new_messages]
             llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
             try:
                 result = llm(new_messages)

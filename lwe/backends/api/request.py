@@ -16,7 +16,7 @@ from lwe.core.token_manager import TokenManager
 from lwe.backends.api.message import MessageManager
 
 from langchain.schema import BaseMessage
-from langchain.chat_models.openai import _convert_message_to_dict
+from langchain.adapters.openai import convert_message_to_dict
 
 class ApiRequest:
     """Individual LLM requests manager
@@ -360,7 +360,7 @@ class ApiRequest:
         :rtype: str
         """
         if isinstance(message, BaseMessage):
-            message_dict = _convert_message_to_dict(message)
+            message_dict = convert_message_to_dict(message)
             content = message_dict['content']
             message_type = 'content'
             if 'function_call' in message_dict:

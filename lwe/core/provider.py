@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from langchain.chat_models.openai import _convert_dict_to_message
+from langchain.adapters.openai import convert_dict_to_message
 
 from lwe.core.plugin import Plugin
 from lwe.core import constants
@@ -243,7 +243,7 @@ class ProviderBase(Plugin):
         return "\n\n".join(messages)
 
     def prepare_messages_for_llm_chat(self, messages):
-        messages = [_convert_dict_to_message(m) for m in messages]
+        messages = [convert_dict_to_message(m) for m in messages]
         return messages
 
     def prepare_messages_for_llm(self, messages):
