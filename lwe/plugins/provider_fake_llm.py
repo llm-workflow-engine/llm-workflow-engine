@@ -1,4 +1,4 @@
-from langchain.llms.fake import FakeListLLM
+from langchain.chat_models.fake import FakeListChatModel
 
 from lwe.core.provider import Provider, PresetValue
 from lwe.core import constants
@@ -8,7 +8,7 @@ DEFAULT_RESPONSES = [
 ]
 
 
-class CustomFakeListLLM(FakeListLLM):
+class CustomFakeListChatModel(FakeListChatModel):
     model_name: str
 
     def __init__(self, **kwargs):
@@ -46,7 +46,7 @@ class ProviderFakeLlm(Provider):
         return self.prepare_messages_for_llm_chat
 
     def llm_factory(self):
-        return CustomFakeListLLM
+        return CustomFakeListChatModel
 
     def customization_config(self):
         return {
