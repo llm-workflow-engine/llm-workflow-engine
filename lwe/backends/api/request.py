@@ -1,6 +1,11 @@
 import copy
 import json
 
+from langchain.schema.messages import (
+    AIMessage,
+    AIMessageChunk,
+)
+
 from lwe.core.logger import Logger
 
 from lwe.core import constants
@@ -235,6 +240,38 @@ class ApiRequest:
         messages = self.provider.prepare_messages_for_llm(messages)
         return messages
 
+    def iterate_streaming_response(self, messages, print_stream, stream_callback):
+        response = None
+        is_function_call = False
+        for chunk in self.llm.stream(messages):
+            if isinstance(chunk, AIMessageChunk):
+                content = chunk.content
+                function_call = chunk.additional_kwargs.get('function_call')
+                if response:
+                    response.content += content
+                    if function_call:
+                        response.additional_kwargs['function_call']['arguments'] += function_call['arguments']
+                else:
+                    response = AIMessage(**dict(chunk))
+                    if function_call:
+                        is_function_call = True
+            elif isinstance(chunk, str):
+                content = chunk
+                response = content if not response else response + content
+            else:
+                raise ValueError(f"Unexpected chunk type: {type(chunk)}")
+            if content:
+                if print_stream:
+                    print(content, end="", flush=True)
+                if stream_callback:
+                    stream_callback(content)
+            if not self.streaming:
+                if is_function_call:
+                    response = None
+                util.print_status_message(False, "Generation stopped")
+                break
+        return response
+
     def execute_llm_streaming(self, messages):
         self.log.debug(f"Started streaming request at {util.current_datetime().isoformat()}")
         response = ""
@@ -243,16 +280,7 @@ class ApiRequest:
         # Start streaming loop.
         self.streaming = True
         try:
-            for chunk in self.llm.stream(messages):
-                content = chunk if isinstance(chunk, str) else chunk.content
-                response += content
-                if print_stream:
-                    print(content, end="", flush=True)
-                if stream_callback:
-                    stream_callback(content)
-                if not self.streaming:
-                    util.print_status_message(False, "Generation stopped")
-                    break
+            response = self.iterate_streaming_response(messages, print_stream, stream_callback)
         except ValueError as e:
             return False, messages, e
         finally:
