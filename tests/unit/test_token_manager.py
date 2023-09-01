@@ -1,15 +1,12 @@
 import pytest
 
 from lwe.core.token_manager import TokenManager
-from ..base import test_config, function_cache, function_manager, plugin_manager, provider_manager  # noqa: F401
+from ..util import make_provider
 
 
-def make_token_manager(test_config, function_cache, provider_manager, provider=None, model_name=None):  # noqa: F811
+def make_token_manager(test_config, function_cache, provider_manager, provider=None, model_name=None):
     if not provider:
-        success, provider, user_message = provider_manager.load_provider('provider_fake_llm')
-        if not success:
-            raise Exception(user_message)
-        provider.setup()
+        provider = make_provider(provider_manager)
     if not model_name:
         model_name = getattr(provider.make_llm(), provider.model_property_name)
     token_manager = TokenManager(
@@ -21,19 +18,19 @@ def make_token_manager(test_config, function_cache, provider_manager, provider=N
     return token_manager
 
 
-def test_get_token_encoding(test_config, function_cache, provider_manager):  # noqa: F811
+def test_get_token_encoding(test_config, function_cache, provider_manager):
     token_manager = make_token_manager(test_config, function_cache, provider_manager)
     encoding = token_manager.get_token_encoding()
     assert encoding is not None
 
 
-def test_get_token_encoding_unsupported_model(test_config, function_cache, provider_manager):  # noqa: F811
+def test_get_token_encoding_unsupported_model(test_config, function_cache, provider_manager):
     token_manager = make_token_manager(test_config, function_cache, provider_manager, model_name="unsupported_model")
     with pytest.raises(NotImplementedError):
         token_manager.get_token_encoding()
 
 
-def test_get_num_tokens_from_messages(test_config, function_cache, provider_manager):  # noqa: F811
+def test_get_num_tokens_from_messages(test_config, function_cache, provider_manager):
     token_manager = make_token_manager(test_config, function_cache, provider_manager)
     messages = [
         {
@@ -59,7 +56,7 @@ def test_get_num_tokens_from_messages(test_config, function_cache, provider_mana
     assert num_tokens == 30
 
 
-def test_get_num_tokens_from_messages_with_function(test_config, function_cache, provider_manager):  # noqa: F811
+def test_get_num_tokens_from_messages_with_function(test_config, function_cache, provider_manager):
     token_manager = make_token_manager(test_config, function_cache, provider_manager)
     messages = [
         {
