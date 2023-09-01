@@ -1,7 +1,7 @@
 import pytest
 
 from lwe.core.token_manager import TokenManager
-from ..util import make_provider
+from ..base import make_provider
 
 
 def make_token_manager(test_config, function_cache, provider_manager, provider=None, model_name=None):
