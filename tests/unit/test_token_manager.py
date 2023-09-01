@@ -1,34 +1,12 @@
 import pytest
 
-from lwe.core.function_manager import FunctionManager
-from lwe.core.function_cache import FunctionCache
 from lwe.core.token_manager import TokenManager
-from lwe.core.plugin_manager import PluginManager
-from lwe.core.provider_manager import ProviderManager
-from ..base import test_config, FakeBackend  # noqa: F401
+from ..base import test_config, function_cache, function_manager, plugin_manager, provider_manager  # noqa: F401
 
 
-@pytest.fixture
-def function_manager(test_config):  # noqa: F811
-    function_manager = FunctionManager(config=test_config)
-    return function_manager
-
-
-@pytest.fixture
-def function_cache(test_config, function_manager):  # noqa: F811
-    function_cache = FunctionCache(
-        test_config,
-        function_manager,
-    )
-    return function_cache
-
-
-def make_token_manager(test_config, function_cache, provider=None, model_name=None):  # noqa: F811
+def make_token_manager(test_config, function_cache, provider_manager, provider=None, model_name=None):  # noqa: F811
     if not provider:
-        backend = FakeBackend(test_config)
-        plugin_manager = PluginManager(test_config, backend, additional_plugins=['provider_chat_openai'])
-        provider_manager = ProviderManager(test_config, plugin_manager)
-        success, provider, user_message = provider_manager.load_provider('provider_chat_openai')
+        success, provider, user_message = provider_manager.load_provider('provider_fake_llm')
         if not success:
             raise Exception(user_message)
         provider.setup()
@@ -43,20 +21,20 @@ def make_token_manager(test_config, function_cache, provider=None, model_name=No
     return token_manager
 
 
-def test_get_token_encoding(test_config, function_cache):  # noqa: F811
-    token_manager = make_token_manager(test_config, function_cache)
+def test_get_token_encoding(test_config, function_cache, provider_manager):  # noqa: F811
+    token_manager = make_token_manager(test_config, function_cache, provider_manager)
     encoding = token_manager.get_token_encoding()
     assert encoding is not None
 
 
-def test_get_token_encoding_unsupported_model(test_config, function_cache):  # noqa: F811
-    token_manager = make_token_manager(test_config, function_cache, model_name="unsupported_model")
+def test_get_token_encoding_unsupported_model(test_config, function_cache, provider_manager):  # noqa: F811
+    token_manager = make_token_manager(test_config, function_cache, provider_manager, model_name="unsupported_model")
     with pytest.raises(NotImplementedError):
         token_manager.get_token_encoding()
 
 
-def test_get_num_tokens_from_messages(test_config, function_cache):  # noqa: F811
-    token_manager = make_token_manager(test_config, function_cache)
+def test_get_num_tokens_from_messages(test_config, function_cache, provider_manager):  # noqa: F811
+    token_manager = make_token_manager(test_config, function_cache, provider_manager)
     messages = [
         {
             "message": "You are a helpful assistant.",
@@ -81,8 +59,8 @@ def test_get_num_tokens_from_messages(test_config, function_cache):  # noqa: F81
     assert num_tokens == 30
 
 
-def test_get_num_tokens_from_messages_with_function(test_config, function_cache):  # noqa: F811
-    token_manager = make_token_manager(test_config, function_cache)
+def test_get_num_tokens_from_messages_with_function(test_config, function_cache, provider_manager):  # noqa: F811
+    token_manager = make_token_manager(test_config, function_cache, provider_manager)
     messages = [
         {
             "message": "You are a helpful assistant.",

@@ -1,17 +1,8 @@
-import pytest
-
-from lwe.core.function_manager import FunctionManager
 from lwe.core.function_cache import FunctionCache
-from ..base import test_config  # noqa: F401
+from ..base import test_config, function_manager  # noqa: F401
 
 
-@pytest.fixture
-def function_manager(test_config):  # noqa: F811
-    function_manager = FunctionManager(config=test_config)
-    return function_manager
-
-
-def make_function_cache(function_manager, customizations=None):
+def make_function_cache(test_config, function_manager, customizations=None):  # noqa: F811
     customizations = customizations or {}
     function_cache = FunctionCache(
         test_config,
@@ -21,23 +12,23 @@ def make_function_cache(function_manager, customizations=None):
     return function_cache
 
 
-def test_function_cache_init(function_manager):
-    function_cache = make_function_cache(function_manager)
+def test_function_cache_init(test_config, function_manager):  # noqa: F811
+    function_cache = make_function_cache(test_config, function_manager)
     assert function_cache.config == test_config
     assert function_cache.function_manager == function_manager
     assert function_cache.customizations == {}
     assert function_cache.functions == []
 
 
-def test_function_cache_init_with_customizations(function_manager):
+def test_function_cache_init_with_customizations(test_config, function_manager):  # noqa: F811
     customizations = {'model_kwargs': {'functions': ['test_function']}}
-    function_cache = make_function_cache(function_manager, customizations)
+    function_cache = make_function_cache(test_config, function_manager, customizations)
     assert function_cache.customizations == customizations
     assert 'test_function' in function_cache.functions
 
 
-def test_function_cache_add(function_manager):
-    function_cache = make_function_cache(function_manager)
+def test_function_cache_add(test_config, function_manager):  # noqa: F811
+    function_cache = make_function_cache(test_config, function_manager)
     function_manager.functions = {}
     assert function_cache.add('test_function') is False
     assert len(function_cache.functions) == 0
@@ -49,8 +40,8 @@ def test_function_cache_add(function_manager):
     assert len(function_cache.functions) == 1
 
 
-def test_function_cache_add_langchain_tool(function_manager):
-    function_cache = make_function_cache(function_manager)
+def test_function_cache_add_langchain_tool(test_config, function_manager):  # noqa: F811
+    function_cache = make_function_cache(test_config, function_manager)
     function_manager.functions = {'Langchain-BadTool': 'test_function_path'}
     assert function_cache.add('Langchain-BadTool') is False
     assert len(function_cache.functions) == 0
@@ -60,8 +51,8 @@ def test_function_cache_add_langchain_tool(function_manager):
     assert len(function_cache.functions) == 1
 
 
-def test_function_cache_add_message_functions(function_manager):
-    function_cache = make_function_cache(function_manager)
+def test_function_cache_add_message_functions(test_config, function_manager):  # noqa: F811
+    function_cache = make_function_cache(test_config, function_manager)
     messages = [
         {'message_type': 'function_call', 'message': {'name': 'test_function'}},
         {'message_type': 'function_response', 'message_metadata': {'name': 'test_function'}},
