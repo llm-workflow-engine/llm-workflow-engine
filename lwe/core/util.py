@@ -412,3 +412,10 @@ def extract_preset_configuration_from_request_overrides(request_overrides, activ
         if 'preset_overrides' in request_overrides:
             preset_overrides = copy.deepcopy(request_overrides['preset_overrides'])
     return True, (preset_name, preset_overrides, activate_preset), f"Extracted preset configuration from request overrides: {request_overrides}"
+
+
+def get_preset_name(preset):
+    if preset:
+        metadata, _customizations = preset
+        return metadata['name']
+    return None
