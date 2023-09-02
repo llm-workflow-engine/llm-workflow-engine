@@ -6,6 +6,9 @@ import argparse
 from sqlalchemy.exc import OperationalError
 
 from lwe.backends.api.orm import Base, Orm
+from lwe.backends.api.user import UserManager
+from lwe.backends.api.conversation import ConversationManager
+from lwe.backends.api.message import MessageManager
 from lwe.backends.api.schema.updater import SchemaUpdater
 from lwe.core.logger import Logger
 from lwe.core.config import Config
@@ -17,10 +20,13 @@ DEFAULT_NUM_MESSAGES = 10
 
 class Database:
 
-    def __init__(self, config):
+    def __init__(self, config, orm=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.orm = Orm(self.config)
+        self.orm = orm or Orm(self.config)
+        self.user_manager = UserManager(self.config, self.orm)
+        self.conversation = ConversationManager(self.config, self.orm)
+        self.message = MessageManager(self.config, self.orm)
 
     def schema_exists(self):
         # Necessary to create a new engine/metadata here, as the tables are cached,
@@ -35,7 +41,7 @@ class Database:
             return False
 
     def create_schema(self):
-        updater = SchemaUpdater(self.config)
+        updater = SchemaUpdater(self.config, self.orm)
         if self.schema_exists():
             updater.update_schema()
         else:
@@ -69,27 +75,27 @@ class DatabaseDevel(Database):
             username = names.get_full_name().lower().replace(" ", ".")
             password = None
             email = f'{username}@example.com'
-            user = self.orm.add_user(username, password, email)
+            user = self.user_manager.add_user(username, password, email)
             util.print_status_message(True, f"Created user: {user.username}", style="bold blue")
             # Create Conversations for each User
             util.print_status_message(True, f"Creating {self.num_conversations} conversations and {self.num_messages} messages for: {user.username}...", style="white")
             for j in range(self.num_conversations):
                 title = f'Conversation {j+1} for User {i+1}'
-                conversation = self.orm.add_conversation(user, title)
+                conversation = self.conversation.add_conversation(user, title)
                 # Create Messages for each Conversation
                 for k in range(self.num_messages):
                     role = 'user' if k % 2 == 0 else 'assistant'
                     message = f'This is message {k+1} in conversation {j+1} for user {i+1}'
-                    message = self.orm.add_message(conversation, role, message, 'content', '', 'chat_openai', 'gpt-3.5-turbo', '')
+                    message = self.message.add_message(conversation, role, message, 'content', '', 'chat_openai', 'gpt-3.5-turbo', '')
 
     def print_data(self):
         output = ['# Users']
-        users = self.orm.get_users()
+        users = self.user_manager.get_users()
         for user in users:
-            conversations = self.orm.get_conversations(user)
+            conversations = self.conversation.get_conversations(user)
             output.append(f'## User {user.id}: {user.username}, conversations: {len(conversations)}')
             for conversation in conversations:
-                messages = self.orm.get_messages(conversation)
+                messages = self.message.get_messages(conversation)
                 output.append(f'### {conversation.title}, messages: {len(messages)}')
                 for message in messages:
                     output.append(f'* {message.role}: {message.message}')

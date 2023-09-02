@@ -9,6 +9,7 @@ import lwe.core.util as util
 from lwe.core.function_cache import FunctionCache
 from lwe.core.token_manager import TokenManager
 
+from lwe.backends.api.orm import Orm
 from lwe.backends.api.conversation import ConversationManager
 from lwe.backends.api.message import MessageManager
 from lwe.backends.api.request import ApiRequest
@@ -27,6 +28,7 @@ class ConversationStorageManager:
                  provider=None,
                  model_name=None,
                  preset_name=None,
+                 orm=None,
                  ):
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
@@ -38,8 +40,9 @@ class ConversationStorageManager:
         self.preset_name = preset_name
         self.function_cache = FunctionCache(self.config, self.function_manager)
         self.token_manager = TokenManager(self.config, self.provider, self.model_name, self.function_cache)
-        self.conversation = ConversationManager(config)
-        self.message = MessageManager(config)
+        self.orm = orm or Orm(self.config)
+        self.conversation = ConversationManager(config, self.orm)
+        self.message = MessageManager(config, self.orm)
 
     def store_conversation_messages(self, new_messages, response_content=None, title=None):
         """
@@ -123,7 +126,7 @@ class ConversationStorageManager:
         """
         return self.message.add_message(self.conversation_id, role, message, message_type, metadata, self.provider.name, self.model_name, self.preset_name)
 
-    def gen_title_thread(self, conversation):
+    def gen_title_thread(self, conversation_id):
         """
         Generate the title for a conversation in a separate thread.
 
@@ -132,11 +135,13 @@ class ConversationStorageManager:
         :returns: Title
         :rtype: str
         """
-        self.log.info(f"Generating title for conversation {conversation.id}")
+        self.log.info(f"Generating title for conversation {conversation_id}")
         # NOTE: This might need to be smarter in the future, but for now
         # it should be reasonable to assume that the second record is the
         # first user message we need for generating the title.
-        success, messages, user_message = self.message.get_messages(conversation.id, limit=2)
+        message_manager = MessageManager(self.config, self.orm)
+        conversation_manager = ConversationManager(self.config, self.orm)
+        success, messages, user_message = message_manager.get_messages(conversation_id, limit=2)
         if success:
             user_content = messages[1]['message'][:constants.TITLE_GENERATION_MAX_CHARACTERS]
             new_messages = [
@@ -148,13 +153,13 @@ class ConversationStorageManager:
             llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
             try:
                 result = llm(new_messages)
-                request = ApiRequest()
+                request = ApiRequest(orm=self.orm)
                 title = request.extract_message_content(result)['message']
                 title = title.replace("\n", ", ").strip().strip('\'"')
-                self.log.info(f"Title generated for conversation {conversation.id}: {title}")
-                success, conversation, user_message = self.conversation.edit_conversation_title(conversation.id, title)
+                self.log.info(f"Title generated for conversation {conversation_id}: {title}")
+                success, conversation, user_message = conversation_manager.edit_conversation_title(conversation_id, title)
                 if success:
-                    self.log.debug(f"Title saved for conversation {conversation.id}")
+                    self.log.debug(f"Title saved for conversation {conversation_id}")
             except ValueError as e:
                 self.log.warning(f"Failed to generate title for conversation: {str(e)}")
             finally:
@@ -168,8 +173,15 @@ class ConversationStorageManager:
         :param conversation: Conversation
         :type conversation: Conversation
         """
-        thread = threading.Thread(target=self.gen_title_thread, args=(conversation,))
-        thread.start()
+        conversation_id = conversation.id
+        database = self.config.get('database')
+        if database.startswith('sqlite') and ':memory:' in database:
+            # Special case for in memory SQLite, as it cannot access the
+            # in memory database from another thread.
+            self.gen_title_thread(conversation_id)
+        else:
+            thread = threading.Thread(target=self.gen_title_thread, args=(conversation_id,))
+            thread.start()
 
     def get_conversation_token_count(self):
         """Get token count for conversation.

@@ -68,18 +68,16 @@ class ApiRepl(Repl):
     def configure_backend(self):
         if not getattr(self, 'backend', None):
             self.backend = ApiBackend(self.config)
-        database = Database(self.config)
+        database = Database(self.config, self.backend.orm)
         database.create_schema()
-        self.user_management = UserManager(self.config)
-        self.session = self.user_management.orm.session
+        self.user_management = UserManager(self.config, self.backend.orm)
 
     def launch_backend(self, interactive=True):
         if interactive:
             self.check_login()
 
     def get_user(self, user_id):
-        user = self.session.get(User, user_id)
-        return user
+        return self.user_management.get_by_user_id(user_id)
 
     def _is_logged_in(self):
         return self.logged_in_user is not None
@@ -175,7 +173,7 @@ class ApiRepl(Repl):
 
         :return: None
         """
-        user_count = self.session.query(User).count()
+        user_count = self.user_management.session.query(User).count()
         if user_count == 0:
             util.print_status_message(False, "No users in database. Creating one...")
             self.welcome_message()
@@ -183,7 +181,7 @@ class ApiRepl(Repl):
         # Special case check: if there's only one user in the database, and
         # they have no password, log them in.
         elif user_count == 1:
-            user = self.session.query(User).first()
+            user = self.user_management.session.query(User).first()
             if not user.password:
                 return self.login(user)
 

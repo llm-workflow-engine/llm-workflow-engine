@@ -1,6 +1,7 @@
 import copy
 
 from lwe.core.backend import Backend
+from lwe.backends.api.orm import Orm
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.workflow_manager import WorkflowManager
 from lwe.core.function_manager import FunctionManager
@@ -35,9 +36,10 @@ class ApiBackend(Backend):
         """
         super().__init__(config)
         self.current_user = None
-        self.user_manager = UserManager(config)
-        self.conversation = ConversationManager(config)
-        self.message = MessageManager(config)
+        self.orm = Orm(config)
+        self.user_manager = UserManager(config, self.orm)
+        self.conversation = ConversationManager(config, self.orm)
+        self.message = MessageManager(config, self.orm)
         self.initialize_backend(config)
 
     def initialize_backend(self, config=None):
@@ -299,6 +301,7 @@ class ApiBackend(Backend):
                                                                   self.provider,
                                                                   self.model,
                                                                   self.active_preset_name or '',
+                                                                  orm=self.orm,
                                                                   )
         tokens = conversation_storage_manager.get_conversation_token_count()
         self.set_conversation_tokens(tokens)
@@ -457,7 +460,7 @@ class ApiBackend(Backend):
         user_id = user_id if user_id else self.current_user.id
         success, conversations, message = self.conversation.get_conversations(user_id, limit=limit, offset=offset)
         if success:
-            history = {m.id: self.conversation.orm.object_as_dict(m) for m in conversations}
+            history = {m.id: self.orm.object_as_dict(m) for m in conversations}
             return success, history, message
         return self._handle_response(success, conversations, message)
 
@@ -478,7 +481,7 @@ class ApiBackend(Backend):
             success, messages, message = self.message.get_messages(id)
             if success:
                 conversation_data = {
-                    "conversation": self.conversation.orm.object_as_dict(conversation),
+                    "conversation": self.orm.object_as_dict(conversation),
                     "messages": messages,
                 }
                 return success, conversation_data, message
@@ -527,6 +530,7 @@ class ApiBackend(Backend):
                              old_messages,
                              self.max_submission_tokens,
                              request_overrides,
+                             orm=self.orm,
                              )
         request.set_request_llm()
         new_messages, messages = request.prepare_ask_request()
@@ -542,6 +546,7 @@ class ApiBackend(Backend):
                                                                       request.provider,
                                                                       request.model_name,
                                                                       request.preset_name,
+                                                                      orm=self.orm,
                                                                       )
             success, response_obj, user_message = conversation_storage_manager.store_conversation_messages(new_messages, response_content, title)
             if success:

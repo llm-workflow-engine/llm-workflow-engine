@@ -13,6 +13,7 @@ import lwe.core.util as util
 from lwe.core.function_cache import FunctionCache
 from lwe.core.token_manager import TokenManager
 
+from lwe.backends.api.orm import Orm
 from lwe.backends.api.message import MessageManager
 
 from langchain.schema import BaseMessage
@@ -35,6 +36,7 @@ class ApiRequest:
                  max_submission_tokens=constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS,
                  request_overrides=None,
                  return_only=False,
+                 orm=None,
                  ):
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
@@ -51,7 +53,8 @@ class ApiRequest:
         self.max_submission_tokens = max_submission_tokens
         self.request_overrides = request_overrides or {}
         self.return_only = return_only
-        self.message = MessageManager(config)
+        self.orm = orm or Orm(self.config)
+        self.message = MessageManager(config, self.orm)
 
     def set_request_llm(self):
         success, response, user_message = self.extract_metadata_customizations()
