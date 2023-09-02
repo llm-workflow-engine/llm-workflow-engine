@@ -44,6 +44,7 @@ class ApiRequest:
         self.function_manager = function_manager
         self.input = input
         self.default_preset = preset
+        self.default_preset_name = util.get_preset_name(self.default_preset)
         self.preset_manager = preset_manager
         self.system_message = system_message
         self.old_messages = old_messages or []
@@ -58,12 +59,11 @@ class ApiRequest:
             return success, response, user_message
         preset_name, preset_overrides, metadata, customizations = response
         success, response, user_message = self.build_llm(preset_name, preset_overrides, metadata, customizations)
-        if not success:
-            return success, response, user_message
+        return success, response, user_message
 
     def extract_metadata_customizations(self):
         self.log.debug(f"Extracting preset configuration from request_overrides: {self.request_overrides}")
-        success, response, user_message = util.extract_preset_configuration_from_request_overrides(self.request_overrides)
+        success, response, user_message = util.extract_preset_configuration_from_request_overrides(self.request_overrides, self.default_preset_name)
         if not success:
             return success, response, user_message
         preset_name, preset_overrides, _activate_preset = response
