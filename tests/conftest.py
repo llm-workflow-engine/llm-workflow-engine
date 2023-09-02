@@ -1,11 +1,13 @@
 import pytest
 
+from lwe.core import constants
 from lwe.core.config import Config
 from lwe.core.function_manager import FunctionManager
 from lwe.core.function_cache import FunctionCache
 from lwe.core.plugin_manager import PluginManager
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.template import TemplateManager
+from lwe.core.preset_manager import PresetManager
 import lwe.core.util as util
 from .base import TEST_CONFIG_DIR, TEST_DATA_DIR, TEST_PROFILE
 from .base import FakeBackend
@@ -52,3 +54,23 @@ def template_manager(test_config):
     template_manager = TemplateManager(config=test_config)
     template_manager.load_templates()
     return template_manager
+
+
+@pytest.fixture
+def preset_manager(test_config):
+    test_preset = (
+        {
+            "description": "Testing preset",
+            "name": "test",
+            "provider": "fake_llm",
+            "filepath": "",
+        },
+        {
+            "responses": [
+                "test response",
+            ],
+            "model_name": constants.API_BACKEND_DEFAULT_MODEL,
+        }
+    )
+    preset_manager = PresetManager(test_config, additional_presets={"test": test_preset})
+    return preset_manager
