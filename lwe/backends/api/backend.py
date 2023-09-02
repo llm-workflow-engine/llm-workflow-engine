@@ -317,6 +317,7 @@ class ApiBackend(Backend):
                                                                   self.provider,
                                                                   self.model,
                                                                   self.active_preset_name or '',
+                                                                  provider_manager=self.provider_manager,
                                                                   orm=self.orm,
                                                                   )
         tokens = conversation_storage_manager.get_conversation_token_count()
@@ -562,6 +563,7 @@ class ApiBackend(Backend):
                                                                       request.provider,
                                                                       request.model_name,
                                                                       request.preset_name,
+                                                                      provider_manager=self.provider_manager,
                                                                       orm=self.orm,
                                                                       )
             success, response_obj, user_message = conversation_storage_manager.store_conversation_messages(new_messages, response_content, title)

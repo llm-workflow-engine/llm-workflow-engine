@@ -28,6 +28,7 @@ class ConversationStorageManager:
                  provider=None,
                  model_name=None,
                  preset_name=None,
+                 provider_manager=None,
                  orm=None,
                  ):
         self.config = config
@@ -38,6 +39,7 @@ class ConversationStorageManager:
         self.provider = provider
         self.model_name = model_name
         self.preset_name = preset_name
+        self.provider_manager = provider_manager
         self.function_cache = FunctionCache(self.config, self.function_manager)
         self.token_manager = TokenManager(self.config, self.provider, self.model_name, self.function_cache)
         self.orm = orm or Orm(self.config)
@@ -150,7 +152,14 @@ class ConversationStorageManager:
             ]
             new_messages = util.transform_messages_to_chat_messages(new_messages)
             new_messages = [convert_dict_to_message(m) for m in new_messages]
-            llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
+            title_provider_name = self.config.get('backend_options.title_generation.provider')
+            if title_provider_name:
+                provider = self.provider_manager.get_provider_from_name(title_provider_name)
+                if not provider:
+                    raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
+                llm = provider.make_llm()
+            else:
+                llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
             try:
                 result = llm(new_messages)
                 request = ApiRequest(orm=self.orm)
