@@ -1,6 +1,7 @@
 import copy
 
 from lwe.core.backend import Backend
+from lwe.backends.api.database import Database
 from lwe.backends.api.orm import Orm, User
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.workflow_manager import WorkflowManager
@@ -40,6 +41,7 @@ class ApiBackend(Backend):
         self.user_manager = UserManager(config, self.orm)
         self.conversation = ConversationManager(config, self.orm)
         self.message = MessageManager(config, self.orm)
+        self.initialize_database(config)
         self.initialize_backend(config)
 
     def initialize_backend(self, config=None):
@@ -65,6 +67,10 @@ class ApiBackend(Backend):
         self.auto_create_first_user()
         self.load_default_user()
         self.load_default_conversation()
+
+    def initialize_database(self, config):
+        database = Database(config, orm=self.orm)
+        database.create_schema()
 
     def auto_create_first_user(self):
         username = self.config.get("backend_options.auto_create_first_user")

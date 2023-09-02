@@ -6,8 +6,7 @@ import email_validator
 import lwe.core.constants as constants
 import lwe.core.util as util
 from lwe.core.repl import Repl
-from lwe.backends.api.database import Database
-from lwe.backends.api.orm import Orm, User
+from lwe.backends.api.orm import User
 from lwe.backends.api.user import UserManager
 from lwe.backends.api.backend import ApiBackend
 from lwe.core.editor import file_editor
@@ -66,11 +65,8 @@ class ApiRepl(Repl):
         return final_completions
 
     def configure_backend(self):
-        orm = Orm(self.config)
-        database = Database(self.config, orm=orm)
-        database.create_schema()
         if not getattr(self, 'backend', None):
-            self.backend = ApiBackend(self.config, orm=orm)
+            self.backend = ApiBackend(self.config)
         self.user_management = UserManager(self.config, self.backend.orm)
 
     def launch_backend(self, interactive=True):
