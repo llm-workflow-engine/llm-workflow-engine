@@ -231,6 +231,7 @@ def current_datetime():
 def filepath_replacements(filepath, config):
     filepath = filepath.replace("$HOME", os.path.expanduser('~user'))
     filepath = filepath.replace("$CONFIG_DIR", config.config_dir)
+    filepath = filepath.replace("$DATA_DIR", config.data_dir)
     filepath = filepath.replace("$PROFILE", config.profile)
     return filepath
 
