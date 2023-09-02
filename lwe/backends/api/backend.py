@@ -1,7 +1,7 @@
 import copy
 
 from lwe.core.backend import Backend
-from lwe.backends.api.orm import Orm
+from lwe.backends.api.orm import Orm, User
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.workflow_manager import WorkflowManager
 from lwe.core.function_manager import FunctionManager
@@ -26,7 +26,7 @@ class ApiBackend(Backend):
 
     name = "api"
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, orm=None):
         """
         Initializes the Backend instance.
 
@@ -36,7 +36,7 @@ class ApiBackend(Backend):
         """
         super().__init__(config)
         self.current_user = None
-        self.orm = Orm(config)
+        self.orm = orm or Orm(config)
         self.user_manager = UserManager(config, self.orm)
         self.conversation = ConversationManager(config, self.orm)
         self.message = MessageManager(config, self.orm)
@@ -62,8 +62,18 @@ class ApiBackend(Backend):
         self.init_provider()
         self.set_available_models()
         self.set_conversation_tokens(0)
+        self.auto_create_first_user()
         self.load_default_user()
         self.load_default_conversation()
+
+    def auto_create_first_user(self):
+        username = self.config.get("backend_options.auto_create_first_user")
+        if isinstance(username, str):
+            query = self.user_manager.session.query(User).order_by(User.id).limit(1)
+            first_user = query.first()
+            if not first_user:
+                first_user = self.user_manager.orm_add_user(username, None, None)
+            return first_user
 
     def load_default_user(self):
         default_user = self.config.get('backend_options.default_user')
