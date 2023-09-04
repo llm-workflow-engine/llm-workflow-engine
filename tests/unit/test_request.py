@@ -1,13 +1,52 @@
+import copy
+
 from unittest.mock import Mock
 
 from langchain.schema.messages import (
     AIMessage,
+    FunctionMessage,
     # AIMessageChunk,
 )
 
 from lwe.core import constants
 from lwe.backends.api.request import ApiRequest
 from ..base import make_provider
+
+TEST_FUNCTION_CALL_RESPONSE_MESSAGES = [
+    {
+        "message": "You are a helpful assistant.",
+        "message_metadata": None,
+        "message_type": "content",
+        "role": "system",
+    },
+    {
+        "message": "repeat this word twice: foo",
+        "message_metadata": None,
+        "message_type": "content",
+        "role": "user",
+    },
+    {
+        "message": {
+            "arguments": {"repeats": 2, "word": "foo"},
+            "name": "test_function",
+        },
+        "message_metadata": None,
+        "message_type": "function_call",
+        "role": "assistant",
+    },
+    {
+        "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
+        "message_metadata": {"name": "test_function"},
+        "message_type": "function_response",
+        "role": "function",
+    },
+    {
+        "message": 'The word "foo" repeated twice is: "foo foo".',
+        "message_metadata": None,
+        "message_type": "content",
+        "role": "assistant",
+    },
+]
 
 
 def make_api_request(test_config,
@@ -92,6 +131,91 @@ def test_set_request_llm_failure(test_config, function_manager, provider_manager
     assert success is False
     assert response is None
     assert user_message == "Error"
+
+
+def test_extract_message_content_function_call(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    ai_message = AIMessage(content='', additional_kwargs={'function_call': {'name': 'test_function', 'arguments': '{\n  "one": "test"\n}'}})
+    message = request.extract_message_content(ai_message)
+    assert message['role'] == 'assistant'
+    assert message['message']['name'] == 'test_function'
+    assert message['message_type'] == 'function_call'
+
+
+def test_extract_message_content_function_response(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_response = '{"result": "test"}'
+    ai_message = FunctionMessage(content=function_response, name="test_function")
+    message = request.extract_message_content(ai_message)
+    assert message['role'] == 'function'
+    assert message['message'] == function_response
+    assert message['message_type'] == 'function_response'
+
+
+def test_extract_message_content_string(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    string_message = 'test_message'
+    message = request.extract_message_content(string_message)
+    assert message['role'] == 'assistant'
+    assert message['message'] == string_message
+    assert message['message_type'] == 'content'
+
+
+def test_should_return_on_function_call(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.preset = ({'return_on_function_call': True}, {})
+    assert request.should_return_on_function_call() is True
+
+
+def test_check_forced_function(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.preset = ({}, {'model_kwargs': {'function_call': {}}})
+    assert request.check_forced_function() is True
+
+
+def test_check_return_on_function_response_not_set(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.preset = ({}, {})
+    function_response, new_messages = request.check_return_on_function_response(copy.deepcopy(TEST_FUNCTION_CALL_RESPONSE_MESSAGES))
+    assert function_response is None
+    assert len(new_messages) == len(TEST_FUNCTION_CALL_RESPONSE_MESSAGES)
+
+
+def test_check_return_on_function_response_true(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.preset = ({'return_on_function_response': True}, {})
+    function_response, new_messages = request.check_return_on_function_response(copy.deepcopy(TEST_FUNCTION_CALL_RESPONSE_MESSAGES))
+    assert function_response == {"message": "Repeated the word foo 2 times.", "result": "foo foo"}
+    assert len(new_messages) == len(TEST_FUNCTION_CALL_RESPONSE_MESSAGES) - 1
+
+
+def test_run_function_success(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    run_function_result = {'result': 'test'}
+    request.function_manager.run_function = Mock(return_value=(True, run_function_result, 'message'))
+    success, json_obj, user_message = request.run_function('test_function', {})
+    assert success is True
+    assert json_obj == run_function_result
+
+
+def test_run_function_failure(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.function_manager.run_function = Mock(return_value=(False, None, 'message'))
+    success, json_obj, user_message = request.run_function('test_function', {})
+    assert success is False
+    assert json_obj == {'error': 'message'}
+
+
+def test_is_function_response_message(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    assert request.is_function_response_message({'message_type': 'function_response'}) is True
+
+
+def test_terminate_stream(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.streaming = True
+    request.terminate_stream(None, None)
+    assert request.streaming is False
 
 
 def test_simple_non_streaming_request(test_config, function_manager, provider_manager, preset_manager):
