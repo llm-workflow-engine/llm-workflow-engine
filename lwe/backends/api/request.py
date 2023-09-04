@@ -350,7 +350,7 @@ class ApiRequest:
                 return user_message, new_messages
         function_response, new_messages = self.check_return_on_function_response(new_messages)
         if function_response:
-            self.log.info(f"Returning directly on function response: {function_call['name']}")
+            self.log.info("Returning directly on function response")
             return function_response, new_messages
         return response_message['message'], new_messages
 
