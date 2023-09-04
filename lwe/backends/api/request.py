@@ -55,6 +55,7 @@ class ApiRequest:
         self.return_only = return_only
         self.orm = orm or Orm(self.config)
         self.message = MessageManager(config, self.orm)
+        self.streaming = False
 
     def set_request_llm(self):
         success, response, user_message = self.extract_metadata_customizations()
@@ -452,3 +453,14 @@ class ApiRequest:
         :rtype: bool
         """
         return message['message_type'] == 'function_response'
+
+    def terminate_stream(self, _signal, _frame):
+        """
+        Handles termination signal and stops the stream if it's running.
+
+        :param _signal: The signal that triggered the termination.
+        :param _frame: Current stack frame.
+        """
+        self.log.info("Received signal to terminate stream")
+        if self.streaming:
+            self.streaming = False

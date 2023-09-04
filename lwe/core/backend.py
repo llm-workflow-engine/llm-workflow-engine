@@ -39,7 +39,6 @@ class Backend(ABC):
         self.provider_name = None
         self.provider = None
         self.message_clipboard = None
-        self.streaming = False
         self.template_manager = TemplateManager(self.config)
         self.preset_manager = PresetManager(self.config)
 
@@ -82,14 +81,13 @@ class Backend(ABC):
 
     def terminate_stream(self, _signal, _frame):
         """
-        Handles termination signal and stops the stream if it's running.
+        Handles termination signal, passing it to the request if present.
 
         :param _signal: The signal that triggered the termination.
         :param _frame: Current stack frame.
         """
         self.log.info("Received signal to terminate stream")
-        if self.streaming:
-            self.streaming = False
+        self.request and self.request.terminate_stream(_signal, _frame)
 
     def get_runtime_config(self):
         """

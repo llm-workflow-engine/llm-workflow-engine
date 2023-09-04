@@ -37,6 +37,7 @@ class ApiBackend(Backend):
         """
         super().__init__(config)
         self.current_user = None
+        self.request = None
         self.orm = orm or Orm(config)
         self.user_manager = UserManager(config, self.orm)
         self.conversation = ConversationManager(config, self.orm)
@@ -549,6 +550,7 @@ class ApiBackend(Backend):
                              request_overrides,
                              orm=self.orm,
                              )
+        self.request = request
         request.set_request_llm()
         new_messages, messages = request.prepare_ask_request()
         success, response_obj, user_message = request.call_llm(messages)
@@ -578,6 +580,7 @@ class ApiBackend(Backend):
                 if activate_preset:
                     self.log.info(f"Activating preset from request override: {preset_name}")
                     self.activate_preset(preset_name)
+        self.request = None
         return self._handle_response(success, response_obj, user_message)
 
     def ask_stream(self, input: str, request_overrides: dict = None):
