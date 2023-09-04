@@ -58,19 +58,5 @@ def template_manager(test_config):
 
 @pytest.fixture
 def preset_manager(test_config):
-    test_preset = (
-        {
-            "description": "Testing preset",
-            "name": "test",
-            "provider": "fake_llm",
-            "filepath": "",
-        },
-        {
-            "responses": [
-                "test response",
-            ],
-            "model_name": constants.API_BACKEND_DEFAULT_MODEL,
-        }
-    )
-    preset_manager = PresetManager(test_config, additional_presets={"test": test_preset})
+    preset_manager = PresetManager(test_config)
     return preset_manager

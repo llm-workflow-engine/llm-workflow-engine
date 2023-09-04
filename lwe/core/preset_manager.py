@@ -62,9 +62,23 @@ class PresetManager():
             'return_on_function_call',
         ]
 
+    def load_test_preset(self):
+        if self.config.profile == 'test':
+            test_preset = (
+                {
+                    "description": "Testing preset",
+                    "name": "test",
+                    "provider": "fake_llm",
+                    "filepath": "",
+                },
+                {}
+            )
+            self.presets['test'] = test_preset
+
     def load_presets(self):
         self.log.debug("Loading presets from dirs: %s" % ", ".join(self.all_preset_dirs))
         self.presets = copy.deepcopy(self.additional_presets)
+        self.load_test_preset()
         try:
             for preset_dir in self.all_preset_dirs:
                 if os.path.exists(preset_dir) and os.path.isdir(preset_dir):
