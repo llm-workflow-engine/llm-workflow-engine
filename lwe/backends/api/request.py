@@ -144,18 +144,12 @@ class ApiRequest:
         """Expand any configured functions to their full definition."""
         self.function_cache = FunctionCache(self.config, self.function_manager, customizations)
         self.function_cache.add_message_functions(self.old_messages)
-        already_configured_functions = []
-        if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
-            for idx, function_name in enumerate(customizations['model_kwargs']['functions']):
-                already_configured_functions.append(function_name)
-                if isinstance(function_name, str):
-                    customizations['model_kwargs']['functions'][idx] = self.function_manager.get_function_config(function_name)
         if len(self.function_cache.functions) > 0:
             customizations.setdefault('model_kwargs', {})
             customizations['model_kwargs'].setdefault('functions', [])
             for function_name in self.function_cache.functions:
-                if function_name not in already_configured_functions:
-                    customizations['model_kwargs']['functions'].append(self.function_manager.get_function_config(function_name))
+                idx = customizations['model_kwargs']['functions'].index(function_name)
+                customizations['model_kwargs']['functions'][idx] = self.function_manager.get_function_config(function_name)
         return customizations
 
     def prepare_new_conversation_messages(self):
