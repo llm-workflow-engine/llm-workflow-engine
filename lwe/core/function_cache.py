@@ -22,16 +22,23 @@ class FunctionCache:
         if self.customizations:
             if 'model_kwargs' in self.customizations and 'functions' in self.customizations['model_kwargs']:
                 for function_name in self.customizations['model_kwargs']['functions']:
-                    self.add(function_name)
+                    if isinstance(function_name, str):
+                        self.add(function_name)
 
-    def add(self, function_name):
+    def add(self, function_name, raise_on_missing=True):
         """Add a function to the cache if valid."""
         if self.function_manager.is_langchain_tool(function_name):
             if not self.function_manager.get_langchain_tool(function_name):
-                return False
+                if raise_on_missing:
+                    raise ValueError(f"Langchain function {function_name} not found")
+                else:
+                    return False
         else:
             if function_name not in self.function_manager.functions:
-                return False
+                if raise_on_missing:
+                    raise ValueError(f"Function {function_name} not found")
+                else:
+                    return False
         if function_name not in self.functions:
             self.functions.append(function_name)
         return True
@@ -46,7 +53,7 @@ class FunctionCache:
                     function_name = message['message']['name']
                 elif m_type == 'function_response':
                     function_name = message['message_metadata']['name']
-                if self.add(function_name):
+                if self.add(function_name, raise_on_missing=False):
                     filtered_messages.append(message)
                 else:
                     message = f"Function {function_name} not found in function list, filtered message out"
