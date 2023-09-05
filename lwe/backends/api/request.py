@@ -345,9 +345,9 @@ class ApiRequest:
                 if success:
                     return self.post_response(response_obj, new_messages)
                 else:
-                    return user_message, new_messages
+                    raise ValueError(f"LLM call failed: {user_message}")
             else:
-                return user_message, new_messages
+                raise ValueError(f"Function call failed: {user_message}")
         function_response, new_messages = self.check_return_on_function_response(new_messages)
         if function_response:
             self.log.info("Returning directly on function response")
