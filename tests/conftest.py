@@ -28,7 +28,11 @@ def test_config():
 
 @pytest.fixture
 def function_manager(test_config):
-    function_manager = FunctionManager(config=test_config)
+    additional_functions = {
+        'test_function2': 'test_function2_path',
+        'test_function3': 'test_function3_path',
+    }
+    function_manager = FunctionManager(config=test_config, additional_functions=additional_functions)
     return function_manager
 
 
