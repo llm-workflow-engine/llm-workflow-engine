@@ -64,6 +64,7 @@ class PresetManager():
 
     def load_test_preset(self):
         if self.config.profile == 'test':
+            self.log.debug("Test profile detected, loading test preset")
             test_preset = (
                 {
                     "description": "Testing preset",
