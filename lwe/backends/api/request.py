@@ -244,6 +244,13 @@ class ApiRequest:
         messages = self.provider.prepare_messages_for_llm(messages)
         return messages
 
+    def output_chunk_content(self, content, print_stream, stream_callback):
+        if content:
+            if print_stream:
+                print(content, end="", flush=True)
+            if stream_callback:
+                stream_callback(content)
+
     def iterate_streaming_response(self, messages, print_stream, stream_callback):
         response = None
         is_function_call = False
@@ -264,11 +271,7 @@ class ApiRequest:
                 response = content if not response else response + content
             else:
                 raise ValueError(f"Unexpected chunk type: {type(chunk)}")
-            if content:
-                if print_stream:
-                    print(content, end="", flush=True)
-                if stream_callback:
-                    stream_callback(content)
+            self.output_chunk_content(content, print_stream, stream_callback)
             if not self.streaming:
                 if is_function_call:
                     response = None
