@@ -1,16 +1,40 @@
 import copy
+import pytest
 
 from unittest.mock import Mock
 
 from langchain.schema.messages import (
+    SystemMessage,
+    HumanMessage,
     AIMessage,
     FunctionMessage,
-    # AIMessageChunk,
+    AIMessageChunk,
 )
 
 from lwe.core import constants
 from lwe.backends.api.request import ApiRequest
 from ..base import make_provider
+
+TEST_BASIC_MESSAGES = [
+    {
+        "message": "You are a helpful assistant.",
+        "message_metadata": None,
+        "message_type": "content",
+        "role": "system",
+    },
+    {
+        "message": "say hello",
+        "message_metadata": None,
+        "message_type": "content",
+        "role": "user",
+    },
+    {
+        "message": 'hello',
+        "message_metadata": None,
+        "message_type": "content",
+        "role": "assistant",
+    },
+]
 
 TEST_FUNCTION_CALL_RESPONSE_MESSAGES = [
     {
@@ -133,6 +157,290 @@ def test_set_request_llm_failure(test_config, function_manager, provider_manager
     assert user_message == "Error"
 
 
+def test_expand_functions_none(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    customizations = {}
+    result = request.expand_functions(customizations)
+    assert result == {}
+
+
+def test_expand_functions_valid_functions(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_manager.get_function_config = Mock(side_effect=["function_config1", "function_config2"])
+    customizations = {'model_kwargs': {'functions': ['test_function', 'test_function2']}}
+    result = request.expand_functions(customizations)
+    assert result['model_kwargs']['functions'] == ["function_config1", "function_config2"]
+
+
+def test_expand_functions_missing_function(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    customizations = {'model_kwargs': {'functions': ['test_missing_function']}}
+    with pytest.raises(ValueError) as excinfo:
+        request.expand_functions(customizations)
+    assert "test_missing_function not found" in str(excinfo.value)
+
+
+def test_prepare_new_conversation_messages_no_old_messages_system_message_default(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.old_messages = []
+    request.input = 'test message'
+    result = request.prepare_new_conversation_messages()
+    assert len(result) == 2
+    assert result[0]['role'] == 'system'
+    assert result[0]['message'] == constants.SYSTEM_MESSAGE_DEFAULT
+    assert result[1]['role'] == 'user'
+    assert result[1]['message'] == 'test message'
+
+
+def test_prepare_new_conversation_messages_no_old_messages_system_message_override(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.old_messages = []
+    request.input = 'test message'
+    request.request_overrides['system_message'] = 'test system message'
+    result = request.prepare_new_conversation_messages()
+    assert len(result) == 2
+    assert result[0]['role'] == 'system'
+    assert result[0]['message'] == 'test system message'
+    assert result[1]['role'] == 'user'
+    assert result[1]['message'] == 'test message'
+
+
+def test_prepare_new_conversation_messages_old_messages(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.old_messages = TEST_BASIC_MESSAGES
+    request.input = 'test message'
+    result = request.prepare_new_conversation_messages()
+    assert len(result) == 1
+    assert result[0]['role'] == 'user'
+    assert result[0]['message'] == 'test message'
+
+
+def test_prepare_ask_request(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.prepare_new_conversation_messages = Mock(return_value=["new_message"])
+    request.function_cache = Mock()
+    request.function_cache.add_message_functions = Mock(return_value=["old_message1", "old_message2"])
+    request.strip_out_messages_over_max_tokens = Mock(return_value=["old_message2", "new_message"])
+    new_messages, messages = request.prepare_ask_request()
+    assert new_messages == ["new_message"]
+    assert messages == ["old_message2", "new_message"]
+    request.strip_out_messages_over_max_tokens.assert_called_once_with(["old_message1", "old_message2", "new_message"], request.max_submission_tokens)
+
+
+def test_strip_out_messages_over_max_tokens_no_messages_stripped(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.token_manager = Mock()
+    request.token_manager.get_num_tokens_from_messages = Mock(side_effect=[30, 30])
+    messages = ["message1", "message2", "message3"]
+    result = request.strip_out_messages_over_max_tokens(messages, 50)
+    assert result == messages
+
+
+def test_strip_out_messages_over_max_tokens_two_messages_stripped(test_config, function_manager, provider_manager, preset_manager, capsys):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.token_manager = Mock()
+    request.token_manager.get_num_tokens_from_messages = Mock(side_effect=[100, 60, 30, 30])
+    messages = copy.deepcopy(TEST_BASIC_MESSAGES)
+    result = request.strip_out_messages_over_max_tokens(messages, 50)
+    assert len(result) == 1
+    assert result[0] == messages[2]
+    captured = capsys.readouterr()
+    assert "stripped out 2 oldest messages" in captured.out
+
+
+def test_strip_out_messages_over_max_tokens_all_messages_stripped(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.token_manager = Mock()
+    request.token_manager.get_num_tokens_from_messages = Mock(side_effect=[100, 80, 60, 60])
+    messages = copy.deepcopy(TEST_BASIC_MESSAGES)
+    with pytest.raises(Exception) as excinfo:
+        request.strip_out_messages_over_max_tokens(messages, 50)
+    assert "still over max submission tokens: 50" in str(excinfo.value)
+
+
+def test_call_llm_streaming(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, request_overrides={"stream": True})
+    built_messages = ["built message"]
+    request.build_chat_request = Mock(return_value=built_messages)
+    request.execute_llm_streaming = Mock(return_value=(True, "response", "Response received"))
+    success, response, user_message = request.call_llm(["message"])
+    assert success is True
+    assert response == "response"
+    assert user_message == "Response received"
+    request.execute_llm_streaming.assert_called_once_with(built_messages)
+
+
+def test_call_llm_non_streaming(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    built_messages = ["built message"]
+    request.build_chat_request = Mock(return_value=built_messages)
+    request.execute_llm_non_streaming = Mock(return_value=(True, "response", "Response received"))
+    success, response, user_message = request.call_llm(["message"])
+    assert success is True
+    assert response == "response"
+    assert user_message == "Response received"
+    request.execute_llm_non_streaming.assert_called_once_with(built_messages)
+
+
+def test_build_chat_request(test_config, function_manager, provider_manager, preset_manager):
+    messages = copy.deepcopy(TEST_BASIC_MESSAGES)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    result = request.build_chat_request(messages)
+    assert len(result) == 3
+    assert isinstance(result[0], SystemMessage)
+    assert isinstance(result[1], HumanMessage)
+    assert isinstance(result[2], AIMessage)
+    assert result[0].content != ""
+    assert result[1].content != ""
+    assert result[2].content != ""
+
+
+def test_output_chunk_content_empty_content(test_config, function_manager, provider_manager, preset_manager, capsys):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    callback = Mock()
+    request.output_chunk_content("", True, callback)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    callback.assert_not_called()
+
+
+def test_output_chunk_content_no_print_no_callback(test_config, function_manager, provider_manager, preset_manager, capsys):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    callback = Mock()
+    request.output_chunk_content("content", False, None)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    callback.assert_not_called()
+
+
+def test_output_chunk_content_print_callback(test_config, function_manager, provider_manager, preset_manager, capsys):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    callback = Mock()
+    request.output_chunk_content("content", True, callback)
+    captured = capsys.readouterr()
+    assert captured.out == "content"
+    callback.assert_called_once_with("content")
+
+
+def test_iterate_streaming_response_output_chunk_content_args(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.streaming = True
+    callback = Mock()
+    request.llm = Mock()
+    request.llm.stream = Mock(return_value=[AIMessageChunk(content="content1")])
+    request.output_chunk_content = Mock()
+    request.iterate_streaming_response(TEST_BASIC_MESSAGES, True, callback)
+    request.output_chunk_content.call_args.args[0] == "content1"
+    request.output_chunk_content.call_args.args[1] is True
+    request.output_chunk_content.call_args.args[2] is callback
+
+
+def test_iterate_streaming_response_messages(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.streaming = True
+    request.llm = Mock()
+    request.llm.stream = Mock(return_value=[AIMessageChunk(content="content1"), AIMessageChunk(content="content2"), AIMessageChunk(content="content3")])
+    result = request.iterate_streaming_response(TEST_BASIC_MESSAGES, False, None)
+    assert result.content == "content1content2content3"
+
+
+def test_iterate_streaming_response_strings(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.streaming = True
+    request.llm = Mock()
+    request.llm.stream = Mock(return_value=["content1", "content2", "content3"])
+    result = request.iterate_streaming_response(TEST_BASIC_MESSAGES, False, None)
+    assert result == "content1content2content3"
+
+
+def test_iterate_streaming_response_unexpected_chunk_type(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.streaming = True
+    request.llm = Mock()
+    request.llm.stream = Mock(return_value=[123])
+    with pytest.raises(ValueError) as excinfo:
+        request.iterate_streaming_response(TEST_BASIC_MESSAGES, False, None)
+    assert str(excinfo.value).startswith("Unexpected chunk type")
+
+
+def test_iterate_streaming_response_function_call(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.streaming = True
+    request.llm = Mock()
+    request.llm.stream = Mock(return_value=[
+        AIMessageChunk(content='', additional_kwargs={'function_call': {'name': 'test_function', 'arguments': ''}}),
+        AIMessageChunk(content='', additional_kwargs={'function_call': {'arguments': '{"arg1": "arg1"}'}}),
+    ])
+    result = request.iterate_streaming_response(TEST_BASIC_MESSAGES, False, None)
+    assert result.content == ""
+    assert result.additional_kwargs['function_call']['name'] == "test_function"
+    assert result.additional_kwargs['function_call']['arguments'] == '{"arg1": "arg1"}'
+
+
+def test_iterate_streaming_response_interrupted_function_call(test_config, function_manager, provider_manager, preset_manager, capsys):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.streaming = False
+    request.llm = Mock()
+    request.llm.stream = Mock(return_value=[
+        AIMessageChunk(content='', additional_kwargs={'function_call': {'name': 'test_function', 'arguments': ''}}),
+    ])
+    result = request.iterate_streaming_response(TEST_BASIC_MESSAGES, False, None)
+    captured = capsys.readouterr()
+    assert result is None
+    assert "Generation stopped" in captured.out
+
+
+def test_execute_llm_streaming_no_print_no_callback(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.iterate_streaming_response = Mock(return_value='test response')
+    success, response, user_message = request.execute_llm_streaming(TEST_BASIC_MESSAGES)
+    assert success is True
+    assert response == "test response"
+    request.iterate_streaming_response.call_args.args[0] == TEST_BASIC_MESSAGES
+    request.iterate_streaming_response.call_args.args[1] is False
+    request.iterate_streaming_response.call_args.args[2] is None
+
+
+def test_execute_llm_streaming_print_callback(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.iterate_streaming_response = Mock(return_value='test response')
+    request.request_overrides['print_stream'] = True
+    stream_callback = Mock()
+    request.request_overrides['stream_callback'] = stream_callback
+    success, response, user_message = request.execute_llm_streaming(TEST_BASIC_MESSAGES)
+    assert success is True
+    assert response == "test response"
+    request.iterate_streaming_response.call_args.args[0] == TEST_BASIC_MESSAGES
+    request.iterate_streaming_response.call_args.args[1] is True
+    request.iterate_streaming_response.call_args.args[2] is stream_callback
+
+
+def test_execute_llm_streaming_exception(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.iterate_streaming_response = Mock(side_effect=ValueError("Error"))
+    success, response, user_message = request.execute_llm_streaming(["message"])
+    assert success is False
+    assert response == ["message"]
+    assert str(user_message) == "Error"
+    assert request.streaming is False
+
+
+def test_execute_llm_non_streaming(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.llm = Mock(return_value="response")
+    success, response, user_message = request.execute_llm_non_streaming(TEST_BASIC_MESSAGES)
+    assert success is True
+    assert response == "response"
+
+
+def test_execute_llm_non_streaming_failure_call_llm(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.llm = Mock(side_effect=ValueError("Error"))
+    success, response_obj, user_message = request.execute_llm_non_streaming(TEST_BASIC_MESSAGES)
+    assert success is False
+    assert user_message == "Error"
+
+
 def test_extract_message_content_function_call(test_config, function_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
     ai_message = AIMessage(content='', additional_kwargs={'function_call': {'name': 'test_function', 'arguments': '{\n  "one": "test"\n}'}})
@@ -216,6 +524,11 @@ def test_terminate_stream(test_config, function_manager, provider_manager, prese
     request.streaming = True
     request.terminate_stream(None, None)
     assert request.streaming is False
+
+
+#########################
+# Integration tests
+#########################
 
 
 def test_simple_non_streaming_request(test_config, function_manager, provider_manager, preset_manager):
