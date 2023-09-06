@@ -313,6 +313,7 @@ class ApiRequest:
         self.log_function_call(function_call)
 
         if self.should_return_on_function_call():
+            self.log.info(f"Returning directly on function call: {function_call['name']}")
             return self.build_function_definition(function_call), new_messages
 
         return self.execute_function_call(function_call, new_messages)
@@ -330,7 +331,6 @@ class ApiRequest:
             util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
 
     def build_function_definition(self, function_call):
-        self.log.info(f"Returning directly on function call: {function_call['name']}")
         return {
             'name': function_call['name'],
             'arguments': function_call['arguments'],
