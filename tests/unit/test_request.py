@@ -13,6 +13,7 @@ from langchain.schema.messages import (
 
 from lwe.core import constants
 from ..base import (
+    clean_output,
     make_provider,
     make_api_request,
     TEST_BASIC_MESSAGES,
@@ -231,7 +232,7 @@ def test_strip_out_messages_over_max_tokens_two_messages_stripped(test_config, f
     assert len(result) == 1
     assert result[0] == messages[2]
     captured = capsys.readouterr()
-    assert "stripped out 2 oldest messages" in captured.out
+    assert "stripped out 2 oldest messages" in clean_output(captured.out)
 
 
 def test_strip_out_messages_over_max_tokens_all_messages_stripped(test_config, function_manager, provider_manager, preset_manager):
@@ -425,6 +426,261 @@ def test_execute_llm_non_streaming_failure_call_llm(test_config, function_manage
     success, response_obj, user_message = request.execute_llm_non_streaming(TEST_BASIC_MESSAGES)
     assert success is False
     assert str(user_message) == "Error"
+
+
+def test_post_response_function_call(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    response_obj = Mock()
+    new_messages = []
+    response_message = {
+        'message_type': 'function_call',
+        'message': {
+            'name': 'test_function',
+            'arguments': {'word': 'foo', 'repeats': 2}
+        }
+    }
+    request.extract_message_content = Mock(return_value=response_message)
+    request.handle_function_call = Mock(return_value=('response', new_messages))
+    result = request.post_response(response_obj, new_messages)
+    assert result == ('response', new_messages)
+    request.extract_message_content.assert_called_once_with(response_obj)
+    request.handle_function_call.assert_called_once_with(response_message, new_messages)
+
+
+def test_post_response_non_function(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    response_obj = Mock()
+    new_messages = []
+    response_message = {
+        'message_type': 'content',
+        'message': 'Hello, world!'
+    }
+    request.extract_message_content = Mock(return_value=response_message)
+    request.handle_non_function_response = Mock(return_value=('response', new_messages))
+    result = request.post_response(response_obj, new_messages)
+    assert result == ('response', new_messages)
+    request.extract_message_content.assert_called_once_with(response_obj)
+    request.handle_non_function_response.assert_called_once_with(response_message, new_messages)
+
+
+def test_handle_function_call_return(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    response_message = {
+        'message_type': 'function_call',
+        'message': {
+            'name': 'test_function',
+            'arguments': {'word': 'foo', 'repeats': 2}
+        }
+    }
+    new_messages = []
+    request.log_function_call = Mock()
+    request.should_return_on_function_call = Mock(return_value=True)
+    request.build_function_definition = Mock(return_value='function_definition')
+    result = request.handle_function_call(response_message, new_messages)
+    assert result == ('function_definition', new_messages)
+    request.log_function_call.assert_called_once_with(response_message['message'])
+    request.should_return_on_function_call.assert_called_once()
+    request.build_function_definition.assert_called_once_with(response_message['message'])
+
+
+def test_handle_function_call_execute(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    response_message = {
+        'message_type': 'function_call',
+        'message': {
+            'name': 'test_function',
+            'arguments': {'word': 'foo', 'repeats': 2}
+        }
+    }
+    new_messages = []
+    request.log_function_call = Mock()
+    request.should_return_on_function_call = Mock(return_value=False)
+    request.execute_function_call = Mock(return_value=('function_response', new_messages))
+    result = request.handle_function_call(response_message, new_messages)
+    assert result == ('function_response', new_messages)
+    request.log_function_call.assert_called_once_with(response_message['message'])
+    request.should_return_on_function_call.assert_called_once()
+    request.execute_function_call.assert_called_once_with(response_message['message'], new_messages)
+
+
+def test_handle_non_function_response_return(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    response_message = {
+        'message_type': 'content',
+        'message': 'Hello, world!'
+    }
+    new_messages = []
+    request.check_return_on_function_response = Mock(return_value=('function_response', new_messages))
+    result = request.handle_non_function_response(response_message, new_messages)
+    assert result == ('function_response', new_messages)
+    request.check_return_on_function_response.assert_called_once_with(new_messages)
+
+
+def test_handle_non_function_response_no_return(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    response_message = {
+        'message_type': 'content',
+        'message': 'Hello, world!'
+    }
+    new_messages = []
+    request.check_return_on_function_response = Mock(return_value=(None, new_messages))
+    result = request.handle_non_function_response(response_message, new_messages)
+    assert result == (response_message['message'], new_messages)
+    request.check_return_on_function_response.assert_called_once_with(new_messages)
+
+
+def test_log_function_call_return_only_false(test_config, function_manager, provider_manager, preset_manager, capsys):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+    request.return_only = False
+    request.log_function_call(function_call)
+    captured = capsys.readouterr()
+    assert 'AI requested function call' in captured.out
+
+
+def test_log_function_call_return_only_true(test_config, function_manager, provider_manager, preset_manager, capsys):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+    request.return_only = True
+    request.log_function_call(function_call)
+    captured = capsys.readouterr()
+    assert captured.out == ''
+
+
+def test_build_function_definition(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+    result = request.build_function_definition(function_call)
+    assert result['name'] == function_call['name']
+    assert result['arguments'] == function_call['arguments']
+
+
+def test_execute_function_call_success(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+    new_messages = []
+    function_response = {
+        'result': 'foo foo',
+    }
+    request.run_function = Mock(return_value=(True, function_response, 'Function call succeeded'))
+    function_response_message = {
+        "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
+        "message_metadata": {"name": "test_function"},
+        "message_type": "function_response",
+        "role": "function",
+    },
+    request.build_function_response_message = Mock(return_value=function_response_message)
+    request.check_forced_function = Mock(return_value=False)
+    request.call_llm = Mock(return_value=(True, 'test response', 'LLM call succeeded'))
+    request.post_response = Mock(return_value=('test response', new_messages))
+    result = request.execute_function_call(function_call, new_messages)
+    assert result == ('test response', new_messages)
+    request.run_function.assert_called_once_with(function_call['name'], function_call['arguments'])
+    request.build_function_response_message.assert_called_once_with(function_call, function_response)
+    request.check_forced_function.assert_called_once()
+    request.call_llm.assert_called_once_with(new_messages)
+    request.post_response.assert_called_once_with('test response', new_messages)
+
+
+def test_execute_function_call_forced(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+
+    function_response = {
+        'result': 'foo foo',
+    }
+    function_response_message = {
+        "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
+        "message_metadata": {"name": "test_function"},
+        "message_type": "function_response",
+        "role": "function",
+    },
+    new_messages = []
+    request.run_function = Mock(return_value=(True, function_response, 'Function call succeeded'))
+    request.build_function_response_message = Mock(return_value=function_response_message)
+    request.check_forced_function = Mock(return_value=True)
+    result = request.execute_function_call(function_call, new_messages)
+    assert result == (function_response, new_messages)
+    request.run_function.assert_called_once_with(function_call['name'], function_call['arguments'])
+    request.build_function_response_message.assert_called_once_with(function_call, function_response)
+    request.check_forced_function.assert_called_once()
+
+
+def test_execute_function_call_llm_failure(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+    function_response = {
+        'result': 'foo foo',
+    }
+    function_response_message = {
+        "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
+        "message_metadata": {"name": "test_function"},
+        "message_type": "function_response",
+        "role": "function",
+    },
+    new_messages = []
+    request.run_function = Mock(return_value=(True, function_response, 'Function call succeeded'))
+    request.build_function_response_message = Mock(return_value=function_response_message)
+    request.check_forced_function = Mock(return_value=False)
+    request.call_llm = Mock(return_value=(False, None, 'LLM call failed'))
+    with pytest.raises(ValueError) as excinfo:
+        request.execute_function_call(function_call, new_messages)
+    assert 'LLM call failed' in str(excinfo.value)
+    request.run_function.assert_called_once_with(function_call['name'], function_call['arguments'])
+    request.build_function_response_message.assert_called_once_with(function_call, function_response)
+    request.check_forced_function.assert_called_once()
+    request.call_llm.assert_called_once_with(new_messages)
+
+
+def test_execute_function_call_failure(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+    new_messages = []
+    request.run_function = Mock(return_value=(False, None, 'Function call failed'))
+    with pytest.raises(ValueError) as excinfo:
+        request.execute_function_call(function_call, new_messages)
+    assert 'Function call failed' in str(excinfo.value)
+    request.run_function.assert_called_once_with(function_call['name'], function_call['arguments'])
+
+
+def test_build_function_response_message(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    function_call = {
+        'name': 'test_function',
+        'arguments': {'word': 'foo', 'repeats': 2}
+    }
+    function_response = {
+        'message': 'Repeated the word foo 2 times.',
+        'result': 'foo foo'
+    }
+    result = request.build_function_response_message(function_call, function_response)
+    assert result == {
+        'role': 'function',
+        'message': function_response,
+        'message_type': 'function_response',
+        'message_metadata': {'name': function_call['name']}
+    }
 
 
 def test_extract_message_content_function_call(test_config, function_manager, provider_manager, preset_manager):
