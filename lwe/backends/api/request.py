@@ -302,10 +302,9 @@ class ApiRequest:
         """Post-process the model response.
 
         :param response_obj: Raw response object
+        :type response_obj: AIMessage or str
         :param new_messages: Generated messages
         :type new_messages: list
-        :param request_overrides: Request overrides
-        :type request_overrides: dict
         :returns: Response, updated messages
         :rtype: tuple
         """
@@ -357,8 +356,8 @@ class ApiRequest:
 
         :param message: Message
         :type message: dict
-        :returns: Content
-        :rtype: str
+        :returns: Built message
+        :rtype: dict
         """
         if isinstance(message, BaseMessage):
             message_dict = convert_message_to_dict(message)
@@ -454,9 +453,6 @@ class ApiRequest:
     def terminate_stream(self, _signal, _frame):
         """
         Handles termination signal and stops the stream if it's running.
-
-        :param _signal: The signal that triggered the termination.
-        :param _frame: Current stack frame.
         """
         self.log.info("Received signal to terminate stream")
         if self.streaming:

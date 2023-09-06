@@ -132,10 +132,8 @@ class ConversationStorageManager:
         """
         Generate the title for a conversation in a separate thread.
 
-        :param conversation: Conversation
-        :type conversation: Conversation
-        :returns: Title
-        :rtype: str
+        :param conversation_id: Conversation ID
+        :type conversation_id: int
         """
         self.log.info(f"Generating title for conversation {conversation_id}")
         # NOTE: This might need to be smarter in the future, but for now
