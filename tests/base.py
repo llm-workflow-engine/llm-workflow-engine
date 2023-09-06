@@ -1,3 +1,4 @@
+import re
 import os
 import tempfile
 
@@ -99,6 +100,9 @@ class FakeBackend(Backend):
     def ask(self, input: str, request_overrides: dict):
         pass
 
+
+def clean_output(output):
+    return re.sub(r'\x1b\[.*?m', '', output)
 
 def fake_llm_responses(responses, request_overrides=None):
     request_overrides = request_overrides or {}
