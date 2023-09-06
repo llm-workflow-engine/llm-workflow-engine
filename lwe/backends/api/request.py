@@ -19,6 +19,7 @@ from lwe.backends.api.message import MessageManager
 from langchain.schema import BaseMessage
 from langchain.adapters.openai import convert_message_to_dict
 
+
 class ApiRequest:
     """Individual LLM requests manager
     """
@@ -31,9 +32,9 @@ class ApiRequest:
                  input=None,
                  preset=None,
                  preset_manager=None,
-                 system_message=constants.SYSTEM_MESSAGE_DEFAULT,
+                 system_message=None,
                  old_messages=None,
-                 max_submission_tokens=constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS,
+                 max_submission_tokens=None,
                  request_overrides=None,
                  return_only=False,
                  orm=None,
@@ -48,9 +49,9 @@ class ApiRequest:
         self.default_preset = preset
         self.default_preset_name = util.get_preset_name(self.default_preset)
         self.preset_manager = preset_manager
-        self.system_message = system_message
+        self.system_message = system_message or constants.SYSTEM_MESSAGE_DEFAULT
         self.old_messages = old_messages or []
-        self.max_submission_tokens = max_submission_tokens
+        self.max_submission_tokens = max_submission_tokens or constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
         self.request_overrides = request_overrides or {}
         self.return_only = return_only
         self.orm = orm or Orm(self.config)
@@ -299,56 +300,71 @@ class ApiRequest:
         return True, response, "Response received"
 
     def post_response(self, response_obj, new_messages):
-        """Post-process the model response.
-
-        :param response_obj: Raw response object
-        :type response_obj: AIMessage or str
-        :param new_messages: Generated messages
-        :type new_messages: list
-        :returns: Response, updated messages
-        :rtype: tuple
-        """
         response_message = self.extract_message_content(response_obj)
         new_messages.append(response_message)
+
         if response_message['message_type'] == 'function_call':
-            function_call = response_message['message']
-            if not self.return_only:
-                util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
-            if self.should_return_on_function_call():
-                function_definition = {
-                    'name': function_call['name'],
-                    'arguments': function_call['arguments'],
-                }
-                self.log.info(f"Returning directly on function call: {function_call['name']}")
-                return function_definition, new_messages
-            success, function_response, user_message = self.run_function(function_call['name'], function_call['arguments'])
-            if success:
-                message_metadata = {
-                    'name': function_call['name'],
-                }
-                new_messages.append(self.message.build_message('function', function_response, message_type='function_response', message_metadata=message_metadata))
-                # If a function call is forced, we cannot recurse, as there will
-                # never be a final non-function response, and we'l recurse infinitely.
-                # TODO: Perhaps in the future we can handle this more elegantly by:
-                # 1. Tracking which functions with which arguments are called, and breaking
-                #    on the first duplicate call.
-                # 2. Allowing a 'maximum_forced_function_calls' metadata attribute.
-                # 3. Automatically switching the preset's 'function_call' to 'auto' after
-                #    the first call.
-                if self.check_forced_function():
-                    return function_response, new_messages
-                success, response_obj, user_message = self.call_llm(new_messages)
-                if success:
-                    return self.post_response(response_obj, new_messages)
-                else:
-                    raise ValueError(f"LLM call failed: {user_message}")
-            else:
-                raise ValueError(f"Function call failed: {user_message}")
+            return self.handle_function_call(response_message, new_messages)
+
+        return self.handle_non_function_response(response_message, new_messages)
+
+    def handle_function_call(self, response_message, new_messages):
+        function_call = response_message['message']
+        self.log_function_call(function_call)
+
+        if self.should_return_on_function_call():
+            return self.build_function_definition(function_call), new_messages
+
+        return self.execute_function_call(function_call, new_messages)
+
+    def handle_non_function_response(self, response_message, new_messages):
         function_response, new_messages = self.check_return_on_function_response(new_messages)
         if function_response:
             self.log.info("Returning directly on function response")
             return function_response, new_messages
+
         return response_message['message'], new_messages
+
+    def log_function_call(self, function_call):
+        if not self.return_only:
+            util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
+
+    def build_function_definition(self, function_call):
+        self.log.info(f"Returning directly on function call: {function_call['name']}")
+        return {
+            'name': function_call['name'],
+            'arguments': function_call['arguments'],
+        }
+
+    def execute_function_call(self, function_call, new_messages):
+        success, function_response, user_message = self.run_function(function_call['name'], function_call['arguments'])
+        if not success:
+            raise ValueError(f"Function call failed: {user_message}")
+
+        new_messages.append(self.build_function_response_message(function_call, function_response))
+
+        # If a function call is forced, we cannot recurse, as there will
+        # never be a final non-function response, and we'll recurse infinitely.
+        # TODO: Perhaps in the future we can handle this more elegantly by:
+        # 1. Tracking which functions with which arguments are called, and breaking
+        #    on the first duplicate call.
+        # 2. Allowing a 'maximum_forced_function_calls' metadata attribute.
+        # 3. Automatically switching the preset's 'function_call' to 'auto' after
+        #    the first call.
+        if self.check_forced_function():
+            return function_response, new_messages
+
+        success, response_obj, user_message = self.call_llm(new_messages)
+        if not success:
+            raise ValueError(f"LLM call failed: {user_message}")
+
+        return self.post_response(response_obj, new_messages)
+
+    def build_function_response_message(self, function_call, function_response):
+        message_metadata = {
+            'name': function_call['name'],
+        }
+        return self.message.build_message('function', function_response, message_type='function_response', message_metadata=message_metadata)
 
     def extract_message_content(self, message):
         """
