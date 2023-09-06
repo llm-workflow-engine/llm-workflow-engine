@@ -157,6 +157,75 @@ def test_set_request_llm_failure(test_config, function_manager, provider_manager
     assert user_message == "Error"
 
 
+def test_extract_metadata_customizations_with_preset_name(test_config, function_manager, provider_manager, preset_manager):
+    request_overrides = {'preset': 'test_preset'}
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, request_overrides=request_overrides)
+    preset_manager.ensure_preset = Mock(return_value=(True, ({'name': 'default_preset', 'provider': 'test_provider'}, {'key': 'value'}), 'user_message'))
+    success, response, user_message = request.extract_metadata_customizations()
+    assert success
+    assert response == ('test_preset', None, {'name': 'default_preset', 'provider': 'test_provider'}, {'key': 'value'})
+
+
+def test_extract_metadata_customizations_with_default_preset(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, preset=({'name': 'default_preset', 'provider': 'test_provider'}, {'key': 'value'}))
+    success, response, user_message = request.extract_metadata_customizations()
+    assert success
+    assert response == (None, None, {'name': 'default_preset', 'provider': 'test_provider'}, {'key': 'value'})
+
+
+def test_extract_metadata_customizations_with_preset_overrides(test_config, function_manager, provider_manager, preset_manager):
+    request_overrides = {'preset': 'test_preset', 'preset_overrides': {'key': 'value'}}
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, request_overrides=request_overrides)
+    preset_manager.ensure_preset = Mock(return_value=(True, ({'name': 'default_preset', 'provider': 'test_provider'}, {'key1': 'value1'}), 'user_message'))
+    success, response, user_message = request.extract_metadata_customizations()
+    assert success
+    assert response == ('test_preset', {'key': 'value'}, {'name': 'default_preset', 'provider': 'test_provider'}, {'key1': 'value1'})
+
+
+def test_extract_metadata_customizations_with_provider(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    provider.get_customizations = Mock(return_value={'key': 'value'})
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, provider=provider)
+    success, response, user_message = request.extract_metadata_customizations()
+    assert success
+    assert response == (None, None, {'provider': provider.name}, {'key': 'value'})
+
+
+def test_extract_metadata_customizations_with_invalid_request_overrides(test_config, function_manager, provider_manager, preset_manager):
+    request_overrides = {'preset_overrides': {'key': 'value'}}
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, request_overrides=request_overrides)
+    success, response, user_message = request.extract_metadata_customizations()
+    assert not success
+    assert response == (None, None, False)
+
+
+def test_extract_metadata_customizations_with_failed_preset_ensuring(test_config, function_manager, provider_manager, preset_manager):
+    request_overrides = {'preset': 'test_preset'}
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, request_overrides=request_overrides)
+    preset_manager.ensure_preset = Mock(return_value=(False, 'error', 'user_message'))
+    success, response, user_message = request.extract_metadata_customizations()
+    assert not success
+    assert response == 'error'
+    assert user_message == 'user_message'
+
+
+def test_get_preset_metadata_customizations(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    preset_manager.ensure_preset = Mock(return_value=(True, ({'name': 'default_preset', 'provider': 'test_provider'}, {'key': 'value'}), 'user_message'))
+    success, response, user_message = request.get_preset_metadata_customizations('test_preset')
+    assert success
+    assert response == ({'name': 'default_preset', 'provider': 'test_provider'}, {'key': 'value'})
+
+
+def test_get_preset_metadata_customizations_with_failed_preset_ensuring(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    preset_manager.ensure_preset = Mock(return_value=(False, 'error', 'user_message'))
+    success, response, user_message = request.get_preset_metadata_customizations('test_preset')
+    assert not success
+    assert response == 'error'
+    assert user_message == 'user_message'
+
+
 def test_expand_functions_none(test_config, function_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
     customizations = {}
