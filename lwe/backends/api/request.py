@@ -63,8 +63,77 @@ class ApiRequest:
         if not success:
             return success, response, user_message
         preset_name, preset_overrides, metadata, customizations = response
-        success, response, user_message = self.build_llm(preset_name, preset_overrides, metadata, customizations)
+        success, response, user_message = self.setup_request_config(preset_name, preset_overrides, metadata, customizations)
         return success, response, user_message
+
+    def setup_request_config(self, preset_name=None, preset_overrides=None, metadata=None, customizations=None):
+        """
+        Set up the configuration for the request.
+
+        :param preset_name: Override preset name
+        :type preset_name: str, optional
+        :param preset_overrides: Overrides for preset, defaults to None
+        :type preset_overrides: dict, optional
+        :param metadata: Preset metadata
+        :type metadata: dict, optional
+        :param customizations: Provider/model customizations
+        :type customizations: dict, optional
+        :returns: success, llm, message
+        :rtype: tuple
+        """
+        config = {
+            'preset_name': preset_name,
+            'preset_overrides': preset_overrides,
+            'metadata': metadata,
+            'customizations': customizations
+        }
+        success, response, user_message = self.build_request_config(config)
+        if success:
+            provider, preset, llm, preset_name, model_name, token_manager = response
+            self.llm = llm
+            self.provider = provider
+            self.token_manager = token_manager
+            self.preset_name = preset_name
+            self.model_name = model_name
+            self.preset = preset
+        return success, response, user_message
+
+    def build_request_config(self, config):
+        config = self.prepare_config(config)
+        success, provider, user_message = self.load_provider(config)
+        if not success:
+            return success, provider, user_message
+        config = self.merge_preset_overrides(config)
+        preset = (config['metadata'], config['customizations'])
+        config['customizations'] = self.expand_functions(config['customizations'])
+        llm = provider.make_llm(config['customizations'], use_defaults=True)
+        preset_name = config['metadata'].get('name', '')
+        model_name = getattr(llm, provider.model_property_name)
+        token_manager = TokenManager(self.config, provider, model_name, self.function_cache)
+        message = f"Built LLM based on preset_name: {preset_name}, metadata: {config['metadata']}, customizations: {config['customizations']}, preset_overrides: {config['preset_overrides']}"
+        self.log.debug(message)
+        return True, (provider, preset, llm, preset_name, model_name, token_manager), message
+
+    def prepare_config(self, config):
+        config['metadata'] = copy.deepcopy(config['metadata'] or {})
+        config['customizations'] = copy.deepcopy(config['customizations'] or {})
+        config['preset_overrides'] = config['preset_overrides'] or {}
+        return config
+
+    def load_provider(self, config):
+        if config['preset_name'] is None:
+            return self.provider_manager.load_provider(config['metadata']['provider'])
+        return True, self.provider, "Default provider loaded"
+
+    def merge_preset_overrides(self, config):
+        if config['preset_overrides']:
+            if 'metadata' in config['preset_overrides']:
+                self.log.info(f"Merging preset overrides for metadata: {config['preset_overrides']['metadata']}")
+                config['metadata'] = util.merge_dicts(config['metadata'], config['preset_overrides']['metadata'])
+            if 'model_customizations' in config['preset_overrides']:
+                self.log.info(f"Merging preset overrides for model customizations: {config['preset_overrides']['model_customizations']}")
+                config['customizations'] = util.merge_dicts(config['customizations'], config['preset_overrides']['model_customizations'])
+        return config
 
     def extract_metadata_customizations(self):
         self.log.debug(f"Extracting preset configuration from request_overrides: {self.request_overrides}")
@@ -97,49 +166,6 @@ class ApiRequest:
         metadata, customizations = preset
         self.log.debug(f"Retrieved metadata and customizations for preset: {preset_name}, metadata: {metadata}, customizations: {customizations}")
         return success, (metadata, customizations), f"Retrieved metadata and customizations for preset: {preset_name}"
-
-    def build_llm(self, preset_name=None, preset_overrides=None, metadata=None, customizations=None):
-        """
-        Build the LLM object for the request.
-
-        :param preset_name: Override preset name
-        :type preset_name: str, optional
-        :param preset_overrides: Overrides for preset, defaults to None
-        :type preset_overrides: dict, optional
-        :param metadata: Preset metadata
-        :type metadata: dict, optional
-        :param customizations: Provider/model customizations
-        :type customizations: dict, optional
-        :returns: success, llm, message
-        :rtype: tuple
-        """
-        metadata = metadata or {}
-        customizations = customizations or {}
-        preset_overrides = preset_overrides or {}
-        metadata = copy.deepcopy(metadata)
-        customizations = copy.deepcopy(customizations)
-        if preset_name is None:
-            success, provider, user_message = self.provider_manager.load_provider(metadata['provider'])
-            if success:
-                self.provider = provider
-            else:
-                return success, provider, user_message
-        if preset_overrides:
-            if 'metadata' in preset_overrides:
-                self.log.info(f"Merging preset overrides for metadata: {preset_overrides['metadata']}")
-                metadata = util.merge_dicts(metadata, preset_overrides['metadata'])
-            if 'model_customizations' in preset_overrides:
-                self.log.info(f"Merging preset overrides for model customizations: {preset_overrides['model_customizations']}")
-                customizations = util.merge_dicts(customizations, preset_overrides['model_customizations'])
-        customizations = self.expand_functions(customizations)
-        self.llm = self.provider.make_llm(customizations, use_defaults=True)
-        self.preset = (metadata, customizations)
-        self.preset_name = metadata.get('name', '')
-        self.model_name = getattr(self.llm, self.provider.model_property_name)
-        self.token_manager = TokenManager(self.config, self.provider, self.model_name, self.function_cache)
-        message = f"Built LLM based on preset_name: {self.preset_name}, metadata: {metadata}, customizations: {customizations}, preset_overrides: {preset_overrides}"
-        self.log.debug(message)
-        return True, self.llm, message
 
     def expand_functions(self, customizations):
         """Expand any configured functions to their full definition."""

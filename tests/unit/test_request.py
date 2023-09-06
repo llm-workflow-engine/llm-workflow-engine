@@ -55,12 +55,12 @@ def test_set_request_llm_success(test_config, function_manager, provider_manager
     customizations = {'key': 'value'}
     request.extract_metadata_customizations = Mock(return_value=(True, (preset_name, preset_overrides, metadata, customizations), "Success"))
     llm = Mock()
-    request.build_llm = Mock(return_value=(True, llm, "Success"))
+    request.setup_request_config = Mock(return_value=(True, llm, "Success"))
     success, response, user_message = request.set_request_llm()
-    request.build_llm.call_args.args[0] == preset_name
-    request.build_llm.call_args.args[1] == preset_overrides
-    request.build_llm.call_args.args[2] == metadata
-    request.build_llm.call_args.args[3] == customizations
+    request.setup_request_config.call_args.args[0] == preset_name
+    request.setup_request_config.call_args.args[1] == preset_overrides
+    request.setup_request_config.call_args.args[2] == metadata
+    request.setup_request_config.call_args.args[3] == customizations
     assert success is True
     assert response == llm
     assert user_message == "Success"
