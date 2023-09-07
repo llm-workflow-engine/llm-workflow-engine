@@ -219,10 +219,11 @@ def remove_and_create_dir(directory_path):
     os.makedirs(directory_path)
 
 def create_file(directory, filename, content=None):
-    file_path = os.path.join(directory, filename)
-    with open(file_path, 'w') as file:
+    filepath = os.path.join(directory, filename)
+    with open(filepath, 'w') as file:
         if content:
             file.write(content)
+    return filepath
 
 def current_datetime():
     now = datetime.now()
