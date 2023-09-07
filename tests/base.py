@@ -10,6 +10,7 @@ from langchain.schema.messages import (
     # AIMessageChunk,
 )
 
+from lwe.core import constants
 from lwe.core.backend import Backend
 from lwe.backends.api.request import ApiRequest
 
@@ -101,8 +102,47 @@ class FakeBackend(Backend):
         pass
 
 
+def store_system_message(backend, conversation, message=constants.SYSTEM_MESSAGE_DEFAULT):
+    backend.message.add_message(conversation.id, "system", message, "content", None, 'provider_fake_llm', constants.API_BACKEND_DEFAULT_MODEL, '')
+
+
+def store_user_message(backend, conversation, message="test question"):
+    success, message, user_message = backend.message.add_message(conversation.id, "user", message, "content", None, 'provider_fake_llm', constants.API_BACKEND_DEFAULT_MODEL, '')
+    if success:
+        return message
+    raise Exception(user_message)
+
+
+def store_assistant_message(backend, conversation, message="test response"):
+    success, message, user_message = backend.message.add_message(conversation.id, "assistant", message, "content", None, 'provider_fake_llm', constants.API_BACKEND_DEFAULT_MODEL, '')
+    if success:
+        return message
+    raise Exception(user_message)
+
+
+def store_conversation(backend, title="Conversation"):
+    success, conversation, user_message = backend.conversation.add_conversation(backend.current_user.id, title)
+    if success:
+        return conversation
+    raise Exception(user_message)
+
+
+def store_conversation_thread(backend, title="Conversation", rounds=1):
+    conversation = store_conversation(backend, title)
+    store_system_message(backend, conversation)
+    for i in range(rounds):
+        store_user_message(backend, conversation, f"test question {i}")
+        store_assistant_message(backend, conversation, f"test response {i}")
+
+
+def store_conversation_threads(backend, title="Conversation", rounds=3):
+    for i in range(rounds):
+        store_conversation_thread(backend, f"{title} {i}")
+
+
 def clean_output(output):
     return re.sub(r'\x1b\[.*?m', '', output)
+
 
 def fake_llm_responses(responses, request_overrides=None):
     request_overrides = request_overrides or {}
