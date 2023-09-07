@@ -6,7 +6,7 @@ from lwe.backends.api.conversation_storage_manager import ConversationStorageMan
 
 from ..base import (
     TEST_BASIC_MESSAGES,
-    # TEST_FUNCTION_CALL_RESPONSE_MESSAGES,
+    TEST_FUNCTION_CALL_RESPONSE_MESSAGES,
 )
 
 
@@ -34,7 +34,20 @@ def test_store_conversation_messages_new_messages_with_current_user(test_config,
     new_messages = copy.deepcopy(TEST_BASIC_MESSAGES)
     success, conversation, message = csm.store_conversation_messages(new_messages)
     assert success
-    # assert conversation is not None
+    assert conversation is not None
+    assert message == "Conversation updated with new messages"
+    success, stored_conversation, user_message = csm.conversation.get_conversation(conversation.id)
+    assert stored_conversation is not None
+    success, stored_messages, user_message = csm.message.get_messages(conversation.id)
+    assert len(stored_messages) == len(new_messages)
+
+
+def test_store_conversation_messages_new_messages_with_function_call_with_current_user(test_config, function_manager, provider_manager):
+    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
+    new_messages = copy.deepcopy(TEST_FUNCTION_CALL_RESPONSE_MESSAGES)
+    success, conversation, message = csm.store_conversation_messages(new_messages)
+    assert success
+    assert conversation is not None
     assert message == "Conversation updated with new messages"
     success, stored_conversation, user_message = csm.conversation.get_conversation(conversation.id)
     assert stored_conversation is not None
