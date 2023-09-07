@@ -9,13 +9,16 @@ import lwe.core.util as util
 
 def make_template_file(template_manager, template_name, content=None):
     template_dir = template_manager.user_template_dirs[0]
-    util.create_file(template_dir, template_name, content)
+    filepath = util.create_file(template_dir, template_name, content)
     template_manager.load_templates()
+    return filepath
 
 
 def remove_template_file(template_manager, template_name):
     template_dir = template_manager.user_template_dirs[0]
-    os.remove(os.path.join(template_dir, template_name))
+    filepath = os.path.join(template_dir, template_name)
+    os.remove(filepath)
+    return filepath
 
 
 def test_init(template_manager):
@@ -124,3 +127,94 @@ def test_get_template_and_variables_not_found(template_manager):
     template, variables = template_manager.get_template_and_variables(template_name)
     assert template is None
     assert variables is None
+
+
+
+
+
+
+
+def test_get_template_variables_substitutions(template_manager):
+    template_name = "existent_template.md"
+    make_template_file(template_manager, template_name)
+    success, response, user_message = template_manager.get_template_variables_substitutions(template_name)
+    remove_template_file(template_manager, template_name)
+    assert success is True
+    assert isinstance(response, tuple)
+    assert "Loaded template substitutions" in user_message
+
+
+def test_render_template(template_manager):
+    template_name = "existent_template.md"
+    make_template_file(template_manager, template_name)
+    success, message, user_message = template_manager.render_template(template_name)
+    remove_template_file(template_manager, template_name)
+    assert success is True
+    assert "Rendered template" in user_message
+
+
+def test_get_template_source(template_manager):
+    template_name = "existent_template.md"
+    make_template_file(template_manager, template_name)
+    success, source, user_message = template_manager.get_template_source(template_name)
+    remove_template_file(template_manager, template_name)
+    assert success is True
+    assert "Loaded template source" in user_message
+
+
+def test_get_template_editable_filepath(template_manager):
+    template_name = "existent_template.md"
+    make_template_file(template_manager, template_name)
+    success, filename, user_message = template_manager.get_template_editable_filepath(template_name)
+    remove_template_file(template_manager, template_name)
+    assert success is True
+    assert "can be edited" in user_message
+
+
+def test_copy_template(template_manager):
+    old_name = "existent_template.md"
+    new_name = "new_template.md"
+    make_template_file(template_manager, old_name)
+    success, new_filepath, user_message = template_manager.copy_template(old_name, new_name)
+    remove_template_file(template_manager, old_name)
+    remove_template_file(template_manager, new_name)
+    assert success is True
+    assert "Copied template" in user_message
+
+
+def test_template_can_delete(template_manager):
+    template_name = "existent_template.md"
+    make_template_file(template_manager, template_name)
+    success, filename, user_message = template_manager.template_can_delete(template_name)
+    remove_template_file(template_manager, template_name)
+    assert success is True
+    assert "can be deleted" in user_message
+
+
+def test_template_delete(template_manager):
+    template_name = "existent_template.md"
+    filepath = make_template_file(template_manager, template_name)
+    success, filename, user_message = template_manager.template_delete(filepath)
+    assert success is True
+    assert "Deleted" in user_message
+
+
+def test_make_temp_template(template_manager):
+    template_contents = "Hello, "
+    basename, filepath = template_manager.make_temp_template(template_contents)
+    assert os.path.exists(filepath)
+    template_manager.remove_temp_template(basename)
+
+
+def test_remove_temp_template(template_manager):
+    template_contents = "Hello, "
+    basename, filepath = template_manager.make_temp_template(template_contents)
+    template_manager.remove_temp_template(basename)
+    assert not os.path.exists(filepath)
+
+
+def test_is_system_template(template_manager):
+    system_template_filepath = os.path.join(template_manager.system_template_dirs[0], "existent_template.md")
+    assert template_manager.is_system_template(system_template_filepath) is True
+    user_template_filepath = os.path.join(template_manager.user_template_dirs[0], "existent_template.md")
+    assert template_manager.is_system_template(user_template_filepath) is False
