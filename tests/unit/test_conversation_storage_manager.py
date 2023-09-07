@@ -112,7 +112,7 @@ def test_add_message(test_config, function_manager, provider_manager):
     assert csm.message.add_message.call_args.args[4] is None
     assert csm.message.add_message.call_args.args[5] == 'provider_fake_llm'
     assert csm.message.add_message.call_args.args[6] == constants.API_BACKEND_DEFAULT_MODEL
-    assert csm.message.add_message.call_args.args[7] is None
+    assert csm.message.add_message.call_args.args[7] == ''
 
 
 def test_get_conversation_token_count(test_config, function_manager, provider_manager):

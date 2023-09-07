@@ -37,8 +37,8 @@ class ConversationStorageManager:
         self.current_user = current_user
         self.conversation_id = conversation_id
         self.provider = provider
-        self.model_name = model_name
-        self.preset_name = preset_name
+        self.model_name = model_name or constants.API_BACKEND_DEFAULT_MODEL
+        self.preset_name = preset_name or ''
         self.provider_manager = provider_manager
         self.function_cache = FunctionCache(self.config, self.function_manager)
         self.token_manager = TokenManager(self.config, self.provider, self.model_name, self.function_cache)
