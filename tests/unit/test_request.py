@@ -12,6 +12,7 @@ from langchain.schema.messages import (
 )
 
 from lwe.core import constants
+from lwe.core.token_manager import TokenManager
 from ..base import (
     clean_output,
     make_provider,
@@ -73,6 +74,118 @@ def test_set_request_llm_failure(test_config, function_manager, provider_manager
     assert success is False
     assert response is None
     assert user_message == "Error"
+
+
+def test_setup_request_config_success(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, provider)
+    provider = Mock()
+    preset = Mock()
+    llm = Mock()
+    token_manager = Mock()
+    request.build_request_config = Mock(return_value=(True, (provider, preset, llm, 'test', constants.API_BACKEND_DEFAULT_MODEL, token_manager), 'Success'))
+    success, response, user_message = request.setup_request_config('preset_name', {'key': 'value'}, {'key': 'value'}, {'key': 'value'})
+    assert success is True
+    assert response == (provider, preset, llm, 'test', constants.API_BACKEND_DEFAULT_MODEL, token_manager)
+    assert request.llm == llm
+    assert request.provider == provider
+    assert request.token_manager == token_manager
+    assert request.preset_name == 'test'
+    assert request.model_name == constants.API_BACKEND_DEFAULT_MODEL
+    assert request.preset == preset
+
+
+def test_setup_request_config_failure(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, provider)
+    request.build_request_config = Mock(return_value=(False, None, 'Error'))
+    success, response, user_message = request.setup_request_config('preset_name', {'key': 'value'}, {'key': 'value'}, {'key': 'value'})
+    assert success is False
+    assert response is None
+
+
+def test_build_request_config_success_no_preset_name(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    provider.make_llm = Mock(return_value=Mock(model_name=constants.API_BACKEND_DEFAULT_MODEL))
+    request.load_provider = Mock(return_value=(True, provider, 'Success'))
+    request.merge_preset_overrides = Mock(return_value={'metadata': {'one': 'two'}, 'customizations': {'three': 'four'}, 'preset_overrides': {'five': 'six'}})
+    request.expand_functions = Mock(return_value={'key': 'value'})
+    request.function_cache = Mock()
+    success, response, user_message = request.build_request_config({'preset_name': None, 'metadata': {'one': 'two'}, 'customizations': {'three': 'four'}, 'preset_overrides': {'five': 'six'}})
+    assert success is True
+    assert response[0] == provider
+    assert response[1] == ({'one': 'two'}, {'three': 'four'})
+    assert response[2] == provider.make_llm.return_value
+    assert response[3] == ''
+    assert response[4] == constants.API_BACKEND_DEFAULT_MODEL
+    assert isinstance(response[5], TokenManager)
+
+
+def test_build_request_config_success_with_preset_name(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, provider)
+    provider.make_llm = Mock(return_value=Mock(model_name=constants.API_BACKEND_DEFAULT_MODEL))
+    request.merge_preset_overrides = Mock(return_value={'metadata': {'one': 'two'}, 'customizations': {'three': 'four'}, 'preset_overrides': {'five': 'six'}})
+    request.expand_functions = Mock(return_value={'key': 'value'})
+    request.function_cache = Mock()
+    success, response, user_message = request.build_request_config({'preset_name': 'test', 'metadata': {'one': 'two'}, 'customizations': {'three': 'four'}, 'preset_overrides': {'five': 'six'}})
+    assert success is True
+    assert response[0] == provider
+    assert response[1] == ({'one': 'two'}, {'three': 'four'})
+    assert response[2] == provider.make_llm.return_value
+    assert response[3] == ''
+    assert response[4] == constants.API_BACKEND_DEFAULT_MODEL
+    assert isinstance(response[5], TokenManager)
+
+
+def test_build_request_config_failure(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.load_provider = Mock(return_value=(False, None, 'Error'))
+    success, response, user_message = request.build_request_config({'preset_name': None, 'metadata': {'key': 'value'}, 'customizations': {'key': 'value'}, 'preset_overrides': {'key': 'value'}})
+    assert success is False
+    assert response is None
+
+
+def test_prepare_config(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    config = request.prepare_config({'preset_name': None, 'metadata': {'one': 'two'}, 'customizations': {'three': 'four'}, 'preset_overrides': {'five': 'six'}})
+    assert config == {'preset_name': None, 'metadata': {'one': 'two'}, 'customizations': {'three': 'four'}, 'preset_overrides': {'five': 'six'}}
+
+
+def test_prepare_config_defaults(test_config, function_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    config = request.prepare_config({'preset_name': None, 'metadata': None, 'customizations': None, 'preset_overrides': None})
+    assert config == {'preset_name': None, 'metadata': {}, 'customizations': {}, 'preset_overrides': {}}
+
+
+def test_load_provider_with_preset_name(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, provider)
+    request.provider_manager.load_provider = Mock()
+    config = {'preset_name': 'test', 'metadata': {'provider': 'test_provider'}}
+    success, response, user_message = request.load_provider(config)
+    assert success is True
+    assert response == provider
+    request.provider_manager.load_provider.assert_not_called()
+
+
+def test_load_provider_without_preset_name(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.provider_manager.load_provider = Mock(return_value=(True, provider, 'Success'))
+    config = {'preset_name': None, 'metadata': {'provider': 'test_provider'}}
+    success, response, user_message = request.load_provider(config)
+    assert success is True
+    assert response == provider
+    request.provider_manager.load_provider.assert_called_once_with('test_provider')
+
+
+def test_merge_preset_overrides(test_config, function_manager, provider_manager, preset_manager):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, provider)
+    config = request.merge_preset_overrides({'metadata': {'key': 'value'}, 'customizations': {'key': 'value'}, 'preset_overrides': {'metadata': {'key1': 'value1'}, 'model_customizations': {'key2': 'value2'}}})
+    assert config == {'metadata': {'key': 'value', 'key1': 'value1'}, 'customizations': {'key': 'value', 'key2': 'value2'}, 'preset_overrides': {'metadata': {'key1': 'value1'}, 'model_customizations': {'key2': 'value2'}}}
 
 
 def test_extract_metadata_customizations_with_preset_name(test_config, function_manager, provider_manager, preset_manager):
