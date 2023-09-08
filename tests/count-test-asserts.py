@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import sys
 
 DEFAULT_TEST_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
