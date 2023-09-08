@@ -1,4 +1,5 @@
 import os
+import yaml
 import pyperclip
 
 from jinja2 import Environment, Template
@@ -129,12 +130,10 @@ def test_get_template_and_variables_not_found(template_manager):
     assert variables is None
 
 
-
-
-
-
-
 def test_get_template_variables_substitutions(template_manager):
+    template_name = "non_existent_template.md"
+    success, source, user_message = template_manager.get_template_source(template_name)
+    assert success is False
     template_name = "existent_template.md"
     make_template_file(template_manager, template_name)
     success, response, user_message = template_manager.get_template_variables_substitutions(template_name)
@@ -154,11 +153,17 @@ def test_render_template(template_manager):
 
 
 def test_get_template_source(template_manager):
+    template_name = "non_existent_template.md"
+    success, source, user_message = template_manager.get_template_source(template_name)
+    assert success is False
     template_name = "existent_template.md"
-    make_template_file(template_manager, template_name)
+    front_matter = yaml.dump({"value": "one", "key": "two"})
+    front_matter = f"---\n{front_matter}\n---\n"
+    make_template_file(template_manager, template_name, content=front_matter)
     success, source, user_message = template_manager.get_template_source(template_name)
     remove_template_file(template_manager, template_name)
     assert success is True
+    assert source['value'] == 'one'
     assert "Loaded template source" in user_message
 
 
@@ -168,6 +173,7 @@ def test_get_template_editable_filepath(template_manager):
     success, filename, user_message = template_manager.get_template_editable_filepath(template_name)
     remove_template_file(template_manager, template_name)
     assert success is True
+    assert template_name in filename
     assert "can be edited" in user_message
 
 
@@ -179,6 +185,7 @@ def test_copy_template(template_manager):
     remove_template_file(template_manager, old_name)
     remove_template_file(template_manager, new_name)
     assert success is True
+    assert new_name in new_filepath
     assert "Copied template" in user_message
 
 
