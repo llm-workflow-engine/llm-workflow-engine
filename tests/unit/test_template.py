@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import os
 import yaml
 import pyperclip
@@ -135,12 +137,17 @@ def test_get_template_variables_substitutions(template_manager):
     success, source, user_message = template_manager.get_template_source(template_name)
     assert success is False
     template_name = "existent_template.md"
+    template, variables, substitutions = 'test content', ['variable1'], {'variable2': 'value2'}
+    template_manager.get_template_and_variables = Mock(return_value=(template, variables))
+    template_manager.process_template_builtin_variables = Mock(return_value=substitutions)
     make_template_file(template_manager, template_name)
     success, response, user_message = template_manager.get_template_variables_substitutions(template_name)
     remove_template_file(template_manager, template_name)
     assert success is True
-    assert isinstance(response, tuple)
+    assert response == (template, variables, substitutions)
     assert "Loaded template substitutions" in user_message
+    template_manager.get_template_and_variables.assert_called_once_with(template_name)
+    template_manager.process_template_builtin_variables.assert_called_once_with(template_name, variables)
 
 
 def test_render_template(template_manager):
@@ -168,6 +175,13 @@ def test_get_template_source(template_manager):
 
 
 def test_get_template_editable_filepath(template_manager):
+    success, filename, user_message = template_manager.get_template_editable_filepath('')
+    assert success is False
+    template_name = "missing_template.md"
+    success, filename, user_message = template_manager.get_template_editable_filepath(template_name)
+    assert success is True
+    assert template_name in filename
+    assert "can be edited" in user_message
     template_name = "existent_template.md"
     make_template_file(template_manager, template_name)
     success, filename, user_message = template_manager.get_template_editable_filepath(template_name)
@@ -175,6 +189,10 @@ def test_get_template_editable_filepath(template_manager):
     assert success is True
     assert template_name in filename
     assert "can be edited" in user_message
+    template_name = "workflow-generator.md"
+    success, filename, user_message = template_manager.get_template_editable_filepath(template_name)
+    assert success is False
+    assert "is a system template, and cannot be edited" in user_message
 
 
 def test_copy_template(template_manager):
@@ -190,12 +208,23 @@ def test_copy_template(template_manager):
 
 
 def test_template_can_delete(template_manager):
+    success, filename, user_message = template_manager.template_can_delete('')
+    assert success is False
+    template_name = "missing_template.md"
+    success, filename, user_message = template_manager.template_can_delete(template_name)
+    assert success is False
+    assert template_name in filename
+    assert "does not exist" in user_message
     template_name = "existent_template.md"
     make_template_file(template_manager, template_name)
     success, filename, user_message = template_manager.template_can_delete(template_name)
     remove_template_file(template_manager, template_name)
     assert success is True
     assert "can be deleted" in user_message
+    template_name = "workflow-generator.md"
+    success, filename, user_message = template_manager.template_can_delete(template_name)
+    assert success is False
+    assert "is a system template, and cannot be deleted" in user_message
 
 
 def test_template_delete(template_manager):
