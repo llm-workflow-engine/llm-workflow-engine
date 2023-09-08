@@ -28,6 +28,14 @@ lwe.plugins.provider\_chat\_openai module
    :undoc-members:
    :show-inheritance:
 
+lwe.plugins.provider\_fake\_llm module
+-----------------------------------------
+
+.. automodule:: lwe.plugins.provider_fake_llm
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 lwe.plugins Module contents
 ---------------------------
 

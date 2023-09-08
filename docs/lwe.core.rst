@@ -132,6 +132,14 @@ lwe.core.template module
    :undoc-members:
    :show-inheritance:
 
+lwe.core.token\_manager module
+------------------------------
+
+.. automodule:: lwe.core.token_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 lwe.core.util module
 --------------------
 
