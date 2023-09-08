@@ -75,6 +75,18 @@ class PresetManager():
                 {}
             )
             self.presets['test'] = test_preset
+            test_preset_2 = (
+                {
+                    "description": "Testing preset 2",
+                    "name": "test_2",
+                    "provider": "fake_llm",
+                    "filepath": "",
+                },
+                {
+                    "model_name": "gpt-4",
+                }
+            )
+            self.presets['test_2'] = test_preset_2
 
     def load_presets(self):
         self.log.debug("Loading presets from dirs: %s" % ", ".join(self.all_preset_dirs))
