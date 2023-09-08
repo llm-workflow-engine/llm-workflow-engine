@@ -6,7 +6,7 @@ from lwe.core.function_manager import FunctionManager
 from lwe.core.function_cache import FunctionCache
 from lwe.core.plugin_manager import PluginManager
 from lwe.core.provider_manager import ProviderManager
-from lwe.core.template import TemplateManager
+from lwe.core.template_manager import TemplateManager
 from lwe.core.preset_manager import PresetManager
 import lwe.core.util as util
 from .base import TEST_CONFIG_DIR, TEST_DATA_DIR, TEST_PROFILE

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
-from lwe.core.template import TemplateManager
+from lwe.core.template_manager import TemplateManager
 from lwe.core.preset_manager import PresetManager
 from lwe.core import util
 

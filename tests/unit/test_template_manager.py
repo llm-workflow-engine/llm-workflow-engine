@@ -6,7 +6,7 @@ import pyperclip
 
 from jinja2 import Environment, Template
 
-from lwe.core.template import TemplateManager
+from lwe.core.template_manager import TemplateManager
 import lwe.core.util as util
 
 

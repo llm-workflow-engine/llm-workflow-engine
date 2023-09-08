@@ -124,10 +124,10 @@ lwe.core.repl module
    :undoc-members:
    :show-inheritance:
 
-lwe.core.template module
+lwe.core.template\_manager module
 ------------------------
 
-.. automodule:: lwe.core.template
+.. automodule:: lwe.core.template_manager
    :members:
    :undoc-members:
    :show-inheritance:
