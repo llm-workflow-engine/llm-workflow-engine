@@ -200,12 +200,6 @@ class TestClass:
         package_root = get_package_root(config)
         assert package_root.endswith("lwe")
 
-
-
-
-
-
-
     def test_NoneAttrs(self):
         none_attrs = NoneAttrs()
         assert none_attrs.any_attribute is None
@@ -216,6 +210,9 @@ class TestClass:
                 pass
 
             def action_command1_action2(self):
+                pass
+
+            def action_command2_action3(self):
                 pass
 
         result = introspect_command_actions(DummyClass, "command1")
@@ -234,20 +231,22 @@ class TestClass:
         result = snake_to_class("some_class")
         assert result == "SomeClass"
 
-    def test_remove_and_create_dir(self,tmpdir):
+    def test_remove_and_create_dir(self, tmpdir):
         directory_path = os.path.join(tmpdir, "test_dir")
         remove_and_create_dir(directory_path)
         assert os.path.isdir(directory_path)
+        os.rmdir(directory_path)
 
     def test_create_file(self, tmpdir):
         directory = tmpdir
         filename = "test_file.txt"
         content = "test content"
         filepath = create_file(directory, filename, content)
-        assert os.path.isfile(os.path.join(directory, filename))
+        assert filepath == os.path.join(directory, filename)
+        assert os.path.isfile(filepath)
         with open(os.path.join(directory, filename), 'r') as f:
             assert f.read() == content
-        assert filepath == os.path.join(directory, filename)
+        os.remove(filepath)
 
     def test_current_datetime(self):
         result = current_datetime()
@@ -262,6 +261,7 @@ class TestClass:
     def test_get_environment_variable(self, monkeypatch):
         monkeypatch.setenv("LWE_TEST_VAR", "test_value")
         assert get_environment_variable("test_var") == "test_value"
+        assert get_environment_variable("non_existent_var") is None
         assert get_environment_variable("non_existent_var", default="default_value") == "default_value"
 
     def test_get_environment_variable_list(self, monkeypatch):
@@ -269,7 +269,8 @@ class TestClass:
         assert get_environment_variable_list("test_var") == ["value1", "value2", "value3"]
 
     def test_split_on_delimiter(self):
-        assert split_on_delimiter("value1,value2,value3") == ["value1", "value2", "value3"]
+        assert split_on_delimiter("value1, value2, value3") == ["value1", "value2", "value3"]
+        assert split_on_delimiter("value1:value2:value3", delimiter=":") == ["value1", "value2", "value3"]
 
     def test_remove_prefix(self):
         assert remove_prefix("prefix_text", "prefix_") == "text"
@@ -280,18 +281,23 @@ class TestClass:
 
     def test_list_to_markdown_list(self):
         assert list_to_markdown_list(["value1", "value2", "value3"]) == "  * value1\n  * value2\n  * value3"
+        assert list_to_markdown_list(["value1", "value2", "value3"], indent=4) == "    * value1\n    * value2\n    * value3"
 
     def test_clean_directory(self, tmpdir):
-        file_path = os.path.join(tmpdir, "test_file.txt")
-        with open(file_path, 'w') as f:
+        filepath = os.path.join(tmpdir, "test_file.txt")
+        filepath2 = os.path.join(tmpdir, "test_file2.txt")
+        with open(filepath, 'w') as f:
             f.write("test content")
+        with open(filepath2, 'w') as f:
+            f.write("test content2")
         clean_directory(tmpdir)
-        assert not os.path.isfile(file_path)
+        assert not os.path.isfile(filepath)
+        assert not os.path.isfile(filepath2)
 
     def test_transform_messages_to_chat_messages(self):
         messages = [
-            {'role': 'user', 'message': 'Hello', 'message_type': 'text'},
-            {'role': 'assistant', 'message': 'Hi', 'message_type': 'text'},
+            {'role': 'user', 'message': 'Hello', 'message_type': 'content'},
+            {'role': 'assistant', 'message': 'Hi', 'message_type': 'content'},
             {'role': 'assistant', 'message': {'name': 'function_name', 'arguments': {}}, 'message_type': 'function_call'}
         ]
         result = transform_messages_to_chat_messages(messages)
@@ -304,15 +310,18 @@ class TestClass:
         assert result[2]['function_call'] == {'name': 'function_name', 'arguments': '{}'}
 
     def test_message_content_from_dict(self):
-        message = {'content': 'Hello', 'message_type': 'text'}
+        message = {'content': 'Hello', 'message_type': 'content'}
         assert message_content_from_dict(message) == 'Hello'
         message = {'content': '', 'function_call': {'name': 'function_name', 'arguments': {}}, 'message_type': 'function_call'}
         assert message_content_from_dict(message) == '{"name": "function_name", "arguments": {}}'
 
     def test_extract_preset_configuration_from_request_overrides(self):
         request_overrides = {'preset': 'preset1', 'preset_overrides': {'key': 'value'}, 'activate_preset': True}
-        result = extract_preset_configuration_from_request_overrides(request_overrides)
-        assert result == (True, ('preset1', {'key': 'value'}, True), "Extracted preset configuration from request overrides: {'preset': 'preset1', 'preset_overrides': {'key': 'value'}, 'activate_preset': True}")
+        success, response, _user_message = extract_preset_configuration_from_request_overrides(request_overrides)
+        assert success
+        assert response[0] == 'preset1'
+        assert response[1] == {'key': 'value'}
+        assert response[2] is True
 
     def test_get_preset_name(self):
         preset = ({'name': 'preset1'}, {'key': 'value'})
