@@ -6,7 +6,6 @@ import email_validator
 import lwe.core.constants as constants
 import lwe.core.util as util
 from lwe.core.repl import Repl
-from lwe.backends.api.database import Database
 from lwe.backends.api.orm import User
 from lwe.backends.api.user import UserManager
 from lwe.backends.api.backend import ApiBackend
@@ -68,18 +67,14 @@ class ApiRepl(Repl):
     def configure_backend(self):
         if not getattr(self, 'backend', None):
             self.backend = ApiBackend(self.config)
-        database = Database(self.config)
-        database.create_schema()
-        self.user_management = UserManager(self.config)
-        self.session = self.user_management.orm.session
+        self.user_management = UserManager(self.config, self.backend.orm)
 
     def launch_backend(self, interactive=True):
         if interactive:
             self.check_login()
 
     def get_user(self, user_id):
-        user = self.session.get(User, user_id)
-        return user
+        return self.user_management.get_by_user_id(user_id)
 
     def _is_logged_in(self):
         return self.logged_in_user is not None
@@ -175,7 +170,7 @@ class ApiRepl(Repl):
 
         :return: None
         """
-        user_count = self.session.query(User).count()
+        user_count = self.user_management.session.query(User).count()
         if user_count == 0:
             util.print_status_message(False, "No users in database. Creating one...")
             self.welcome_message()
@@ -183,7 +178,7 @@ class ApiRepl(Repl):
         # Special case check: if there's only one user in the database, and
         # they have no password, log them in.
         elif user_count == 1:
-            user = self.session.query(User).first()
+            user = self.user_management.session.query(User).first()
             if not user.password:
                 return self.login(user)
 
@@ -193,15 +188,13 @@ class ApiRepl(Repl):
 
         :return: None
         """
-        util.print_markdown(
-"""
+        util.print_markdown("""
 # Welcome to the LLM Workflow Engine shell!
 
 This shell interacts directly with ChatGPT and other LLMs via their API, and stores conversations and messages in the configured database.
 
 Before you can start using the shell, you must create a new user.
-"""
-        )
+""")
 
     def add_examples(self):
         """
@@ -239,9 +232,10 @@ Before you can start using the shell, you must create a new user.
         :rtype: str
         """
         if self.backend.conversation_id:
-            if self.backend.conversation_title:
-                title = self.backend.conversation_title[:constants.SHORT_TITLE_LENGTH]
-                if len(self.backend.conversation_title) > constants.SHORT_TITLE_LENGTH:
+            conversation_title = self.backend.get_current_conversation_title()
+            if conversation_title:
+                title = conversation_title[:constants.SHORT_TITLE_LENGTH]
+                if len(conversation_title) > constants.SHORT_TITLE_LENGTH:
                     title += "..."
             else:
                 title = constants.UNTITLED_CONVERSATION

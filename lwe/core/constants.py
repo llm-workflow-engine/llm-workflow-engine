@@ -34,8 +34,12 @@ CONFIG_PROFILES_DIR = 'profiles'
 DEFAULT_CONFIG = {
     'backend': 'api',
     'backend_options': {
+        'auto_create_first_user': None,
         'default_user': None,
         'default_conversation_id': None,
+        'title_generation': {
+            'provider': None,
+        },
     },
     'directories': {
         'templates': [

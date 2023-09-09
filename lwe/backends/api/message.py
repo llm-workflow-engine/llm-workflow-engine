@@ -9,9 +9,9 @@ from lwe.backends.api.conversation import ConversationManager
 JSON_MESSAGE_TYPES = ['function_call', 'function_response']
 
 class MessageManager(Manager):
-    def __init__(self, config=None):
-        super().__init__(config)
-        self.conversation_manager = ConversationManager(self.config)
+    def __init__(self, config=None, orm=None):
+        super().__init__(config, orm)
+        self.conversation_manager = ConversationManager(self.config, self.orm)
 
     def build_message(self, role, message, message_type='content', message_metadata=None):
         message = {
@@ -38,7 +38,7 @@ class MessageManager(Manager):
 
     def get_message(self, message_id):
         try:
-            message = self.orm.session.query(Message).get(message_id)
+            message = self.session.query(Message).get(message_id)
             message = self.message_from_storage(message)
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to retrieve message: {str(e)}")
@@ -53,7 +53,7 @@ class MessageManager(Manager):
         if not conversation:
             return False, None, "Conversation not found"
         try:
-            messages = self.orm.get_messages(conversation, limit=limit, offset=offset, target_id=None)
+            messages = self.orm_get_messages(conversation, limit=limit, offset=offset, target_id=None)
             messages = [self.message_from_storage(message) for message in messages]
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to retrieve messages: {str(e)}")
@@ -66,7 +66,7 @@ class MessageManager(Manager):
         if not conversation:
             return False, None, "Conversation not found"
         try:
-            last_message = self.orm.get_last_message(conversation)
+            last_message = self.orm_get_last_message(conversation)
             last_message = self.message_from_storage(last_message)
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to retrieve last message: {str(e)}")
@@ -80,7 +80,7 @@ class MessageManager(Manager):
             return False, None, "Conversation not found"
         try:
             message, message_metadata = self.message_to_storage(message, message_type, message_metadata)
-            message = self.orm.add_message(conversation, role, message, message_type, message_metadata, provider, model, preset)
+            message = self.orm_add_message(conversation, role, message, message_type, message_metadata, provider, model, preset)
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to add message: {str(e)}")
         return True, message, "Message added successfully"
@@ -93,7 +93,7 @@ class MessageManager(Manager):
     #     if not message:
     #         return False, None, "Message not found"
     #     try:
-    #         updated_message = self.orm.edit_message(message, **kwargs)
+    #         updated_message = self.orm_edit_message(message, **kwargs)
     #     except SQLAlchemyError as e:
     #         return self._handle_error(f"Failed to edit message: {str(e)}")
     #     return True, updated_message, "Message edited successfully"
@@ -105,7 +105,7 @@ class MessageManager(Manager):
         if not message:
             return False, None, "Message not found"
         try:
-            self.orm.delete_message(message)
+            self.orm_delete_message(message)
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to delete message: {str(e)}")
         return True, None, "Message deleted successfully"

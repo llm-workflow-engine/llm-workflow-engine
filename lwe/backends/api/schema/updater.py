@@ -15,13 +15,16 @@ from lwe.core.config import Config
 from lwe.core.logger import Logger
 from lwe.core import util
 
+from lwe.backends.api.orm import Orm
+
 class SchemaUpdater:
-    def __init__(self, config=None):
+    def __init__(self, config=None, orm=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.database_url = self.config.get('database')
         self.alembic_cfg = self.set_config()
-        self.engine = create_engine(self.database_url)
+        self.orm = orm or Orm(self.config)
+        self.engine = self.orm.engine
         self.versioning_initialized = self.is_versioning_initialized()
         self.log.debug("Initialized SchemaUpdater with database URL: %s", self.database_url)
 

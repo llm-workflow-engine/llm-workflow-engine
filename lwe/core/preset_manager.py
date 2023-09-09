@@ -1,4 +1,5 @@
 import os
+import copy
 import yaml
 
 from lwe.core.config import Config
@@ -22,8 +23,9 @@ class PresetManager():
     Manage presets.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, additional_presets=None):
         self.config = config or Config()
+        self.additional_presets = additional_presets or {}
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_preset_dirs = self.config.args.preset_dir or util.get_environment_variable_list('preset_dir') or self.config.get('directories.presets')
         self.make_user_preset_dirs()
@@ -60,9 +62,36 @@ class PresetManager():
             'return_on_function_call',
         ]
 
+    def load_test_preset(self):
+        if self.config.profile == 'test':
+            self.log.debug("Test profile detected, loading test preset")
+            test_preset = (
+                {
+                    "description": "Testing preset",
+                    "name": "test",
+                    "provider": "fake_llm",
+                    "filepath": "",
+                },
+                {}
+            )
+            self.presets['test'] = test_preset
+            test_preset_2 = (
+                {
+                    "description": "Testing preset 2",
+                    "name": "test_2",
+                    "provider": "fake_llm",
+                    "filepath": "",
+                },
+                {
+                    "model_name": "gpt-4",
+                }
+            )
+            self.presets['test_2'] = test_preset_2
+
     def load_presets(self):
         self.log.debug("Loading presets from dirs: %s" % ", ".join(self.all_preset_dirs))
-        self.presets = {}
+        self.presets = copy.deepcopy(self.additional_presets)
+        self.load_test_preset()
         try:
             for preset_dir in self.all_preset_dirs:
                 if os.path.exists(preset_dir) and os.path.isdir(preset_dir):

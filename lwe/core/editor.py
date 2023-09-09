@@ -9,6 +9,17 @@ SYSTEM = platform.system()
 WINDOWS_EDITORS = ['micro', 'nano', 'vim']
 
 def get_environment_editor(default=None):
+    """
+    Fetches the preferred editor from the environment variables.
+
+    This function checks the environment variables 'VISUAL' and 'EDITOR' in order to determine the user's preferred editor.
+    If neither of these variables are set, it returns a default value.
+
+    :param default: The default editor to return if no environment variable is set.
+    :type default: str or None
+    :return: The preferred editor as specified by environment variables or the default value.
+    :rtype: str or None
+    """
     editor = os.environ.get('VISUAL', os.environ.get('EDITOR', default))
     return editor
 

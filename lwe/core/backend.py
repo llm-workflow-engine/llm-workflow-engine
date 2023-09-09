@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 
-import copy
-
 from lwe.core.config import Config
 from lwe.core.logger import Logger
-from lwe.core.template import TemplateManager
+from lwe.core.template_manager import TemplateManager
 from lwe.core.preset_manager import PresetManager
 from lwe.core import util
 
@@ -41,7 +39,6 @@ class Backend(ABC):
         self.provider_name = None
         self.provider = None
         self.message_clipboard = None
-        self.streaming = False
         self.template_manager = TemplateManager(self.config)
         self.preset_manager = PresetManager(self.config)
 
@@ -84,14 +81,13 @@ class Backend(ABC):
 
     def terminate_stream(self, _signal, _frame):
         """
-        Handles termination signal and stops the stream if it's running.
+        Handles termination signal, passing it to the request if present.
 
         :param _signal: The signal that triggered the termination.
         :param _frame: Current stack frame.
         """
         self.log.info("Received signal to terminate stream")
-        if self.streaming:
-            self.streaming = False
+        self.request and self.request.terminate_stream(_signal, _frame)
 
     def get_runtime_config(self):
         """
@@ -100,33 +96,6 @@ class Backend(ABC):
         :return: The runtime configuration as a string.
         """
         return ""
-
-    def extract_preset_configuration_from_overrides(self, overrides):
-        """
-        Extracts preset configuration from the given overrides.
-
-        :param overrides: The overrides from which to extract preset configuration.
-        :return: A tuple containing a success indicator, preset configuration, and a user message.
-        """
-        preset_name = None
-        preset_overrides = None
-        self.log.debug(f"Extracting preset configuration from overrides: {overrides}")
-        if 'request_overrides' in overrides and ('preset' in overrides['request_overrides'] or 'preset_overrides' in overrides['request_overrides']):
-            if 'preset' in overrides['request_overrides']:
-                preset_name = overrides['request_overrides']['preset']
-                self.log.debug(f"Preset extracted from overrides: {preset_name}")
-                if 'activate_preset' in overrides['request_overrides'] and overrides['request_overrides']['activate_preset']:
-                    # TODO: activate_preset() currently lives in the API backend, and so should not
-                    # strictly be called here.
-                    self.log.info(f"Activating preset from overrides: {preset_name}")
-                    self.activate_preset(preset_name)
-            else:
-                preset_name = self.active_preset_name
-            if not preset_name:
-                return False, (preset_name, preset_overrides, overrides), "No active preset to override"
-            if 'preset_overrides' in overrides['request_overrides']:
-                preset_overrides = copy.deepcopy(overrides['request_overrides']['preset_overrides'])
-        return True, (preset_name, preset_overrides, overrides), f"Extracted preset configuration from request overrides: {overrides}"
 
     def run_template_setup(self, template_name, substitutions=None):
         """
@@ -139,17 +108,6 @@ class Backend(ABC):
         self.log.info(f"Setting up run of template: {template_name}")
         substitutions = substitutions or {}
         message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
-        preset_name = None
-        success, response, user_message = self.extract_preset_configuration_from_overrides(overrides)
-        if not success:
-            return success, (message, preset_name, overrides), user_message
-        preset_name, preset_overrides, overrides = response
-        if preset_name:
-            success, llm, user_message = self.set_override_llm(preset_name, preset_overrides)
-            if success:
-                self.log.info(f"Switching to preset '{preset_name}' for template: {template_name}")
-            else:
-                return success, llm, user_message
         return True, (message, overrides), f"Set up of template run complete: {template_name}"
 
     def run_template_compiled(self, message, overrides=None):
@@ -162,7 +120,7 @@ class Backend(ABC):
         """
         overrides = overrides or {}
         self.log.info("Running template")
-        response = self._ask(message, **overrides)
+        response = self.make_request(message, **overrides)
         return response
 
     def run_template(self, template_name, template_vars=None, overrides=None):
@@ -233,16 +191,6 @@ class Backend(ABC):
         Retrieves a conversation. Must be implemented by the child class.
 
         :param uuid: Optional unique identifier of the conversation.
-        """
-        pass
-
-    @abstractmethod
-    def set_override_llm(self, preset_name=None, preset_overrides=None):
-        """
-        Sets an override Language Model (llm) for the request. Must be implemented by the child class.
-
-        :param preset_name: Optional name of the preset.
-        :param preset_overrides: Optional dictionary of preset overrides.
         """
         pass
 

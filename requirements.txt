@@ -5,10 +5,10 @@ beautifulsoup4
 docutils>=0.20.1
 email-validator
 Jinja2
-langchain==0.0.253
+langchain==0.0.278
 names
 numexpr>=2.8.4
-openai>=0.27.8
+openai>=0.28.0
 openpyxl
 pdfminer.six
 prompt-toolkit

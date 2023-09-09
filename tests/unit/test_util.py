@@ -1,28 +1,51 @@
 import pytest
 import pyperclip
 import os
+from datetime import datetime
 
 from lwe.core.util import (introspect_commands,
-                                       command_with_leader,
-                                       merge_dicts,
-                                       underscore_to_dash,
-                                       dash_to_underscore,
-                                       list_to_completion_hash,
-                                       float_range_to_completions,
-                                       validate_int,
-                                       validate_float,
-                                       validate_str,
-                                       paste_from_clipboard,
-                                       print_status_message,
-                                       print_markdown,
-                                       parse_conversation_ids,
-                                       conversation_from_messages,
-                                       parse_shell_input,
-                                       get_class_method,
-                                       output_response,
-                                       write_temp_file,
-                                       get_package_root,
-                                       )
+                           command_with_leader,
+                           merge_dicts,
+                           underscore_to_dash,
+                           dash_to_underscore,
+                           list_to_completion_hash,
+                           float_range_to_completions,
+                           validate_int,
+                           validate_float,
+                           validate_str,
+                           paste_from_clipboard,
+                           print_status_message,
+                           print_markdown,
+                           parse_conversation_ids,
+                           conversation_from_messages,
+                           parse_shell_input,
+                           get_class_method,
+                           output_response,
+                           write_temp_file,
+                           get_package_root,
+                           NoneAttrs,
+                           introspect_command_actions,
+                           dict_to_pretty_json,
+                           get_file_directory,
+                           snake_to_class,
+                           remove_and_create_dir,
+                           create_file,
+                           current_datetime,
+                           filepath_replacements,
+                           get_environment_variable,
+                           get_environment_variable_list,
+                           split_on_delimiter,
+                           remove_prefix,
+                           # get_ansible_module_doc,
+                           # ansible_doc_to_markdown,
+                           is_valid_url,
+                           list_to_markdown_list,
+                           clean_directory,
+                           transform_messages_to_chat_messages,
+                           message_content_from_dict,
+                           extract_preset_configuration_from_request_overrides,
+                           get_preset_name,
+                           )
 import lwe.core.constants as constants
 from lwe.core.error import NoInputError
 from lwe.core.config import Config
@@ -176,3 +199,131 @@ class TestClass:
         config = Config(profile='test')
         package_root = get_package_root(config)
         assert package_root.endswith("lwe")
+
+    def test_NoneAttrs(self):
+        none_attrs = NoneAttrs()
+        assert none_attrs.any_attribute is None
+
+    def test_introspect_command_actions(self):
+        class DummyClass:
+            def action_command1_action1(self):
+                pass
+
+            def action_command1_action2(self):
+                pass
+
+            def action_command2_action3(self):
+                pass
+
+        result = introspect_command_actions(DummyClass, "command1")
+        assert result == ["action1", "action2"]
+
+    def test_dict_to_pretty_json(self):
+        dict_obj = {"key": "value"}
+        result = dict_to_pretty_json(dict_obj)
+        assert result == '```json\n{\n    "key": "value"\n}\n```'
+
+    def test_get_file_directory(self):
+        result = get_file_directory()
+        assert os.path.isdir(result)
+
+    def test_snake_to_class(self):
+        result = snake_to_class("some_class")
+        assert result == "SomeClass"
+
+    def test_remove_and_create_dir(self, tmpdir):
+        directory_path = os.path.join(tmpdir, "test_dir")
+        remove_and_create_dir(directory_path)
+        assert os.path.isdir(directory_path)
+        os.rmdir(directory_path)
+
+    def test_create_file(self, tmpdir):
+        directory = tmpdir
+        filename = "test_file.txt"
+        content = "test content"
+        filepath = create_file(directory, filename, content)
+        assert filepath == os.path.join(directory, filename)
+        assert os.path.isfile(filepath)
+        with open(os.path.join(directory, filename), 'r') as f:
+            assert f.read() == content
+        os.remove(filepath)
+
+    def test_current_datetime(self):
+        result = current_datetime()
+        assert isinstance(result, datetime)
+
+    def test_filepath_replacements(self):
+        config = Config(profile='test')
+        filepath = "$HOME/$CONFIG_DIR/$DATA_DIR/$PROFILE"
+        result = filepath_replacements(filepath, config)
+        assert result == f"{os.path.expanduser('~user')}/{config.config_dir}/{config.data_dir}/test"
+
+    def test_get_environment_variable(self, monkeypatch):
+        monkeypatch.setenv("LWE_TEST_VAR", "test_value")
+        assert get_environment_variable("test_var") == "test_value"
+        assert get_environment_variable("non_existent_var") is None
+        assert get_environment_variable("non_existent_var", default="default_value") == "default_value"
+
+    def test_get_environment_variable_list(self, monkeypatch):
+        monkeypatch.setenv("LWE_TEST_VAR", "value1:value2:value3")
+        assert get_environment_variable_list("test_var") == ["value1", "value2", "value3"]
+
+    def test_split_on_delimiter(self):
+        assert split_on_delimiter("value1, value2, value3") == ["value1", "value2", "value3"]
+        assert split_on_delimiter("value1:value2:value3", delimiter=":") == ["value1", "value2", "value3"]
+
+    def test_remove_prefix(self):
+        assert remove_prefix("prefix_text", "prefix_") == "text"
+
+    def test_is_valid_url(self):
+        assert is_valid_url("http://example.com")
+        assert not is_valid_url("invalid_url")
+
+    def test_list_to_markdown_list(self):
+        assert list_to_markdown_list(["value1", "value2", "value3"]) == "  * value1\n  * value2\n  * value3"
+        assert list_to_markdown_list(["value1", "value2", "value3"], indent=4) == "    * value1\n    * value2\n    * value3"
+
+    def test_clean_directory(self, tmpdir):
+        filepath = os.path.join(tmpdir, "test_file.txt")
+        filepath2 = os.path.join(tmpdir, "test_file2.txt")
+        with open(filepath, 'w') as f:
+            f.write("test content")
+        with open(filepath2, 'w') as f:
+            f.write("test content2")
+        clean_directory(tmpdir)
+        assert not os.path.isfile(filepath)
+        assert not os.path.isfile(filepath2)
+
+    def test_transform_messages_to_chat_messages(self):
+        messages = [
+            {'role': 'user', 'message': 'Hello', 'message_type': 'content'},
+            {'role': 'assistant', 'message': 'Hi', 'message_type': 'content'},
+            {'role': 'assistant', 'message': {'name': 'function_name', 'arguments': {}}, 'message_type': 'function_call'}
+        ]
+        result = transform_messages_to_chat_messages(messages)
+        assert result[0]['role'] == 'user'
+        assert result[0]['content'] == 'Hello'
+        assert result[1]['role'] == 'assistant'
+        assert result[1]['content'] == 'Hi'
+        assert result[2]['role'] == 'assistant'
+        assert result[2]['content'] == ''
+        assert result[2]['function_call'] == {'name': 'function_name', 'arguments': '{}'}
+
+    def test_message_content_from_dict(self):
+        message = {'content': 'Hello', 'message_type': 'content'}
+        assert message_content_from_dict(message) == 'Hello'
+        message = {'content': '', 'function_call': {'name': 'function_name', 'arguments': {}}, 'message_type': 'function_call'}
+        assert message_content_from_dict(message) == '{"name": "function_name", "arguments": {}}'
+
+    def test_extract_preset_configuration_from_request_overrides(self):
+        request_overrides = {'preset': 'preset1', 'preset_overrides': {'key': 'value'}, 'activate_preset': True}
+        success, response, _user_message = extract_preset_configuration_from_request_overrides(request_overrides)
+        assert success
+        assert response[0] == 'preset1'
+        assert response[1] == {'key': 'value'}
+        assert response[2] is True
+
+    def test_get_preset_name(self):
+        preset = ({'name': 'preset1'}, {'key': 'value'})
+        assert get_preset_name(preset) == 'preset1'
+        assert get_preset_name(None) is None

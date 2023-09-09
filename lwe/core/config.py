@@ -94,8 +94,12 @@ class Config:
     def _transform_config(self):
         self.set('log.console.level', self.get('log.console.level').upper(), False)
         self.set('debug.log.level', self.get('debug.log.level').upper(), False)
-        if not self.get('database'):
-            self.set('database', "sqlite:///%s/%s.db" % (self.data_profile_dir, constants.DEFAULT_DATABASE_BASENAME), False)
+        database_setting = self.get('database')
+        if database_setting:
+            database = util.filepath_replacements(database_setting, self)
+        else:
+            database = "sqlite:///%s/%s.db" % (self.data_profile_dir, constants.DEFAULT_DATABASE_BASENAME)
+        self.set('database', database, False)
         for setting, paths in self.get('directories').items():
             adjusted_paths = [util.filepath_replacements(path, self) for path in paths]
             self.set(f"directories.{setting}", adjusted_paths, False)

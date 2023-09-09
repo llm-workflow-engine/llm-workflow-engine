@@ -17,8 +17,9 @@ class FunctionManager():
     Manage functions.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, additional_functions=None):
         self.config = config or Config()
+        self.additional_functions = additional_functions or {}
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_function_dirs = self.config.args.function_dir or util.get_environment_variable_list('function_dir') or self.config.get('directories.functions')
         self.make_user_function_dirs()
@@ -69,8 +70,8 @@ class FunctionManager():
     def get_langchain_tool(self, function_name):
         self.log.debug(f"Loading Langchain tool: {function_name}")
         tool_name = util.remove_prefix(function_name, LANGCHAIN_TOOL_PREFIX)
-        tool = getattr(langchain.tools, tool_name)
         try:
+            tool = getattr(langchain.tools, tool_name)
             tool_instance = tool()
             return tool_instance
         except Exception as e:
@@ -103,7 +104,7 @@ class FunctionManager():
 
     def load_functions(self):
         self.log.debug("Loading functions from dirs: %s" % ", ".join(self.all_function_dirs))
-        self.functions = {}
+        self.functions = self.additional_functions
         try:
             for function_dir in self.all_function_dirs:
                 if os.path.exists(function_dir) and os.path.isdir(function_dir):

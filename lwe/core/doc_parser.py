@@ -72,7 +72,7 @@ def parse_docstring(docstring: str) -> Dict[str, Dict[str, Any]]:
     parsed_elements = {}
     description = []
     description_complete = False
-    for elem in document.traverse():
+    for elem in document.findall():
         if isinstance(elem, docutils.nodes.paragraph):
             if not description_complete and (not elem.parent or not isinstance(elem.parent, docutils.nodes.field_list)):
                 description.append(elem.astext())
