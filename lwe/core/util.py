@@ -204,9 +204,8 @@ def parse_shell_input(user_input):
 
 
 def get_class_method(klass, command_command):
-    mro = getattr(klass, "__mro__")
-    for klass in mro:
-        method = getattr(klass, command_command, None)
+    for k in klass.__mro__:
+        method = getattr(k, command_command, None)
         if method:
             return method
 
@@ -306,10 +305,10 @@ def get_ansible_module_doc(module_name):
         )
         data = json.loads(result.stdout, strict=False)
         return data
-    except subprocess.CalledProcessError as e:
-        raise subprocess.CalledProcessError(f"Error parsing Ansible doc: {e}")
-    except json.JSONDecodeError as e:
-        raise json.JSONDecodeError(f"Error: Unable to parse Ansible doc: {e}")
+    except subprocess.CalledProcessError as err:
+        raise subprocess.CalledProcessError(f"Error parsing Ansible doc: {err}") from err
+    except json.JSONDecodeError as err:
+        raise json.JSONDecodeError(f"Error: Unable to parse Ansible doc: {err}") from err
 
 
 def ansible_doc_to_markdown(module_name, full_doc=False):

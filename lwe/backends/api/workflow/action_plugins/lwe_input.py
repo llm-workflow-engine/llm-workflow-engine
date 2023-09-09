@@ -171,8 +171,8 @@ class ActionModule(ActionBase):
                 user_input = display.prompt_until(
                     prompt, private=not echo, interrupt_input=(b"a",), complete_input=(b"c",)
                 )
-            except AnsiblePromptInterrupt:
-                raise AnsibleError("user requested abort!")
+            except AnsiblePromptInterrupt as err:
+                raise AnsibleError("user requested abort!") from err
         elif user_input.strip() == b"e":
             display.display("Editor requested")
             user_input = pipe_editor("", suffix="md")

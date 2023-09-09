@@ -37,7 +37,7 @@ def test_api_backend_get_history(test_config):
     success, history, user_message = backend.get_history(limit=3)
     if success:
         print("\nHistory:\n")
-        for id, conversation in history.items():
+        for _id, conversation in history.items():
             print(conversation["title"])
     assert success
     assert len(history) == 3

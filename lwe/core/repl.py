@@ -236,10 +236,10 @@ class Repl:
                 for sub in constants.HELP_TOKEN_VARIABLE_SUBSTITUTIONS:
                     try:
                         const_value = getattr(constants, sub)
-                    except AttributeError:
+                    except AttributeError as err:
                         raise AttributeError(
                             f"{sub!r} in HELP_TOKEN_VARIABLE_SUBSTITUTIONS is not a valid constant"
-                        )
+                        ) from err
                     doc = doc.replace("{%s}" % sub, str(const_value))
                 return textwrap.dedent(doc)
 
@@ -307,7 +307,7 @@ class Repl:
         for plugin in self.plugins.values():
             plugin.set_shell(self)
 
-    def configure_backend():
+    def configure_backend(self):
         raise NotImplementedError
 
     def launch_backend(self, interactive=True):

@@ -4,7 +4,7 @@ from lwe.core.config import Config
 from lwe.core.logger import Logger
 
 
-class PluginBase(ABC):
+class PluginBase:
     def __init__(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
@@ -28,7 +28,7 @@ class PluginBase(ABC):
     def set_shell(self, shell):
         self.shell = shell
 
-    def get_shell_completions(self, _base_shell_completions):
+    def get_shell_completions(self, _base_shell_completions):  # noqa B027
         pass
 
     def incompatible_backends(self):
@@ -48,7 +48,7 @@ class PluginBase(ABC):
         return True, result, result_string
 
 
-class Plugin(PluginBase):
+class Plugin(PluginBase, ABC):
     @abstractmethod
     def setup(self):
         pass

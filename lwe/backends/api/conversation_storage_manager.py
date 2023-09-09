@@ -170,43 +170,42 @@ class ConversationStorageManager:
         message_manager = MessageManager(self.config, self.orm)
         conversation_manager = ConversationManager(self.config, self.orm)
         success, messages, user_message = message_manager.get_messages(conversation_id, limit=2)
-        if success:
-            user_content = messages[1]["message"][: constants.TITLE_GENERATION_MAX_CHARACTERS]
-            new_messages = [
-                self.message.build_message(
-                    "system", constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT
-                ),
-                self.message.build_message(
-                    "user",
-                    "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content),
-                ),
-            ]
-            new_messages = util.transform_messages_to_chat_messages(new_messages)
-            new_messages = [convert_dict_to_message(m) for m in new_messages]
-            title_provider_name = self.config.get("backend_options.title_generation.provider")
-            if title_provider_name:
-                provider = self.provider_manager.get_provider_from_name(title_provider_name)
-                if not provider:
-                    raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
-                llm = provider.make_llm()
-            else:
-                llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
-            try:
-                result = llm(new_messages)
-                request = ApiRequest(orm=self.orm)
-                title = request.extract_message_content(result)["message"]
-                title = title.replace("\n", ", ").strip().strip("'\"")
-                self.log.info(f"Title generated for conversation {conversation_id}: {title}")
-                success, conversation, user_message = conversation_manager.edit_conversation_title(
-                    conversation_id, title
-                )
-                if success:
-                    self.log.debug(f"Title saved for conversation {conversation_id}")
-            except ValueError as e:
-                self.log.warning(f"Failed to generate title for conversation: {str(e)}")
-            finally:
-                return
-        self.log.warning(f"Failed to generate title for conversation: {user_message}")
+        if not success:
+            self.log.warning(f"Failed to generate title for conversation: {user_message}")
+            return
+        user_content = messages[1]["message"][: constants.TITLE_GENERATION_MAX_CHARACTERS]
+        new_messages = [
+            self.message.build_message(
+                "system", constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT
+            ),
+            self.message.build_message(
+                "user",
+                "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content),
+            ),
+        ]
+        new_messages = util.transform_messages_to_chat_messages(new_messages)
+        new_messages = [convert_dict_to_message(m) for m in new_messages]
+        title_provider_name = self.config.get("backend_options.title_generation.provider")
+        if title_provider_name:
+            provider = self.provider_manager.get_provider_from_name(title_provider_name)
+            if not provider:
+                raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
+            llm = provider.make_llm()
+        else:
+            llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
+        try:
+            result = llm(new_messages)
+            request = ApiRequest(orm=self.orm)
+            title = request.extract_message_content(result)["message"]
+            title = title.replace("\n", ", ").strip().strip("'\"")
+            self.log.info(f"Title generated for conversation {conversation_id}: {title}")
+            success, conversation, user_message = conversation_manager.edit_conversation_title(
+                conversation_id, title
+            )
+            if success:
+                self.log.debug(f"Title saved for conversation {conversation_id}")
+        except ValueError as e:
+            self.log.warning(f"Failed to generate title for conversation: {str(e)}")
 
     def gen_title(self, conversation):
         """

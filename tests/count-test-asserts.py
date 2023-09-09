@@ -15,7 +15,7 @@ def count_asserts_in_file(file_path, debug):
 
 def count_asserts_in_directory(directory_path, debug):
     total_asserts = 0
-    for root, dirs, files in os.walk(directory_path):
+    for root, _dirs, files in os.walk(directory_path):
         for file in files:
             if file.startswith("test_") and file.endswith(".py"):
                 total_asserts += count_asserts_in_file(os.path.join(root, file), debug)

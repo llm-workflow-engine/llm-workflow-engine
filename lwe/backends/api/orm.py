@@ -227,7 +227,7 @@ class Manager:
         self.session.add(message)
         # Original conversation was created in another session, so load one fresh.
         conversation_update = self.orm_get_conversation(conversation.id)
-        setattr(conversation_update, "updated_time", now)
+        conversation_update.updated_time = now
         self.session.commit()
         self.log.info(
             f"Added Message with role: {role}, message_type: {message_type}, message_metadata: {message_metadata}, provider: {provider}, model: {model}, preset: {preset} for Conversation with id {conversation.id}"

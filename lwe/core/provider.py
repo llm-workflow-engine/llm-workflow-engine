@@ -93,7 +93,7 @@ class ProviderBase(Plugin):
         super().__init__(config)
 
     def display_name(self):
-        return self.name[len(constants.PROVIDER_PREFIX) :]
+        return self.name[len(constants.PROVIDER_PREFIX):]
 
     @property
     def plugin_type(self):

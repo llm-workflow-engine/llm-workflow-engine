@@ -33,8 +33,8 @@ class TokenManager:
             encoding = tiktoken.encoding_for_model(self.model_name)
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
-        except Exception as e:
-            raise Exception(f"Unable to get token encoding for model {self.model_name}: {str(e)}")
+        except Exception as err:
+            raise Exception(f"Unable to get token encoding for model {self.model_name}: {str(err)}") from err
         return encoding
 
     def get_num_tokens_from_messages(self, messages, encoding=None):
