@@ -8,6 +8,7 @@ lwe.backends.api Subpackages
    :maxdepth: 4
 
    lwe.backends.api.schema
+   lwe.backends.api.workflow
 
 lwe.backends.api Submodules
 ---------------------------
