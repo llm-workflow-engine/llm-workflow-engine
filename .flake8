@@ -1,4 +1,7 @@
 [flake8]
 ignore = E501
+max-line-length = 100
+max-complexity = 18
+select = B,C,E,F,W,B9
 
 # vi: ft=dosini
