@@ -26,15 +26,12 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "${{ matrix.python-version }}"
-    - name: Install OS dependencies
-      run: |
-        sudo apt-get install xclip
     - name: Install PIP
       run: |
         python -m pip install --upgrade pip
     - name: Install testing dependencies
       run: |
-        pip install pytest flake8 xvfbwrapper
+        pip install pytest flake8
     - name: Install app
       run: |
         pip install -e .
