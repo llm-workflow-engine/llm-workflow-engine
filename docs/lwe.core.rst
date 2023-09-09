@@ -60,6 +60,14 @@ lwe.core.function module
    :undoc-members:
    :show-inheritance:
 
+lwe.core.function\_cache module
+-------------------------------
+
+.. automodule:: lwe.core.function_cache
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 lwe.core.function\_manager module
 ---------------------------------
 
@@ -72,6 +80,14 @@ lwe.core.logger module
 ----------------------
 
 .. automodule:: lwe.core.logger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lwe.core.monkey\_patch module
+-----------------------------
+
+.. automodule:: lwe.core.monkey_patch
    :members:
    :undoc-members:
    :show-inheritance:
@@ -125,7 +141,7 @@ lwe.core.repl module
    :show-inheritance:
 
 lwe.core.template\_manager module
-------------------------
+---------------------------------
 
 .. automodule:: lwe.core.template_manager
    :members:
