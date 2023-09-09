@@ -317,7 +317,7 @@ def test_api_backend_doesnt_override_system_message_when_system_message_in_reque
     assert backend.get_system_message() == constants.SYSTEM_MESSAGE_DEFAULT
 
 
-def test_api_backend_doesnt_set_custom_title_when_in_request_overrides(test_config):
+def test_api_backend_sets_custom_title_when_in_request_overrides(test_config):
     backend = make_api_backend(test_config)
     request_overrides = {
         'title': 'test custom title',
@@ -327,6 +327,58 @@ def test_api_backend_doesnt_set_custom_title_when_in_request_overrides(test_conf
     success, response, _user_message = backend.get_conversation()
     assert success
     assert response['conversation']['title'] == 'test custom title'
+
+
+def test_api_backend_overrides_provider_model_when_in_request_overrides(test_config):
+    backend = make_api_backend(test_config)
+    success, response, _user_message = backend.ask("test question")
+    assert success
+    request_overrides = {
+        'preset_overrides': {
+            'model_customizations': {
+                'model_name': 'gpt-4',
+            },
+        },
+    }
+    success, response, _user_message = backend.ask("test question", request_overrides=request_overrides)
+    assert success
+    success, response, _user_message = backend.ask("test question")
+    assert success
+    success, response, _user_message = backend.get_conversation()
+    assert success
+    messages = response['messages']
+    assert messages[0]['provider'] == 'provider_fake_llm'
+    assert messages[0]['model'] == constants.API_BACKEND_DEFAULT_MODEL
+    assert messages[1]['provider'] == 'provider_fake_llm'
+    assert messages[1]['model'] == constants.API_BACKEND_DEFAULT_MODEL
+    assert messages[2]['provider'] == 'provider_fake_llm'
+    assert messages[2]['model'] == constants.API_BACKEND_DEFAULT_MODEL
+    assert messages[3]['provider'] == 'provider_fake_llm'
+    assert messages[3]['model'] == 'gpt-4'
+    assert messages[4]['provider'] == 'provider_fake_llm'
+    assert messages[3]['model'] == 'gpt-4'
+    assert messages[5]['provider'] == 'provider_fake_llm'
+    assert messages[5]['model'] == constants.API_BACKEND_DEFAULT_MODEL
+    assert messages[6]['provider'] == 'provider_fake_llm'
+    assert messages[6]['model'] == constants.API_BACKEND_DEFAULT_MODEL
+
+
+def test_api_backend_switches_active_preset_when_switching_conversations(test_config):
+    backend = make_api_backend(test_config)
+    assert backend.active_preset_name == 'test'
+    success, response, _user_message = backend.ask("test question")
+    assert success
+    backend.new_conversation()
+    request_overrides = {
+        'preset': 'test_2',
+    }
+    success, response, _user_message = backend.ask("test question", request_overrides=request_overrides)
+    assert success
+    assert backend.active_preset_name == 'test'
+    backend.switch_to_conversation(1)
+    assert backend.active_preset_name == 'test'
+    backend.switch_to_conversation(2)
+    assert backend.active_preset_name == 'test_2'
 
 
 def test_api_backend_streaming_with_streaming_callback(test_config):
