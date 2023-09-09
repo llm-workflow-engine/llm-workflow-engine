@@ -1,6 +1,6 @@
+import os
 import pytest
 
-from lwe.core import constants
 from lwe.core.config import Config
 from lwe.core.function_manager import FunctionManager
 from lwe.core.function_cache import FunctionCache
@@ -13,10 +13,14 @@ from .base import TEST_CONFIG_DIR, TEST_DATA_DIR, TEST_PROFILE
 from .base import FakeBackend
 
 
+def set_environment_variables():
+    os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY', 'fake-api-key')
+
 @pytest.fixture
 def test_config():
     util.remove_and_create_dir(TEST_CONFIG_DIR)
     util.remove_and_create_dir(TEST_DATA_DIR)
+    set_environment_variables()
     config = Config(TEST_CONFIG_DIR, TEST_DATA_DIR, profile=TEST_PROFILE)
     config.set('backend_options.auto_create_first_user', 'test')
     config.set('backend_options.title_generation.provider', 'fake_llm')
