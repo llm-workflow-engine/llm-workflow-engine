@@ -14,7 +14,7 @@ from lwe import ApiBackend
 from lwe.core import constants
 # from lwe.core import util
 
-DEBUG = False
+DEBUG = True
 
 
 def make_api_backend(test_config, user_id=1):

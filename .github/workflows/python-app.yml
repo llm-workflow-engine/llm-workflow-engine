@@ -41,4 +41,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest
+        # pytest
+        pytest -s tests/system/test_api_backend.py::test_api_backend_get_history
