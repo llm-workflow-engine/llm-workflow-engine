@@ -11,12 +11,100 @@ from langchain.callbacks.manager import (
 )
 from langchain.schema.output import ChatGenerationChunk
 
-from langchain.chat_models.fake import FakeMessagesListChatModel
+# TODO: Re-enable if https://github.com/langchain-ai/langchain/pull/10200 lands.
+# from langchain.chat_models.fake import FakeMessagesListChatModel
 
 from lwe.core.provider import Provider, PresetValue
 from lwe.core import constants
 
+# TODO: Remove these definitions if https://github.com/langchain-ai/langchain/pull/10200 lands.
+import asyncio
+import time
+from typing import AsyncIterator, Dict
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.schema import ChatResult
+from langchain.schema.output import ChatGeneration
+# TODO: Remove these definitions if https://github.com/langchain-ai/langchain/pull/10200 lands.
+
 DEFAULT_RESPONSE_MESSAGE = "test response"
+
+
+class FakeMessagesListChatModel(BaseChatModel):
+    responses: Union[List[BaseMessage], List[List[BaseMessage]]]
+    sleep: Optional[float] = None
+    i: int = 0
+
+    @property
+    def _llm_type(self) -> str:
+        return "fake-messages-list-chat-model"
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        return {"responses": self.responses}
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        response = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
+        generation = ChatGeneration(message=response)
+        return ChatResult(generations=[generation])
+
+    def _call(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Union[BaseMessage, List[BaseMessage]]:
+        """First try to lookup in queries, else return 'foo' or 'bar'."""
+        response = self.responses[self.i]
+        if self.i < len(self.responses) - 1:
+            self.i += 1
+        else:
+            self.i = 0
+        return response
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Union[List[str], None] = None,
+        run_manager: Union[CallbackManagerForLLMRun, None] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        response = self.responses[self.i]
+        if self.i < len(self.responses) - 1:
+            self.i += 1
+        else:
+            self.i = 0
+        for c in response:
+            if self.sleep is not None:
+                time.sleep(self.sleep)
+            yield ChatGenerationChunk(message=c)
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Union[List[str], None] = None,
+        run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        response = self.responses[self.i]
+        if self.i < len(self.responses) - 1:
+            self.i += 1
+        else:
+            self.i = 0
+        for c in response:
+            if self.sleep is not None:
+                await asyncio.sleep(self.sleep)
+            yield ChatGenerationChunk(message=c)
 
 
 class CustomFakeMessagesListChatModel(FakeMessagesListChatModel):
