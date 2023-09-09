@@ -329,9 +329,9 @@ def test_api_backend_doesnt_override_active_preset_when_preset_in_request_overri
     success, response, _user_message = backend.get_conversation()
     assert success
     message_assistant = response["messages"][2]
-    message_assistant["provider"] == "provider_fake_llm"
-    message_assistant["model"] == "gpt-4"
-    message_assistant["preset"] == "test_2"
+    assert message_assistant["provider"] == "provider_fake_llm"
+    assert message_assistant["model"] == "gpt-4"
+    assert message_assistant["preset"] == "test_2"
     assert backend.active_preset_name == "test"
 
 
@@ -349,9 +349,9 @@ def test_api_backend_overrides_active_preset_when_activate_preset_in_request_ove
     success, response, _user_message = backend.get_conversation()
     assert success
     message_assistant = response["messages"][2]
-    message_assistant["provider"] == "provider_fake_llm"
-    message_assistant["model"] == "gpt-4"
-    message_assistant["preset"] == "test_2"
+    assert message_assistant["provider"] == "provider_fake_llm"
+    assert message_assistant["model"] == "gpt-4"
+    assert message_assistant["preset"] == "test_2"
     assert backend.active_preset_name == "test_2"
 
 
@@ -370,8 +370,8 @@ def test_api_backend_doesnt_override_system_message_when_system_message_in_reque
     success, response, _user_message = backend.get_conversation()
     assert success
     message_system = response["messages"][0]
-    message_system["role"] == "system"
-    message_system["message"] == "test system message"
+    assert message_system["role"] == "system"
+    assert message_system["message"] == "test system message"
     assert backend.get_system_message() == constants.SYSTEM_MESSAGE_DEFAULT
 
 

@@ -72,10 +72,10 @@ def test_set_request_llm_success(test_config, function_manager, provider_manager
     llm = Mock()
     request.setup_request_config = Mock(return_value=(True, llm, "Success"))
     success, response, user_message = request.set_request_llm()
-    request.setup_request_config.call_args.args[0] == preset_name
-    request.setup_request_config.call_args.args[1] == preset_overrides
-    request.setup_request_config.call_args.args[2] == metadata
-    request.setup_request_config.call_args.args[3] == customizations
+    assert request.setup_request_config.call_args.args[0] == preset_name
+    assert request.setup_request_config.call_args.args[1] == preset_overrides
+    assert request.setup_request_config.call_args.args[2] == metadata
+    assert request.setup_request_config.call_args.args[3] == customizations
     assert success is True
     assert response == llm
     assert user_message == "Success"
@@ -670,9 +670,9 @@ def test_iterate_streaming_response_output_chunk_content_args(
     request.llm.stream = Mock(return_value=[AIMessageChunk(content="content1")])
     request.output_chunk_content = Mock()
     request.iterate_streaming_response(TEST_BASIC_MESSAGES, True, callback)
-    request.output_chunk_content.call_args.args[0] == "content1"
-    request.output_chunk_content.call_args.args[1] is True
-    request.output_chunk_content.call_args.args[2] is callback
+    assert request.output_chunk_content.call_args.args[0] == "content1"
+    assert request.output_chunk_content.call_args.args[1] is True
+    assert request.output_chunk_content.call_args.args[2] is callback
 
 
 def test_iterate_streaming_response_messages(
@@ -766,9 +766,9 @@ def test_execute_llm_streaming_no_print_no_callback(
     success, response, user_message = request.execute_llm_streaming(TEST_BASIC_MESSAGES)
     assert success is True
     assert response == "test response"
-    request.iterate_streaming_response.call_args.args[0] == TEST_BASIC_MESSAGES
-    request.iterate_streaming_response.call_args.args[1] is False
-    request.iterate_streaming_response.call_args.args[2] is None
+    assert request.iterate_streaming_response.call_args.args[0] == TEST_BASIC_MESSAGES
+    assert request.iterate_streaming_response.call_args.args[1] is False
+    assert request.iterate_streaming_response.call_args.args[2] is None
 
 
 def test_execute_llm_streaming_print_callback(
@@ -782,9 +782,9 @@ def test_execute_llm_streaming_print_callback(
     success, response, user_message = request.execute_llm_streaming(TEST_BASIC_MESSAGES)
     assert success is True
     assert response == "test response"
-    request.iterate_streaming_response.call_args.args[0] == TEST_BASIC_MESSAGES
-    request.iterate_streaming_response.call_args.args[1] is True
-    request.iterate_streaming_response.call_args.args[2] is stream_callback
+    assert request.iterate_streaming_response.call_args.args[0] == TEST_BASIC_MESSAGES
+    assert request.iterate_streaming_response.call_args.args[1] is True
+    assert request.iterate_streaming_response.call_args.args[2] is stream_callback
 
 
 def test_execute_llm_streaming_exception(
