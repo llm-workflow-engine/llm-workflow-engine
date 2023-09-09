@@ -25,7 +25,7 @@ def create_schema_revision(message, database_url=None):
         logger.info("No database url specified, using default.")
         database_url = get_database_url()
     logger.info(
-        f"Creating schema revision with message: '{message}', database_url: '{database_url}'"
+        f"Creating schema revision with message: {message!r}, database_url: {database_url!r}"
     )
 
     alembic_cfg = AlembicConfig()
