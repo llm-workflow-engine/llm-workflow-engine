@@ -25,14 +25,14 @@ class Config:
         self.config_file = None
         if config_dir:
             if not os.path.exists(config_dir):
-                raise FileNotFoundError(f"The config directory '{config_dir}' does not exist.")
+                raise FileNotFoundError(f"The config directory {config_dir!r} does not exist.")
             self.config_dir = config_dir
         else:
             self.config_dir = self._default_config_dir()
         self.config_profile_dir = self.make_profile_dir(self.config_dir, self.profile)
         if data_dir:
             if not os.path.exists(data_dir):
-                raise FileNotFoundError(f"The data directory '{data_dir}' does not exist.")
+                raise FileNotFoundError(f"The data directory {data_dir!r} does not exist.")
             self.data_dir = data_dir
         else:
             self.data_dir = self._default_data_dir()

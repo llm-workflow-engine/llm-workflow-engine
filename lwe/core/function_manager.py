@@ -59,7 +59,7 @@ class FunctionManager:
                                 f"Can't open function file {function_name} from directory: {function_dir}: {e}"
                             )
                 else:
-                    message = f"Failed to load function {function_name}: Directory '{function_dir}' not found or not a directory"
+                    message = f"Failed to load function {function_name}: Directory {function_dir!r} not found or not a directory"
                     self.log.error(message)
                     return False, None, message
         except Exception as e:
@@ -132,7 +132,7 @@ class FunctionManager:
                             self.functions[function_name] = filepath
                 else:
                     message = (
-                        f"Failed to load directory '{function_dir}': not found or not a directory"
+                        f"Failed to load directory {function_dir!r}: not found or not a directory"
                     )
                     self.log.error(message)
                     return False, None, message
@@ -186,7 +186,7 @@ class FunctionManager:
             self.log.info(
                 f"Function {function_name} executed successfully, output data: {output_data}"
             )
-            return True, output_data, f"Function '{function_name}' executed successfully"
+            return True, output_data, f"Function {function_name!r} executed successfully"
         except Exception as e:
             message = f"Error: Exception occurred while executing {function_path}: {str(e)}"
             self.log.error(message)

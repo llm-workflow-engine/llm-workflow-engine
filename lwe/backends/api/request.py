@@ -162,7 +162,7 @@ class ApiRequest:
         metadata = {}
         customizations = {}
         if preset_name:
-            self.log.debug(f"Preset '{preset_name}' extracted from request overrides")
+            self.log.debug(f"Preset {preset_name!r} extracted from request overrides")
             success, response, user_message = self.get_preset_metadata_customizations(preset_name)
             if success:
                 metadata, customizations = response

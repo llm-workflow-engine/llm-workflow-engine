@@ -67,7 +67,7 @@ class TemplateManager:
         self.log.debug(f"Ensuring template {template_name} exists")
         self.load_templates()
         if template_name not in self.templates:
-            return False, template_name, f"Template '{template_name}' not found"
+            return False, template_name, f"Template {template_name!r} not found"
         message = f"Template {template_name} exists"
         self.log.debug(message)
         return True, template_name, message

@@ -43,7 +43,7 @@ class WorkflowManager:
         if workflow_name not in self.workflows:
             self.load_workflows()
         if workflow_name not in self.workflows:
-            return False, workflow_name, f"Workflow '{workflow_name}' not found"
+            return False, workflow_name, f"Workflow {workflow_name!r} not found"
         message = f"Workflow {workflow_name} exists"
         self.log.debug(message)
         return True, self.workflows[workflow_name], message
@@ -54,13 +54,13 @@ class WorkflowManager:
             return success, workflow, user_message
         if len(workflow) > 0:
             if "tasks" in workflow[0]:
-                return True, workflow, f"Workflow '{workflow_name}' has a valid play with tasks"
+                return True, workflow, f"Workflow {workflow_name!r} has a valid play with tasks"
             return (
                 False,
                 workflow,
-                f"Workflow '{workflow_name}' has no tasks, are you trying to run an 'include' file?",
+                f"Workflow {workflow_name!r} has no tasks, are you trying to run an 'include' file?",
             )
-        return False, workflow, f"Workflow '{workflow_name}' has invalid format"
+        return False, workflow, f"Workflow {workflow_name!r} has invalid format"
 
     def make_user_workflow_dirs(self):
         for workflow_dir in self.user_workflow_dirs:
@@ -183,7 +183,7 @@ class WorkflowManager:
                             workflow_file = os.path.join(workflow_dir, file_name)
                             self.workflows[workflow_name] = workflow_file
                 else:
-                    message = f"Failed to load workflows: Directory '{workflow_dir}' not found or not a directory"
+                    message = f"Failed to load workflows: Directory {workflow_dir!r} not found or not a directory"
                     self.log.error(message)
                     return False, None, message
             return True, self.workflows, "Workflows successfully loaded"
@@ -227,11 +227,11 @@ class WorkflowManager:
             return success, workflow_file, user_message
         try:
             os.remove(workflow_file)
-            message = f"Successfully deleted workflow '{workflow_name}' from '{workflow_file}'"
+            message = f"Successfully deleted workflow {workflow_name!r} from {workflow_file!r}"
             self.log.info(message)
             return True, workflow_name, message
         except Exception as e:
-            message = f"An error occurred while deleting workflow '{workflow_name}': {e}"
+            message = f"An error occurred while deleting workflow {workflow_name!r}: {e}"
             self.log.error(message)
             return False, None, message
 

@@ -48,7 +48,7 @@ class PresetManager:
         if preset_name not in self.presets:
             self.load_presets()
         if preset_name not in self.presets:
-            return False, preset_name, f"Preset '{preset_name}' not found"
+            return False, preset_name, f"Preset {preset_name!r} not found"
         message = f"preset {preset_name} exists"
         self.log.debug(message)
         return True, self.presets[preset_name], message
@@ -110,7 +110,7 @@ class PresetManager:
                                 with open(filepath, "r") as file:
                                     content = yaml.safe_load(file)
                             except Exception as e:
-                                self.log.error(f"Error loading YAML file '{file_name}': {e}")
+                                self.log.error(f"Error loading YAML file {file_name!r}: {e}")
                                 continue
                             metadata, customizations = self.parse_preset_dict(content)
                             metadata["filepath"] = filepath
@@ -118,7 +118,7 @@ class PresetManager:
                             self.presets[preset_name] = (metadata, customizations)
                             self.log.info(f"Successfully loaded preset: {preset_name}")
                 else:
-                    message = f"Failed to load presets: Directory '{preset_dir}' not found or not a directory"
+                    message = f"Failed to load presets: Directory {preset_dir!r} not found or not a directory"
                     self.log.error(message)
                     return False, None, message
             return True, self.presets, "Presets successfully loaded"
@@ -139,11 +139,11 @@ class PresetManager:
         try:
             with open(file_path, "w") as file:
                 yaml.safe_dump(preset_data, file, default_flow_style=False)
-            message = f"Successfully saved preset '{preset_name}' to '{file_path}'"
+            message = f"Successfully saved preset {preset_name!r} to {file_path!r}"
             self.log.info(message)
             return True, file_path, message
         except Exception as e:
-            message = f"An error occurred while saving preset '{preset_name}': {e}"
+            message = f"An error occurred while saving preset {preset_name!r}: {e}"
             self.log.error(message)
             return False, None, message
 
@@ -156,11 +156,11 @@ class PresetManager:
             )
             file_path = os.path.join(preset_dir, preset_name)
             os.remove(file_path)
-            message = f"Successfully deleted preset '{preset_name}' from '{file_path}'"
+            message = f"Successfully deleted preset {preset_name!r} from {file_path!r}"
             self.log.info(message)
             return True, preset_name, message
         except Exception as e:
-            message = f"An error occurred while deleting preset '{preset_name}': {e}"
+            message = f"An error occurred while deleting preset {preset_name!r}: {e}"
             self.log.error(message)
             return False, None, message
 

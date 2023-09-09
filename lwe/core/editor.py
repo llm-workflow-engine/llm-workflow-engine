@@ -66,7 +66,7 @@ def pipe_editor(input_data="", suffix=None):
     # This is ugly, but Windows is throwing an error on deletion of the temp file.
     if SYSTEM == "Windows":
         print(
-            f"Deletion of temporary files on Windows is not currently supported, editor content was saved to '{filepath}', and can be deleted manually if desired"
+            f"Deletion of temporary files on Windows is not currently supported, editor content was saved to {filepath!r}, and can be deleted manually if desired"
         )
         print(
             "If you'd like to help fix this issue, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/224"

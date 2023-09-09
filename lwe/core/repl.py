@@ -238,7 +238,7 @@ class Repl:
                         const_value = getattr(constants, sub)
                     except AttributeError:
                         raise AttributeError(
-                            f"'{sub}' in HELP_TOKEN_VARIABLE_SUBSTITUTIONS is not a valid constant"
+                            f"{sub!r} in HELP_TOKEN_VARIABLE_SUBSTITUTIONS is not a valid constant"
                         )
                     doc = doc.replace("{%s}" % sub, str(const_value))
                 return textwrap.dedent(doc)
@@ -867,7 +867,7 @@ class Repl:
         try:
             fileprompt = open(arg, encoding="utf-8").read()
         except Exception:
-            util.print_markdown(f"Failed to read file '{arg}'")
+            util.print_markdown(f"Failed to read file {arg!r}")
             return
         self.default(fileprompt)
 
@@ -878,7 +878,7 @@ class Repl:
             else:
                 self.logfile = open(os.path.join(os.getcwd(), filename), "a", encoding="utf-8")
         except Exception:
-            util.print_markdown(f"Failed to open log file '{filename}'.")
+            util.print_markdown(f"Failed to open log file {filename!r}.")
             return False
         return True
 
@@ -895,7 +895,7 @@ class Repl:
         """
         if arg:
             if self._open_log(arg):
-                util.print_markdown(f"* Logging enabled, appending to '{arg}'.")
+                util.print_markdown(f"* Logging enabled, appending to {arg!r}.")
         else:
             self.logfile = None
             util.print_markdown("* Logging is now disabled.")
@@ -1063,7 +1063,7 @@ class Repl:
         )
         if not success:
             return success, source, user_message
-        util.print_markdown(f"\n## Template '{template_name}'")
+        util.print_markdown(f"\n## Template {template_name!r}")
         if source.metadata:
             util.print_markdown(
                 "\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False)

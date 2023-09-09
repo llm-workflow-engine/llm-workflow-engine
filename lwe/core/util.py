@@ -318,7 +318,7 @@ def ansible_doc_to_markdown(module_name, full_doc=False):
     examples = data["copy"]["examples"]
     return_data = data["copy"]["return"]
 
-    markdown = f"""The following is reference documentation for the Ansible '{module_name}' module.
+    markdown = f"""The following is reference documentation for the Ansible {module_name!r} module.
 
 Examples listed demonstrate how to use the module in an Ansible playbook.
 

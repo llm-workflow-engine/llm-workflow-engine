@@ -316,7 +316,7 @@ class ApiBackend(Backend):
             else:
                 util.print_status_message(
                     False,
-                    f"Unable to switch conversation to previous preset '{last_message['preset']}' -- ERROR: {user_message}, falling back to provider: {last_message['provider']}, model: {last_message['model']}",
+                    f"Unable to switch conversation to previous preset {last_message['preset']!r} -- ERROR: {user_message}, falling back to provider: {last_message['provider']}, model: {last_message['model']}",
                 )
         if not model_configured:
             if last_message["provider"] and last_message["model"]:

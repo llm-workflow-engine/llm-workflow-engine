@@ -809,7 +809,7 @@ Before you can start using the shell, you must create a new user.
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
-        util.print_markdown(f"\n## Preset '{preset_name}'")
+        util.print_markdown(f"\n## Preset {preset_name!r}")
         util.print_markdown(
             "### Model customizations\n```yaml\n%s\n```"
             % yaml.dump(customizations, default_flow_style=False)
@@ -1087,7 +1087,7 @@ Before you can start using the shell, you must create a new user.
             return success, workflow_file, user_message
         with open(workflow_file) as f:
             workflow_content = f.read()
-        util.print_markdown(f"\n## Workflow '{workflow_name}'")
+        util.print_markdown(f"\n## Workflow {workflow_name!r}")
         util.print_markdown("```yaml\n%s\n```" % workflow_content)
 
     def action_workflow_copy(self, *workflow_names):
