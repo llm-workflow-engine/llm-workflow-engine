@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import os
 import yaml
+import pytest
 import pyperclip
 
 from jinja2 import Environment, Template
@@ -93,7 +94,7 @@ Hello, {{ name }}
     assert 'Hello, John Doe' in message
     assert overrides == {'request_overrides': {'title': 'Existent Template'}}
 
-
+@pytest.mark.usefixtures("set_up_xvfb")
 def test_process_template_builtin_variables(template_manager):
     pyperclip.copy("clipboard_text")
     variables = ['clipboard']

@@ -109,6 +109,7 @@ class TestClass:
         assert validate_str("test", min=5) is False
         assert validate_str("test", max=3) is False
 
+    @pytest.mark.usefixtures("set_up_xvfb")
     def test_paste_from_clipboard(self):
         pyperclip.copy("test_value")
         assert paste_from_clipboard() == "test_value"
