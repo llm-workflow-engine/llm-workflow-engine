@@ -1,6 +1,5 @@
 import os
 import pytest
-from xvfbwrapper import Xvfb
 
 from lwe.core.config import Config
 from lwe.core.function_manager import FunctionManager
@@ -17,12 +16,6 @@ from .base import FakeBackend
 def set_environment_variables():
     os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY', 'fake-api-key')
 
-@pytest.fixture(scope="session")
-def set_up_xvfb():
-    vdisplay = Xvfb()
-    vdisplay.start()
-    yield
-    vdisplay.stop()
 
 @pytest.fixture
 def test_config():

@@ -1,5 +1,5 @@
+from unittest.mock import patch
 import pytest
-import pyperclip
 import os
 from datetime import datetime
 
@@ -109,10 +109,9 @@ class TestClass:
         assert validate_str("test", min=5) is False
         assert validate_str("test", max=3) is False
 
-    @pytest.mark.usefixtures("set_up_xvfb")
     def test_paste_from_clipboard(self):
-        pyperclip.copy("test_value")
-        assert paste_from_clipboard() == "test_value"
+        with patch('pyperclip.paste', return_value='test_value'):
+            assert paste_from_clipboard() == "test_value"
 
     def test_print_status_message(self, capsys):
         print_status_message(True, "Success message")

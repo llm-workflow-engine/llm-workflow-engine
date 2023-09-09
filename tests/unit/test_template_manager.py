@@ -1,9 +1,7 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import os
 import yaml
-import pytest
-import pyperclip
 
 from jinja2 import Environment, Template
 
@@ -94,12 +92,12 @@ Hello, {{ name }}
     assert 'Hello, John Doe' in message
     assert overrides == {'request_overrides': {'title': 'Existent Template'}}
 
-@pytest.mark.usefixtures("set_up_xvfb")
+
 def test_process_template_builtin_variables(template_manager):
-    pyperclip.copy("clipboard_text")
     variables = ['clipboard']
-    substitutions = template_manager.process_template_builtin_variables("existent_template.md", variables)
-    assert substitutions == {'clipboard': 'clipboard_text'}
+    with patch('pyperclip.paste', return_value='test_value'):
+        substitutions = template_manager.process_template_builtin_variables("existent_template.md", variables)
+        assert substitutions == {'clipboard': 'test_value'}
 
 
 def test_make_user_template_dirs(template_manager, tmpdir):
