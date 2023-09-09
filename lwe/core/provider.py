@@ -6,8 +6,17 @@ from lwe.core.plugin import Plugin
 from lwe.core import constants
 from lwe.core import util
 
+
 class PresetValue:
-    def __init__(self, value_type, min_value=None, max_value=None, options=None, include_none=False, private=False):
+    def __init__(
+        self,
+        value_type,
+        min_value=None,
+        max_value=None,
+        options=None,
+        include_none=False,
+        private=False,
+    ):
         options = options or {}
         self.value_type = value_type
         self.min_value = min_value
@@ -21,12 +30,14 @@ class PresetValue:
     def build_completions(self):
         if self.value_type == bool:
             self.completions = {
-                'true': None,
-                'false': None,
+                "true": None,
+                "false": None,
             }
         elif self.value_type == int:
             if self.min_value is not None and self.max_value is not None:
-                self.completions = util.list_to_completion_hash(range(self.min_value, self.max_value + 1))
+                self.completions = util.list_to_completion_hash(
+                    range(self.min_value, self.max_value + 1)
+                )
         elif self.value_type == float:
             if self.min_value is not None and self.max_value is not None:
                 self.completions = util.float_range_to_completions(self.min_value, self.max_value)
@@ -35,22 +46,28 @@ class PresetValue:
         elif self.value_type == dict:
             pass
         else:
-            raise ValueError("Invalid value type provided. Must be one of the following: str, int, float, bool")
+            raise ValueError(
+                "Invalid value type provided. Must be one of the following: str, int, float, bool"
+            )
         if self.value_type != dict and self.include_none:
-            self.completions['None'] = None
+            self.completions["None"] = None
 
     def cast(self, value):
-        if value == 'None' or value is None:
+        if value == "None" or value is None:
             return True, None, None
         if self.value_type == bool:
             if isinstance(value, bool):
                 return True, value, None
-            elif value.lower() in ['true', 't', '1']:
+            elif value.lower() in ["true", "t", "1"]:
                 return True, True, None
-            elif value.lower() in ['false', 'f', '0']:
+            elif value.lower() in ["false", "f", "0"]:
                 return True, False, None
             else:
-                return False, None, "Invalid value provided. Must be one of the following: true, false"
+                return (
+                    False,
+                    None,
+                    "Invalid value provided. Must be one of the following: true, false",
+                )
         elif self.value_type == int:
             try:
                 return True, int(value), None
@@ -64,27 +81,31 @@ class PresetValue:
         elif self.value_type == str:
             return True, str(value), None
         else:
-            return False, None, "Invalid value type provided. Must be one of the following: str, int, float, bool"
+            return (
+                False,
+                None,
+                "Invalid value type provided. Must be one of the following: str, int, float, bool",
+            )
+
 
 class ProviderBase(Plugin):
-
     def __init__(self, config=None):
         super().__init__(config)
 
     def display_name(self):
-        return self.name[len(constants.PROVIDER_PREFIX):]
+        return self.name[len(constants.PROVIDER_PREFIX) :]
 
     @property
     def plugin_type(self):
-        return 'provider'
+        return "provider"
 
     @property
     def model_property_name(self):
-        return 'model_name'
+        return "model_name"
 
     @property
     def available_models(self):
-        return self.get_capability('models', {}).keys()
+        return self.get_capability("models", {}).keys()
 
     def setup(self):
         self.set_customizations(self.default_customizations())
@@ -101,7 +122,7 @@ class ProviderBase(Plugin):
         defaults = {k: v for k, v in llm_defaults.items() if k in custom_config}
         if self.default_model:
             defaults[self.model_property_name] = self.default_model
-        defaults['_type'] = llm_defaults['_type']
+        defaults["_type"] = llm_defaults["_type"]
         return defaults
 
     # NOTE: This is a best-guess approach for random dict values.
@@ -118,7 +139,7 @@ class ProviderBase(Plugin):
 
     def calculate_customization_value(self, orig_keys, new_value):
         if isinstance(orig_keys, str):
-            orig_keys = orig_keys.split('.')
+            orig_keys = orig_keys.split(".")
         keys = orig_keys.copy()
         config = self.customization_config()
         while keys:
@@ -140,7 +161,7 @@ class ProviderBase(Plugin):
 
     def get_customization_value(self, keys):
         if isinstance(keys, str):
-            keys = keys.split('.')
+            keys = keys.split(".")
         customizations = self.customizations.copy()
         while keys:
             key = keys.pop(0)
@@ -152,7 +173,7 @@ class ProviderBase(Plugin):
 
     def set_customization_value(self, keys, new_value):
         if isinstance(keys, str):
-            keys = keys.split('.')
+            keys = keys.split(".")
         if isinstance(new_value, dict):
             for k, v in new_value.items():
                 success, new_value, user_message = self.set_customization_value(keys + [k], v)
@@ -176,7 +197,7 @@ class ProviderBase(Plugin):
     def get_customizations(self, customizations=None):
         customizations = self.customizations if customizations is None else customizations
         # _type key exists in the Langchain output of dict(llm), and must be filtered out.
-        customizations = {k: v for k, v in customizations.items() if k != '_type'}
+        customizations = {k: v for k, v in customizations.items() if k != "_type"}
         return customizations
 
     def set_customizations(self, customizations):
@@ -186,7 +207,7 @@ class ProviderBase(Plugin):
         def dict_to_completions(completions, items, prefix=None, is_dict=False):
             prefix = prefix or []
             for key, value in items.items():
-                full_key = '.'.join(prefix + [key])
+                full_key = ".".join(prefix + [key])
                 if value is None:
                     continue
                 elif value == dict:
@@ -205,6 +226,7 @@ class ProviderBase(Plugin):
                 else:
                     completions[full_key] = value
             return completions
+
         completions = dict_to_completions({}, self.customization_config())
         return completions
 
@@ -217,8 +239,8 @@ class ProviderBase(Plugin):
             return model_name
 
     def set_model(self, model_name):
-        models = self.get_capability('models', {})
-        validate_models = self.get_capability('validate_models', True)
+        models = self.get_capability("models", {})
+        validate_models = self.get_capability("validate_models", True)
         if model_name in models or not validate_models:
             return self.set_customization_value(self.model_property_name, model_name)
         else:
@@ -226,7 +248,11 @@ class ProviderBase(Plugin):
 
     def make_llm(self, customizations=None, use_defaults=False):
         customizations = customizations or {}
-        final_customizations = self.get_customizations(self.default_customizations()) if use_defaults else self.get_customizations()
+        final_customizations = (
+            self.get_customizations(self.default_customizations())
+            if use_defaults
+            else self.get_customizations()
+        )
         final_customizations.update(customizations)
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
@@ -236,11 +262,11 @@ class ProviderBase(Plugin):
         return self.prepare_messages_for_llm_last_message
 
     def prepare_messages_for_llm_last_message(self, messages):
-        messages = messages[-1]['content']
+        messages = messages[-1]["content"]
         return messages
 
     def prepare_messages_for_llm_stuff_messages(self, messages):
-        messages = [m['content'] for m in messages]
+        messages = [m["content"] for m in messages]
         return "\n\n".join(messages)
 
     def prepare_messages_for_llm_chat(self, messages):
@@ -253,14 +279,14 @@ class ProviderBase(Plugin):
         return messages
 
     def max_submission_tokens(self):
-        models = self.get_capability('models', {})
+        models = self.get_capability("models", {})
         model_name = self.get_model()
-        if model_name and model_name in models and 'max_tokens' in models[model_name]:
-            return models[model_name]['max_tokens']
+        if model_name and model_name in models and "max_tokens" in models[model_name]:
+            return models[model_name]["max_tokens"]
         return constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
 
-class Provider(ProviderBase):
 
+class Provider(ProviderBase):
     @property
     @abstractmethod
     def capabilities(self):

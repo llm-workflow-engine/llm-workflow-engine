@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def get_database_url():
     config = Config()
-    database = config.get('database')
+    database = config.get("database")
     return database
 
 
@@ -24,7 +24,9 @@ def create_schema_revision(message, database_url=None):
     if not database_url:
         logger.info("No database url specified, using default.")
         database_url = get_database_url()
-    logger.info(f"Creating schema revision with message: '{message}', database_url: '{database_url}'")
+    logger.info(
+        f"Creating schema revision with message: '{message}', database_url: '{database_url}'"
+    )
 
     alembic_cfg = AlembicConfig()
     script_path = Path(__file__).resolve().parent
@@ -39,7 +41,8 @@ def create_schema_revision(message, database_url=None):
         logger.info("Starting schema revision generation...")
         command.revision(alembic_cfg, message, autogenerate=True)
         logger.info("Schema revision created successfully.")
-        util.print_markdown("""
+        util.print_markdown(
+            """
 ## To dump and re-import data into a fresh schema:
 
  * `sudo apt install libsqlite3-mod-impexp`
@@ -49,15 +52,23 @@ def create_schema_revision(message, database_url=None):
  * *...backup original database, then delete it...*
  * *...create fresh database, and open it in Sqlite...*
  * `.read /tmp/dump.sql`
-          """)
+          """
+        )
     except Exception as e:
         logger.error(f"Error creating schema revision: {e}")
         sys.exit(1)
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate a new schema revision by comparing the updated schema with the original schema in a reference database.")
-    parser.add_argument("-m", "--message", required=True, help="Human-readable message for the revision")
-    parser.add_argument("-d", "--database-url", help="SQLAlchemy connection string to the reference database")
+    parser = argparse.ArgumentParser(
+        description="Generate a new schema revision by comparing the updated schema with the original schema in a reference database."
+    )
+    parser.add_argument(
+        "-m", "--message", required=True, help="Human-readable message for the revision"
+    )
+    parser.add_argument(
+        "-d", "--database-url", help="SQLAlchemy connection string to the reference database"
+    )
 
     args = parser.parse_args()
 

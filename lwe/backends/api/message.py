@@ -6,7 +6,7 @@ from sqlalchemy.orm import object_mapper
 from lwe.backends.api.orm import Manager, Message
 from lwe.backends.api.conversation import ConversationManager
 
-JSON_MESSAGE_TYPES = ['function_call', 'function_response']
+JSON_MESSAGE_TYPES = ["function_call", "function_response"]
 
 
 class MessageManager(Manager):
@@ -14,12 +14,12 @@ class MessageManager(Manager):
         super().__init__(config, orm)
         self.conversation_manager = ConversationManager(self.config, self.orm)
 
-    def build_message(self, role, message, message_type='content', message_metadata=None):
+    def build_message(self, role, message, message_type="content", message_metadata=None):
         message = {
-            'role': role,
-            'message': message,
-            'message_type': message_type,
-            'message_metadata': message_metadata,
+            "role": role,
+            "message": message,
+            "message_type": message_type,
+            "message_metadata": message_metadata,
         }
         return message
 
@@ -32,9 +32,11 @@ class MessageManager(Manager):
     def message_from_storage(self, message):
         if isinstance(message, Message):
             message = {c.key: getattr(message, c.key) for c in object_mapper(message).columns}
-        if message['message_type'] in JSON_MESSAGE_TYPES:
-            message['message'] = json.loads(message['message'], strict=False)
-        message['message_metadata'] = json.loads(message['message_metadata']) if message['message_metadata'] else None
+        if message["message_type"] in JSON_MESSAGE_TYPES:
+            message["message"] = json.loads(message["message"], strict=False)
+        message["message_metadata"] = (
+            json.loads(message["message_metadata"]) if message["message_metadata"] else None
+        )
         return message
 
     def get_message(self, message_id):
@@ -54,7 +56,9 @@ class MessageManager(Manager):
         if not conversation:
             return False, None, "Conversation not found"
         try:
-            messages = self.orm_get_messages(conversation, limit=limit, offset=offset, target_id=None)
+            messages = self.orm_get_messages(
+                conversation, limit=limit, offset=offset, target_id=None
+            )
             messages = [self.message_from_storage(message) for message in messages]
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to retrieve messages: {str(e)}")
@@ -73,15 +77,31 @@ class MessageManager(Manager):
             return self._handle_error(f"Failed to retrieve last message: {str(e)}")
         return True, last_message, "Last message retrieved successfully"
 
-    def add_message(self, conversation_id, role, message, message_type=None, message_metadata=None, provider=None, model=None, preset=None):
-        success, conversation, user_message = self.conversation_manager.get_conversation(conversation_id)
+    def add_message(
+        self,
+        conversation_id,
+        role,
+        message,
+        message_type=None,
+        message_metadata=None,
+        provider=None,
+        model=None,
+        preset=None,
+    ):
+        success, conversation, user_message = self.conversation_manager.get_conversation(
+            conversation_id
+        )
         if not success:
             return success, conversation, user_message
         if not conversation:
             return False, None, "Conversation not found"
         try:
-            message, message_metadata = self.message_to_storage(message, message_type, message_metadata)
-            message = self.orm_add_message(conversation, role, message, message_type, message_metadata, provider, model, preset)
+            message, message_metadata = self.message_to_storage(
+                message, message_type, message_metadata
+            )
+            message = self.orm_add_message(
+                conversation, role, message, message_type, message_metadata, provider, model, preset
+            )
         except SQLAlchemyError as e:
             return self._handle_error(f"Failed to add message: {str(e)}")
         return True, message, "Message added successfully"

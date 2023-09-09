@@ -12,9 +12,9 @@ from lwe.backends.api.backend import ApiBackend
 from lwe.core.editor import file_editor
 
 ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
-    'config',
-    'exit',
-    'quit',
+    "config",
+    "exit",
+    "quit",
 ]
 SKIP_MESSAGE = "(Press enter to skip)"
 
@@ -30,43 +30,66 @@ class ApiRepl(Repl):
 
     def not_logged_in_disallowed_commands(self):
         base_shell_commands = util.introspect_commands(Repl)
-        disallowed_commands = [c for c in base_shell_commands if c not in ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS]
+        disallowed_commands = [
+            c for c in base_shell_commands if c not in ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS
+        ]
         return disallowed_commands
 
     def exec_prompt_pre(self, command, arg):
         if not self.logged_in_user and command in self.not_logged_in_disallowed_commands():
-            return False, None, "Must be logged in to execute %s%s" % (constants.COMMAND_LEADER, command)
+            return (
+                False,
+                None,
+                "Must be logged in to execute %s%s" % (constants.COMMAND_LEADER, command),
+            )
 
     def configure_shell_commands(self):
         self.commands = util.introspect_commands(__class__)
 
     def get_custom_shell_completions(self):
-        user_commands = sorted(self.get_command_actions('user', dashed=True))
+        user_commands = sorted(self.get_command_actions("user", dashed=True))
         success, users, user_message = self.user_management.get_users()
         if not success:
             raise Exception(user_message)
         usernames = {u.username: None for u in users} if users else None
         # Overwriting the commands directly, as merging still includes deleted users.
-        self.base_shell_completions[util.command_with_leader("user")] = {c: None if c == 'logout' else usernames for c in user_commands}
-        self.base_shell_completions[util.command_with_leader('model')] = self.backend.provider.customizations_to_completions()
+        self.base_shell_completions[util.command_with_leader("user")] = {
+            c: None if c == "logout" else usernames for c in user_commands
+        }
+        self.base_shell_completions[
+            util.command_with_leader("model")
+        ] = self.backend.provider.customizations_to_completions()
         provider_completions = {}
         for _name, provider in self.backend.get_providers().items():
-            provider_models = util.list_to_completion_hash(provider.available_models) if provider.available_models else None
+            provider_models = (
+                util.list_to_completion_hash(provider.available_models)
+                if provider.available_models
+                else None
+            )
             provider_completions[provider.display_name()] = provider_models
         final_completions = {
-            util.command_with_leader('system-message'): util.list_to_completion_hash(self.backend.get_system_message_aliases()),
-            util.command_with_leader('provider'): provider_completions,
+            util.command_with_leader("system-message"): util.list_to_completion_hash(
+                self.backend.get_system_message_aliases()
+            ),
+            util.command_with_leader("provider"): provider_completions,
         }
         preset_keys = self.backend.preset_manager.presets.keys()
-        final_completions[util.command_with_leader('preset')] = {c: util.list_to_completion_hash(preset_keys) for c in self.get_command_actions('preset', dashed=True)}
+        final_completions[util.command_with_leader("preset")] = {
+            c: util.list_to_completion_hash(preset_keys)
+            for c in self.get_command_actions("preset", dashed=True)
+        }
         for preset_name in preset_keys:
-            final_completions[util.command_with_leader("preset")]['save'][preset_name] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
+            final_completions[util.command_with_leader("preset")]["save"][
+                preset_name
+            ] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
         workflow_keys = util.list_to_completion_hash(self.backend.workflow_manager.workflows.keys())
-        final_completions[util.command_with_leader('workflow')] = {c: workflow_keys for c in self.get_command_actions('workflow', dashed=True)}
+        final_completions[util.command_with_leader("workflow")] = {
+            c: workflow_keys for c in self.get_command_actions("workflow", dashed=True)
+        }
         return final_completions
 
     def configure_backend(self):
-        if not getattr(self, 'backend', None):
+        if not getattr(self, "backend", None):
             self.backend = ApiBackend(self.config)
         self.user_management = UserManager(self.config, self.backend.orm)
 
@@ -95,7 +118,11 @@ class ApiRepl(Repl):
         selected_preset = input(f"Choose a default preset {SKIP_MESSAGE}: ").strip() or None
         if not selected_preset and allow_empty:
             return True, None
-        if not selected_preset or not selected_preset.isdigit() or not (1 <= int(selected_preset) <= len(presets)):
+        if (
+            not selected_preset
+            or not selected_preset.isdigit()
+            or not (1 <= int(selected_preset) <= len(presets))
+        ):
             return False, "Invalid preset selection."
         if int(selected_preset) == 1:
             default_preset = ""
@@ -152,7 +179,9 @@ class ApiRepl(Repl):
             success, message = self.validate_email(email)
             if not success:
                 return False, None, message
-        password = getpass.getpass(prompt='Enter password (leave blank for passwordless login): ') or None
+        password = (
+            getpass.getpass(prompt="Enter password (leave blank for passwordless login): ") or None
+        )
         # NOTE: Not sure if it's a good workflow to prompt for this on register,
         # leaving out for now.
         # success, default_preset = self.select_preset()
@@ -188,13 +217,15 @@ class ApiRepl(Repl):
 
         :return: None
         """
-        util.print_markdown("""
+        util.print_markdown(
+            """
 # Welcome to the LLM Workflow Engine shell!
 
 This shell interacts directly with ChatGPT and other LLMs via their API, and stores conversations and messages in the configured database.
 
 Before you can start using the shell, you must create a new user.
-""")
+"""
+        )
 
     def add_examples(self):
         """
@@ -202,10 +233,13 @@ Before you can start using the shell, you must create a new user.
 
         :return: None
         """
-        if 'examples' in self.backend.plugin_manager.plugins:
+        if "examples" in self.backend.plugin_manager.plugins:
             from lwe.plugins.examples import TYPES as example_types
-            examples = self.backend.plugin_manager.plugins['examples']
-            confirmation = input(f"Would you like to install example configurations for: {', '.join(example_types)}? [y/N] ").strip()
+
+            examples = self.backend.plugin_manager.plugins["examples"]
+            confirmation = input(
+                f"Would you like to install example configurations for: {', '.join(example_types)}? [y/N] "
+            ).strip()
             if confirmation.lower() in ["yes", "y"]:
                 examples.install_examples()
 
@@ -234,7 +268,7 @@ Before you can start using the shell, you must create a new user.
         if self.backend.conversation_id:
             conversation_title = self.backend.get_current_conversation_title()
             if conversation_title:
-                title = conversation_title[:constants.SHORT_TITLE_LENGTH]
+                title = conversation_title[: constants.SHORT_TITLE_LENGTH]
                 if len(conversation_title) > constants.SHORT_TITLE_LENGTH:
                     title += "..."
             else:
@@ -251,18 +285,31 @@ Before you can start using the shell, you must create a new user.
         :rtype: str
         """
         if not self.logged_in_user:
-            return ''
+            return ""
         prompt_prefix = self.config.get("shell.prompt_prefix")
         prompt_prefix = prompt_prefix.replace("$TITLE", self.get_current_conversation_title())
         prompt_prefix = prompt_prefix.replace("$USER", self.logged_in_user.username)
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
-        prompt_prefix = prompt_prefix.replace("$PRESET_OR_MODEL", self.backend.active_preset_name if self.backend.active_preset_name else self.backend.model)
+        prompt_prefix = prompt_prefix.replace(
+            "$PRESET_OR_MODEL",
+            self.backend.active_preset_name
+            if self.backend.active_preset_name
+            else self.backend.model,
+        )
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())
-        prompt_prefix = prompt_prefix.replace("$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens))
-        conversation_tokens = "" if self.backend.conversation_tokens is None else str(self.backend.conversation_tokens)
+        prompt_prefix = prompt_prefix.replace(
+            "$MAX_SUBMISSION_TOKENS", str(self.backend.max_submission_tokens)
+        )
+        conversation_tokens = (
+            ""
+            if self.backend.conversation_tokens is None
+            else str(self.backend.conversation_tokens)
+        )
         prompt_prefix = prompt_prefix.replace("$CURRENT_CONVERSATION_TOKENS", conversation_tokens)
-        prompt_prefix = prompt_prefix.replace("$SYSTEM_MESSAGE_ALIAS", self.backend.system_message_alias or "")
+        prompt_prefix = prompt_prefix.replace(
+            "$SYSTEM_MESSAGE_ALIAS", self.backend.system_message_alias or ""
+        )
         return f"{prompt_prefix} "
 
     def get_model_temperature(self):
@@ -272,8 +319,10 @@ Before you can start using the shell, you must create a new user.
         :return: The temperature of the model
         :rtype: str
         """
-        temperature = 'N/A'
-        success, temperature, _user_message = self.backend.provider.get_customization_value('temperature')
+        temperature = "N/A"
+        success, temperature, _user_message = self.backend.provider.get_customization_value(
+            "temperature"
+        )
         if success:
             temperature = temperature
         return str(temperature)
@@ -330,7 +379,7 @@ Before you can start using the shell, you must create a new user.
         :rtype: tuple[bool, User, str]
         """
         if user.password:
-            password = getpass.getpass(prompt='Enter password: ')
+            password = getpass.getpass(prompt="Enter password: ")
             success, user, message = self.user_management.login(user.username, password)
         else:
             success, user, message = True, user, "Login successful."
@@ -417,7 +466,12 @@ Before you can start using the shell, you must create a new user.
 * Email: %s
 * Password: %s
 * Default preset: %s
-        """ % (user.username, user.email, "set" if user.password else "Not set", user.default_preset if user.default_preset else "Global default")
+        """ % (
+            user.username,
+            user.email,
+            "set" if user.password else "Not set",
+            user.default_preset if user.default_preset else "Global default",
+        )
         util.print_markdown(output)
 
     def action_user_show(self, username=None):
@@ -596,7 +650,10 @@ Before you can start using the shell, you must create a new user.
                 if alias == self.backend.system_message_alias:
                     alias_string += f" {constants.ACTIVE_ITEM_INDICATOR}"
                 alias_list.append(alias_string)
-            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (self.backend.system_message, "\n".join(sorted(alias_list)))
+            output = "## System message:\n\n%s\n\n## Available aliases:\n\n%s" % (
+                self.backend.system_message,
+                "\n".join(sorted(alias_list)),
+            )
             util.print_markdown(output)
 
     def command_max_submission_tokens(self, max_submission_tokens=None):
@@ -620,7 +677,12 @@ Before you can start using the shell, you must create a new user.
             {COMMAND}
             {COMMAND} 256
         """
-        return self.get_set_backend_setting("int", "max_submission_tokens", max_submission_tokens, min=constants.OPEN_AI_MIN_SUBMISSION_TOKENS)
+        return self.get_set_backend_setting(
+            "int",
+            "max_submission_tokens",
+            max_submission_tokens,
+            min=constants.OPEN_AI_MIN_SUBMISSION_TOKENS,
+        )
 
     def command_providers(self, arg):
         """
@@ -630,7 +692,10 @@ Before you can start using the shell, you must create a new user.
             {COMMAND}
         """
         self.rebuild_completions()
-        provider_plugins = [f"* {provider.display_name()}" for provider in self.backend.provider_manager.provider_plugins.values()]
+        provider_plugins = [
+            f"* {provider.display_name()}"
+            for provider in self.backend.provider_manager.provider_plugins.values()
+        ]
         util.print_markdown("## Providers:\n\n%s" % "\n".join(sorted(provider_plugins)))
 
     def command_provider(self, arg):
@@ -662,7 +727,7 @@ Before you can start using the shell, you must create a new user.
                 self.rebuild_completions()
             return success, provider, user_message
         else:
-            return self.command_model('')
+            return self.command_model("")
 
     def command_presets(self, arg):
         """
@@ -692,7 +757,7 @@ Before you can start using the shell, you must create a new user.
         for preset_name, data in presets.items():
             metadata, _customizations = data
             content = f"* **{preset_name}**"
-            if 'description' in metadata:
+            if "description" in metadata:
                 content += f": *{metadata['description']}*"
             if preset_name == self.backend.active_preset_name:
                 content += f" {constants.ACTIVE_ITEM_INDICATOR}"
@@ -745,8 +810,13 @@ Before you can start using the shell, you must create a new user.
             return success, preset, user_message
         metadata, customizations = preset
         util.print_markdown(f"\n## Preset '{preset_name}'")
-        util.print_markdown("### Model customizations\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False))
-        util.print_markdown("### Metadata\n```yaml\n%s\n```" % yaml.dump(metadata, default_flow_style=False))
+        util.print_markdown(
+            "### Model customizations\n```yaml\n%s\n```"
+            % yaml.dump(customizations, default_flow_style=False)
+        )
+        util.print_markdown(
+            "### Metadata\n```yaml\n%s\n```" % yaml.dump(metadata, default_flow_style=False)
+        )
 
     def action_preset_save(self, *args):
         """
@@ -764,11 +834,17 @@ Before you can start using the shell, you must create a new user.
             return False, args, "No preset name specified"
         preset_name = args.pop(0)
         extra_metadata = {}
-        success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
+        success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(
+            preset_name
+        )
         if success:
             existing_metadata, _customizations = existing_preset
-            if self.backend.preset_manager.is_system_preset(existing_metadata['filepath']):
-                return False, args, f"{existing_metadata['name']} is a system preset, and cannot be edited directly"
+            if self.backend.preset_manager.is_system_preset(existing_metadata["filepath"]):
+                return (
+                    False,
+                    args,
+                    f"{existing_metadata['name']} is a system preset, and cannot be edited directly",
+                )
             for key in self.backend.preset_manager.user_metadata_fields():
                 if key in existing_metadata:
                     extra_metadata[key] = existing_metadata[key]
@@ -782,7 +858,9 @@ Before you can start using the shell, you must create a new user.
             else:
                 extra_metadata[metadata_field] = " ".join(rest)
         metadata.update(extra_metadata)
-        success, file_path, user_message = self.backend.preset_manager.save_preset(preset_name, metadata, customizations)
+        success, file_path, user_message = self.backend.preset_manager.save_preset(
+            preset_name, metadata, customizations
+        )
         if success:
             success, presets, user_message = self.backend.preset_manager.load_presets()
             if not success:
@@ -807,11 +885,15 @@ Before you can start using the shell, you must create a new user.
         success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if success:
             metadata, _customizations = preset
-            if self.backend.preset_manager.is_system_preset(metadata['filepath']):
-                return False, preset_name, f"{metadata['name']} is a system preset, and cannot be edited directly"
+            if self.backend.preset_manager.is_system_preset(metadata["filepath"]):
+                return (
+                    False,
+                    preset_name,
+                    f"{metadata['name']} is a system preset, and cannot be edited directly",
+                )
         else:
             return success, preset_name, user_message
-        file_editor(metadata['filepath'])
+        file_editor(metadata["filepath"])
         success, presets, user_message = self.backend.preset_manager.load_presets()
         if not success:
             return success, presets, user_message
@@ -857,11 +939,17 @@ Before you can start using the shell, you must create a new user.
         success, preset, user_message = self.backend.preset_manager.ensure_preset(preset_name)
         if success:
             metadata, _customizations = preset
-            if self.backend.preset_manager.is_system_preset(metadata['filepath']):
-                return False, preset_name, f"{metadata['name']} is a system preset, and cannot be deleted"
+            if self.backend.preset_manager.is_system_preset(metadata["filepath"]):
+                return (
+                    False,
+                    preset_name,
+                    f"{metadata['name']} is a system preset, and cannot be deleted",
+                )
         else:
             return success, preset, user_message
-        confirmation = input(f"Are you sure you want to delete preset {preset_name}? [y/N] ").strip()
+        confirmation = input(
+            f"Are you sure you want to delete preset {preset_name}? [y/N] "
+        ).strip()
         if confirmation.lower() in ["yes", "y"]:
             success, _, user_message = self.backend.preset_manager.delete_preset(preset_name)
             if success:
@@ -903,23 +991,28 @@ Before you can start using the shell, you must create a new user.
         workflows = []
         include_files = []
         for workflow_name in self.backend.workflow_manager.workflows.keys():
-            success, workflow, user_message = self.backend.workflow_manager.load_workflow(workflow_name)
+            success, workflow, user_message = self.backend.workflow_manager.load_workflow(
+                workflow_name
+            )
             if not success:
                 return success, None, user_message
             if len(workflow) > 0:
                 content = f"* **{workflow_name}**"
-                if 'tasks' in workflow[0]:
+                if "tasks" in workflow[0]:
                     name_parts = []
                     for p in workflow:
-                        if 'name' in p:
-                            name_parts.append(p['name'])
+                        if "name" in p:
+                            name_parts.append(p["name"])
                     content += ": *%s*" % ", ".join(name_parts)
                     if not arg or arg.lower() in content.lower():
                         workflows.append(content)
                 else:
                     if not arg or arg.lower() in content.lower():
                         include_files.append(content)
-        util.print_markdown("## Workflows:\n\n%s\n\n## Include files:\n\n%s" % ("\n".join(sorted(workflows)), "\n".join(sorted(include_files))))
+        util.print_markdown(
+            "## Workflows:\n\n%s\n\n## Include files:\n\n%s"
+            % ("\n".join(sorted(workflows)), "\n".join(sorted(include_files)))
+        )
 
     def command_workflow(self, args):
         """
@@ -969,8 +1062,10 @@ Before you can start using the shell, you must create a new user.
         if not args:
             return False, args, "No workflow name specified"
         workflow_name = args.pop(0)
-        workflow_args = ' '.join(args)
-        success, result, user_message = self.backend.workflow_manager.run(workflow_name, workflow_args)
+        workflow_args = " ".join(args)
+        success, result, user_message = self.backend.workflow_manager.run(
+            workflow_name, workflow_args
+        )
         return success, result, user_message
 
     def action_workflow_show(self, workflow_name=None):
@@ -985,7 +1080,9 @@ Before you can start using the shell, you must create a new user.
         """
         if not workflow_name:
             return False, None, "No workflow name specified"
-        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
+        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(
+            workflow_name
+        )
         if not success:
             return success, workflow_file, user_message
         with open(workflow_file) as f:
@@ -1008,7 +1105,9 @@ Before you can start using the shell, you must create a new user.
         except ValueError:
             return False, workflow_names, "Old and new workflow name required"
 
-        success, new_filepath, user_message = self.backend.workflow_manager.copy_workflow(old_name, new_name)
+        success, new_filepath, user_message = self.backend.workflow_manager.copy_workflow(
+            old_name, new_name
+        )
         if not success:
             return success, new_filepath, user_message
         self.rebuild_completions()
@@ -1026,14 +1125,24 @@ Before you can start using the shell, you must create a new user.
         """
         if not workflow_name:
             return False, workflow_name, "No workflow name specified"
-        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
+        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(
+            workflow_name
+        )
         if success:
             filename = workflow_file
             if self.backend.workflow_manager.is_system_workflow(filename):
-                return False, workflow_name, f"{workflow_name} is a system workflow, and cannot be edited directly"
+                return (
+                    False,
+                    workflow_name,
+                    f"{workflow_name} is a system workflow, and cannot be edited directly",
+                )
         else:
-            workflow_name = f"{workflow_name}.yaml" if not workflow_name.endswith('.yaml') else workflow_name
-            filename = os.path.join(self.backend.workflow_manager.user_workflow_dirs[-1], workflow_name)
+            workflow_name = (
+                f"{workflow_name}.yaml" if not workflow_name.endswith(".yaml") else workflow_name
+            )
+            filename = os.path.join(
+                self.backend.workflow_manager.user_workflow_dirs[-1], workflow_name
+            )
         file_editor(filename)
         self.backend.workflow_manager.load_workflows()
         self.rebuild_completions()
@@ -1050,12 +1159,22 @@ Before you can start using the shell, you must create a new user.
         """
         if not workflow_name:
             return False, None, "No workflow name specified"
-        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(workflow_name)
+        success, workflow_file, user_message = self.backend.workflow_manager.ensure_workflow(
+            workflow_name
+        )
         if success and self.backend.workflow_manager.is_system_workflow(workflow_file):
-            return False, workflow_name, f"{workflow_name} is a system workflow, and cannot be deleted"
-        confirmation = input(f"Are you sure you want to delete workflow {workflow_name}? [y/N] ").strip()
+            return (
+                False,
+                workflow_name,
+                f"{workflow_name} is a system workflow, and cannot be deleted",
+            )
+        confirmation = input(
+            f"Are you sure you want to delete workflow {workflow_name}? [y/N] "
+        ).strip()
         if confirmation.lower() in ["yes", "y"]:
-            success, workflow_name, user_message = self.backend.workflow_manager.delete_workflow(workflow_name)
+            success, workflow_name, user_message = self.backend.workflow_manager.delete_workflow(
+                workflow_name
+            )
             if success:
                 self.backend.workflow_manager.load_workflows()
                 self.rebuild_completions()
@@ -1091,7 +1210,7 @@ Before you can start using the shell, you must create a new user.
         for function_name, _filepath in functions.items():
             function_config = self.backend.function_manager.get_function_config(function_name)
             content = f"* **{function_name}**"
-            if 'description' in function_config:
+            if "description" in function_config:
                 content += f": *{function_config['description']}*"
             if not arg or arg.lower() in content.lower():
                 function_names.append(content)

@@ -5,7 +5,7 @@ class TestFunction(Function):
     # Ignore for pytest.
     __test__ = False
 
-    def __call__(self, word: str, repeats: int, enclose_with: str = '') -> dict:
+    def __call__(self, word: str, repeats: int, enclose_with: str = "") -> dict:
         """
         Repeat the provided word a number of times.
 
@@ -22,11 +22,11 @@ class TestFunction(Function):
             repeated_content = " ".join([word] * repeats)
             enclosed_content = f"{enclose_with}{repeated_content}{enclose_with}"
             output = {
-                'result': enclosed_content,
-                'message': f'Repeated the word {word} {repeats} times.',
+                "result": enclosed_content,
+                "message": f"Repeated the word {word} {repeats} times.",
             }
         except Exception as e:
             output = {
-                'error': str(e),
+                "error": str(e),
             }
         return output

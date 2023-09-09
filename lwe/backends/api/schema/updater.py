@@ -22,7 +22,7 @@ class SchemaUpdater:
     def __init__(self, config=None, orm=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.database_url = self.config.get('database')
+        self.database_url = self.config.get("database")
         self.alembic_cfg = self.set_config()
         self.orm = orm or Orm(self.config)
         self.engine = self.orm.engine
@@ -30,19 +30,19 @@ class SchemaUpdater:
         self.log.debug("Initialized SchemaUpdater with database URL: %s", self.database_url)
 
     def set_config(self):
-        ini_file = os.path.join(util.get_file_directory(), 'alembic.ini')
+        ini_file = os.path.join(util.get_file_directory(), "alembic.ini")
         self.log.debug("Creating alembic config using .ini: %s", ini_file)
         alembic_cfg = AlembicConfig(ini_file)
-        alembic_cfg.set_main_option('sqlalchemy.url', self.database_url)
-        alembic_cfg.attributes['config_dir'] = self.config.config_dir
-        alembic_cfg.attributes['config_profile_dir'] = self.config.config_profile_dir
-        alembic_cfg.attributes['data_dir'] = self.config.data_dir
-        alembic_cfg.attributes['data_profile_dir'] = self.config.data_profile_dir
+        alembic_cfg.set_main_option("sqlalchemy.url", self.database_url)
+        alembic_cfg.attributes["config_dir"] = self.config.config_dir
+        alembic_cfg.attributes["config_profile_dir"] = self.config.config_profile_dir
+        alembic_cfg.attributes["data_dir"] = self.config.data_dir
+        alembic_cfg.attributes["data_profile_dir"] = self.config.data_profile_dir
         return alembic_cfg
 
     def is_versioning_initialized(self):
         inspector = inspect(self.engine)
-        initialized = 'alembic_version' in inspector.get_table_names()
+        initialized = "alembic_version" in inspector.get_table_names()
         self.log.debug("Schema versioning initialized: %s", initialized)
         return initialized
 
@@ -66,9 +66,9 @@ class SchemaUpdater:
         if not self.versioning_initialized:
             self.log.info("Initializing alembic versioning")
             self.stamp_database(None)
-        command.upgrade(self.alembic_cfg, 'head')
+        command.upgrade(self.alembic_cfg, "head")
 
-    def stamp_database(self, revision='head'):
+    def stamp_database(self, revision="head"):
         self.log.debug("Stamping database with version: %s", revision)
         command.stamp(self.alembic_cfg, revision)
 
@@ -87,9 +87,14 @@ class SchemaUpdater:
                 message = "Schema is out of date."
                 self.log.warning(message)
                 util.print_status_message(False, message)
-                util.print_status_message(False, "It is highly recommended to backup your database and configruation directory prior to upgrading.")
+                util.print_status_message(
+                    False,
+                    "It is highly recommended to backup your database and configruation directory prior to upgrading.",
+                )
                 util.print_status_message(False, f"Database: {self.database_url}")
-                util.print_status_message(False, f"Configuration directory: {self.config.config_dir}")
+                util.print_status_message(
+                    False, f"Configuration directory: {self.config.config_dir}"
+                )
                 if self.confirm_upgrade():
                     upgrading_message = "Upgrading the schema..."
                     self.log.info(upgrading_message)
@@ -109,7 +114,9 @@ class SchemaUpdater:
             self.log.error("Error during schema update process: %s", str(e))
             traceback_str = traceback.format_exc()
             self.log.error(f"Stack trace: {traceback_str}")
-            util.print_status_message(False, "An error occurred during the schema update process. Please check the logs.")
+            util.print_status_message(
+                False, "An error occurred during the schema update process. Please check the logs."
+            )
             sys.exit(0)
 
     def add_revision(self, name):
@@ -121,8 +128,8 @@ if __name__ == "__main__":
     parser.add_argument("--add", required=True, help="Create a new migration revision", type=str)
     args = parser.parse_args()
     config = Config()
-    config.set('debug.log.enabled', True)
-    config.set('console.log.level', 'debug')
+    config.set("debug.log.enabled", True)
+    config.set("console.log.level", "debug")
     schema_updater = SchemaUpdater(config)
     if args.add:
         schema_updater.add_revision(args.add)

@@ -10,7 +10,6 @@ from lwe.backends.api.repl import ApiRepl
 
 
 def main():
-
     dummy_config = Config()
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -60,10 +59,10 @@ def main():
     parser.add_argument(
         "-i",
         "--input-file",
-        type=argparse.FileType('r'),
+        type=argparse.FileType("r"),
         default=None,
         const=sys.stdin,
-        nargs='?',
+        nargs="?",
         help="Input file (default: read from stdin)",
     )
     parser.add_argument(
@@ -98,11 +97,11 @@ def main():
         help="Arguments to pass to the workflow",
     )
     user_directories = [
-        'template',
-        'preset',
-        'plugin',
-        'workflow',
-        'function',
+        "template",
+        "preset",
+        "plugin",
+        "workflow",
+        "function",
     ]
     for directory in user_directories:
         parser.add_argument(
@@ -129,50 +128,50 @@ def main():
     args = parser.parse_args()
 
     config_args = {
-        'args': args,
+        "args": args,
     }
-    config_dir = args.config_dir or os.environ.get('LWE_CONFIG_DIR', None)
-    config_profile = args.config_profile or os.environ.get('LWE_CONFIG_PROFILE', None)
-    data_dir = args.data_dir or os.environ.get('LWE_DATA_DIR', None)
+    config_dir = args.config_dir or os.environ.get("LWE_CONFIG_DIR", None)
+    config_profile = args.config_profile or os.environ.get("LWE_CONFIG_PROFILE", None)
+    data_dir = args.data_dir or os.environ.get("LWE_DATA_DIR", None)
     if config_dir:
-        config_args['config_dir'] = config_dir
+        config_args["config_dir"] = config_dir
     if config_profile:
-        config_args['profile'] = config_profile
+        config_args["profile"] = config_profile
     if data_dir:
-        config_args['data_dir'] = data_dir
+        config_args["data_dir"] = data_dir
     config = Config(**config_args)
     config.load_from_file()
 
     if args.database is not None:
-        config.set('database', args.database)
-    config.set('shell.streaming', args.stream)
+        config.set("database", args.database)
+    config.set("shell.streaming", args.stream)
     if args.log is not None:
-        config.set('chat.log.enabled', True)
-        config.set('chat.log.filepath', args.log)
+        config.set("chat.log.enabled", True)
+        config.set("chat.log.filepath", args.log)
     if args.debug_log is not None:
-        config.set('debug.log.enabled', True)
-        config.set('debug.log.filepath', args.debug_log)
+        config.set("debug.log.enabled", True)
+        config.set("debug.log.filepath", args.debug_log)
     if args.debug:
-        config.set('log.console.level', 'debug')
-        config.set('debug.log.enabled', True)
-        config.set('debug.log.level', 'debug')
+        config.set("log.console.level", "debug")
+        config.set("debug.log.enabled", True)
+        config.set("debug.log.level", "debug")
     if args.preset is not None:
-        config.set('model.default_preset', args.preset)
+        config.set("model.default_preset", args.preset)
     if args.system_message is not None:
-        config.set('model.default_system_message', args.system_message)
+        config.set("model.default_system_message", args.system_message)
 
     command = None
     if len(args.params) > 0 and args.params[0] in constants.SHELL_ONE_SHOT_COMMANDS:
         command = args.params[0]
 
-    backend = config.get('backend')
-    if backend == 'api':
+    backend = config.get("backend")
+    if backend == "api":
         shell = ApiRepl(config)
     else:
         raise RuntimeError(f"Unknown backend: {backend}")
     shell.setup()
 
-    if command == 'config':
+    if command == "config":
         config_args = " ".join(args.params[1:]) if len(args.params) > 1 else ""
         shell.command_config(config_args)
         exit(0)
@@ -195,7 +194,9 @@ def main():
         exit(0)
     else:
         if args.workflow is not None:
-            success, result, user_message = shell.backend.workflow_manager.run(args.workflow, args.workflow_args)
+            success, result, user_message = shell.backend.workflow_manager.run(
+                args.workflow, args.workflow_args
+            )
             util.print_status_message(success, user_message)
             exit(0)
         else:

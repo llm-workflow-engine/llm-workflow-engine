@@ -18,20 +18,20 @@ from langchain.adapters.openai import convert_dict_to_message
 
 
 class ConversationStorageManager:
-    """Manage conversation storage.
-    """
+    """Manage conversation storage."""
 
-    def __init__(self,
-                 config,
-                 function_manager,
-                 current_user=None,
-                 conversation_id=None,
-                 provider=None,
-                 model_name=None,
-                 preset_name=None,
-                 provider_manager=None,
-                 orm=None,
-                 ):
+    def __init__(
+        self,
+        config,
+        function_manager,
+        current_user=None,
+        conversation_id=None,
+        provider=None,
+        model_name=None,
+        preset_name=None,
+        provider_manager=None,
+        orm=None,
+    ):
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
         self.function_manager = function_manager
@@ -39,10 +39,12 @@ class ConversationStorageManager:
         self.conversation_id = conversation_id
         self.provider = provider
         self.model_name = model_name or constants.API_BACKEND_DEFAULT_MODEL
-        self.preset_name = preset_name or ''
+        self.preset_name = preset_name or ""
         self.provider_manager = provider_manager
         self.function_cache = FunctionCache(self.config, self.function_manager)
-        self.token_manager = TokenManager(self.config, self.provider, self.model_name, self.function_cache)
+        self.token_manager = TokenManager(
+            self.config, self.provider, self.model_name, self.function_cache
+        )
         self.orm = orm or Orm(self.config)
         self.conversation = ConversationManager(config, self.orm)
         self.message = MessageManager(config, self.orm)
@@ -60,14 +62,20 @@ class ConversationStorageManager:
         :returns: success, conversation or response_content, message
         :rtype: tuple
         """
-        self.log.debug(f"Storing conversation messages for conversation: {self.conversation_id or 'new'}")
+        self.log.debug(
+            f"Storing conversation messages for conversation: {self.conversation_id or 'new'}"
+        )
         if self.current_user:
-            success, response, user_message = self.add_new_messages_to_conversation(new_messages, title)
+            success, response, user_message = self.add_new_messages_to_conversation(
+                new_messages, title
+            )
             if not success:
                 return success, response, user_message
             conversation, last_message = response
             if conversation.title:
-                self.log.debug(f"Conversation {conversation.id} already has title: {conversation.title}")
+                self.log.debug(
+                    f"Conversation {conversation.id} already has title: {conversation.title}"
+                )
             else:
                 self.gen_title(conversation)
             return True, conversation, "Conversation updated with new messages"
@@ -84,11 +92,15 @@ class ConversationStorageManager:
         :rtype: Conversation
         """
         if self.conversation_id:
-            success, conversation, message = self.conversation.get_conversation(self.conversation_id)
+            success, conversation, message = self.conversation.get_conversation(
+                self.conversation_id
+            )
             if not success:
                 raise Exception(message)
         else:
-            success, conversation, message = self.conversation.add_conversation(self.current_user.id, title=title)
+            success, conversation, message = self.conversation.add_conversation(
+                self.current_user.id, title=title
+            )
             self.conversation_id = conversation.id
             if not success:
                 raise Exception(message)
@@ -107,10 +119,16 @@ class ConversationStorageManager:
         conversation = self.create_new_conversation_if_needed(title)
         last_message = None
         for m in new_messages:
-            success, last_message, user_message = self.add_message(m['role'], m['message'], m['message_type'], m['message_metadata'])
+            success, last_message, user_message = self.add_message(
+                m["role"], m["message"], m["message_type"], m["message_metadata"]
+            )
             if not success:
                 raise Exception(user_message)
-        return True, (conversation, last_message), f"Added new messages to conversation {conversation.id}"
+        return (
+            True,
+            (conversation, last_message),
+            f"Added new messages to conversation {conversation.id}",
+        )
 
     def add_message(self, role, message, message_type, metadata):
         """
@@ -127,7 +145,16 @@ class ConversationStorageManager:
         :returns: success, added message, user message
         :rtype: tuple
         """
-        return self.message.add_message(self.conversation_id, role, message, message_type, metadata, self.provider.name, self.model_name, self.preset_name)
+        return self.message.add_message(
+            self.conversation_id,
+            role,
+            message,
+            message_type,
+            metadata,
+            self.provider.name,
+            self.model_name,
+            self.preset_name,
+        )
 
     def gen_title_thread(self, conversation_id):
         """
@@ -144,14 +171,19 @@ class ConversationStorageManager:
         conversation_manager = ConversationManager(self.config, self.orm)
         success, messages, user_message = message_manager.get_messages(conversation_id, limit=2)
         if success:
-            user_content = messages[1]['message'][:constants.TITLE_GENERATION_MAX_CHARACTERS]
+            user_content = messages[1]["message"][: constants.TITLE_GENERATION_MAX_CHARACTERS]
             new_messages = [
-                self.message.build_message('system', constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
-                self.message.build_message('user', "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content)),
+                self.message.build_message(
+                    "system", constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT
+                ),
+                self.message.build_message(
+                    "user",
+                    "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content),
+                ),
             ]
             new_messages = util.transform_messages_to_chat_messages(new_messages)
             new_messages = [convert_dict_to_message(m) for m in new_messages]
-            title_provider_name = self.config.get('backend_options.title_generation.provider')
+            title_provider_name = self.config.get("backend_options.title_generation.provider")
             if title_provider_name:
                 provider = self.provider_manager.get_provider_from_name(title_provider_name)
                 if not provider:
@@ -162,10 +194,12 @@ class ConversationStorageManager:
             try:
                 result = llm(new_messages)
                 request = ApiRequest(orm=self.orm)
-                title = request.extract_message_content(result)['message']
-                title = title.replace("\n", ", ").strip().strip('\'"')
+                title = request.extract_message_content(result)["message"]
+                title = title.replace("\n", ", ").strip().strip("'\"")
                 self.log.info(f"Title generated for conversation {conversation_id}: {title}")
-                success, conversation, user_message = conversation_manager.edit_conversation_title(conversation_id, title)
+                success, conversation, user_message = conversation_manager.edit_conversation_title(
+                    conversation_id, title
+                )
                 if success:
                     self.log.debug(f"Title saved for conversation {conversation_id}")
             except ValueError as e:
@@ -182,8 +216,8 @@ class ConversationStorageManager:
         :type conversation: Conversation
         """
         conversation_id = conversation.id
-        database = self.config.get('database')
-        if database.startswith('sqlite') and ':memory:' in database:
+        database = self.config.get("database")
+        if database.startswith("sqlite") and ":memory:" in database:
             # Special case for in memory SQLite, as it cannot access the
             # in memory database from another thread.
             self.gen_title_thread(conversation_id)

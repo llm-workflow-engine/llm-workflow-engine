@@ -3,49 +3,50 @@ import pytest
 import os
 from datetime import datetime
 
-from lwe.core.util import (introspect_commands,
-                           command_with_leader,
-                           merge_dicts,
-                           underscore_to_dash,
-                           dash_to_underscore,
-                           list_to_completion_hash,
-                           float_range_to_completions,
-                           validate_int,
-                           validate_float,
-                           validate_str,
-                           paste_from_clipboard,
-                           print_status_message,
-                           print_markdown,
-                           parse_conversation_ids,
-                           conversation_from_messages,
-                           parse_shell_input,
-                           get_class_method,
-                           output_response,
-                           write_temp_file,
-                           get_package_root,
-                           NoneAttrs,
-                           introspect_command_actions,
-                           dict_to_pretty_json,
-                           get_file_directory,
-                           snake_to_class,
-                           remove_and_create_dir,
-                           create_file,
-                           current_datetime,
-                           filepath_replacements,
-                           get_environment_variable,
-                           get_environment_variable_list,
-                           split_on_delimiter,
-                           remove_prefix,
-                           # get_ansible_module_doc,
-                           # ansible_doc_to_markdown,
-                           is_valid_url,
-                           list_to_markdown_list,
-                           clean_directory,
-                           transform_messages_to_chat_messages,
-                           message_content_from_dict,
-                           extract_preset_configuration_from_request_overrides,
-                           get_preset_name,
-                           )
+from lwe.core.util import (
+    introspect_commands,
+    command_with_leader,
+    merge_dicts,
+    underscore_to_dash,
+    dash_to_underscore,
+    list_to_completion_hash,
+    float_range_to_completions,
+    validate_int,
+    validate_float,
+    validate_str,
+    paste_from_clipboard,
+    print_status_message,
+    print_markdown,
+    parse_conversation_ids,
+    conversation_from_messages,
+    parse_shell_input,
+    get_class_method,
+    output_response,
+    write_temp_file,
+    get_package_root,
+    NoneAttrs,
+    introspect_command_actions,
+    dict_to_pretty_json,
+    get_file_directory,
+    snake_to_class,
+    remove_and_create_dir,
+    create_file,
+    current_datetime,
+    filepath_replacements,
+    get_environment_variable,
+    get_environment_variable_list,
+    split_on_delimiter,
+    remove_prefix,
+    # get_ansible_module_doc,
+    # ansible_doc_to_markdown,
+    is_valid_url,
+    list_to_markdown_list,
+    clean_directory,
+    transform_messages_to_chat_messages,
+    message_content_from_dict,
+    extract_preset_configuration_from_request_overrides,
+    get_preset_name,
+)
 import lwe.core.constants as constants
 from lwe.core.error import NoInputError
 from lwe.core.config import Config
@@ -68,9 +69,9 @@ class TestClass:
         assert result == f"{constants.COMMAND_LEADER}test_command"
 
     def test_merge_dicts(self):
-        dict1 = {'a': 1, 'b': {'c': 2}}
-        dict2 = {'b': {'d': 3}, 'e': 4}
-        expected = {'a': 1, 'b': {'c': 2, 'd': 3}, 'e': 4}
+        dict1 = {"a": 1, "b": {"c": 2}}
+        dict2 = {"b": {"d": 3}, "e": 4}
+        expected = {"a": 1, "b": {"c": 2, "d": 3}, "e": 4}
         assert merge_dicts(dict1, dict2) == expected
 
     def test_underscore_to_dash(self):
@@ -80,10 +81,22 @@ class TestClass:
         assert dash_to_underscore("some-text") == "some_text"
 
     def test_list_to_completion_hash(self):
-        assert list_to_completion_hash([1, 2, 3]) == {'1': None, '2': None, '3': None}
+        assert list_to_completion_hash([1, 2, 3]) == {"1": None, "2": None, "3": None}
 
     def test_float_range_to_completions(self):
-        assert float_range_to_completions(0, 1) == {'0.0': None, '0.1': None, '0.2': None, '0.3': None, '0.4': None, '0.5': None, '0.6': None, '0.7': None, '0.8': None, '0.9': None, '1.0': None}
+        assert float_range_to_completions(0, 1) == {
+            "0.0": None,
+            "0.1": None,
+            "0.2": None,
+            "0.3": None,
+            "0.4": None,
+            "0.5": None,
+            "0.6": None,
+            "0.7": None,
+            "0.8": None,
+            "0.9": None,
+            "1.0": None,
+        }
 
     def test_validate_int(self):
         assert validate_int(5) == 5
@@ -111,7 +124,7 @@ class TestClass:
         assert validate_str("test", max=3) is False
 
     def test_paste_from_clipboard(self):
-        with patch('pyperclip.paste', return_value='test_value'):
+        with patch("pyperclip.paste", return_value="test_value"):
             assert paste_from_clipboard() == "test_value"
 
     def test_print_status_message(self, capsys):
@@ -141,9 +154,9 @@ class TestClass:
 
     def test_conversation_from_messages(self):
         messages = [
-            {'role': 'system', 'message': 'Hello'},
-            {'role': 'user', 'message': 'Hi'},
-            {'role': 'assistant', 'message': 'How can I help you?'}
+            {"role": "system", "message": "Hello"},
+            {"role": "user", "message": "Hi"},
+            {"role": "assistant", "message": "How can I help you?"},
         ]
         conversation_parts = conversation_from_messages(messages)
         assert conversation_parts[0]["role"] == "system"
@@ -163,16 +176,16 @@ class TestClass:
             parse_shell_input("/quit")
         with pytest.raises(NoInputError):
             parse_shell_input("")
-        assert parse_shell_input("?") == ('help', '')
-        assert parse_shell_input("Hello") == (constants.DEFAULT_COMMAND, 'Hello')
-        assert parse_shell_input("/command argument") == ('command', 'argument')
+        assert parse_shell_input("?") == ("help", "")
+        assert parse_shell_input("Hello") == (constants.DEFAULT_COMMAND, "Hello")
+        assert parse_shell_input("/command argument") == ("command", "argument")
 
     class SampleClass:
         def sample_method(self):
             pass
 
     def test_get_class_method(self):
-        method = get_class_method(self.SampleClass, 'sample_method')
+        method = get_class_method(self.SampleClass, "sample_method")
         assert method == self.SampleClass.sample_method
 
     def test_output_response(self, capsys):
@@ -190,14 +203,14 @@ class TestClass:
 
     def test_write_temp_file(self):
         input_data = "test content"
-        temp_path = write_temp_file(input_data=input_data, suffix='txt')
-        with open(temp_path, 'r') as f:
+        temp_path = write_temp_file(input_data=input_data, suffix="txt")
+        with open(temp_path, "r") as f:
             content = f.read()
         assert content == input_data
         os.remove(temp_path)
 
     def test_get_package_root(self):
-        config = Config(profile='test')
+        config = Config(profile="test")
         package_root = get_package_root(config)
         assert package_root.endswith("lwe")
 
@@ -245,7 +258,7 @@ class TestClass:
         filepath = create_file(directory, filename, content)
         assert filepath == os.path.join(directory, filename)
         assert os.path.isfile(filepath)
-        with open(os.path.join(directory, filename), 'r') as f:
+        with open(os.path.join(directory, filename), "r") as f:
             assert f.read() == content
         os.remove(filepath)
 
@@ -254,7 +267,7 @@ class TestClass:
         assert isinstance(result, datetime)
 
     def test_filepath_replacements(self):
-        config = Config(profile='test')
+        config = Config(profile="test")
         filepath = "$HOME/$CONFIG_DIR/$DATA_DIR/$PROFILE"
         result = filepath_replacements(filepath, config)
         assert result == f"{os.path.expanduser('~user')}/{config.config_dir}/{config.data_dir}/test"
@@ -263,7 +276,9 @@ class TestClass:
         monkeypatch.setenv("LWE_TEST_VAR", "test_value")
         assert get_environment_variable("test_var") == "test_value"
         assert get_environment_variable("non_existent_var") is None
-        assert get_environment_variable("non_existent_var", default="default_value") == "default_value"
+        assert (
+            get_environment_variable("non_existent_var", default="default_value") == "default_value"
+        )
 
     def test_get_environment_variable_list(self, monkeypatch):
         monkeypatch.setenv("LWE_TEST_VAR", "value1:value2:value3")
@@ -271,7 +286,11 @@ class TestClass:
 
     def test_split_on_delimiter(self):
         assert split_on_delimiter("value1, value2, value3") == ["value1", "value2", "value3"]
-        assert split_on_delimiter("value1:value2:value3", delimiter=":") == ["value1", "value2", "value3"]
+        assert split_on_delimiter("value1:value2:value3", delimiter=":") == [
+            "value1",
+            "value2",
+            "value3",
+        ]
 
     def test_remove_prefix(self):
         assert remove_prefix("prefix_text", "prefix_") == "text"
@@ -281,15 +300,21 @@ class TestClass:
         assert not is_valid_url("invalid_url")
 
     def test_list_to_markdown_list(self):
-        assert list_to_markdown_list(["value1", "value2", "value3"]) == "  * value1\n  * value2\n  * value3"
-        assert list_to_markdown_list(["value1", "value2", "value3"], indent=4) == "    * value1\n    * value2\n    * value3"
+        assert (
+            list_to_markdown_list(["value1", "value2", "value3"])
+            == "  * value1\n  * value2\n  * value3"
+        )
+        assert (
+            list_to_markdown_list(["value1", "value2", "value3"], indent=4)
+            == "    * value1\n    * value2\n    * value3"
+        )
 
     def test_clean_directory(self, tmpdir):
         filepath = os.path.join(tmpdir, "test_file.txt")
         filepath2 = os.path.join(tmpdir, "test_file2.txt")
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             f.write("test content")
-        with open(filepath2, 'w') as f:
+        with open(filepath2, "w") as f:
             f.write("test content2")
         clean_directory(tmpdir)
         assert not os.path.isfile(filepath)
@@ -297,34 +322,48 @@ class TestClass:
 
     def test_transform_messages_to_chat_messages(self):
         messages = [
-            {'role': 'user', 'message': 'Hello', 'message_type': 'content'},
-            {'role': 'assistant', 'message': 'Hi', 'message_type': 'content'},
-            {'role': 'assistant', 'message': {'name': 'function_name', 'arguments': {}}, 'message_type': 'function_call'}
+            {"role": "user", "message": "Hello", "message_type": "content"},
+            {"role": "assistant", "message": "Hi", "message_type": "content"},
+            {
+                "role": "assistant",
+                "message": {"name": "function_name", "arguments": {}},
+                "message_type": "function_call",
+            },
         ]
         result = transform_messages_to_chat_messages(messages)
-        assert result[0]['role'] == 'user'
-        assert result[0]['content'] == 'Hello'
-        assert result[1]['role'] == 'assistant'
-        assert result[1]['content'] == 'Hi'
-        assert result[2]['role'] == 'assistant'
-        assert result[2]['content'] == ''
-        assert result[2]['function_call'] == {'name': 'function_name', 'arguments': '{}'}
+        assert result[0]["role"] == "user"
+        assert result[0]["content"] == "Hello"
+        assert result[1]["role"] == "assistant"
+        assert result[1]["content"] == "Hi"
+        assert result[2]["role"] == "assistant"
+        assert result[2]["content"] == ""
+        assert result[2]["function_call"] == {"name": "function_name", "arguments": "{}"}
 
     def test_message_content_from_dict(self):
-        message = {'content': 'Hello', 'message_type': 'content'}
-        assert message_content_from_dict(message) == 'Hello'
-        message = {'content': '', 'function_call': {'name': 'function_name', 'arguments': {}}, 'message_type': 'function_call'}
+        message = {"content": "Hello", "message_type": "content"}
+        assert message_content_from_dict(message) == "Hello"
+        message = {
+            "content": "",
+            "function_call": {"name": "function_name", "arguments": {}},
+            "message_type": "function_call",
+        }
         assert message_content_from_dict(message) == '{"name": "function_name", "arguments": {}}'
 
     def test_extract_preset_configuration_from_request_overrides(self):
-        request_overrides = {'preset': 'preset1', 'preset_overrides': {'key': 'value'}, 'activate_preset': True}
-        success, response, _user_message = extract_preset_configuration_from_request_overrides(request_overrides)
+        request_overrides = {
+            "preset": "preset1",
+            "preset_overrides": {"key": "value"},
+            "activate_preset": True,
+        }
+        success, response, _user_message = extract_preset_configuration_from_request_overrides(
+            request_overrides
+        )
         assert success
-        assert response[0] == 'preset1'
-        assert response[1] == {'key': 'value'}
+        assert response[0] == "preset1"
+        assert response[1] == {"key": "value"}
         assert response[2] is True
 
     def test_get_preset_name(self):
-        preset = ({'name': 'preset1'}, {'key': 'value'})
-        assert get_preset_name(preset) == 'preset1'
+        preset = ({"name": "preset1"}, {"key": "value"})
+        assert get_preset_name(preset) == "preset1"
         assert get_preset_name(None) is None

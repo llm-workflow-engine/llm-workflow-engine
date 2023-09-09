@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 
+
 class PluginBase(ABC):
     def __init__(self, config=None):
         self.config = config or Config()
@@ -10,12 +11,12 @@ class PluginBase(ABC):
 
     @property
     def plugin_type(self):
-        return 'plugin'
+        return "plugin"
 
     @property
     def description(self):
         if self.__class__.__doc__:
-            return self.__class__.__doc__.strip().split('\n')[0]
+            return self.__class__.__doc__.strip().split("\n")[0]
         return ""
 
     def set_name(self, name):
@@ -46,8 +47,8 @@ class PluginBase(ABC):
             return False, None, e
         return True, result, result_string
 
-class Plugin(PluginBase):
 
+class Plugin(PluginBase):
     @abstractmethod
     def setup(self):
         pass

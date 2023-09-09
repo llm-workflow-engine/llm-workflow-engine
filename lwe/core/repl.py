@@ -10,6 +10,7 @@ import pyperclip
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
+
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import NestedCompleter, PathCompleter
 from prompt_toolkit.shortcuts import CompleteStyle
@@ -29,11 +30,14 @@ from lwe.core.editor import file_editor, pipe_editor
 # to start commands with a special character.
 # It would also be possible to subclass NesteredCompleter and override
 # the get_completions() method, but that feels more brittle.
-document._FIND_WORD_RE = re.compile(r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\.\s]+)")
+document._FIND_WORD_RE = re.compile(
+    r"([a-zA-Z0-9-" + constants.COMMAND_LEADER + r"]+|[^a-zA-Z0-9_\.\s]+)"
+)
 # I think this 'better' regex should work, but it's not.
 # document._FIND_WORD_RE = re.compile(r"(\/|\/?[a-zA-Z0-9_]+|[^a-zA-Z0-9_\s]+)")
 
-class Repl():
+
+class Repl:
     """
     A shell interpreter that serves as a front end to the backend classes
     """
@@ -41,7 +45,10 @@ class Repl():
     intro = "Provide a prompt, or type %shelp or ? to list commands." % constants.COMMAND_LEADER
     prompt = "> "
     prompt_prefix = ""
-    doc_header = "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help" % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
+    doc_header = (
+        "Documented commands type %shelp [command without %s] (e.g. /help ask) for detailed help"
+        % (constants.COMMAND_LEADER, constants.COMMAND_LEADER)
+    )
 
     # our stuff
     prompt_number = 0
@@ -64,9 +71,8 @@ class Repl():
     def initialize_repl(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.debug = self.config.get('log.console.level').lower() == 'debug'
+        self.debug = self.config.get("log.console.level").lower() == "debug"
         self._set_logging()
-
 
     def reload_repl(self):
         util.print_status_message(True, "Reloading configuration...")
@@ -79,7 +85,7 @@ class Repl():
         self.backend.terminate_stream(_signal, _frame)
 
     def catch_ctrl_c(self, signum, _frame):
-        self.log.debug(f'Ctrl-c hit: {signum}')
+        self.log.debug(f"Ctrl-c hit: {signum}")
         sig = util.is_windows and signal.SIGBREAK or signal.SIGUSR1
         os.kill(os.getpid(), sig)
 
@@ -104,7 +110,7 @@ class Repl():
         self.commands.extend(self.get_plugin_commands())
         self.dashed_commands = [util.underscore_to_dash(command) for command in self.commands]
         self.dashed_commands.sort()
-        self.all_commands = self.dashed_commands + ['help']
+        self.all_commands = self.dashed_commands + ["help"]
         self.all_commands.sort()
 
     def get_custom_shell_completions(self):
@@ -121,38 +127,54 @@ class Repl():
         commands_with_leader = {}
         for command in self.all_commands:
             commands_with_leader[util.command_with_leader(command)] = None
-        config_args = sorted(['edit', 'files', 'profile', 'runtime'] + list(self.config.get().keys()) + self.config.properties)
-        commands_with_leader[util.command_with_leader('config')] = util.list_to_completion_hash(config_args)
-        commands_with_leader[util.command_with_leader('help')] = util.list_to_completion_hash(self.dashed_commands)
-        for command in ['file', 'log']:
+        config_args = sorted(
+            ["edit", "files", "profile", "runtime"]
+            + list(self.config.get().keys())
+            + self.config.properties
+        )
+        commands_with_leader[util.command_with_leader("config")] = util.list_to_completion_hash(
+            config_args
+        )
+        commands_with_leader[util.command_with_leader("help")] = util.list_to_completion_hash(
+            self.dashed_commands
+        )
+        for command in ["file", "log"]:
             commands_with_leader[util.command_with_leader(command)] = PathCompleter()
         template_completions = util.list_to_completion_hash(self.backend.template_manager.templates)
-        commands_with_leader[util.command_with_leader('template')] = {c: template_completions for c in self.get_command_actions('template', dashed=True)}
+        commands_with_leader[util.command_with_leader("template")] = {
+            c: template_completions for c in self.get_command_actions("template", dashed=True)
+        }
         self.base_shell_completions = commands_with_leader
 
     def rebuild_completions(self):
         self.set_base_shell_completions()
-        completions = util.merge_dicts(self.base_shell_completions, self.get_custom_shell_completions())
+        completions = util.merge_dicts(
+            self.base_shell_completions, self.get_custom_shell_completions()
+        )
         completions = self.get_plugin_shell_completions(completions)
         self.command_completer = NestedCompleter.from_nested_dict(completions)
 
     def get_shell_history(self):
-        history_file = self.config.get('shell.history_file')
+        history_file = self.config.get("shell.history_file")
         if history_file:
             return FileHistory(history_file)
 
     def get_styles(self):
-        style = Style.from_dict({
-            'prompt': 'bold',
-            'completion-menu.completion': 'bg:#008888 #ffffff',
-            'completion-menu.completion.current': 'bg:#00aaaa #000000',
-            'scrollbar.background': 'bg:#88aaaa',
-            'scrollbar.button': 'bg:#222222',
-        })
+        style = Style.from_dict(
+            {
+                "prompt": "bold",
+                "completion-menu.completion": "bg:#008888 #ffffff",
+                "completion-menu.completion.current": "bg:#00aaaa #000000",
+                "scrollbar.background": "bg:#88aaaa",
+                "scrollbar.button": "bg:#222222",
+            }
+        )
         return style
 
     def run_template(self, template_name, substitutions=None):
-        success, response, user_message = self.backend.run_template_setup(template_name, substitutions)
+        success, response, user_message = self.backend.run_template_setup(
+            template_name, substitutions
+        )
         if not success:
             return success, response, user_message
         message, overrides = response
@@ -162,8 +184,10 @@ class Repl():
         response = self.default(message, **overrides)
         return response
 
-    def edit_run_template(self, template_content, suffix='md'):
-        template_name, filepath = self.backend.template_manager.make_temp_template(template_content, suffix)
+    def edit_run_template(self, template_content, suffix="md"):
+        template_name, filepath = self.backend.template_manager.make_temp_template(
+            template_content, suffix
+        )
         file_editor(filepath)
         response = self.run_template(template_name)
         self.backend.template_manager.remove_temp_template(template_name)
@@ -180,8 +204,15 @@ class Repl():
             self.log.debug(f"Collecting variable values for: {template_name}")
             for variable in user_variables:
                 substitutions[variable] = input(f"    {variable}: ").strip()
-                self.log.debug(f"Collected variable {variable} for template {template_name}: {substitutions[variable]}")
-        substitutions = util.merge_dicts(substitutions, self.backend.template_manager.process_template_builtin_variables(template_name, variables))
+                self.log.debug(
+                    f"Collected variable {variable} for template {template_name}: {substitutions[variable]}"
+                )
+        substitutions = util.merge_dicts(
+            substitutions,
+            self.backend.template_manager.process_template_builtin_variables(
+                template_name, variables
+            ),
+        )
         return substitutions
 
     def get_command_help_brief(self, command):
@@ -198,12 +229,17 @@ class Repl():
             method, _obj = self.get_command_method(command)
             doc = method.__doc__
             if doc:
-                doc = doc.replace("{COMMAND}", "%s%s" % (constants.COMMAND_LEADER, util.underscore_to_dash(command)))
+                doc = doc.replace(
+                    "{COMMAND}",
+                    "%s%s" % (constants.COMMAND_LEADER, util.underscore_to_dash(command)),
+                )
                 for sub in constants.HELP_TOKEN_VARIABLE_SUBSTITUTIONS:
                     try:
                         const_value = getattr(constants, sub)
                     except AttributeError:
-                        raise AttributeError(f"'{sub}' in HELP_TOKEN_VARIABLE_SUBSTITUTIONS is not a valid constant")
+                        raise AttributeError(
+                            f"'{sub}' in HELP_TOKEN_VARIABLE_SUBSTITUTIONS is not a valid constant"
+                        )
                     doc = doc.replace("{%s}" % sub, str(const_value))
                 return textwrap.dedent(doc)
 
@@ -215,35 +251,36 @@ class Repl():
             print(self.get_command_help_brief(command))
         print("")
 
-    def help(self, command=''):
+    def help(self, command=""):
         if command:
             help_doc = self.get_command_help(command)
             if help_doc:
                 print(help_doc)
             else:
-                print("\nNo help for '%s'\n\nAvailable commands: %s" % (command, ", ".join(self.dashed_commands)))
+                print(
+                    "\nNo help for '%s'\n\nAvailable commands: %s"
+                    % (command, ", ".join(self.dashed_commands))
+                )
         else:
             self.help_commands()
 
     def _set_logging(self):
-        if self.config.get('chat.log.enabled'):
-            log_file = self.config.get('chat.log.filepath')
+        if self.config.get("chat.log.enabled"):
+            log_file = self.config.get("chat.log.filepath")
             if log_file:
                 if not self._open_log(log_file):
                     print("\nERROR: could not open log file: %s" % log_file)
                     sys.exit(0)
 
-    def _set_prompt(self, prefix=''):
+    def _set_prompt(self, prefix=""):
         self.prompt = f"{self.prompt_prefix}{self.prompt_number}> "
 
-    def _set_prompt_prefix(self, prefix=''):
+    def _set_prompt_prefix(self, prefix=""):
         self.prompt_prefix = prefix
 
     def _update_message_map(self):
         self.prompt_number += 1
-        self.message_map[self.prompt_number] = (
-            self.backend.conversation_id,
-        )
+        self.message_map[self.prompt_number] = (self.backend.conversation_id,)
         self._set_prompt()
 
     def _write_log(self, prompt, response):
@@ -253,13 +290,11 @@ class Repl():
 
     def _write_log_context(self):
         if self.logfile is not None:
-            self.logfile.write(
-                f"## context {self.backend.conversation_id}\n"
-            )
+            self.logfile.write(f"## context {self.backend.conversation_id}\n")
             self.logfile.flush()
 
     def build_shell_user_prefix(self):
-        return ''
+        return ""
 
     def set_user_prompt(self, user=None):
         prefix = self.build_shell_user_prefix()
@@ -281,7 +316,7 @@ class Repl():
     def setup(self):
         self.configure_backend()
         self.configure_plugins()
-        self.stream = self.config.get('shell.streaming')
+        self.stream = self.config.get("shell.streaming")
         self.backend.template_manager.load_templates()
         self.configure_shell_commands()
         self.configure_commands()
@@ -298,7 +333,7 @@ class Repl():
 
     def _set_title(self, title, conversation=None):
         util.print_markdown("* Setting title...")
-        success, _, message = self.backend.set_title(title, conversation['id'])
+        success, _, message = self.backend.set_title(title, conversation["id"])
         if success:
             return success, conversation, f"Title set to: {conversation['title']}"
         else:
@@ -314,7 +349,9 @@ class Repl():
             if success:
                 util.print_status_message(True, f"Deleted conversation: {label}")
             else:
-                util.print_status_message(False, f"Failed to deleted conversation: {label}, {message}")
+                util.print_status_message(
+                    False, f"Failed to deleted conversation: {label}, {message}"
+                )
 
     def _delete_current_conversation(self):
         util.print_markdown("* Deleting current conversation")
@@ -333,7 +370,11 @@ class Repl():
         try:
             method, klass = self.get_command_action_method(command, action)
         except AttributeError:
-            return False, None, f"Invalid action {action} for {constants.COMMAND_LEADER}{command} command"
+            return (
+                False,
+                None,
+                f"Invalid action {action} for {constants.COMMAND_LEADER}{command} command",
+            )
         action_args.insert(0, klass)
         return method(*action_args)
 
@@ -357,9 +398,7 @@ class Repl():
             {COMMAND}
         """
         self.stream = not self.stream
-        util.print_markdown(
-            f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}."
-        )
+        util.print_markdown(f"* Streaming mode is now {'enabled' if self.stream else 'disabled'}.")
 
     def command_new(self, _):
         """
@@ -403,9 +442,11 @@ class Repl():
                         else:
                             if item <= len(history_list):
                                 conversation = history_list[item - 1]
-                                self._delete_conversation(conversation['id'], conversation['title'])
+                                self._delete_conversation(conversation["id"], conversation["title"])
                             else:
-                                util.print_status_message(False, f"Cannont delete history item {item}, does not exist")
+                                util.print_status_message(
+                                    False, f"Cannont delete history item {item}, does not exist"
+                                )
                 else:
                     return success, conversations, message
             else:
@@ -442,7 +483,7 @@ class Repl():
         limit = constants.DEFAULT_HISTORY_LIMIT
         offset = 0
         if arg:
-            args = arg.split(' ')
+            args = arg.split(" ")
             if len(args) > 2:
                 util.print_markdown("* Invalid number of arguments, must be limit [offest]")
                 return
@@ -461,7 +502,23 @@ class Repl():
         success, history, message = self._fetch_history(limit=limit, offset=offset)
         if success:
             history_list = [h for h in history.values()]
-            util.print_markdown("## Recent history:\n\n%s" % "\n".join(["1. %s: %s (%s)%s" % (h['created_time'].strftime("%Y-%m-%d %H:%M"), h['title'] or constants.NO_TITLE_TEXT, h['id'], f" {constants.ACTIVE_ITEM_INDICATOR}" if h['id'] == self.backend.conversation_id else '') for h in history_list]))
+            util.print_markdown(
+                "## Recent history:\n\n%s"
+                % "\n".join(
+                    [
+                        "1. %s: %s (%s)%s"
+                        % (
+                            h["created_time"].strftime("%Y-%m-%d %H:%M"),
+                            h["title"] or constants.NO_TITLE_TEXT,
+                            h["id"],
+                            f" {constants.ACTIVE_ITEM_INDICATOR}"
+                            if h["id"] == self.backend.conversation_id
+                            else "",
+                        )
+                        for h in history_list
+                    ]
+                )
+            )
         else:
             return success, history, message
 
@@ -529,7 +586,7 @@ class Repl():
                 pass
             kwargs = {}
             if id:
-                kwargs['limit'] = id
+                kwargs["limit"] = id
             success, conversations, message = self._fetch_history(**kwargs)
             if success:
                 history_list = list(conversations.values())
@@ -538,21 +595,34 @@ class Repl():
                     if id <= len(history_list):
                         conversation = history_list[id - 1]
                     else:
-                        return False, conversations, "Cannot set title on history item %d, does not exist" % id
-                    new_title = input("Enter new title for '%s': " % conversation["title"] or constants.NO_TITLE_TEXT)
+                        return (
+                            False,
+                            conversations,
+                            "Cannot set title on history item %d, does not exist" % id,
+                        )
+                    new_title = input(
+                        "Enter new title for '%s': " % conversation["title"]
+                        or constants.NO_TITLE_TEXT
+                    )
                 else:
                     if self.backend.conversation_id:
                         if self.backend.conversation_id in conversations:
                             conversation = conversations[self.backend.conversation_id]
                         else:
-                            success, conversation_data, message = self.backend.get_conversation(self.backend.conversation_id)
+                            success, conversation_data, message = self.backend.get_conversation(
+                                self.backend.conversation_id
+                            )
                             if not success:
                                 return success, conversation_data, message
-                            conversation = conversation_data['conversation']
+                            conversation = conversation_data["conversation"]
                         new_title = arg
                     else:
-                        return False, None, "Current conversation has no title, you must send information first"
-                conversation['title'] = new_title
+                        return (
+                            False,
+                            None,
+                            "Current conversation has no title, you must send information first",
+                        )
+                conversation["title"] = new_title
                 return self._set_title(new_title, conversation)
             else:
                 return success, conversations, message
@@ -560,11 +630,18 @@ class Repl():
             if self.backend.conversation_id:
                 success, conversation_data, message = self.backend.get_conversation()
                 if success:
-                    util.print_markdown("* Title: %s" % conversation_data['conversation']['title'] or constants.NO_TITLE_TEXT)
+                    util.print_markdown(
+                        "* Title: %s" % conversation_data["conversation"]["title"]
+                        or constants.NO_TITLE_TEXT
+                    )
                 else:
                     return success, conversation_data, message
             else:
-                return False, None, "Current conversation has no title, you must send information first"
+                return (
+                    False,
+                    None,
+                    "Current conversation has no title, you must send information first",
+                )
 
     def command_chat(self, arg):
         """
@@ -593,7 +670,7 @@ class Repl():
                     return False, None, f"Invalid chat history item {arg}, must be in integer"
                 kwargs = {}
                 if id:
-                    kwargs['limit'] = id
+                    kwargs["limit"] = id
                 success, conversations, message = self._fetch_history(**kwargs)
                 if success:
                     history_list = list(conversations.values())
@@ -601,7 +678,11 @@ class Repl():
                         conversation = history_list[id - 1]
                         title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
-                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                        return (
+                            False,
+                            conversations,
+                            f"Cannot retrieve chat content on history item {id}, does not exist",
+                        )
                 else:
                     return success, conversations, message
         else:
@@ -653,7 +734,7 @@ class Repl():
                     return False, None, f"Invalid chat history item {arg}, must be in integer"
                 kwargs = {}
                 if id:
-                    kwargs['limit'] = id
+                    kwargs["limit"] = id
                 success, conversations, message = self._fetch_history(**kwargs)
                 if success:
                     history_list = list(conversations.values())
@@ -661,7 +742,11 @@ class Repl():
                         conversation = history_list[id - 1]
                         title = conversation["title"] or constants.NO_TITLE_TEXT
                     else:
-                        return False, conversations, f"Cannot retrieve chat content on history item {id}, does not exist"
+                        return (
+                            False,
+                            conversations,
+                            f"Cannot retrieve chat content on history item {id}, does not exist",
+                        )
                 else:
                     return success, conversations, message
         else:
@@ -703,14 +788,18 @@ class Repl():
 
         request_overrides = request_overrides or {}
         if self.stream:
-            request_overrides['print_stream'] = True
+            request_overrides["print_stream"] = True
             print("")
-            success, response, user_message = self.backend.ask_stream(input, request_overrides=request_overrides)
+            success, response, user_message = self.backend.ask_stream(
+                input, request_overrides=request_overrides
+            )
             print("\n")
             if not success:
                 return success, response, user_message
         else:
-            success, response, user_message = self.backend.ask(input, request_overrides=request_overrides)
+            success, response, user_message = self.backend.ask(
+                input, request_overrides=request_overrides
+            )
             if success:
                 print("")
                 util.print_markdown(response)
@@ -730,7 +819,9 @@ class Repl():
             {COMMAND}
         """
         ctrl_sequence = "^z" if util.is_windows else "^d"
-        util.print_markdown(f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end.")
+        util.print_markdown(
+            f"* Reading prompt, hit {ctrl_sequence} when done, or write line with /end."
+        )
 
         prompt = ""
         while True:
@@ -759,7 +850,7 @@ class Repl():
             {COMMAND}
             {COMMAND} some text to start with
         """
-        output = pipe_editor(args, suffix='md')
+        output = pipe_editor(args, suffix="md")
         print(output)
         self.default(output)
 
@@ -855,7 +946,9 @@ class Repl():
                 if path == self.backend.provider.model_property_name:
                     success, value, user_message = self.backend.set_model(value)
                 else:
-                    success, value, user_message = self.backend.provider.set_customization_value(path, value)
+                    success, value, user_message = self.backend.provider.set_customization_value(
+                        path, value
+                    )
                 if success:
                     model_name = value.get(self.backend.provider.model_property_name, "unknown")
                     self.backend.model = model_name
@@ -864,7 +957,9 @@ class Repl():
                 success, value, user_message = self.backend.provider.get_customization_value(arg)
                 if success:
                     if isinstance(value, dict):
-                        util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(value, default_flow_style=False))
+                        util.print_markdown(
+                            "\n```yaml\n%s\n```" % yaml.dump(value, default_flow_style=False)
+                        )
                     else:
                         util.print_markdown(f"* {arg} = {value}")
                 else:
@@ -873,8 +968,14 @@ class Repl():
             customizations = self.backend.provider.get_customizations()
             model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
             provider_name = self.backend.provider.display_name()
-            customizations_data = "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False) if customizations else ''
-            util.print_markdown("## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data))
+            customizations_data = (
+                "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False)
+                if customizations
+                else ""
+            )
+            util.print_markdown(
+                "## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data)
+            )
 
     def command_templates(self, arg):
         """
@@ -909,7 +1010,7 @@ class Repl():
             except yaml.parser.ParserError:
                 util.print_status_message(False, f"Failed to parse template: {template_name}")
                 continue
-            if 'description' in source.metadata:
+            if "description" in source.metadata:
                 content += f": *{source.metadata['description']}*"
             if not arg or arg.lower() in content.lower():
                 templates.append(content)
@@ -957,12 +1058,16 @@ class Repl():
         :param template_name: The name of the template.
         :type template_name: str
         """
-        success, source, user_message = self.backend.template_manager.get_template_source(template_name)
+        success, source, user_message = self.backend.template_manager.get_template_source(
+            template_name
+        )
         if not success:
             return success, source, user_message
         util.print_markdown(f"\n## Template '{template_name}'")
         if source.metadata:
-            util.print_markdown("\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False))
+            util.print_markdown(
+                "\n```yaml\n%s\n```" % yaml.dump(source.metadata, default_flow_style=False)
+            )
         util.print_markdown(f"\n\n{source.content}")
 
     def action_template_edit(self, template_name):
@@ -972,7 +1077,11 @@ class Repl():
         :param template_name: The name of the template.
         :type template_name: str
         """
-        success, filepath, user_message = self.backend.template_manager.get_template_editable_filepath(template_name)
+        (
+            success,
+            filepath,
+            user_message,
+        ) = self.backend.template_manager.get_template_editable_filepath(template_name)
         if not success:
             return success, filepath, user_message
         file_editor(filepath)
@@ -993,7 +1102,9 @@ class Repl():
         except ValueError:
             return False, template_names, "Old and new template name required"
 
-        success, new_filepath, user_message = self.backend.template_manager.copy_template(old_name, new_name)
+        success, new_filepath, user_message = self.backend.template_manager.copy_template(
+            old_name, new_name
+        )
         if not success:
             return success, new_filepath, user_message
         self.rebuild_completions()
@@ -1006,10 +1117,14 @@ class Repl():
         :param template_name: The name of the template to delete.
         :type template_name: str
         """
-        success, filename, user_message = self.backend.template_manager.template_can_delete(template_name)
+        success, filename, user_message = self.backend.template_manager.template_can_delete(
+            template_name
+        )
         if not success:
             return success, filename, user_message
-        confirmation = input(f"Are you sure you want to delete template {template_name}? [y/N] ").strip()
+        confirmation = input(
+            f"Are you sure you want to delete template {template_name}? [y/N] "
+        ).strip()
         if confirmation.lower() in ["yes", "y"]:
             return self.backend.template_manager.template_delete(filename)
         else:
@@ -1022,7 +1137,11 @@ class Repl():
         :param template_name: The name of the template.
         :type template_name: str
         """
-        success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
+        (
+            success,
+            response,
+            user_message,
+        ) = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
         _template, variables, substitutions = response
@@ -1038,7 +1157,11 @@ class Repl():
         response = self.action_template_show(template_name)
         if response:
             return response
-        success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
+        (
+            success,
+            response,
+            user_message,
+        ) = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
         _template, variables, _substitutions = response
@@ -1052,7 +1175,9 @@ class Repl():
         :param template_name: The name of the template.
         :type template_name: str
         """
-        success, template_content, user_message = self.backend.template_manager.render_template(template_name)
+        success, template_content, user_message = self.backend.template_manager.render_template(
+            template_name
+        )
         if not success:
             return success, template_name, user_message
         return self.edit_run_template(template_content)
@@ -1069,7 +1194,11 @@ class Repl():
         response = self.action_template_show(template_name)
         if response:
             return response
-        success, response, user_message = self.backend.template_manager.get_template_variables_substitutions(template_name)
+        (
+            success,
+            response,
+            user_message,
+        ) = self.backend.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, template_name, user_message
         template, variables, _substitutions = response
@@ -1139,11 +1268,15 @@ class Repl():
             self.config.config_file or "None",
             self.config.data_dir,
             self.config.data_profile_dir,
-            self.config.get('database'),
+            self.config.get("database"),
             util.list_to_markdown_list(self.backend.template_manager.user_template_dirs),
             util.list_to_markdown_list(self.backend.preset_manager.user_preset_dirs),
-            util.list_to_markdown_list(self.backend.workflow_manager.user_workflow_dirs) if getattr(self.backend, "workflow_manager", None) else "",
-            util.list_to_markdown_list(self.backend.function_manager.user_function_dirs) if getattr(self.backend, "function_manager", None) else "",
+            util.list_to_markdown_list(self.backend.workflow_manager.user_workflow_dirs)
+            if getattr(self.backend, "workflow_manager", None)
+            else "",
+            util.list_to_markdown_list(self.backend.function_manager.user_function_dirs)
+            if getattr(self.backend, "function_manager", None)
+            else "",
         )
         util.print_markdown(output)
 
@@ -1174,14 +1307,21 @@ class Repl():
         util.print_markdown(output)
 
     def show_section_config(self, section, section_data):
-        config_data = yaml.dump(section_data, default_flow_style=False) if isinstance(section_data, dict) else section_data
+        config_data = (
+            yaml.dump(section_data, default_flow_style=False)
+            if isinstance(section_data, dict)
+            else section_data
+        )
         output = """
 # Configuration section '%s':
 
 ```
 %s
 ```
-""" % (section, config_data)
+""" % (
+            section,
+            config_data,
+        )
         util.print_markdown(output)
 
     def show_full_config(self):
@@ -1206,15 +1346,15 @@ class Repl():
             if arg in self.config.properties:
                 property = getattr(self.config, arg, None)
                 print(property)
-            if arg == 'edit':
+            if arg == "edit":
                 file_editor(self.config.config_file)
                 self.reload_repl()
                 return True, None, "Reloaded configuration"
-            elif arg == 'files':
+            elif arg == "files":
                 return self.show_files_config()
-            elif arg == 'profile':
+            elif arg == "profile":
                 return self.show_profile_config()
-            elif arg == 'runtime':
+            elif arg == "runtime":
                 return self.show_runtime_config()
             else:
                 section_data = self.config.get(arg)
@@ -1261,7 +1401,7 @@ class Repl():
 
     def run_command(self, command, argument):
         command = util.dash_to_underscore(command)
-        if command == 'help':
+        if command == "help":
             self.help(argument)
         else:
             if command in self.commands:
@@ -1275,7 +1415,7 @@ class Repl():
                 else:
                     util.output_response(response)
             else:
-                print(f'Unknown command: {command}')
+                print(f"Unknown command: {command}")
 
     def cmdloop(self):
         print("")
@@ -1290,7 +1430,7 @@ class Repl():
             )
             try:
                 command, argument = util.parse_shell_input(user_input)
-            except (NoInputError):
+            except NoInputError:
                 continue
             except EOFError:
                 break
@@ -1299,4 +1439,4 @@ class Repl():
                 util.output_response(exec_prompt_pre_result)
             else:
                 self.run_command(command, argument)
-        print('GoodBye!')
+        print("GoodBye!")

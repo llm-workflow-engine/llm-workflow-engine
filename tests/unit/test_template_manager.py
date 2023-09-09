@@ -31,8 +31,8 @@ def test_init(template_manager):
 
 def test_template_builtin_variables(template_manager):
     builtins = template_manager.template_builtin_variables()
-    assert 'clipboard' in builtins
-    assert callable(builtins['clipboard'])
+    assert "clipboard" in builtins
+    assert callable(builtins["clipboard"])
 
 
 def test_ensure_template(template_manager):
@@ -52,29 +52,25 @@ def test_ensure_template(template_manager):
 
 
 def test_extract_metadata_keys(template_manager):
-    metadata = {
-        'title': 'Test Title',
-        'description': 'Test Description',
-        'custom': 'Custom Value'
-    }
-    keys = ['title', 'custom']
+    metadata = {"title": "Test Title", "description": "Test Description", "custom": "Custom Value"}
+    keys = ["title", "custom"]
     metadata, extracted_keys = template_manager.extract_metadata_keys(keys, metadata)
-    assert metadata == {'description': 'Test Description'}
-    assert extracted_keys == {'title': 'Test Title', 'custom': 'Custom Value'}
+    assert metadata == {"description": "Test Description"}
+    assert extracted_keys == {"title": "Test Title", "custom": "Custom Value"}
 
 
 def test_extract_template_run_overrides(template_manager):
     metadata = {
-        'description': 'Test Description',
-        'request_overrides': {
-            'title': 'Test Title',
-            'option': 'value',
+        "description": "Test Description",
+        "request_overrides": {
+            "title": "Test Title",
+            "option": "value",
         },
-        'custom': 'Custom Value'
+        "custom": "Custom Value",
     }
     metadata, overrides = template_manager.extract_template_run_overrides(metadata)
-    assert metadata == {'custom': 'Custom Value'}
-    assert overrides == {'request_overrides': {'title': 'Test Title', 'option': 'value'}}
+    assert metadata == {"custom": "Custom Value"}
+    assert overrides == {"request_overrides": {"title": "Test Title", "option": "value"}}
 
 
 def test_build_message_from_template(template_manager):
@@ -87,17 +83,21 @@ request_overrides:
 Hello, {{ name }}
 """
     make_template_file(template_manager, template_name, template_content)
-    message, overrides = template_manager.build_message_from_template(template_name, {'name': 'John Doe'})
+    message, overrides = template_manager.build_message_from_template(
+        template_name, {"name": "John Doe"}
+    )
     remove_template_file(template_manager, template_name)
-    assert 'Hello, John Doe' in message
-    assert overrides == {'request_overrides': {'title': 'Existent Template'}}
+    assert "Hello, John Doe" in message
+    assert overrides == {"request_overrides": {"title": "Existent Template"}}
 
 
 def test_process_template_builtin_variables(template_manager):
-    variables = ['clipboard']
-    with patch('pyperclip.paste', return_value='test_value'):
-        substitutions = template_manager.process_template_builtin_variables("existent_template.md", variables)
-        assert substitutions == {'clipboard': 'test_value'}
+    variables = ["clipboard"]
+    with patch("pyperclip.paste", return_value="test_value"):
+        substitutions = template_manager.process_template_builtin_variables(
+            "existent_template.md", variables
+        )
+        assert substitutions == {"clipboard": "test_value"}
 
 
 def test_make_user_template_dirs(template_manager, tmpdir):
@@ -136,17 +136,21 @@ def test_get_template_variables_substitutions(template_manager):
     success, source, user_message = template_manager.get_template_source(template_name)
     assert success is False
     template_name = "existent_template.md"
-    template, variables, substitutions = 'test content', ['variable1'], {'variable2': 'value2'}
+    template, variables, substitutions = "test content", ["variable1"], {"variable2": "value2"}
     template_manager.get_template_and_variables = Mock(return_value=(template, variables))
     template_manager.process_template_builtin_variables = Mock(return_value=substitutions)
     make_template_file(template_manager, template_name)
-    success, response, user_message = template_manager.get_template_variables_substitutions(template_name)
+    success, response, user_message = template_manager.get_template_variables_substitutions(
+        template_name
+    )
     remove_template_file(template_manager, template_name)
     assert success is True
     assert response == (template, variables, substitutions)
     assert "Loaded template substitutions" in user_message
     template_manager.get_template_and_variables.assert_called_once_with(template_name)
-    template_manager.process_template_builtin_variables.assert_called_once_with(template_name, variables)
+    template_manager.process_template_builtin_variables.assert_called_once_with(
+        template_name, variables
+    )
 
 
 def test_render_template(template_manager):
@@ -169,12 +173,12 @@ def test_get_template_source(template_manager):
     success, source, user_message = template_manager.get_template_source(template_name)
     remove_template_file(template_manager, template_name)
     assert success is True
-    assert source['value'] == 'one'
+    assert source["value"] == "one"
     assert "Loaded template source" in user_message
 
 
 def test_get_template_editable_filepath(template_manager):
-    success, filename, user_message = template_manager.get_template_editable_filepath('')
+    success, filename, user_message = template_manager.get_template_editable_filepath("")
     assert success is False
     template_name = "missing_template.md"
     success, filename, user_message = template_manager.get_template_editable_filepath(template_name)
@@ -207,7 +211,7 @@ def test_copy_template(template_manager):
 
 
 def test_template_can_delete(template_manager):
-    success, filename, user_message = template_manager.template_can_delete('')
+    success, filename, user_message = template_manager.template_can_delete("")
     assert success is False
     template_name = "missing_template.md"
     success, filename, user_message = template_manager.template_can_delete(template_name)
@@ -249,7 +253,11 @@ def test_remove_temp_template(template_manager):
 
 
 def test_is_system_template(template_manager):
-    system_template_filepath = os.path.join(template_manager.system_template_dirs[0], "existent_template.md")
+    system_template_filepath = os.path.join(
+        template_manager.system_template_dirs[0], "existent_template.md"
+    )
     assert template_manager.is_system_template(system_template_filepath) is True
-    user_template_filepath = os.path.join(template_manager.user_template_dirs[0], "existent_template.md")
+    user_template_filepath = os.path.join(
+        template_manager.user_template_dirs[0], "existent_template.md"
+    )
     assert template_manager.is_system_template(user_template_filepath) is False

@@ -7,10 +7,10 @@ FILE_DIR = path.dirname(path.abspath(path.realpath(__file__)))
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
     install_requirement = f.readlines()
 
-with open(path.join(FILE_DIR, 'lwe', 'version.py')) as f:
+with open(path.join(FILE_DIR, "lwe", "version.py")) as f:
     version = re.match(r'^__version__ = "([\w\.]+)"$', f.read().strip())[1]
 
 setup(
@@ -24,18 +24,18 @@ setup(
     url="https://github.com/llm-workflow-engine/llm-workflow-engine",
     packages=find_packages(),
     package_data={
-        'lwe': [
-            'backends/api/schema/alembic.ini',
-            'backends/api/schema/alembic/*',
-            'backends/api/schema/alembic/**/*',
-            'functions/*',
-            'functions/**/*',
-            'presets/*',
-            'presets/**/*',
-            'templates/*',
-            'templates/**/*',
-            'workflows/*',
-            'workflows/**/*',
+        "lwe": [
+            "backends/api/schema/alembic.ini",
+            "backends/api/schema/alembic/*",
+            "backends/api/schema/alembic/**/*",
+            "functions/*",
+            "functions/**/*",
+            "presets/*",
+            "presets/**/*",
+            "templates/*",
+            "templates/**/*",
+            "workflows/*",
+            "workflows/**/*",
         ],
     },
     install_requires=install_requirement,

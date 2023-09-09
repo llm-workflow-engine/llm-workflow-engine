@@ -6,8 +6,16 @@ import platform
 import lwe.core.constants as constants
 import lwe.core.util as util
 
+
 class Config:
-    def __init__(self, config_dir=None, data_dir=None, profile=constants.DEFAULT_PROFILE, config=None, args=None):
+    def __init__(
+        self,
+        config_dir=None,
+        data_dir=None,
+        profile=constants.DEFAULT_PROFILE,
+        config=None,
+        args=None,
+    ):
         config = config or {}
         self.args = args or util.NoneAttrs()
         self.system = platform.system()
@@ -34,12 +42,12 @@ class Config:
     @property
     def properties(self):
         return [
-            'config_dir',
-            'config_file',
-            'config_profile_dir',
-            'data_dir',
-            'data_profile_dir',
-            'system',
+            "config_dir",
+            "config_file",
+            "config_profile_dir",
+            "data_dir",
+            "data_profile_dir",
+            "system",
         ]
 
     def _default_config_dir(self):
@@ -53,7 +61,10 @@ class Config:
         legacy_config_dir = os.path.join(base_path, constants.LEGACY_DEFAULT_CONFIG_DIR)
         if os.path.exists(legacy_config_dir):
             util.print_status_message(False, f"Using legacy config directory: {legacy_config_dir}")
-            util.print_status_message(False, f"To dismiss this warning, move your configuration to the new default directory: {config_dir}")
+            util.print_status_message(
+                False,
+                f"To dismiss this warning, move your configuration to the new default directory: {config_dir}",
+            )
             return legacy_config_dir
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
@@ -68,7 +79,10 @@ class Config:
         legacy_data_dir = os.path.join(base_path, constants.LEGACY_DEFAULT_CONFIG_DIR)
         if os.path.exists(legacy_data_dir):
             util.print_status_message(False, f"Using legacy data directory: {legacy_data_dir}")
-            util.print_status_message(False, f"To dismiss this warning, move your data to the new default directory: {data_dir}")
+            util.print_status_message(
+                False,
+                f"To dismiss this warning, move your data to the new default directory: {data_dir}",
+            )
             return legacy_data_dir
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
@@ -92,15 +106,18 @@ class Config:
         self._transform_config()
 
     def _transform_config(self):
-        self.set('log.console.level', self.get('log.console.level').upper(), False)
-        self.set('debug.log.level', self.get('debug.log.level').upper(), False)
-        database_setting = self.get('database')
+        self.set("log.console.level", self.get("log.console.level").upper(), False)
+        self.set("debug.log.level", self.get("debug.log.level").upper(), False)
+        database_setting = self.get("database")
         if database_setting:
             database = util.filepath_replacements(database_setting, self)
         else:
-            database = "sqlite:///%s/%s.db" % (self.data_profile_dir, constants.DEFAULT_DATABASE_BASENAME)
-        self.set('database', database, False)
-        for setting, paths in self.get('directories').items():
+            database = "sqlite:///%s/%s.db" % (
+                self.data_profile_dir,
+                constants.DEFAULT_DATABASE_BASENAME,
+            )
+        self.set("database", database, False)
+        for setting, paths in self.get("directories").items():
             adjusted_paths = [util.filepath_replacements(path, self) for path in paths]
             self.set(f"directories.{setting}", adjusted_paths, False)
 

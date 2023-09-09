@@ -20,15 +20,14 @@ class ExtractSentimentTopics(BaseModel):
 
 
 class StoreSentimentAndTopics(Function):
-
     def clean_results(self, results):
-        return [re.sub(r'\W', '_', elem['name'].lower()) for elem in results]
+        return [re.sub(r"\W", "_", elem["name"].lower()) for elem in results]
 
     def get_config(self) -> dict:
         return {
             "name": "store_sentiment_and_topics",
             "description": "Store the extracted sentiments and topics",
-            "parameters": ExtractSentimentTopics.schema()
+            "parameters": ExtractSentimentTopics.schema(),
         }
 
     def __call__(self, sentiments: List[str], topics: List[str]) -> dict:
@@ -42,12 +41,12 @@ class StoreSentimentAndTopics(Function):
         """
         try:
             output = {
-                'sentiments': self.clean_results(sentiments),
-                'topics': self.clean_results(topics),
-                'message': 'Stored the sentiments and topics',
+                "sentiments": self.clean_results(sentiments),
+                "topics": self.clean_results(topics),
+                "message": "Stored the sentiments and topics",
             }
         except Exception as e:
             output = {
-                'error': str(e),
+                "error": str(e),
             }
         return output

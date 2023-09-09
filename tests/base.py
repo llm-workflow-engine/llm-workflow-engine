@@ -14,10 +14,10 @@ from lwe.core import constants
 from lwe.core.backend import Backend
 from lwe.backends.api.request import ApiRequest
 
-TEST_DIR = os.path.join(tempfile.gettempdir(), 'lwe_test')
-TEST_CONFIG_DIR = os.path.join(TEST_DIR, 'config')
-TEST_DATA_DIR = os.path.join(TEST_DIR, 'data')
-TEST_PROFILE = 'test'
+TEST_DIR = os.path.join(tempfile.gettempdir(), "lwe_test")
+TEST_CONFIG_DIR = os.path.join(TEST_DIR, "config")
+TEST_DATA_DIR = os.path.join(TEST_DIR, "data")
+TEST_PROFILE = "test"
 
 TEST_BASIC_MESSAGES = [
     {
@@ -33,7 +33,7 @@ TEST_BASIC_MESSAGES = [
         "role": "user",
     },
     {
-        "message": 'hello',
+        "message": "hello",
         "message_metadata": None,
         "message_type": "content",
         "role": "assistant",
@@ -103,25 +103,54 @@ class FakeBackend(Backend):
 
 
 def store_system_message(backend, conversation, message=constants.SYSTEM_MESSAGE_DEFAULT):
-    backend.message.add_message(conversation.id, "system", message, "content", None, 'provider_fake_llm', constants.API_BACKEND_DEFAULT_MODEL, '')
+    backend.message.add_message(
+        conversation.id,
+        "system",
+        message,
+        "content",
+        None,
+        "provider_fake_llm",
+        constants.API_BACKEND_DEFAULT_MODEL,
+        "",
+    )
 
 
 def store_user_message(backend, conversation, message="test question"):
-    success, message, user_message = backend.message.add_message(conversation.id, "user", message, "content", None, 'provider_fake_llm', constants.API_BACKEND_DEFAULT_MODEL, '')
+    success, message, user_message = backend.message.add_message(
+        conversation.id,
+        "user",
+        message,
+        "content",
+        None,
+        "provider_fake_llm",
+        constants.API_BACKEND_DEFAULT_MODEL,
+        "",
+    )
     if success:
         return message
     raise Exception(user_message)
 
 
 def store_assistant_message(backend, conversation, message="test response"):
-    success, message, user_message = backend.message.add_message(conversation.id, "assistant", message, "content", None, 'provider_fake_llm', constants.API_BACKEND_DEFAULT_MODEL, '')
+    success, message, user_message = backend.message.add_message(
+        conversation.id,
+        "assistant",
+        message,
+        "content",
+        None,
+        "provider_fake_llm",
+        constants.API_BACKEND_DEFAULT_MODEL,
+        "",
+    )
     if success:
         return message
     raise Exception(user_message)
 
 
 def store_conversation(backend, title="Conversation"):
-    success, conversation, user_message = backend.conversation.add_conversation(backend.current_user.id, title)
+    success, conversation, user_message = backend.conversation.add_conversation(
+        backend.current_user.id, title
+    )
     if success:
         return conversation
     raise Exception(user_message)
@@ -141,19 +170,21 @@ def store_conversation_threads(backend, title="Conversation", rounds=3):
 
 
 def clean_output(output):
-    return re.sub(r'\x1b\[.*?m', '', output)
+    return re.sub(r"\x1b\[.*?m", "", output)
 
 
 def fake_llm_responses(responses, request_overrides=None):
     request_overrides = request_overrides or {}
-    request_overrides.setdefault('preset_overrides', {})
-    request_overrides['preset_overrides'].setdefault('model_customizations', {})
-    responses = [AIMessage(content=message) if isinstance(message, str) else message for message in responses]
-    request_overrides['preset_overrides']['model_customizations']['responses'] = responses
+    request_overrides.setdefault("preset_overrides", {})
+    request_overrides["preset_overrides"].setdefault("model_customizations", {})
+    responses = [
+        AIMessage(content=message) if isinstance(message, str) else message for message in responses
+    ]
+    request_overrides["preset_overrides"]["model_customizations"]["responses"] = responses
     return request_overrides
 
 
-def make_provider(provider_manager, provider_name='provider_fake_llm'):
+def make_provider(provider_manager, provider_name="provider_fake_llm"):
     success, provider, user_message = provider_manager.load_provider(provider_name)
     if not success:
         raise Exception(user_message)
@@ -161,31 +192,33 @@ def make_provider(provider_manager, provider_name='provider_fake_llm'):
     return provider
 
 
-def make_api_request(test_config,
-                     function_manager,
-                     provider_manager,
-                     preset_manager,
-                     provider=None,
-                     input='test',
-                     preset=None,
-                     system_message=None,
-                     old_messages=None,
-                     max_submission_tokens=None,
-                     request_overrides=None,
-                     return_only=False,
-                     ):
+def make_api_request(
+    test_config,
+    function_manager,
+    provider_manager,
+    preset_manager,
+    provider=None,
+    input="test",
+    preset=None,
+    system_message=None,
+    old_messages=None,
+    max_submission_tokens=None,
+    request_overrides=None,
+    return_only=False,
+):
     provider = provider or make_provider(provider_manager)
-    request = ApiRequest(config=test_config,
-                         provider=provider,
-                         provider_manager=provider_manager,
-                         function_manager=function_manager,
-                         input=input,
-                         preset=preset,
-                         preset_manager=preset_manager,
-                         system_message=system_message,
-                         old_messages=old_messages,
-                         max_submission_tokens=max_submission_tokens,
-                         request_overrides=request_overrides,
-                         return_only=return_only,
-                         )
+    request = ApiRequest(
+        config=test_config,
+        provider=provider,
+        provider_manager=provider_manager,
+        function_manager=function_manager,
+        input=input,
+        preset=preset,
+        preset_manager=preset_manager,
+        system_message=system_message,
+        old_messages=old_messages,
+        max_submission_tokens=max_submission_tokens,
+        request_overrides=request_overrides,
+        return_only=return_only,
+    )
     return request

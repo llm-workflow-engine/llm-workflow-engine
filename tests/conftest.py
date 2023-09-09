@@ -14,7 +14,7 @@ from .base import FakeBackend
 
 
 def set_environment_variables():
-    os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY', 'fake-api-key')
+    os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "fake-api-key")
 
 
 @pytest.fixture
@@ -23,21 +23,23 @@ def test_config():
     util.remove_and_create_dir(TEST_DATA_DIR)
     set_environment_variables()
     config = Config(TEST_CONFIG_DIR, TEST_DATA_DIR, profile=TEST_PROFILE)
-    config.set('backend_options.auto_create_first_user', 'test')
-    config.set('backend_options.title_generation.provider', 'fake_llm')
-    config.set('database', 'sqlite:///:memory:')
-    config.set('model.default_preset', 'test')
-    config.set('plugins.enabled', ['provider_fake_llm'])
+    config.set("backend_options.auto_create_first_user", "test")
+    config.set("backend_options.title_generation.provider", "fake_llm")
+    config.set("database", "sqlite:///:memory:")
+    config.set("model.default_preset", "test")
+    config.set("plugins.enabled", ["provider_fake_llm"])
     return config
 
 
 @pytest.fixture
 def function_manager(test_config):
     additional_functions = {
-        'test_function2': 'test_function2_path',
-        'test_function3': 'test_function3_path',
+        "test_function2": "test_function2_path",
+        "test_function3": "test_function3_path",
     }
-    function_manager = FunctionManager(config=test_config, additional_functions=additional_functions)
+    function_manager = FunctionManager(
+        config=test_config, additional_functions=additional_functions
+    )
     return function_manager
 
 

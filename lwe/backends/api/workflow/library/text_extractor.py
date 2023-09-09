@@ -14,31 +14,45 @@ from lwe.core.config import Config
 from lwe.core.logger import Logger
 
 config = Config()
-config.set('debug.log.enabled', True)
-log = Logger('text_extractor', config)
+config.set("debug.log.enabled", True)
+log = Logger("text_extractor", config)
 
 SUPPORTED_FILE_EXTENSIONS = [
     # Microsoft Office formats
-    '.docx', '.pptx', '.xlsx',
+    ".docx",
+    ".pptx",
+    ".xlsx",
     # OpenDocument formats
-    '.odt', '.ods', '.odp', '.odg', '.odc', '.odf', '.odi', '.odm',
+    ".odt",
+    ".ods",
+    ".odp",
+    ".odg",
+    ".odc",
+    ".odf",
+    ".odi",
+    ".odm",
     # Portable Document Format
-    '.pdf',
+    ".pdf",
     # Rich Text Format
-    '.rtf',
+    ".rtf",
     # Markdown
-    '.md',
+    ".md",
     # ePub
-    '.epub',
+    ".epub",
     # Text files
-    '.txt', '.csv',
+    ".txt",
+    ".csv",
     # HTML and XML formats
-    '.html', '.htm', '.xhtml', '.xml',
+    ".html",
+    ".htm",
+    ".xhtml",
+    ".xml",
     # Email formats
-    '.eml', '.msg'
+    ".eml",
+    ".msg",
 ]
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: text_extractor
 short_description: Extract text content from a file or URL
@@ -59,9 +73,9 @@ options:
       required: false
 author:
     - Chad Phillips (@thehunmonkgroup)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
   - name: Extract content from a local PDF file
     text_extractor:
       path: "/path/to/your/file.pdf"
@@ -70,9 +84,9 @@ EXAMPLES = r'''
     text_extractor:
       path: "https://example.com/sample.html"
       max_length: 3000
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
   content:
       description: The extracted main text content from the HTML.
       type: str
@@ -81,32 +95,31 @@ RETURN = r'''
       description: The length of the extracted main text content.
       type: int
       returned: success
-'''
+"""
+
 
 def extract_text(path):
     text = textract.process(path).decode("utf-8")
     return text
 
+
 def main():
-    result = dict(
-        changed=False,
-        response=dict()
-    )
+    result = dict(changed=False, response=dict())
     module = AnsibleModule(
         argument_spec=dict(
-            path=dict(type='path', required=True),
-            max_length=dict(type='int', required=False),
+            path=dict(type="path", required=True),
+            max_length=dict(type="int", required=False),
         ),
         supports_check_mode=True,
     )
-    path = module.params['path']
-    max_length = module.params['max_length']
+    path = module.params["path"]
+    max_length = module.params["max_length"]
 
     if module.check_mode:
         module.exit_json(**result)
 
     parsed_url = urlparse(path)
-    is_url = parsed_url.scheme in ['http', 'https']
+    is_url = parsed_url.scheme in ["http", "https"]
     cleanup_tmpfile_path = None
     if is_url:
         try:
@@ -135,17 +148,18 @@ def main():
             module.fail_json(msg=message)
     else:
         # Last ditch, try to read the file as UTF-8.
-        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
             # Get rid of any non-ascii characters.
-            content = re.sub(r'[^\x00-\x7F]+', '', f.read())
+            content = re.sub(r"[^\x00-\x7F]+", "", f.read())
     if max_length:
         content = content[:max_length]
     if cleanup_tmpfile_path:
         os.remove(cleanup_tmpfile_path)
-    result['content'] = content
-    result['length'] = len(content)
+    result["content"] = content
+    result["length"] = len(content)
     log.info("Content extracted successfully")
     module.exit_json(**result)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

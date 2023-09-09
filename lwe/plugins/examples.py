@@ -5,10 +5,10 @@ from lwe.core.plugin import Plugin
 import lwe.core.util as util
 
 TYPES = [
-    'presets',
-    'templates',
-    'workflows',
-    'functions',
+    "presets",
+    "templates",
+    "workflows",
+    "functions",
 ]
 
 
@@ -19,21 +19,27 @@ class Examples(Plugin):
 
     def default_config(self):
         return {
-            'confirm_overwrite': True,
-            'default_types': TYPES,
+            "confirm_overwrite": True,
+            "default_types": TYPES,
         }
 
     def setup(self):
         self.profile_dir = self.config.config_profile_dir
-        self.examples_root = os.path.join(os.path.dirname(util.get_package_root(self.config)), 'examples')
-        self.default_types = self.config.get('plugins.examples.default_types')
-        self.confirm_overwrite = self.config.get('plugins.examples.confirm_overwrite')
-        self.log.info(f"This is the examples plugin, running with profile dir: {self.profile_dir}, examples root: {self.examples_root}, default types: {self.default_types}, confirm overwrite: {self.confirm_overwrite}")
+        self.examples_root = os.path.join(
+            os.path.dirname(util.get_package_root(self.config)), "examples"
+        )
+        self.default_types = self.config.get("plugins.examples.default_types")
+        self.confirm_overwrite = self.config.get("plugins.examples.confirm_overwrite")
+        self.log.info(
+            f"This is the examples plugin, running with profile dir: {self.profile_dir}, examples root: {self.examples_root}, default types: {self.default_types}, confirm overwrite: {self.confirm_overwrite}"
+        )
 
     def get_shell_completions(self, _base_shell_completions):
         """Example of provided shell completions."""
         commands = {}
-        commands[util.command_with_leader('examples')] = util.list_to_completion_hash(['list'] + TYPES)
+        commands[util.command_with_leader("examples")] = util.list_to_completion_hash(
+            ["list"] + TYPES
+        )
         return commands
 
     def get_examples(self, example_type):
@@ -49,7 +55,7 @@ class Examples(Plugin):
             os.makedirs(dest_dir)
         if os.path.exists(dest_file) and self.confirm_overwrite:
             confirm = input(f"File {dest_file} already exists. Overwrite? (y/n): ")
-            if confirm.lower() != 'y':
+            if confirm.lower() != "y":
                 message = f"Skipping file {example_file}"
                 util.print_status_message(True, message, "bold blue")
                 self.log.info(message)
@@ -63,7 +69,9 @@ class Examples(Plugin):
             self.log.error(f"Error installing {example_file}: {str(e)}")
 
     def confirm_install(self, example_types):
-        confirm = input(f"Are you sure you want to install examples for the following types? {', '.join(example_types)} (y/n): ")
+        confirm = input(
+            f"Are you sure you want to install examples for the following types? {', '.join(example_types)} (y/n): "
+        )
         if confirm.lower() not in ["yes", "y"]:
             message = "Skipping installation"
             util.print_status_message(False, message)

@@ -19,6 +19,7 @@ from rich.markdown import Markdown
 import lwe.core.constants as constants
 from lwe.core.error import NoInputError
 from lwe import debug
+
 if False:
     debug.console(None)
 
@@ -33,13 +34,21 @@ class NoneAttrs:
 
 
 def introspect_commands(klass):
-    return [method[8:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith("command_")]
+    return [
+        method[8:]
+        for method in dir(klass)
+        if callable(getattr(klass, method)) and method.startswith("command_")
+    ]
 
 
 def introspect_command_actions(klass, command):
     action_command = f"action_{command}_"
     prefix = len(action_command)
-    return [method[prefix:] for method in dir(klass) if callable(getattr(klass, method)) and method.startswith(action_command)]
+    return [
+        method[prefix:]
+        for method in dir(klass)
+        if callable(getattr(klass, method)) and method.startswith(action_command)
+    ]
 
 
 def command_with_leader(command):
@@ -135,15 +144,19 @@ def print_markdown(output, style=None):
 
 
 def parse_conversation_ids(id_string):
-    items = [item.strip() for item in id_string.split(',')]
+    items = [item.strip() for item in id_string.split(",")]
     final_list = []
     for item in items:
         if len(item) == 36:
             final_list.append(item)
         else:
-            sub_items = item.split('-')
+            sub_items = item.split("-")
             try:
-                sub_items = [int(item) for item in sub_items if int(item) >= 1 and int(item) <= constants.DEFAULT_HISTORY_LIMIT]
+                sub_items = [
+                    int(item)
+                    for item in sub_items
+                    if int(item) >= 1 and int(item) <= constants.DEFAULT_HISTORY_LIMIT
+                ]
             except ValueError:
                 return "Error: Invalid range, must be two ordered history numbers separated by '-', e.g. '1-10'."
             if len(sub_items) == 1:
@@ -158,11 +171,13 @@ def parse_conversation_ids(id_string):
 def conversation_from_messages(messages):
     conversation_parts = []
     for message in messages:
-        conversation_parts.append({
-            "role": message['role'],
-            "display_role": "**%s**:" % message['role'].capitalize(),
-            "message": message['message']
-        })
+        conversation_parts.append(
+            {
+                "role": message["role"],
+                "display_role": "**%s**:" % message["role"].capitalize(),
+                "message": message["message"],
+            }
+        )
     return conversation_parts
 
 
@@ -175,13 +190,13 @@ def parse_shell_input(user_input):
         text = text[1:]
         parts = [arg.strip() for arg in text.split(maxsplit=1)]
         command = parts[0]
-        argument = parts[1] if len(parts) > 1 else ''
+        argument = parts[1] if len(parts) > 1 else ""
         if command == "exit" or command == "quit":
             raise EOFError
     else:
-        if text == '?':
-            command = 'help'
-            argument = ''
+        if text == "?":
+            command = "help"
+            argument = ""
         else:
             command = constants.DEFAULT_COMMAND
             argument = text
@@ -189,7 +204,7 @@ def parse_shell_input(user_input):
 
 
 def get_class_method(klass, command_command):
-    mro = getattr(klass, '__mro__')
+    mro = getattr(klass, "__mro__")
     for klass in mro:
         method = getattr(klass, command_command, None)
         if method:
@@ -210,21 +225,18 @@ def output_response(response):
             print_markdown(response)
 
 
-def write_temp_file(input_data='', suffix=None, prefix=None, dir=None):
-    kwargs = {
-        'prefix': prefix,
-        'dir': dir
-    }
+def write_temp_file(input_data="", suffix=None, prefix=None, dir=None):
+    kwargs = {"prefix": prefix, "dir": dir}
     if suffix:
-        kwargs['suffix'] = f".{suffix}"
+        kwargs["suffix"] = f".{suffix}"
     _, filepath = tempfile.mkstemp(**kwargs)
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         f.write(input_data)
     return filepath
 
 
 def get_package_root(obj):
-    package_name = obj.__class__.__module__.split('.')[0]
+    package_name = obj.__class__.__module__.split(".")[0]
     package_root = os.path.dirname(os.path.abspath(sys.modules[package_name].__file__))
     return package_root
 
@@ -235,8 +247,8 @@ def get_file_directory():
 
 
 def snake_to_class(string):
-    parts = string.split('_')
-    return ''.join(word.title() for word in parts)
+    parts = string.split("_")
+    return "".join(word.title() for word in parts)
 
 
 def remove_and_create_dir(directory_path):
@@ -247,7 +259,7 @@ def remove_and_create_dir(directory_path):
 
 def create_file(directory, filename, content=None):
     filepath = os.path.join(directory, filename)
-    with open(filepath, 'w') as file:
+    with open(filepath, "w") as file:
         if content:
             file.write(content)
     return filepath
@@ -259,7 +271,7 @@ def current_datetime():
 
 
 def filepath_replacements(filepath, config):
-    filepath = filepath.replace("$HOME", os.path.expanduser('~user'))
+    filepath = filepath.replace("$HOME", os.path.expanduser("~user"))
     filepath = filepath.replace("$CONFIG_DIR", config.config_dir)
     filepath = filepath.replace("$DATA_DIR", config.data_dir)
     filepath = filepath.replace("$PROFILE", config.profile)
@@ -272,25 +284,25 @@ def get_environment_variable(name, default=None):
 
 def get_environment_variable_list(name):
     var_list = get_environment_variable(name)
-    return split_on_delimiter(var_list, ':') if var_list else None
+    return split_on_delimiter(var_list, ":") if var_list else None
 
 
-def split_on_delimiter(string, delimiter=','):
+def split_on_delimiter(string, delimiter=","):
     return [x.strip() for x in string.split(delimiter)]
 
 
 def remove_prefix(text, prefix):
-    pattern = r'(?i)^' + re.escape(prefix)
-    return re.sub(pattern, '', text)
+    pattern = r"(?i)^" + re.escape(prefix)
+    return re.sub(pattern, "", text)
 
 
 def get_ansible_module_doc(module_name):
     try:
         result = subprocess.run(
-            ['ansible-doc', '-t', 'module', module_name, '--json'],
+            ["ansible-doc", "-t", "module", module_name, "--json"],
             stdout=subprocess.PIPE,
             text=True,
-            check=True
+            check=True,
         )
         data = json.loads(result.stdout, strict=False)
         return data
@@ -374,7 +386,7 @@ def is_valid_url(url):
 
 
 def list_to_markdown_list(list_obj, indent=2):
-    spaces = ' ' * indent
+    spaces = " " * indent
     return "\n".join([f"{spaces}* {x}" for x in list_obj])
 
 
@@ -395,24 +407,24 @@ def transform_messages_to_chat_messages(messages):
     """
     chat_messages = []
     for message in messages:
-        role = message['role']
+        role = message["role"]
         next_message = {
-            'role': role,
+            "role": role,
         }
         if role == "assistant":
-            if message['message_type'] == "function_call":
-                next_message['function_call'] = {
-                    'name': message['message']['name'],
-                    'arguments': json.dumps(message['message']['arguments'], indent=2),
+            if message["message_type"] == "function_call":
+                next_message["function_call"] = {
+                    "name": message["message"]["name"],
+                    "arguments": json.dumps(message["message"]["arguments"], indent=2),
                 }
-                next_message['content'] = ""
+                next_message["content"] = ""
             else:
-                next_message['content'] = message['message']
+                next_message["content"] = message["message"]
         elif role == "function":
-            next_message['content'] = json.dumps(message['message'])
-            next_message['name'] = message['message_metadata']['name']
+            next_message["content"] = json.dumps(message["message"])
+            next_message["name"] = message["message_metadata"]["name"]
         else:
-            next_message['content'] = message['message']
+            next_message["content"] = message["message"]
         chat_messages.append(next_message)
     return chat_messages
 
@@ -426,9 +438,9 @@ def message_content_from_dict(message):
     :returns: Content
     :rtype: str
     """
-    content = message['content']
-    if message['message_type'] == 'function_call':
-        content = json.dumps(message['function_call'])
+    content = message["content"]
+    if message["message_type"] == "function_call":
+        content = json.dumps(message["function_call"])
     return content
 
 
@@ -442,22 +454,30 @@ def extract_preset_configuration_from_request_overrides(request_overrides, activ
     preset_name = None
     preset_overrides = None
     activate_preset = False
-    if 'preset' in request_overrides or 'preset_overrides' in request_overrides:
-        if 'preset' in request_overrides:
-            preset_name = request_overrides['preset']
-            if 'activate_preset' in request_overrides and request_overrides['activate_preset']:
+    if "preset" in request_overrides or "preset_overrides" in request_overrides:
+        if "preset" in request_overrides:
+            preset_name = request_overrides["preset"]
+            if "activate_preset" in request_overrides and request_overrides["activate_preset"]:
                 activate_preset = True
         else:
             preset_name = active_preset_name
         if not preset_name:
-            return False, (preset_name, preset_overrides, activate_preset), "No active preset to override"
-        if 'preset_overrides' in request_overrides:
-            preset_overrides = copy.deepcopy(request_overrides['preset_overrides'])
-    return True, (preset_name, preset_overrides, activate_preset), f"Extracted preset configuration from request overrides: {request_overrides}"
+            return (
+                False,
+                (preset_name, preset_overrides, activate_preset),
+                "No active preset to override",
+            )
+        if "preset_overrides" in request_overrides:
+            preset_overrides = copy.deepcopy(request_overrides["preset_overrides"])
+    return (
+        True,
+        (preset_name, preset_overrides, activate_preset),
+        f"Extracted preset configuration from request overrides: {request_overrides}",
+    )
 
 
 def get_preset_name(preset):
     if preset:
         metadata, _customizations = preset
-        return metadata['name']
+        return metadata["name"]
     return None

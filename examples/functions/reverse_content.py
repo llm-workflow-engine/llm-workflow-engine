@@ -14,11 +14,11 @@ class ReverseContent(Function):
         try:
             reversed_content = content[::-1]
             output = {
-                'result': reversed_content,
-                'message': 'Reversed the content string',
+                "result": reversed_content,
+                "message": "Reversed the content string",
             }
         except Exception as e:
             output = {
-                'error': str(e),
+                "error": str(e),
             }
         return output

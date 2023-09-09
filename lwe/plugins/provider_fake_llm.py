@@ -28,6 +28,7 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import ChatResult
 from langchain.schema.output import ChatGeneration
+
 # TODO: Remove these definitions if https://github.com/langchain-ai/langchain/pull/10200 lands.
 
 DEFAULT_RESPONSE_MESSAGE = "test response"
@@ -111,10 +112,10 @@ class CustomFakeMessagesListChatModel(FakeMessagesListChatModel):
     model_name: str
 
     def __init__(self, **kwargs):
-        if not kwargs.get('model_name'):
-            kwargs['model_name'] = constants.API_BACKEND_DEFAULT_MODEL
-        if not kwargs.get('responses'):
-            kwargs['responses'] = []
+        if not kwargs.get("model_name"):
+            kwargs["model_name"] = constants.API_BACKEND_DEFAULT_MODEL
+        if not kwargs.get("responses"):
+            kwargs["responses"] = []
         super().__init__(**kwargs)
 
     def _call(
@@ -154,16 +155,16 @@ class ProviderFakeLlm(Provider):
     @property
     def capabilities(self):
         return {
-            'chat': True,
-            'validate_models': False,
-            'models': {
-                'gpt-3.5-turbo': {
-                    'max_tokens': 4096,
+            "chat": True,
+            "validate_models": False,
+            "models": {
+                "gpt-3.5-turbo": {
+                    "max_tokens": 4096,
                 },
-                'gpt-4': {
-                    'max_tokens': 8192,
+                "gpt-4": {
+                    "max_tokens": 8192,
                 },
-            }
+            },
         }
 
     @property
@@ -178,6 +179,6 @@ class ProviderFakeLlm(Provider):
 
     def customization_config(self):
         return {
-            'responses': None,
-            'model_name': PresetValue(str, options=self.available_models),
+            "responses": None,
+            "model_name": PresetValue(str, options=self.available_models),
         }

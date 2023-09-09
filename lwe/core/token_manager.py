@@ -8,8 +8,7 @@ from lwe.core import util
 
 
 class TokenManager:
-    """Manage functions in a cache.
-    """
+    """Manage functions in a cache."""
 
     def __init__(self, config, provider, model_name, function_cache):
         """Initialize the function cache."""
@@ -64,7 +63,10 @@ class TokenManager:
                     num_tokens += -1  # role is always required and always 1 token
         num_tokens += 2  # every reply is primed with <im_start>assistant
         if len(self.function_cache.functions) > 0:
-            functions = [self.function_cache.function_manager.get_function_config(function_name) for function_name in self.function_cache.functions]
+            functions = [
+                self.function_cache.function_manager.get_function_config(function_name)
+                for function_name in self.function_cache.functions
+            ]
             functions_string = json.dumps(functions, indent=2)
             num_tokens += len(encoding.encode(functions_string))
         return num_tokens

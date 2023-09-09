@@ -21,24 +21,24 @@ from langchain.adapters.openai import convert_message_to_dict
 
 
 class ApiRequest:
-    """Individual LLM requests manager
-    """
+    """Individual LLM requests manager"""
 
-    def __init__(self,
-                 config=None,
-                 provider=None,
-                 provider_manager=None,
-                 function_manager=None,
-                 input=None,
-                 preset=None,
-                 preset_manager=None,
-                 system_message=None,
-                 old_messages=None,
-                 max_submission_tokens=None,
-                 request_overrides=None,
-                 return_only=False,
-                 orm=None,
-                 ):
+    def __init__(
+        self,
+        config=None,
+        provider=None,
+        provider_manager=None,
+        function_manager=None,
+        input=None,
+        preset=None,
+        preset_manager=None,
+        system_message=None,
+        old_messages=None,
+        max_submission_tokens=None,
+        request_overrides=None,
+        return_only=False,
+        orm=None,
+    ):
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
         self.default_provider = provider
@@ -51,7 +51,9 @@ class ApiRequest:
         self.preset_manager = preset_manager
         self.system_message = system_message or constants.SYSTEM_MESSAGE_DEFAULT
         self.old_messages = old_messages or []
-        self.max_submission_tokens = max_submission_tokens or constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
+        self.max_submission_tokens = (
+            max_submission_tokens or constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
+        )
         self.request_overrides = request_overrides or {}
         self.return_only = return_only
         self.orm = orm or Orm(self.config)
@@ -63,10 +65,14 @@ class ApiRequest:
         if not success:
             return success, response, user_message
         preset_name, preset_overrides, metadata, customizations = response
-        success, response, user_message = self.setup_request_config(preset_name, preset_overrides, metadata, customizations)
+        success, response, user_message = self.setup_request_config(
+            preset_name, preset_overrides, metadata, customizations
+        )
         return success, response, user_message
 
-    def setup_request_config(self, preset_name=None, preset_overrides=None, metadata=None, customizations=None):
+    def setup_request_config(
+        self, preset_name=None, preset_overrides=None, metadata=None, customizations=None
+    ):
         """
         Set up the configuration for the request.
 
@@ -82,10 +88,10 @@ class ApiRequest:
         :rtype: tuple
         """
         config = {
-            'preset_name': preset_name,
-            'preset_overrides': preset_overrides,
-            'metadata': metadata,
-            'customizations': customizations
+            "preset_name": preset_name,
+            "preset_overrides": preset_overrides,
+            "metadata": metadata,
+            "customizations": customizations,
         }
         success, response, user_message = self.build_request_config(config)
         if success:
@@ -104,10 +110,10 @@ class ApiRequest:
         if not success:
             return success, provider, user_message
         config = self.merge_preset_overrides(config)
-        preset = (config['metadata'], config['customizations'])
-        config['customizations'] = self.expand_functions(config['customizations'])
-        llm = provider.make_llm(config['customizations'], use_defaults=True)
-        preset_name = config['metadata'].get('name', '')
+        preset = (config["metadata"], config["customizations"])
+        config["customizations"] = self.expand_functions(config["customizations"])
+        llm = provider.make_llm(config["customizations"], use_defaults=True)
+        preset_name = config["metadata"].get("name", "")
         model_name = getattr(llm, provider.model_property_name)
         token_manager = TokenManager(self.config, provider, model_name, self.function_cache)
         message = f"Built LLM based on preset_name: {preset_name}, metadata: {config['metadata']}, customizations: {config['customizations']}, preset_overrides: {config['preset_overrides']}"
@@ -115,29 +121,41 @@ class ApiRequest:
         return True, (provider, preset, llm, preset_name, model_name, token_manager), message
 
     def prepare_config(self, config):
-        config['metadata'] = copy.deepcopy(config['metadata'] or {})
-        config['customizations'] = copy.deepcopy(config['customizations'] or {})
-        config['preset_overrides'] = config['preset_overrides'] or {}
+        config["metadata"] = copy.deepcopy(config["metadata"] or {})
+        config["customizations"] = copy.deepcopy(config["customizations"] or {})
+        config["preset_overrides"] = config["preset_overrides"] or {}
         return config
 
     def load_provider(self, config):
-        if config['preset_name'] is None:
-            return self.provider_manager.load_provider(config['metadata']['provider'])
+        if config["preset_name"] is None:
+            return self.provider_manager.load_provider(config["metadata"]["provider"])
         return True, self.provider, "Default provider loaded"
 
     def merge_preset_overrides(self, config):
-        if config['preset_overrides']:
-            if 'metadata' in config['preset_overrides']:
-                self.log.info(f"Merging preset overrides for metadata: {config['preset_overrides']['metadata']}")
-                config['metadata'] = util.merge_dicts(config['metadata'], config['preset_overrides']['metadata'])
-            if 'model_customizations' in config['preset_overrides']:
-                self.log.info(f"Merging preset overrides for model customizations: {config['preset_overrides']['model_customizations']}")
-                config['customizations'] = util.merge_dicts(config['customizations'], config['preset_overrides']['model_customizations'])
+        if config["preset_overrides"]:
+            if "metadata" in config["preset_overrides"]:
+                self.log.info(
+                    f"Merging preset overrides for metadata: {config['preset_overrides']['metadata']}"
+                )
+                config["metadata"] = util.merge_dicts(
+                    config["metadata"], config["preset_overrides"]["metadata"]
+                )
+            if "model_customizations" in config["preset_overrides"]:
+                self.log.info(
+                    f"Merging preset overrides for model customizations: {config['preset_overrides']['model_customizations']}"
+                )
+                config["customizations"] = util.merge_dicts(
+                    config["customizations"], config["preset_overrides"]["model_customizations"]
+                )
         return config
 
     def extract_metadata_customizations(self):
-        self.log.debug(f"Extracting preset configuration from request_overrides: {self.request_overrides}")
-        success, response, user_message = util.extract_preset_configuration_from_request_overrides(self.request_overrides, self.default_preset_name)
+        self.log.debug(
+            f"Extracting preset configuration from request_overrides: {self.request_overrides}"
+        )
+        success, response, user_message = util.extract_preset_configuration_from_request_overrides(
+            self.request_overrides, self.default_preset_name
+        )
         if not success:
             return success, response, user_message
         preset_name, preset_overrides, _activate_preset = response
@@ -155,28 +173,40 @@ class ApiRequest:
             metadata, customizations = self.default_preset
         else:
             self.log.debug("Using current provider")
-            metadata['provider'] = self.provider.name
+            metadata["provider"] = self.provider.name
             customizations = self.provider.get_customizations()
-        return success, (preset_name, preset_overrides, metadata, customizations), "Extracted metadata and customizations"
+        return (
+            success,
+            (preset_name, preset_overrides, metadata, customizations),
+            "Extracted metadata and customizations",
+        )
 
     def get_preset_metadata_customizations(self, preset_name):
         success, preset, user_message = self.preset_manager.ensure_preset(preset_name)
         if not success:
             return success, preset, user_message
         metadata, customizations = preset
-        self.log.debug(f"Retrieved metadata and customizations for preset: {preset_name}, metadata: {metadata}, customizations: {customizations}")
-        return success, (metadata, customizations), f"Retrieved metadata and customizations for preset: {preset_name}"
+        self.log.debug(
+            f"Retrieved metadata and customizations for preset: {preset_name}, metadata: {metadata}, customizations: {customizations}"
+        )
+        return (
+            success,
+            (metadata, customizations),
+            f"Retrieved metadata and customizations for preset: {preset_name}",
+        )
 
     def expand_functions(self, customizations):
         """Expand any configured functions to their full definition."""
         self.function_cache = FunctionCache(self.config, self.function_manager, customizations)
         self.function_cache.add_message_functions(self.old_messages)
         if len(self.function_cache.functions) > 0:
-            customizations.setdefault('model_kwargs', {})
-            customizations['model_kwargs'].setdefault('functions', [])
+            customizations.setdefault("model_kwargs", {})
+            customizations["model_kwargs"].setdefault("functions", [])
             for function_name in self.function_cache.functions:
-                idx = customizations['model_kwargs']['functions'].index(function_name)
-                customizations['model_kwargs']['functions'][idx] = self.function_manager.get_function_config(function_name)
+                idx = customizations["model_kwargs"]["functions"].index(function_name)
+                customizations["model_kwargs"]["functions"][
+                    idx
+                ] = self.function_manager.get_function_config(function_name)
         return customizations
 
     def prepare_new_conversation_messages(self):
@@ -188,8 +218,12 @@ class ApiRequest:
         """
         new_messages = []
         if len(self.old_messages) == 0:
-            new_messages.append(self.message.build_message('system', self.request_overrides.get('system_message') or self.system_message))
-        new_messages.append(self.message.build_message('user', self.input))
+            new_messages.append(
+                self.message.build_message(
+                    "system", self.request_overrides.get("system_message") or self.system_message
+                )
+            )
+        new_messages.append(self.message.build_message("user", self.input))
         return new_messages
 
     def prepare_ask_request(self):
@@ -218,16 +252,22 @@ class ApiRequest:
         """
         messages = copy.deepcopy(messages)
         token_count = self.token_manager.get_num_tokens_from_messages(messages)
-        self.log.debug(f"Stripping messages over max tokens: {max_tokens}, initial token count: {token_count}")
+        self.log.debug(
+            f"Stripping messages over max tokens: {max_tokens}, initial token count: {token_count}"
+        )
         stripped_messages_count = 0
         while token_count > max_tokens and len(messages) > 1:
             message = messages.pop(0)
             token_count = self.token_manager.get_num_tokens_from_messages(messages)
-            self.log.debug(f"Stripping message: {message['role']}, {message['message']} -- new token count: {token_count}")
+            self.log.debug(
+                f"Stripping message: {message['role']}, {message['message']} -- new token count: {token_count}"
+            )
             stripped_messages_count += 1
         token_count = self.token_manager.get_num_tokens_from_messages(messages)
         if token_count > max_tokens:
-            raise Exception(f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}")
+            raise Exception(
+                f"No messages to send, all messages have been stripped, still over max submission tokens: {max_tokens}"
+            )
         if stripped_messages_count > 0:
             max_tokens_exceeded_warning = f"Conversation exceeded max submission tokens ({max_tokens}), stripped out {stripped_messages_count} oldest messages before sending, sent {token_count} tokens instead"
             self.log.warning(max_tokens_exceeded_warning)
@@ -243,7 +283,7 @@ class ApiRequest:
         :returns: success, response, message
         :rtype: tuple
         """
-        stream = self.request_overrides.get('stream', False)
+        stream = self.request_overrides.get("stream", False)
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
         messages = self.build_chat_request(messages)
         if stream:
@@ -278,11 +318,13 @@ class ApiRequest:
         for chunk in self.llm.stream(messages):
             if isinstance(chunk, AIMessageChunk):
                 content = chunk.content
-                function_call = chunk.additional_kwargs.get('function_call')
+                function_call = chunk.additional_kwargs.get("function_call")
                 if response:
                     response.content += content
                     if function_call:
-                        response.additional_kwargs['function_call']['arguments'] += function_call['arguments']
+                        response.additional_kwargs["function_call"]["arguments"] += function_call[
+                            "arguments"
+                        ]
                 else:
                     response = AIMessage(**dict(chunk))
                     if function_call:
@@ -303,8 +345,8 @@ class ApiRequest:
     def execute_llm_streaming(self, messages):
         self.log.debug(f"Started streaming request at {util.current_datetime().isoformat()}")
         response = ""
-        print_stream = self.request_overrides.get('print_stream', False)
-        stream_callback = self.request_overrides.get('stream_callback', None)
+        print_stream = self.request_overrides.get("print_stream", False)
+        stream_callback = self.request_overrides.get("stream_callback", None)
         # Start streaming loop.
         self.streaming = True
         try:
@@ -329,13 +371,13 @@ class ApiRequest:
         response_message = self.extract_message_content(response_obj)
         new_messages.append(response_message)
 
-        if response_message['message_type'] == 'function_call':
+        if response_message["message_type"] == "function_call":
             return self.handle_function_call(response_message, new_messages)
 
         return self.handle_non_function_response(response_message, new_messages)
 
     def handle_function_call(self, response_message, new_messages):
-        function_call = response_message['message']
+        function_call = response_message["message"]
         self.log_function_call(function_call)
 
         if self.should_return_on_function_call():
@@ -350,20 +392,24 @@ class ApiRequest:
             self.log.info("Returning directly on function response")
             return function_response, new_messages
 
-        return response_message['message'], new_messages
+        return response_message["message"], new_messages
 
     def log_function_call(self, function_call):
         if not self.return_only:
-            util.print_markdown(f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}")
+            util.print_markdown(
+                f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}"
+            )
 
     def build_function_definition(self, function_call):
         return {
-            'name': function_call['name'],
-            'arguments': function_call['arguments'],
+            "name": function_call["name"],
+            "arguments": function_call["arguments"],
         }
 
     def execute_function_call(self, function_call, new_messages):
-        success, function_response, user_message = self.run_function(function_call['name'], function_call['arguments'])
+        success, function_response, user_message = self.run_function(
+            function_call["name"], function_call["arguments"]
+        )
         if not success:
             raise ValueError(f"Function call failed: {user_message}")
 
@@ -388,9 +434,14 @@ class ApiRequest:
 
     def build_function_response_message(self, function_call, function_response):
         message_metadata = {
-            'name': function_call['name'],
+            "name": function_call["name"],
         }
-        return self.message.build_message('function', function_response, message_type='function_response', message_metadata=message_metadata)
+        return self.message.build_message(
+            "function",
+            function_response,
+            message_type="function_response",
+            message_metadata=message_metadata,
+        )
 
     def extract_message_content(self, message):
         """
@@ -403,16 +454,18 @@ class ApiRequest:
         """
         if isinstance(message, BaseMessage):
             message_dict = convert_message_to_dict(message)
-            content = message_dict['content']
-            message_type = 'content'
-            if 'function_call' in message_dict:
-                message_type = 'function_call'
-                message_dict['function_call']['arguments'] = json.loads(message_dict['function_call']['arguments'], strict=False)
-                content = message_dict['function_call']
-            elif message_dict['role'] == 'function':
-                message_type = 'function_response'
-            return self.message.build_message(message_dict['role'], content, message_type)
-        return self.message.build_message('assistant', message)
+            content = message_dict["content"]
+            message_type = "content"
+            if "function_call" in message_dict:
+                message_type = "function_call"
+                message_dict["function_call"]["arguments"] = json.loads(
+                    message_dict["function_call"]["arguments"], strict=False
+                )
+                content = message_dict["function_call"]
+            elif message_dict["role"] == "function":
+                message_type = "function_response"
+            return self.message.build_message(message_dict["role"], content, message_type)
+        return self.message.build_message("assistant", message)
 
     def should_return_on_function_call(self):
         """
@@ -422,7 +475,7 @@ class ApiRequest:
         :rtype: bool
         """
         metadata, _customizations = self.preset
-        return 'return_on_function_call' in metadata and metadata['return_on_function_call']
+        return "return_on_function_call" in metadata and metadata["return_on_function_call"]
 
     def check_forced_function(self):
         """Check if a function call is forced.
@@ -431,7 +484,11 @@ class ApiRequest:
         :rtype: bool
         """
         _metadata, customizations = self.preset
-        return 'model_kwargs' in customizations and 'function_call' in customizations['model_kwargs'] and isinstance(customizations['model_kwargs']['function_call'], dict)
+        return (
+            "model_kwargs" in customizations
+            and "function_call" in customizations["model_kwargs"]
+            and isinstance(customizations["model_kwargs"]["function_call"], dict)
+        )
 
     def check_return_on_function_response(self, new_messages):
         """
@@ -445,7 +502,7 @@ class ApiRequest:
         :rtype: tuple
         """
         metadata, _customizations = self.preset
-        if 'return_on_function_response' in metadata and metadata['return_on_function_response']:
+        if "return_on_function_response" in metadata and metadata["return_on_function_response"]:
             # NOTE: In order to allow for multiple function calling and
             # returning on the LAST function response, we need to allow
             # the LLM to respond to all previous function responses, as
@@ -461,7 +518,7 @@ class ApiRequest:
             # 2. Extract and return the function response
             if self.is_function_response_message(new_messages[-2]):
                 new_messages.pop()
-                function_response = new_messages[-1]['message']
+                function_response = new_messages[-1]["message"]
                 return function_response, new_messages
         return None, new_messages
 
@@ -476,9 +533,11 @@ class ApiRequest:
         :rtype: tuple
         """
         success, response, user_message = self.function_manager.run_function(function_name, data)
-        json_obj = response if success else {'error': user_message}
+        json_obj = response if success else {"error": user_message}
         if not self.return_only:
-            util.print_markdown(f"### Function response:\n* Name: {function_name}\n* Success: {success}")
+            util.print_markdown(
+                f"### Function response:\n* Name: {function_name}\n* Success: {success}"
+            )
             util.print_markdown(json_obj)
         return success, json_obj, user_message
 
@@ -490,7 +549,7 @@ class ApiRequest:
         :returns: True if function response
         :rtype: bool
         """
-        return message['message_type'] == 'function_response'
+        return message["message_type"] == "function_response"
 
     def terminate_stream(self, _signal, _frame):
         """

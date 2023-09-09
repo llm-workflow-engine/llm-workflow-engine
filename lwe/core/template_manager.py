@@ -11,7 +11,8 @@ import lwe.core.util as util
 
 TEMP_TEMPLATE_DIR = "lwe-temp-templates"
 
-class TemplateManager():
+
+class TemplateManager:
     """
     Manage templates.
     """
@@ -26,12 +27,18 @@ class TemplateManager():
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.temp_template_dir = self.make_temp_template_dir()
-        self.user_template_dirs = self.config.args.template_dir or util.get_environment_variable_list('template_dir') or self.config.get('directories.templates')
+        self.user_template_dirs = (
+            self.config.args.template_dir
+            or util.get_environment_variable_list("template_dir")
+            or self.config.get("directories.templates")
+        )
         self.make_user_template_dirs()
         self.system_template_dirs = [
-            os.path.join(util.get_package_root(self), 'templates'),
+            os.path.join(util.get_package_root(self), "templates"),
         ]
-        self.all_template_dirs = self.user_template_dirs + self.system_template_dirs + [self.temp_template_dir]
+        self.all_template_dirs = (
+            self.user_template_dirs + self.system_template_dirs + [self.temp_template_dir]
+        )
         self.templates = []
         self.templates_env = None
 
@@ -43,7 +50,7 @@ class TemplateManager():
         :rtype: dict
         """
         return {
-            'clipboard': util.paste_from_clipboard,
+            "clipboard": util.paste_from_clipboard,
         }
 
     def ensure_template(self, template_name):
@@ -79,7 +86,11 @@ class TemplateManager():
             return success, template_name, user_message
         template, variables = self.get_template_and_variables(template_name)
         substitutions = self.process_template_builtin_variables(template_name, variables)
-        return True, (template, variables, substitutions), f"Loaded template substitutions: {template_name}"
+        return (
+            True,
+            (template, variables, substitutions),
+            f"Loaded template substitutions: {template_name}",
+        )
 
     def render_template(self, template_name):
         """
@@ -128,7 +139,11 @@ class TemplateManager():
         if template:
             filename = template.filename
             if self.is_system_template(filename):
-                return False, template_name, f"{template_name} is a system template, and cannot be edited directly"
+                return (
+                    False,
+                    template_name,
+                    f"{template_name} is a system template, and cannot be edited directly",
+                )
         else:
             filename = os.path.join(self.user_template_dirs[0], template_name)
         return True, filename, f"Template {filename} can be edited"
@@ -148,7 +163,11 @@ class TemplateManager():
         if not template:
             return False, old_name, f"{old_name} does not exist"
         old_filepath = template.filename
-        base_filepath = self.user_template_dirs[0] if self.is_system_template(old_filepath) else os.path.dirname(old_filepath)
+        base_filepath = (
+            self.user_template_dirs[0]
+            if self.is_system_template(old_filepath)
+            else os.path.dirname(old_filepath)
+        )
         new_filepath = os.path.join(base_filepath, new_name)
         if os.path.exists(new_filepath):
             return False, new_filepath, f"{new_filepath} already exists"
@@ -217,10 +236,10 @@ class TemplateManager():
         :rtype: tuple
         """
         override_keys = [
-            'request_overrides',
+            "request_overrides",
         ]
         builtin_keys = [
-            'description',
+            "description",
         ]
         metadata, overrides = self.extract_metadata_keys(override_keys, metadata)
         metadata, _ = self.extract_metadata_keys(builtin_keys, metadata)
@@ -264,7 +283,9 @@ class TemplateManager():
         for variable, method in builtin_variables.items():
             if variable in variables:
                 substitutions[variable] = method()
-                self.log.debug(f"Collected builtin variable {variable} for template {template_name}: {substitutions[variable]}")
+                self.log.debug(
+                    f"Collected builtin variable {variable} for template {template_name}: {substitutions[variable]}"
+                )
         return substitutions
 
     def make_user_template_dirs(self):
@@ -289,7 +310,7 @@ class TemplateManager():
         util.clean_directory(temp_dir)
         return temp_dir
 
-    def make_temp_template(self, template_contents, suffix='md'):
+    def make_temp_template(self, template_contents, suffix="md"):
         """
         Create a temporary template.
 
@@ -300,7 +321,7 @@ class TemplateManager():
         :return: The basename and the full path of the temporary template
         :rtype: tuple
         """
-        filepath = util.write_temp_file(template_contents, suffix='md', dir=self.temp_template_dir)
+        filepath = util.write_temp_file(template_contents, suffix="md", dir=self.temp_template_dir)
         return os.path.basename(filepath), filepath
 
     def remove_temp_template(self, template_name):

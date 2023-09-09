@@ -6,6 +6,7 @@ from lwe.core.template_manager import TemplateManager
 from lwe.core.preset_manager import PresetManager
 from lwe.core import util
 
+
 class Backend(ABC):
     """
     Base class/interface for all backends. This class provides a number of methods
@@ -107,7 +108,9 @@ class Backend(ABC):
         """
         self.log.info(f"Setting up run of template: {template_name}")
         substitutions = substitutions or {}
-        message, overrides = self.template_manager.build_message_from_template(template_name, substitutions)
+        message, overrides = self.template_manager.build_message_from_template(
+            template_name, substitutions
+        )
         return True, (message, overrides), f"Set up of template run complete: {template_name}"
 
     def run_template_compiled(self, message, overrides=None):
@@ -134,7 +137,11 @@ class Backend(ABC):
         """
         template_vars = template_vars or {}
         overrides = overrides or {}
-        success, response, user_message = self.template_manager.get_template_variables_substitutions(template_name)
+        (
+            success,
+            response,
+            user_message,
+        ) = self.template_manager.get_template_variables_substitutions(template_name)
         if not success:
             return success, response, user_message
         _template, _variables, substitutions = response

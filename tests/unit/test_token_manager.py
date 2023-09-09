@@ -4,7 +4,9 @@ from lwe.core.token_manager import TokenManager
 from ..base import make_provider
 
 
-def make_token_manager(test_config, function_cache, provider_manager, provider=None, model_name=None):
+def make_token_manager(
+    test_config, function_cache, provider_manager, provider=None, model_name=None
+):
     if not provider:
         provider = make_provider(provider_manager)
     if not model_name:
@@ -25,7 +27,9 @@ def test_get_token_encoding(test_config, function_cache, provider_manager):
 
 
 def test_get_token_encoding_unsupported_model(test_config, function_cache, provider_manager):
-    token_manager = make_token_manager(test_config, function_cache, provider_manager, model_name="unsupported_model")
+    token_manager = make_token_manager(
+        test_config, function_cache, provider_manager, model_name="unsupported_model"
+    )
     with pytest.raises(NotImplementedError):
         token_manager.get_token_encoding()
 

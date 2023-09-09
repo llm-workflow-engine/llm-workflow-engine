@@ -3,6 +3,7 @@ from lwe.core.logger import Logger
 from lwe.core import constants
 from lwe.core.plugin_manager import PluginManager
 
+
 class ProviderManager:
     def __init__(self, config, plugin_manager):
         self.config = config or Config()
@@ -11,7 +12,11 @@ class ProviderManager:
         self.provider_plugins = self.get_provider_plugins()
 
     def get_provider_plugins(self):
-        provider_plugins = {k: v for (k, v) in self.plugin_manager.get_plugins().items() if v.plugin_type == 'provider'}
+        provider_plugins = {
+            k: v
+            for (k, v) in self.plugin_manager.get_plugins().items()
+            if v.plugin_type == "provider"
+        }
         return provider_plugins
 
     def full_name(self, name):

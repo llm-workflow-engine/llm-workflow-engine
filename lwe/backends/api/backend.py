@@ -18,13 +18,12 @@ from lwe.backends.api.orm import Conversation
 from lwe.core.preset_manager import parse_llm_dict
 
 ADDITIONAL_PLUGINS = [
-    'provider_chat_openai',
+    "provider_chat_openai",
 ]
 
 
 class ApiBackend(Backend):
-    """Backend implementation using direct API access.
-    """
+    """Backend implementation using direct API access."""
 
     name = "api"
 
@@ -58,7 +57,9 @@ class ApiBackend(Backend):
         """
         super().initialize_backend(config)
         self.return_only = False
-        self.plugin_manager = PluginManager(self.config, self, additional_plugins=ADDITIONAL_PLUGINS)
+        self.plugin_manager = PluginManager(
+            self.config, self, additional_plugins=ADDITIONAL_PLUGINS
+        )
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.workflow_manager = WorkflowManager(self.config)
         self.function_manager = FunctionManager(self.config)
@@ -84,12 +85,12 @@ class ApiBackend(Backend):
             return first_user
 
     def load_default_user(self):
-        default_user = self.config.get('backend_options.default_user')
+        default_user = self.config.get("backend_options.default_user")
         if default_user is not None:
             self.load_user(default_user)
 
     def load_default_conversation(self):
-        default_conversation_id = self.config.get('backend_options.default_conversation_id')
+        default_conversation_id = self.config.get("backend_options.default_conversation_id")
         if default_conversation_id is not None:
             self.load_conversation(default_conversation_id)
 
@@ -126,7 +127,9 @@ class ApiBackend(Backend):
 
     def init_system_message(self):
         """Initialize the system message from config."""
-        success, _alias, user_message = self.set_system_message(self.config.get('model.default_system_message'))
+        success, _alias, user_message = self.set_system_message(
+            self.config.get("model.default_system_message")
+        )
         if not success:
             util.print_status_message(success, user_message)
             self.set_system_message()
@@ -140,13 +143,15 @@ class ApiBackend(Backend):
         self.init_system_message()
         self.active_preset = None
         self.active_preset_name = None
-        default_preset = self.config.get('model.default_preset')
+        default_preset = self.config.get("model.default_preset")
         if default_preset:
             success, preset, user_message = self.activate_preset(default_preset)
             if success:
                 return
-            util.print_status_message(False, f"Failed to load default preset {default_preset}: {user_message}")
-        self.set_provider('provider_chat_openai')
+            util.print_status_message(
+                False, f"Failed to load default preset {default_preset}: {user_message}"
+            )
+        self.set_provider("provider_chat_openai")
 
     def set_provider(self, provider_name, customizations=None, reset=False):
         """
@@ -161,7 +166,9 @@ class ApiBackend(Backend):
         :returns: success, provider, message
         :rtype: tuple
         """
-        self.log.debug(f"Setting provider to: {provider_name}, with customizations: {customizations}, reset: {reset}")
+        self.log.debug(
+            f"Setting provider to: {provider_name}, with customizations: {customizations}, reset: {reset}"
+        )
         self.active_preset = None
         self.active_preset_name = None
         provider_full_name = self.provider_manager.full_name(provider_name)
@@ -174,7 +181,11 @@ class ApiBackend(Backend):
             self.provider = provider
             if isinstance(customizations, dict):
                 for key, value in customizations.items():
-                    success, customizations, customization_message = self.provider.set_customization_value(key, value)
+                    (
+                        success,
+                        customizations,
+                        customization_message,
+                    ) = self.provider.set_customization_value(key, value)
                     if not success:
                         return success, customizations, customization_message
             self.llm = self.make_llm()
@@ -202,8 +213,10 @@ class ApiBackend(Backend):
 
     def compact_functions(self, customizations):
         """Compact expanded functions to just their name."""
-        if 'model_kwargs' in customizations and 'functions' in customizations['model_kwargs']:
-            customizations['model_kwargs']['functions'] = [f['name'] for f in customizations['model_kwargs']['functions']]
+        if "model_kwargs" in customizations and "functions" in customizations["model_kwargs"]:
+            customizations["model_kwargs"]["functions"] = [
+                f["name"] for f in customizations["model_kwargs"]["functions"]
+            ]
         return customizations
 
     def make_preset(self):
@@ -227,12 +240,14 @@ class ApiBackend(Backend):
             return success, preset, user_message
         metadata, customizations = preset
         customizations = copy.deepcopy(customizations)
-        success, provider, user_message = self.set_provider(metadata['provider'], customizations, reset=True)
+        success, provider, user_message = self.set_provider(
+            metadata["provider"], customizations, reset=True
+        )
         if success:
             self.active_preset = preset
             self.active_preset_name = preset_name
-            if 'system_message' in metadata:
-                self.set_system_message(metadata['system_message'])
+            if "system_message" in metadata:
+                self.set_system_message(metadata["system_message"])
         return success, preset, user_message
 
     def _handle_response(self, success, obj, message):
@@ -263,11 +278,13 @@ class ApiBackend(Backend):
         if self.conversation_id is None:
             provider = self.provider
         else:
-            success, last_message, user_message = self.message.get_last_message(self.conversation_id)
+            success, last_message, user_message = self.message.get_last_message(
+                self.conversation_id
+            )
             if not success:
                 raise ValueError(user_message)
-            provider = self.provider_manager.get_provider_from_name(last_message['provider'])
-        if provider is not None and provider.get_capability('chat'):
+            provider = self.provider_manager.get_provider_from_name(last_message["provider"])
+        if provider is not None and provider.get_capability("chat"):
             self.conversation_tokens = tokens
         else:
             self.conversation_tokens = None
@@ -283,7 +300,7 @@ class ApiBackend(Backend):
         success, conversation, user_message = self.get_conversation(conversation_id)
         if success:
             self.conversation_id = conversation_id
-            self.conversation_title = conversation['conversation']['title']
+            self.conversation_title = conversation["conversation"]["title"]
         else:
             raise ValueError(user_message)
         success, last_message, user_message = self.message.get_last_message(self.conversation_id)
@@ -291,19 +308,26 @@ class ApiBackend(Backend):
             raise ValueError(user_message)
         model_configured = False
         self.log.debug(f"Retrieved last message {last_message}")
-        if last_message['preset']:
+        if last_message["preset"]:
             self.log.debug(f"Last message has preset: {last_message['preset']}")
-            success, _preset, user_message = self.activate_preset(last_message['preset'])
+            success, _preset, user_message = self.activate_preset(last_message["preset"])
             if success:
                 model_configured = True
             else:
-                util.print_status_message(False, f"Unable to switch conversation to previous preset '{last_message['preset']}' -- ERROR: {user_message}, falling back to provider: {last_message['provider']}, model: {last_message['model']}")
+                util.print_status_message(
+                    False,
+                    f"Unable to switch conversation to previous preset '{last_message['preset']}' -- ERROR: {user_message}, falling back to provider: {last_message['provider']}, model: {last_message['model']}",
+                )
         if not model_configured:
-            if last_message['provider'] and last_message['model']:
-                self.log.debug(f"Last message has provider: {last_message['provider']}, model: {last_message['model']}")
-                success, _provider, _user_message = self.set_provider(last_message['provider'], reset=True)
+            if last_message["provider"] and last_message["model"]:
+                self.log.debug(
+                    f"Last message has provider: {last_message['provider']}, model: {last_message['model']}"
+                )
+                success, _provider, _user_message = self.set_provider(
+                    last_message["provider"], reset=True
+                )
                 if success:
-                    success, _customizations, _user_message = self.set_model(last_message['model'])
+                    success, _customizations, _user_message = self.set_model(last_message["model"])
                     if success:
                         self.init_system_message()
                         model_configured = True
@@ -312,20 +336,21 @@ class ApiBackend(Backend):
             self.log.warning(message)
             util.print_status_message(False, message)
             self.init_provider()
-        conversation_storage_manager = ConversationStorageManager(self.config,
-                                                                  self.function_manager,
-                                                                  self.current_user,
-                                                                  self.conversation_id,
-                                                                  self.provider,
-                                                                  self.model,
-                                                                  self.active_preset_name or '',
-                                                                  provider_manager=self.provider_manager,
-                                                                  orm=self.orm,
-                                                                  )
+        conversation_storage_manager = ConversationStorageManager(
+            self.config,
+            self.function_manager,
+            self.current_user,
+            self.conversation_id,
+            self.provider,
+            self.model,
+            self.active_preset_name or "",
+            provider_manager=self.provider_manager,
+            orm=self.orm,
+        )
         tokens = conversation_storage_manager.get_conversation_token_count()
         self.set_conversation_tokens(tokens)
 
-    def get_system_message(self, system_message='default'):
+    def get_system_message(self, system_message="default"):
         """
         Get the system message.
 
@@ -339,7 +364,7 @@ class ApiBackend(Backend):
             system_message = aliases[system_message]
         return system_message
 
-    def set_system_message(self, system_message='default'):
+    def set_system_message(self, system_message="default"):
         """
         Set the system message.
 
@@ -347,7 +372,9 @@ class ApiBackend(Backend):
         :type system_message: str
         """
         self.system_message = self.get_system_message(system_message)
-        self.system_message_alias = system_message if system_message in self.get_system_message_aliases() else None
+        self.system_message_alias = (
+            system_message if system_message in self.get_system_message_aliases() else None
+        )
         message = f"System message set to: {self.system_message}"
         self.log.info(message)
         return True, system_message, message
@@ -362,7 +389,11 @@ class ApiBackend(Backend):
         :type force: bool
         """
         self.max_submission_tokens = max_submission_tokens or self.provider.max_submission_tokens()
-        return True, self.max_submission_tokens, f"Max submission tokens set to {self.max_submission_tokens}"
+        return (
+            True,
+            self.max_submission_tokens,
+            f"Max submission tokens set to {self.max_submission_tokens}",
+        )
 
     def get_runtime_config(self):
         """
@@ -374,7 +405,10 @@ class ApiBackend(Backend):
         output = """
 * Max submission tokens: %s
 * System message: %s
-""" % (self.max_submission_tokens, self.system_message)
+""" % (
+            self.max_submission_tokens,
+            self.system_message,
+        )
         return output
 
     def get_system_message_aliases(self):
@@ -384,8 +418,8 @@ class ApiBackend(Backend):
         :returns: Dict of message aliases
         :rtype: dict
         """
-        aliases = self.config.get('model.system_message')
-        aliases['default'] = constants.SYSTEM_MESSAGE_DEFAULT
+        aliases = self.config.get("model.system_message")
+        aliases["default"] = constants.SYSTEM_MESSAGE_DEFAULT
         return aliases
 
     def retrieve_old_messages(self, conversation_id=None, target_id=None):
@@ -401,7 +435,9 @@ class ApiBackend(Backend):
         """
         old_messages = []
         if conversation_id:
-            success, old_messages, message = self.message.get_messages(conversation_id, target_id=target_id)
+            success, old_messages, message = self.message.get_messages(
+                conversation_id, target_id=target_id
+            )
             if not success:
                 raise Exception(message)
         return old_messages
@@ -419,7 +455,9 @@ class ApiBackend(Backend):
         self.current_user = user
         if self.current_user:
             if self.current_user.default_preset:
-                self.log.debug(f"Activating user default preset: {self.current_user.default_preset}")
+                self.log.debug(
+                    f"Activating user default preset: {self.current_user.default_preset}"
+                )
                 return self.activate_preset(self.current_user.default_preset)
         return self.init_provider()
 
@@ -432,7 +470,7 @@ class ApiBackend(Backend):
         :returns: List of messages
         :rtype: list
         """
-        return conversation_data['messages']
+        return conversation_data["messages"]
 
     def delete_conversation(self, conversation_id=None):
         """Delete a conversation.
@@ -458,7 +496,9 @@ class ApiBackend(Backend):
         :rtype: tuple
         """
         conversation_id = conversation_id if conversation_id else self.conversation_id
-        success, conversation, user_message = self.conversation.edit_conversation_title(conversation_id, title)
+        success, conversation, user_message = self.conversation.edit_conversation_title(
+            conversation_id, title
+        )
         if success:
             self.conversation_title = conversation.title
         return self._handle_response(success, conversation, user_message)
@@ -477,7 +517,9 @@ class ApiBackend(Backend):
         :rtype: tuple
         """
         user_id = user_id if user_id else self.current_user.id
-        success, conversations, message = self.conversation.get_conversations(user_id, limit=limit, offset=offset)
+        success, conversations, message = self.conversation.get_conversations(
+            user_id, limit=limit, offset=offset
+        )
         if success:
             history = {m.id: self.orm.object_as_dict(m) for m in conversations}
             return success, history, message
@@ -533,24 +575,29 @@ class ApiBackend(Backend):
         self.log.info("Starting 'ask' request")
         request_overrides = request_overrides or {}
         old_messages = self.retrieve_old_messages(self.conversation_id)
-        self.log.debug(f"Extracting activate preset configuration from request_overrides: {request_overrides}")
-        success, response, user_message = util.extract_preset_configuration_from_request_overrides(request_overrides, self.active_preset_name)
+        self.log.debug(
+            f"Extracting activate preset configuration from request_overrides: {request_overrides}"
+        )
+        success, response, user_message = util.extract_preset_configuration_from_request_overrides(
+            request_overrides, self.active_preset_name
+        )
         if not success:
             return success, response, user_message
         preset_name, _preset_overrides, activate_preset = response
-        request = ApiRequest(self.config,
-                             self.provider,
-                             self.provider_manager,
-                             self.function_manager,
-                             input,
-                             self.active_preset,
-                             self.preset_manager,
-                             self.system_message,
-                             old_messages,
-                             self.max_submission_tokens,
-                             request_overrides,
-                             orm=self.orm,
-                             )
+        request = ApiRequest(
+            self.config,
+            self.provider,
+            self.provider_manager,
+            self.function_manager,
+            input,
+            self.active_preset,
+            self.preset_manager,
+            self.system_message,
+            old_messages,
+            self.max_submission_tokens,
+            request_overrides,
+            orm=self.orm,
+        )
         self.request = request
         request.set_request_llm()
         new_messages, messages = request.prepare_ask_request()
@@ -558,18 +605,25 @@ class ApiBackend(Backend):
         if success:
             response_content, new_messages = request.post_response(response_obj, new_messages)
             self.message_clipboard = response_content
-            title = request_overrides.get('title')
-            conversation_storage_manager = ConversationStorageManager(self.config,
-                                                                      self.function_manager,
-                                                                      self.current_user,
-                                                                      self.conversation_id,
-                                                                      request.provider,
-                                                                      request.model_name,
-                                                                      request.preset_name,
-                                                                      provider_manager=self.provider_manager,
-                                                                      orm=self.orm,
-                                                                      )
-            success, response_obj, user_message = conversation_storage_manager.store_conversation_messages(new_messages, response_content, title)
+            title = request_overrides.get("title")
+            conversation_storage_manager = ConversationStorageManager(
+                self.config,
+                self.function_manager,
+                self.current_user,
+                self.conversation_id,
+                request.provider,
+                request.model_name,
+                request.preset_name,
+                provider_manager=self.provider_manager,
+                orm=self.orm,
+            )
+            (
+                success,
+                response_obj,
+                user_message,
+            ) = conversation_storage_manager.store_conversation_messages(
+                new_messages, response_content, title
+            )
             if success:
                 if isinstance(response_obj, Conversation):
                     conversation = response_obj
@@ -596,7 +650,7 @@ class ApiBackend(Backend):
         :rtype: tuple
         """
         request_overrides = request_overrides or {}
-        request_overrides['stream'] = True
+        request_overrides["stream"] = True
         return self.make_request(input, request_overrides)
 
     def ask(self, input: str, request_overrides: dict = None):
