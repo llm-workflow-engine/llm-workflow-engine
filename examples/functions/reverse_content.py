@@ -1,5 +1,6 @@
 from lwe.core.function import Function
 
+
 class ReverseContent(Function):
     def __call__(self, content: str) -> dict:
         """

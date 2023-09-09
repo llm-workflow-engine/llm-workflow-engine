@@ -8,6 +8,7 @@ from lwe.backends.api.conversation import ConversationManager
 
 JSON_MESSAGE_TYPES = ['function_call', 'function_response']
 
+
 class MessageManager(Manager):
     def __init__(self, config=None, orm=None):
         super().__init__(config, orm)

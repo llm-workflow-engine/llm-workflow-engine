@@ -50,6 +50,7 @@ import lwe.core.constants as constants
 from lwe.core.error import NoInputError
 from lwe.core.config import Config
 
+
 class TestClass:
     class DummyClass:
         def command_command1(self):

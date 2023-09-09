@@ -18,6 +18,7 @@ DEFAULT_NUM_USERS = 5
 DEFAULT_NUM_CONVERSATIONS = 5
 DEFAULT_NUM_MESSAGES = 10
 
+
 class Database:
 
     def __init__(self, config, orm=None):
@@ -55,6 +56,7 @@ class Database:
             util.print_status_message(False, f"Removing old database schema for: {self.orm.database}")
             Base.metadata.drop_all(bind=self.orm.engine)
             util.print_status_message(True, "Removed old database schema")
+
 
 class DatabaseDevel(Database):
 
@@ -118,6 +120,7 @@ class DatabaseDevel(Database):
         if self.print:
             self.print_data()
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -179,6 +182,7 @@ def main():
         config.set('database', args.database)
     db = DatabaseDevel(config, args)
     db.run()
+
 
 if __name__ == '__main__':
     main()

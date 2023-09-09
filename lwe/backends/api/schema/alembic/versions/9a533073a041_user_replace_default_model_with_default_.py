@@ -1,7 +1,7 @@
 """user replace default_model with default_preset
 
 Revision ID: 9a533073a041
-Revises: 
+Revises:
 Create Date: 2023-05-11 19:19:27.659031
 
 """

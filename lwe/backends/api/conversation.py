@@ -2,6 +2,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from lwe.backends.api.orm import Manager
 
+
 class ConversationManager(Manager):
     def get_conversations(self, user_id, limit=None, offset=None, order_desc=True):
         try:

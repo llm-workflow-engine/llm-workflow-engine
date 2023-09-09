@@ -17,6 +17,7 @@ down_revision = 'c7d7803302a9'
 branch_labels = None
 depends_on = None
 
+
 def upgrade_preset(preset_path):
     if not preset_path.endswith('.yaml'):
         print(f"Skipping file {preset_path}, not a preset")
@@ -29,6 +30,7 @@ def upgrade_preset(preset_path):
         with open(preset_path, 'w') as f:
             yaml.safe_dump(preset_data, f)
             print(f"Upgraded preset file schema: {preset_path}")
+
 
 def execute_upgrade():
     config_dir = op.get_context().config.attributes['config_dir']
@@ -47,6 +49,7 @@ def execute_upgrade():
                 print(f"Presets directory found for profile: {profile}, processing presets...")
                 for preset_file in os.listdir(presets_dir):
                     upgrade_preset(os.path.join(presets_dir, preset_file))
+
 
 def upgrade() -> None:
     try:

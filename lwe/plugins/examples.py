@@ -11,6 +11,7 @@ TYPES = [
     'functions',
 ]
 
+
 class Examples(Plugin):
     """
     Easily install example configuration files

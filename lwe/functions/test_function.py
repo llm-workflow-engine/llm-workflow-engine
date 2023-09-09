@@ -1,5 +1,6 @@
 from lwe.core.function import Function
 
+
 class TestFunction(Function):
     # Ignore for pytest.
     __test__ = False

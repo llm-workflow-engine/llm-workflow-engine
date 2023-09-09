@@ -13,10 +13,12 @@ import lwe.core.util as util
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def get_database_url():
     config = Config()
     database = config.get('database')
     return database
+
 
 def create_schema_revision(message, database_url=None):
     if not database_url:

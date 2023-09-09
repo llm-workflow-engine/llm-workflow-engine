@@ -6,6 +6,7 @@ from lwe.core.logger import Logger
 
 from lwe.core import util
 
+
 class TokenManager:
     """Manage functions in a cache.
     """

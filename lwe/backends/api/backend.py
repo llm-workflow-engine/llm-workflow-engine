@@ -21,6 +21,7 @@ ADDITIONAL_PLUGINS = [
     'provider_chat_openai',
 ]
 
+
 class ApiBackend(Backend):
     """Backend implementation using direct API access.
     """

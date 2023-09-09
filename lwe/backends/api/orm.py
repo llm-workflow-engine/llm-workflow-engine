@@ -16,12 +16,17 @@ from lwe.core.logger import Logger
 import lwe.core.constants as constants
 
 Base = declarative_base()
+
+
 def _set_sqlite_pragma(conn, _record):
     if isinstance(conn, SQLite3Connection):
         cursor = conn.cursor()
         cursor.execute("PRAGMA foreign_keys=ON;")
         cursor.close()
+
+
 event.listen(Engine, "connect", _set_sqlite_pragma)
+
 
 class User(Base):
     __tablename__ = 'user'
@@ -37,10 +42,12 @@ class User(Base):
 
     conversations = relationship('Conversation', back_populates='user', passive_deletes=True)
 
+
 Index('user_username_idx', User.username)
 Index('user_email_idx', User.email)
 Index('user_created_time_idx', User.created_time)
 Index('user_last_login_time', User.last_login_time)
+
 
 class Conversation(Base):
     __tablename__ = 'conversation'
@@ -55,10 +62,12 @@ class Conversation(Base):
     user = relationship('User', back_populates='conversations')
     messages = relationship('Message', back_populates='conversation', passive_deletes=True)
 
+
 Index('conversation_user_id_idx', Conversation.user_id)
 Index('conversation_created_time_idx', Conversation.created_time)
 Index('conversation_updated_time_idx', Conversation.updated_time)
 Index('conversation_hidden_idx', Conversation.hidden)
+
 
 class Message(Base):
     __tablename__ = 'message'
@@ -76,8 +85,10 @@ class Message(Base):
 
     conversation = relationship('Conversation', back_populates='messages')
 
+
 Index('message_conversation_id_idx', Message.conversation_id)
 Index('message_created_time_idx', Message.created_time)
+
 
 class Orm:
     def __init__(self, config=None):

@@ -10,6 +10,7 @@ from lwe.core.config import Config
 from lwe.core.logger import Logger
 import lwe.core.util as util
 
+
 class WorkflowManager():
     """
     Manage workflows.

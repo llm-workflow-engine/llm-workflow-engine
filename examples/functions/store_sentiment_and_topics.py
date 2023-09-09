@@ -5,15 +5,19 @@ from typing import List
 
 from lwe.core.function import Function
 
+
 class Sentiment(BaseModel):
     name: str = Field(..., description="Single word sentiment description")
+
 
 class Topic(BaseModel):
     name: str = Field(..., description="One or two word description of a topic")
 
+
 class ExtractSentimentTopics(BaseModel):
     sentiments: List[Sentiment] = Field(..., description="One to three sentiment descriptions")
     topics: List[Topic] = Field(..., description="One to three topic descriptions")
+
 
 class StoreSentimentAndTopics(Function):
 

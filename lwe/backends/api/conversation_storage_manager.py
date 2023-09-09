@@ -16,6 +16,7 @@ from lwe.backends.api.request import ApiRequest
 
 from langchain.adapters.openai import convert_dict_to_message
 
+
 class ConversationStorageManager:
     """Manage conversation storage.
     """

@@ -333,7 +333,6 @@ Examples listed demonstrate how to use the module in an Ansible playbook.
     else:
         markdown += "\n".join([f" * {k}" for k in module_data["options"].keys()])
 
-
     markdown += "\n\n##Attributes\n\n"
 
     if full_doc:

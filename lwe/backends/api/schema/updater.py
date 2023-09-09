@@ -9,13 +9,14 @@ from alembic.config import Config as AlembicConfig
 from alembic import command
 from alembic.script import ScriptDirectory
 from alembic.runtime.migration import MigrationContext
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import inspect
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
 from lwe.core import util
 
 from lwe.backends.api.orm import Orm
+
 
 class SchemaUpdater:
     def __init__(self, config=None, orm=None):
@@ -113,6 +114,7 @@ class SchemaUpdater:
 
     def add_revision(self, name):
         command.revision(self.alembic_cfg, message=name, autogenerate=True)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Schema Updater")

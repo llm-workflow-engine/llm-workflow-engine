@@ -25,4 +25,3 @@ def upgrade() -> None:
     op.execute("UPDATE conversation SET provider = 'cohere' WHERE model IN ('base', 'base-light', 'command', 'command-light', 'summarize-medium', 'summarize-xlarge');")
     op.execute("UPDATE conversation SET provider = 'huggingface_hub' WHERE model IN ('bert-base-uncased', 'gpt2', 'xlm-roberta-base', 'roberta-base', 'microsoft/layoutlmv3-base', 'distilbert-base-uncased', 't5-base', 'xlm-roberta-large', 'bert-base-cased', 'google/flan-t5-xl');")
     op.execute("UPDATE conversation SET provider = 'openai' WHERE model IN ('text-ada-001', 'text-babbage-001', 'text-curie-001', 'text-davinci-001', 'text-davinci-002', 'text-davinci-003');")
-

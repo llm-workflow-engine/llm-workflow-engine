@@ -18,6 +18,7 @@ ALLOWED_BASE_SHELL_NOT_LOGGED_IN_COMMANDS = [
 ]
 SKIP_MESSAGE = "(Press enter to skip)"
 
+
 class ApiRepl(Repl):
     """
     A shell interpreter that serves as a front end to the ApiBackend class
@@ -162,7 +163,6 @@ class ApiRepl(Repl):
         if success:
             self.rebuild_completions()
         return success, user, user_message
-
 
     def check_login(self):
         """
@@ -791,7 +791,6 @@ Before you can start using the shell, you must create a new user.
             if not success:
                 return success, preset, load_preset_message
         return success, file_path, user_message
-
 
     def action_preset_edit(self, preset_name=None):
         """

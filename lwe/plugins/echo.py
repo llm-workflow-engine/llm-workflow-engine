@@ -1,6 +1,7 @@
 from lwe.core.plugin import Plugin
 import lwe.core.util as util
 
+
 class Echo(Plugin):
     """
     Simple echo plugin, echos back the text you give it

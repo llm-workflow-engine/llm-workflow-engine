@@ -8,6 +8,7 @@ from lwe.core.config import Config
 from lwe.core import util
 from lwe.backends.api.repl import ApiRepl
 
+
 def main():
 
     dummy_config = Config()
@@ -202,6 +203,7 @@ def main():
 
     shell.cmdloop()
     shell.cleanup()
+
 
 if __name__ == "__main__":
     main()
