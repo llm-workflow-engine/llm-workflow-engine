@@ -26,10 +26,15 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "${{ matrix.python-version }}"
-    - name: Install dependencies
+    - name: Install OS dependencies
+      run: |
+        sudo apt-get install xclip
+    - name: Install PIP
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest
+    - name: Install testing dependencies
+      run: |
+        pip install pytest flake8 xvfbwrapper
     - name: Install app
       run: |
         pip install -e .
@@ -41,5 +46,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        # pytest
-        pytest -s tests/system/test_api_backend.py::test_api_backend_get_history
+        pytest
+        # pytest -s tests/system/test_api_backend.py::test_api_backend_get_history
