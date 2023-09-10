@@ -208,7 +208,7 @@ class ApiBackend(Backend):
         """
         self.log.debug(f"Setting model to: {model_name}")
         success, customizations, user_message = super().set_model(model_name)
-        self.set_max_submission_tokens(force=True)
+        self.set_max_submission_tokens()
         return success, customizations, user_message
 
     def compact_functions(self, customizations):
@@ -379,7 +379,7 @@ class ApiBackend(Backend):
         self.log.info(message)
         return True, system_message, message
 
-    def set_max_submission_tokens(self, max_submission_tokens=None, force=False):
+    def set_max_submission_tokens(self, max_submission_tokens=None):
         """
         Set the max submission tokens.
 
