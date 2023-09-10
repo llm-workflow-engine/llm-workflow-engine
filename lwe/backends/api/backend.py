@@ -1,8 +1,11 @@
 import copy
 
-from lwe.core.backend import Backend
+from lwe.core.config import Config
+from lwe.core.logger import Logger
 from lwe.backends.api.database import Database
 from lwe.backends.api.orm import Orm, User
+from lwe.core.template_manager import TemplateManager
+from lwe.core.preset_manager import PresetManager
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.workflow_manager import WorkflowManager
 from lwe.core.function_manager import FunctionManager
@@ -22,7 +25,7 @@ ADDITIONAL_PLUGINS = [
 ]
 
 
-class ApiBackend(Backend):
+class ApiBackend:
     """Backend implementation using direct API access."""
 
     name = "api"
@@ -35,7 +38,8 @@ class ApiBackend(Backend):
 
         :param config: Optional configuration for the backend. If not provided, it uses a default configuration.
         """
-        super().__init__(config)
+        self.conversation_id = None
+        self.conversation_title = None
         self.current_user = None
         self.request = None
         self.orm = orm or Orm(config)
@@ -44,6 +48,89 @@ class ApiBackend(Backend):
         self.message = MessageManager(config, self.orm)
         self.initialize_database(config)
         self.initialize_backend(config)
+
+    def set_available_models(self):
+        """
+        Sets the available models for the provider.
+        """
+        self.available_models = self.provider.available_models
+
+    def make_llm(self, customizations=None):
+        """
+        Creates a Language Model (llm) using the provider.
+
+        :param customizations: Optional dictionary for customizations.
+        :return: Language Model (llm) object.
+        """
+        customizations = customizations or {}
+        llm = self.provider.make_llm(customizations)
+        return llm
+
+    def terminate_stream(self, _signal, _frame):
+        """
+        Handles termination signal, passing it to the request if present.
+
+        :param _signal: The signal that triggered the termination.
+        :param _frame: Current stack frame.
+        """
+        self.log.info("Received signal to terminate stream")
+        self.request and self.request.terminate_stream(_signal, _frame)
+
+    def run_template_setup(self, template_name, substitutions=None):
+        """
+        Sets up the run of a template.
+
+        :param template_name: Name of the template to run.
+        :param substitutions: Optional dictionary of substitutions.
+        :return: A tuple containing a success indicator, tuple of template setup data, and a user message.
+        """
+        self.log.info(f"Setting up run of template: {template_name}")
+        substitutions = substitutions or {}
+        message, overrides = self.template_manager.build_message_from_template(
+            template_name, substitutions
+        )
+        return True, (message, overrides), f"Set up of template run complete: {template_name}"
+
+    def run_template_compiled(self, message, overrides=None):
+        """
+        Runs the compiled template.
+
+        :param message: The message to be sent.
+        :param overrides: Optional dictionary of overrides.
+        :return: The response tuple from LLM request.
+        """
+        overrides = overrides or {}
+        self.log.info("Running template")
+        response = self.make_request(message, **overrides)
+        return response
+
+    def run_template(self, template_name, template_vars=None, overrides=None):
+        """
+        Runs the given template with the provided variables and overrides.
+
+        :param template_name: Name of the template to run.
+        :param template_vars: Optional dictionary of template variables, will merged with any set in the template.
+        :param overrides: Optional dictionary of overrides, will be merged with any set in the template.
+        :return: The response tuple from the template run.
+        """
+        template_vars = template_vars or {}
+        overrides = overrides or {}
+        (
+            success,
+            response,
+            user_message,
+        ) = self.template_manager.get_template_variables_substitutions(template_name)
+        if not success:
+            return success, response, user_message
+        _template, _variables, substitutions = response
+        util.merge_dicts(substitutions, template_vars)
+        success, response, user_message = self.run_template_setup(template_name, substitutions)
+        if not success:
+            return success, response, user_message
+        message, template_overrides = response
+        util.merge_dicts(template_overrides, overrides)
+        response = self.run_template_compiled(message, template_overrides)
+        return response
 
     def initialize_backend(self, config=None):
         """
@@ -55,8 +142,14 @@ class ApiBackend(Backend):
         :param config: Backend configuration options
         :type config: dict, optional
         """
-        super().initialize_backend(config)
+        self.config = config or Config()
+        self.log = Logger(self.__class__.__name__, self.config)
+        self.provider_name = None
+        self.provider = None
+        self.message_clipboard = None
         self.return_only = False
+        self.template_manager = TemplateManager(self.config)
+        self.preset_manager = PresetManager(self.config)
         self.plugin_manager = PluginManager(
             self.config, self, additional_plugins=ADDITIONAL_PLUGINS
         )
@@ -207,7 +300,8 @@ class ApiBackend(Backend):
         :rtype: tuple
         """
         self.log.debug(f"Setting model to: {model_name}")
-        success, customizations, user_message = super().set_model(model_name)
+        self.model = model_name
+        success, customizations, user_message = self.provider.set_model(model_name)
         self.set_max_submission_tokens()
         return success, customizations, user_message
 
@@ -558,7 +652,9 @@ class ApiBackend(Backend):
 
     def new_conversation(self):
         """Start a new conversation."""
-        super().new_conversation()
+        self.conversation_id = None
+        self.conversation_title = None
+        self.message_clipboard = None
         self.set_conversation_tokens(0)
 
     def make_request(self, input, request_overrides: dict = None):

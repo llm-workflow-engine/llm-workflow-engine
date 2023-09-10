@@ -12,7 +12,7 @@ from langchain.schema.messages import (
 
 from lwe.core import constants
 import lwe.core.util as util
-from lwe.core.backend import Backend
+from lwe.backends.api.backend import ApiBackend
 from lwe.backends.api.request import ApiRequest
 
 TEST_DIR = os.path.join(tempfile.gettempdir(), "lwe_test")
@@ -78,7 +78,7 @@ TEST_FUNCTION_CALL_RESPONSE_MESSAGES = [
 ]
 
 
-class FakeBackend(Backend):
+class FakeBackend(ApiBackend):
     name = "api"
 
     def conversation_data_to_messages(self, conversation_data):
