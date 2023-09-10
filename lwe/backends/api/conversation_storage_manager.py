@@ -175,9 +175,7 @@ class ConversationStorageManager:
             return
         user_content = messages[1]["message"][: constants.TITLE_GENERATION_MAX_CHARACTERS]
         new_messages = [
-            self.message.build_message(
-                "system", constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT
-            ),
+            self.message.build_message("system", constants.DEFAULT_TITLE_GENERATION_SYSTEM_PROMPT),
             self.message.build_message(
                 "user",
                 "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content),

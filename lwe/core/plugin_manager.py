@@ -63,7 +63,7 @@ class PluginManager:
         entry_point_group = "%splugins" % PLUGIN_PREFIX
         for entry_point in pkg_resources.iter_entry_points(group=entry_point_group):
             package_name = entry_point.dist.project_name
-            plugin_name = util.dash_to_underscore(package_name[len("%splugin_" % PLUGIN_PREFIX):])
+            plugin_name = util.dash_to_underscore(package_name[len("%splugin_" % PLUGIN_PREFIX) :])
             if plugin_name in plugin_list:
                 try:
                     klass = entry_point.load()

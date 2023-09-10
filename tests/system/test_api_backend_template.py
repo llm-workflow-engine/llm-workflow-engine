@@ -57,7 +57,9 @@ def test_api_backend_template_variable_substitution(test_config, datadir):
         "passed_variable": "passed_variable_value",
     }
     with patch("pyperclip.paste", return_value="clipboard_value"):
-        success, response, user_message = backend.run_template("test_template_variable_substitution.md", template_variables)
+        success, response, user_message = backend.run_template(
+            "test_template_variable_substitution.md", template_variables
+        )
     assert success
     message_user = get_template_user_message(backend)
     message = message_user["message"]
@@ -115,7 +117,9 @@ def test_api_backend_template_creates_valid_conversation_and_messages(test_confi
     assert message_assistant["preset"] == "test"
 
 
-def test_api_backend_template_with_function_call_creates_valid_conversation_and_messages(test_config, datadir):
+def test_api_backend_template_with_function_call_creates_valid_conversation_and_messages(
+    test_config, datadir
+):
     backend = make_api_backend(test_config, datadir)
     function_responses = [
         AIMessage(
@@ -130,7 +134,9 @@ def test_api_backend_template_with_function_call_creates_valid_conversation_and_
         "Foo repeated twice is: foo foo",
     ]
     overrides = {"request_overrides": fake_llm_responses(function_responses)}
-    success, response, _user_message = backend.run_template("test_template_function_call_basic.md", None, overrides)
+    success, response, _user_message = backend.run_template(
+        "test_template_function_call_basic.md", None, overrides
+    )
     assert success
     success, response, _user_message = backend.get_conversation()
     assert success
@@ -196,7 +202,9 @@ def test_api_backend_template_with_function_call_and_return_on_function_call_cre
         "Foo repeated twice is: foo foo",
     ]
     overrides = {"request_overrides": fake_llm_responses(function_responses)}
-    success, response, _user_message = backend.run_template("test_template_with_function_call_and_return_on_function_call.md", None, overrides)
+    success, response, _user_message = backend.run_template(
+        "test_template_with_function_call_and_return_on_function_call.md", None, overrides
+    )
     assert success
     success, response, _user_message = backend.get_conversation()
     assert success
@@ -245,7 +253,9 @@ def test_api_backend_template_with_function_call_and_return_on_function_response
         "Foo repeated twice is: foo foo",
     ]
     overrides = {"request_overrides": fake_llm_responses(function_responses)}
-    success, response, _user_message = backend.run_template("test_template_with_function_call_and_return_on_function_response.md", None, overrides)
+    success, response, _user_message = backend.run_template(
+        "test_template_with_function_call_and_return_on_function_response.md", None, overrides
+    )
     assert success
     success, response, _user_message = backend.get_conversation()
     assert success
@@ -286,10 +296,14 @@ def test_api_backend_template_with_function_call_and_return_on_function_response
     assert message_function_response["preset"] == "test"
 
 
-def test_api_backend_template_doesnt_override_active_preset_when_preset_in_request_overrides(test_config, datadir):
+def test_api_backend_template_doesnt_override_active_preset_when_preset_in_request_overrides(
+    test_config, datadir
+):
     backend = make_api_backend(test_config, datadir)
     assert backend.active_preset_name == "test"
-    success, response, _user_message = backend.run_template("test_template_doesnt_override_active_preset_when_preset_in_request_overrides.md")
+    success, response, _user_message = backend.run_template(
+        "test_template_doesnt_override_active_preset_when_preset_in_request_overrides.md"
+    )
     assert success
     success, response, _user_message = backend.get_conversation()
     assert success
@@ -300,10 +314,14 @@ def test_api_backend_template_doesnt_override_active_preset_when_preset_in_reque
     assert backend.active_preset_name == "test"
 
 
-def test_api_backend_template_overrides_active_preset_when_activate_preset_in_request_overrides(test_config, datadir):
+def test_api_backend_template_overrides_active_preset_when_activate_preset_in_request_overrides(
+    test_config, datadir
+):
     backend = make_api_backend(test_config, datadir)
     assert backend.active_preset_name == "test"
-    success, response, _user_message = backend.run_template("test_template_overrides_active_preset_when_activate_preset_in_request_overrides.md")
+    success, response, _user_message = backend.run_template(
+        "test_template_overrides_active_preset_when_activate_preset_in_request_overrides.md"
+    )
     assert success
     success, response, _user_message = backend.get_conversation()
     assert success
@@ -320,7 +338,9 @@ def test_api_backend_template_doesnt_override_system_message_when_system_message
 ):
     backend = make_api_backend(test_config, datadir)
     assert backend.get_system_message() == constants.SYSTEM_MESSAGE_DEFAULT
-    success, response, _user_message = backend.run_template("test_template_doesnt_override_system_message_when_system_message_in_request_overrides.md")
+    success, response, _user_message = backend.run_template(
+        "test_template_doesnt_override_system_message_when_system_message_in_request_overrides.md"
+    )
     assert success
     success, response, _user_message = backend.get_conversation()
     assert success
@@ -332,18 +352,24 @@ def test_api_backend_template_doesnt_override_system_message_when_system_message
 
 def test_api_backend_template_sets_custom_title_when_in_request_overrides(test_config, datadir):
     backend = make_api_backend(test_config, datadir)
-    success, response, _user_message = backend.run_template("test_template_sets_custom_title_when_in_request_overrides.md")
+    success, response, _user_message = backend.run_template(
+        "test_template_sets_custom_title_when_in_request_overrides.md"
+    )
     assert success
     success, response, _user_message = backend.get_conversation()
     assert success
     assert response["conversation"]["title"] == "test custom title"
 
 
-def test_api_backend_template_overrides_provider_model_when_in_request_overrides(test_config, datadir):
+def test_api_backend_template_overrides_provider_model_when_in_request_overrides(
+    test_config, datadir
+):
     backend = make_api_backend(test_config, datadir)
     success, response, _user_message = backend.ask("test question")
     assert success
-    success, response, _user_message = backend.run_template("test_template_overrides_provider_model_when_in_request_overrides.md")
+    success, response, _user_message = backend.run_template(
+        "test_template_overrides_provider_model_when_in_request_overrides.md"
+    )
     assert success
     success, response, _user_message = backend.ask("test question")
     assert success
