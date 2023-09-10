@@ -1,3 +1,130 @@
+### v0.18.0 - 09/09/2023
+
+Major rewrite of the ApiBackend for maintainability/testability.
+
+No changes to functionality of the Python module or REPL.
+
+#### Commit log
+
+* **Sat Sep 09 2023:** formatting fixes via black
+* **Sat Sep 09 2023:** system tests for ApiBackend template operations
+* **Sat Sep 09 2023:** add pytest-datadir plugin
+* **Sat Sep 09 2023:** move make_template_file to base test module
+* **Sat Sep 09 2023:** add links to test badges
+* **Sat Sep 09 2023:** better name for test workflow badge
+* **Sat Sep 09 2023:** add test/CodeQL badges
+* **Sat Sep 09 2023:** fix more linting errors
+* **Sat Sep 09 2023:** fix missing test asserts, B015 linting error
+* **Sat Sep 09 2023:** fix B907 linting errors
+* **Sat Sep 09 2023:** reformat with black
+* **Sat Sep 09 2023:** extend flake8 config, add black config
+* **Sat Sep 09 2023:** fix linting errors/warnings
+* **Sat Sep 09 2023:** add flake8 config file
+* **Sat Sep 09 2023:** remove xclip/xvfbwrapper deps
+* **Sat Sep 09 2023:** mock pyperclip for unit tests
+* **Sat Sep 09 2023:** turn off testing debug
+* **Sat Sep 09 2023:** clean up dependency installation
+* **Sat Sep 09 2023:** use Xvfb for clipboard tests
+* **Sat Sep 09 2023:** use custom FakeMessagesListChatModel for now
+* **Sat Sep 09 2023:** set fake OPENAI_API_KEY for tests
+* **Sat Sep 09 2023:** temporary hack to debug Github workflow tests
+* **Sat Sep 09 2023:** separate workflow step to install app
+* **Sat Sep 09 2023:** switch to development install of package
+* **Sat Sep 09 2023:** bump Python version requirement to 3.9 or later
+* **Sat Sep 09 2023:** fix python version declaration
+* **Sat Sep 09 2023:** update codeQL workflow
+* **Sat Sep 09 2023:** remove old workflow
+* **Thu Aug 17 2023:** don't pollute base presets
+* **Sat Sep 09 2023:** Create python-app.yml
+* **Sat Sep 09 2023:** more ApiRequest system tests
+* **Fri Sep 08 2023:** add missing API doc
+* **Fri Sep 08 2023:** add config for API doc
+* **Fri Sep 08 2023:** remove unneeded import
+* **Fri Sep 08 2023:** script to count total asserts tests
+* **Fri Sep 08 2023:** more ApiRequest system tests
+* **Fri Sep 08 2023:** combine ApiBackend system tests, add more.
+* **Fri Sep 08 2023:** add second test preset to preset manager
+* **Fri Sep 08 2023:** template -> template_manager
+* **Fri Sep 08 2023:** fix missing API doc
+* **Thu Sep 07 2023:** improve TemplateManager unit tests
+* **Thu Sep 07 2023:** clean up util class and tests
+* **Thu Sep 07 2023:** add more template/util tests
+* **Thu Sep 07 2023:** return filepath from create_file()
+* **Thu Sep 07 2023:** polish up system tests
+* **Thu Sep 07 2023:** add another ConversationStorageManager integration test
+* **Thu Sep 07 2023:** add test support methods for creating conversations/messages
+* **Wed Sep 06 2023:** add integration tests for ConversationStorageManager
+* **Wed Sep 06 2023:** init defaults
+* **Wed Sep 06 2023:** add more integration tests for ApiRequest
+* **Wed Sep 06 2023:** more unit tests for ApiRequest
+* **Wed Sep 06 2023:** refactor build_llm() into more testable units
+* **Wed Sep 06 2023:** add more unit tests for ApiRequest
+* **Wed Sep 06 2023:** support function to clean colorized output
+* **Wed Sep 06 2023:** move log message
+* **Wed Sep 06 2023:** reorganize system/integration tests, add more ApiRequest integration tests
+* **Wed Sep 06 2023:** refactor post_response, clean up init defaults
+* **Tue Sep 05 2023:** more tests for ApiRequest
+* **Tue Sep 05 2023:** clean up docstrings
+* **Tue Sep 05 2023:** more ApiRequest tests
+* **Tue Sep 05 2023:** update function cache tests for recent changes
+* **Tue Sep 05 2023:** pass fake testing functions in function_manager fixture
+* **Tue Sep 05 2023:** allow passing additional_functions to function manager
+* **Tue Sep 05 2023:** only add string function defs to cache, raise on missing functions for non-messages
+* **Tue Sep 05 2023:** refactor expand_functions()
+* **Tue Sep 05 2023:** abstract output_chunk_content
+* **Tue Sep 05 2023:** raise on post_response errors
+* **Mon Sep 04 2023:** use config test fixture in integration tests
+* **Mon Sep 04 2023:** more robust setup for config fixture
+* **Mon Sep 04 2023:** log when test preset is auto-loaded
+* **Mon Sep 04 2023:** leverage FakeMessagesListChatModel for fake LLM provider
+* **Mon Sep 04 2023:** load test preset conditionally in preset manager
+* **Mon Sep 04 2023:** more unit tests for ApiRequest
+* **Mon Sep 04 2023:** clean up log message
+* **Mon Sep 04 2023:** move terminate_stream() to request class
+* **Sun Sep 03 2023:** more unit tests for ApiRequest/ConversationStorageManager
+* **Sat Sep 02 2023:** allow providing custom defaults for default customizations
+* **Sat Sep 02 2023:** bump openai package
+* **Sat Sep 02 2023:** add backend_options.title_generation.provider, allows passing a custom provider for title generation
+* **Sat Sep 02 2023:** use file-based test database for history test
+* **Sat Sep 02 2023:** support filepath replacement tokens for database settinng
+* **Sat Sep 02 2023:** initialize database from backend
+* **Sat Sep 02 2023:** add backend_options.auto_create_first_user config option
+* **Sat Sep 02 2023:** refactor database connection/session management to support in-memory SQLite
+* **Fri Sep 01 2023:** initial ApiRequest tests
+* **Fri Sep 01 2023:** add preset_manager test fixture
+* **Fri Sep 01 2023:** pass default preset name, always return tuple for set_request_llm()
+* **Fri Sep 01 2023:** allow passing additional presets to preset manager
+* **Fri Sep 01 2023:** add get_preset() util function
+* **Fri Sep 01 2023:** add docstring
+* **Thu Aug 31 2023:** abstract more to base test module
+* **Thu Aug 31 2023:** reorganize fixtures and util functions
+* **Thu Aug 31 2023:** kill unneeded config file
+* **Thu Aug 31 2023:** abstract fixtures to base test file
+* **Thu Aug 31 2023:** upgrade langchain to v0.0.278
+* **Thu Aug 31 2023:** use FakeListChatModel instead
+* **Thu Aug 31 2023:** add provider_fake_llm
+* **Thu Aug 31 2023:** support function calls in streaming responses
+* **Wed Aug 30 2023:** ignore class for testing
+* **Wed Aug 30 2023:** fix deprecation warning
+* **Wed Aug 30 2023:** unit tests for tokenmanager class
+* **Wed Aug 30 2023:** add FakeBackend for testing
+* **Wed Aug 30 2023:** fix request function calls
+* **Mon Aug 28 2023:** more FunctionCache tests
+* **Mon Aug 28 2023:** unit tests for FunctionCache
+* **Mon Aug 28 2023:** fix conditional check for function message
+* **Mon Aug 28 2023:** add flake8 config
+* **Mon Aug 28 2023:** abstract test config setup to helper module
+* **Sat Aug 26 2023:** display template before colleting variables
+* **Sat Aug 26 2023:** fixes for non chat models
+* **Thu Aug 24 2023:** more token manager and function cache to core
+* **Mon Aug 21 2023:** bug fixes, first working LLM reqeust and conversation storage
+* **Mon Aug 21 2023:** bugfixes
+* **Mon Aug 21 2023:** break out much of API backend into multiple support classes
+* **Thu Aug 17 2023:** don't pollute base presets
+* **Tue Aug 15 2023:** log step of stripping messages based on max tokens
+* **Tue Aug 15 2023:** add backend_options attributes to sample config
+* **Tue Aug 15 2023:** first pass to revamp streaming
+
 ### v0.17.0 - 07/08/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
