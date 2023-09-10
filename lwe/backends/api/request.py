@@ -59,6 +59,7 @@ class ApiRequest:
         self.orm = orm or Orm(self.config)
         self.message = MessageManager(config, self.orm)
         self.streaming = False
+        self.log.debug(f"Inintialized ApiRequest with input: {self.input}, default preset name: {self.default_preset_name}, system_message: {self.system_message}, max_submission_tokens: {self.max_submission_tokens}, request_overrides: {self.request_overrides}, return only: {self.return_only}")
 
     def set_request_llm(self):
         success, response, user_message = self.extract_metadata_customizations()
