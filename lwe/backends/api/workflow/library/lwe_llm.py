@@ -45,6 +45,11 @@ options:
         required: false
         default: None
         type: str
+    max_submission_tokens:
+        description: The maximum number of tokens that can be submitted. Default is max for the model.
+        required: false
+        default: None
+        type: int
     template:
         description: An LWE template to use for constructing the prompt.
         required: true if message not provided
@@ -82,6 +87,7 @@ EXAMPLES = r"""
 - name: Start conversation
   lwe_llm:
     message: "What are the three primary colors?"
+    max_submission_tokens: 512
     # User ID or username
     user: 1
     register: result
@@ -106,6 +112,7 @@ EXAMPLES = r"""
 - name: Continue conversation
   lwe_llm:
     message: "Say three things about bacon"
+    system_message: "You are a bacon connoisseur"
     profile: test
     preset: mypreset
     preset_overrides:
@@ -141,6 +148,7 @@ def run_module():
         preset=dict(type="str", required=False),
         preset_overrides=dict(type="dict", required=False),
         system_message=dict(type="str", required=False),
+        max_submission_tokens=dict(type="int", required=False),
         template=dict(type="str", required=False),
         template_vars=dict(type="dict", required=False),
         user=dict(type="raw", required=False),
@@ -158,6 +166,7 @@ def run_module():
     preset = module.params["preset"]
     preset_overrides = module.params["preset_overrides"]
     system_message = module.params["system_message"]
+    max_submission_tokens = module.params["max_submission_tokens"]
     template_name = module.params["template"]
     template_vars = module.params["template_vars"] or {}
     user = module.params["user"]
@@ -176,6 +185,7 @@ def run_module():
         module.exit_json(**result)
 
     config = Config(profile=profile)
+    config.load_from_file()
     config.set("debug.log.enabled", True)
     config.set("model.default_preset", preset)
     config.set("backend_options.default_user", user)

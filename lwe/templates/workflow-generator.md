@@ -44,6 +44,11 @@ request_overrides:
             required: false
             default: None
             type: str
+        max_submission_tokens:
+            description: The maximum number of tokens that can be submitted. Default is max for the model.
+            required: false
+            default: None
+            type: int
         template:
             description: An LWE template to use for constructing the prompt.
             required: true if message not provided
@@ -78,6 +83,7 @@ request_overrides:
     - name: Start conversation
       lwe_llm:
         message: "What are the three primary colors?"
+        max_submission_tokens: 512
         # User ID or username
         user: 1
         register: result
@@ -102,6 +108,7 @@ request_overrides:
     - name: Continue conversation
       lwe_llm:
         message: "Say three things about bacon"
+        system_message: "You are a bacon connoisseur"
         profile: test
         preset: mypreset
         preset_overrides:
