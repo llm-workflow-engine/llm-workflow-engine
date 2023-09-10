@@ -11,6 +11,7 @@ from langchain.schema.messages import (
 )
 
 from lwe.core import constants
+import lwe.core.util as util
 from lwe.core.backend import Backend
 from lwe.backends.api.request import ApiRequest
 
@@ -182,6 +183,13 @@ def fake_llm_responses(responses, request_overrides=None):
     ]
     request_overrides["preset_overrides"]["model_customizations"]["responses"] = responses
     return request_overrides
+
+
+def make_template_file(template_manager, template_name, content=None):
+    template_dir = template_manager.user_template_dirs[0]
+    filepath = util.create_file(template_dir, template_name, content)
+    template_manager.load_templates()
+    return filepath
 
 
 def make_provider(provider_manager, provider_name="provider_fake_llm"):

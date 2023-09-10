@@ -5,15 +5,11 @@ import yaml
 
 from jinja2 import Environment, Template
 
+from ..base import (
+    make_template_file,
+)
+
 from lwe.core.template_manager import TemplateManager
-import lwe.core.util as util
-
-
-def make_template_file(template_manager, template_name, content=None):
-    template_dir = template_manager.user_template_dirs[0]
-    filepath = util.create_file(template_dir, template_name, content)
-    template_manager.load_templates()
-    return filepath
 
 
 def remove_template_file(template_manager, template_name):
