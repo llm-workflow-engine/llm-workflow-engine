@@ -5,7 +5,7 @@ beautifulsoup4
 docutils>=0.20.1
 email-validator
 Jinja2
-langchain==0.0.278
+langchain==0.0.295
 names
 numexpr>=2.8.4
 openai>=0.28.0
