@@ -1,3 +1,13 @@
+### v0.18.1 - 19/09/2023
+
+* **Tue Sep 19 2023:** bump langchain to 0.0.295
+* **Sun Sep 10 2023:** integrate Backend/ApiBackend
+* **Sun Sep 10 2023:** set max_submission_tokens if provided
+* **Sun Sep 10 2023:** remove unused import
+* **Sun Sep 10 2023:** lwe_llm fixes: not loading profile config from file, add max_submission tokens
+* **Sun Sep 10 2023:** add debug log to request init
+* **Sun Sep 10 2023:** remove dead arg for max_submission_tokens()
+
 ### v0.18.0 - 09/09/2023
 
 Major rewrite of the ApiBackend for maintainability/testability.
