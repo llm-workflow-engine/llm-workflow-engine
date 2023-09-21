@@ -316,6 +316,7 @@ class ApiRequest:
     def iterate_streaming_response(self, messages, print_stream, stream_callback):
         response = None
         is_function_call = False
+        self.log.debug(f"Streaming with LLM attributes: {self.llm.dict()}")
         for chunk in self.llm.stream(messages):
             if isinstance(chunk, AIMessageChunk):
                 content = chunk.content
