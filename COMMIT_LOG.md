@@ -1,3 +1,8 @@
+### v0.18.2 - 21/09/2023
+
+* **Thu Sep 21 2023:** bump langchain to 0.0.298
+* **Thu Sep 21 2023:** add debug message for built LLM attributes
+
 ### v0.18.1 - 19/09/2023
 
 * **Tue Sep 19 2023:** bump langchain to 0.0.295
