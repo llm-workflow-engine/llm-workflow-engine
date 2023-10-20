@@ -84,8 +84,6 @@ These plugins add additional commands to the shell:
    https://github.com/llm-workflow-engine/lwe-plugin-shell
 * **test:** Test plugin, echos back the command you give it
    https://github.com/llm-workflow-engine/lwe-plugin-test
-* **zap:** Send natural language commands to Zapier actions: https://nla.zapier.com/get-started/
-   https://github.com/llm-workflow-engine/lwe-plugin-zap
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
