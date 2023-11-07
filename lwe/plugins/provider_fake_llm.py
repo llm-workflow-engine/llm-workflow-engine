@@ -161,6 +161,9 @@ class ProviderFakeLlm(Provider):
                 "gpt-3.5-turbo": {
                     "max_tokens": 4096,
                 },
+                "gpt-3.5-turbo-1106": {
+                    "max_tokens": 16384,
+                },
                 "gpt-4": {
                     "max_tokens": 8192,
                 },

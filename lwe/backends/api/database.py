@@ -5,6 +5,7 @@ import argparse
 
 from sqlalchemy.exc import OperationalError
 
+from lwe.core import constants
 from lwe.backends.api.orm import Base, Orm
 from lwe.backends.api.user import UserManager
 from lwe.backends.api.conversation import ConversationManager
@@ -99,7 +100,7 @@ class DatabaseDevel(Database):
                         "content",
                         "",
                         "chat_openai",
-                        "gpt-3.5-turbo",
+                        constants.API_BACKEND_DEFAULT_MODEL,
                         "",
                     )
 

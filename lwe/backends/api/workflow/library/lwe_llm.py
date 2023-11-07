@@ -6,6 +6,7 @@ __metaclass__ = type
 
 from ansible.module_utils.basic import AnsibleModule
 
+# from lwe.core import constants
 from lwe.core.config import Config
 from lwe import ApiBackend
 import lwe.core.util as util
@@ -144,7 +145,7 @@ def run_module():
         message=dict(type="str", required=False),
         profile=dict(type="str", required=False, default="default"),
         # provider=dict(type='str', required=False, default='chat_openai'),
-        # model=dict(type='str', required=False, default='gpt-3.5-turbo'),
+        # model=dict(type='str', required=False, default=constants.API_BACKEND_DEFAULT_MODEL),
         preset=dict(type="str", required=False),
         preset_overrides=dict(type="dict", required=False),
         system_message=dict(type="str", required=False),
