@@ -7,7 +7,7 @@ model_customizations:
   max_tokens: null
   model_kwargs:
     top_p: 0.1
-  model_name: gpt-4
+  model_name: gpt-4-1106-preview
   n: 1
   request_timeout: 60
   temperature: 0.2
