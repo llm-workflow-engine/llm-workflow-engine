@@ -44,7 +44,15 @@ class Examples(Plugin):
 
     def get_examples(self, example_type):
         example_type_dir = f"{self.examples_root}/{example_type}"
-        return [os.path.basename(file) for file in os.listdir(example_type_dir)]
+        examples = []
+        for root, dirs, files in os.walk(example_type_dir):
+            # Exclude directories that start with an underscore
+            dirs[:] = [d for d in dirs if not d.startswith('_')]
+            for file in files:
+                file_path = os.path.join(root, file)
+                if os.path.isfile(file_path):
+                    examples.append(os.path.relpath(file_path, example_type_dir))
+        return examples
 
     def install_example_file(self, example_type, example_file):
         """Helper method to install a single example file."""
