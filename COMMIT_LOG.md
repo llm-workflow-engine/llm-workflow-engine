@@ -1,3 +1,8 @@
+### v0.18.4 - 16/11/2023
+
+* **Thu Nov 16 2023:** exclude example dirs that start w/ an underscore
+* **Thu Nov 16 2023:** fix examples plugin to work with non-dev installs
+
 ### v0.18.3 - 16/11/2023
 
 * **Thu Nov 16 2023:** upgrade to latest langchain, openai 1.x
