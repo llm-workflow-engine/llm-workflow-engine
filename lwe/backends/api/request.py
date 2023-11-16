@@ -328,7 +328,9 @@ class ApiRequest:
                             "arguments"
                         ]
                 else:
-                    response = AIMessage(**dict(chunk))
+                    chunk_copy = copy.deepcopy(chunk)
+                    chunk_copy.type = 'ai'
+                    response = AIMessage(**dict(chunk_copy))
                     if function_call:
                         is_function_call = True
             elif isinstance(chunk, str):

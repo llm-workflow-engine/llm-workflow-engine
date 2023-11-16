@@ -72,9 +72,9 @@ def test_function_cache_add_bad_function(test_config, function_manager):
 
 def test_function_cache_add_valid_langchain_tool(test_config, function_manager):
     function_cache = make_function_cache(test_config, function_manager)
-    function_manager.functions = {"Langchain-ShellTool": "test_function_path"}
-    assert function_cache.add("Langchain-ShellTool") is True
-    assert "Langchain-ShellTool" in function_cache.functions
+    function_manager.functions = {"Langchain-MoveFileTool": "test_function_path"}
+    assert function_cache.add("Langchain-MoveFileTool") is True
+    assert "Langchain-MoveFileTool" in function_cache.functions
     assert len(function_cache.functions) == 1
 
 
