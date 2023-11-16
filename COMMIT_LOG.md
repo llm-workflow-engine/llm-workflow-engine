@@ -1,3 +1,12 @@
+### v0.18.3 - 16/11/2023
+
+* **Thu Nov 16 2023:** upgrade to latest langchain, openai 1.x
+* **Thu Nov 16 2023:** add provider_azure_openai_chat to plugins list
+* **Thu Nov 16 2023:** lock openai package to legacy version for now
+* **Mon Nov 06 2023:** upgrade default model to gpt-3.5-turbo-1106
+* **Mon Nov 06 2023:** add new OpenAI provider models dated 1106, default to them in presets
+* **Fri Oct 20 2023:** remove zap plugin from plugin list
+
 ### v0.18.2 - 21/09/2023
 
 * **Thu Sep 21 2023:** bump langchain to 0.0.298
