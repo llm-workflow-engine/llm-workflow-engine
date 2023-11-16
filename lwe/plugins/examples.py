@@ -26,7 +26,7 @@ class Examples(Plugin):
     def setup(self):
         self.profile_dir = self.config.config_profile_dir
         self.examples_root = os.path.join(
-            os.path.dirname(util.get_package_root(self.config)), "examples"
+            os.path.dirname(util.get_package_root(self.config)), "lwe", "examples"
         )
         self.default_types = self.config.get("plugins.examples.default_types")
         self.confirm_overwrite = self.config.get("plugins.examples.confirm_overwrite")

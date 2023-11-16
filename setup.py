@@ -28,6 +28,8 @@ setup(
             "backends/api/schema/alembic.ini",
             "backends/api/schema/alembic/*",
             "backends/api/schema/alembic/**/*",
+            "examples/*",
+            "examples/**/*",
             "functions/*",
             "functions/**/*",
             "presets/*",
