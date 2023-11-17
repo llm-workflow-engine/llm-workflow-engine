@@ -165,10 +165,14 @@ def main():
         command = args.params[0]
 
     backend = config.get("backend")
-    if backend == "api":
-        shell = ApiRepl(config)
-    else:
-        raise RuntimeError(f"Unknown backend: {backend}")
+    if backend != "api":
+        config.set("backend", "api")
+        util.print_status_message(False, f"Using legacy backend setting: {backend}")
+        util.print_status_message(
+            False,
+            "To dismiss this warning, edit the 'backend' setting in your configuration to 'api', or remove the setting from your configuration.",
+        )
+    shell = ApiRepl(config)
     shell.setup()
 
     if command == "config":
