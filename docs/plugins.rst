@@ -105,8 +105,12 @@ Supported providers
 
 * **provider_ai21:** Access to `AI21 <https://docs.ai21.com/docs/jurassic-2-models>`_ models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-ai21
-* **provider_azure_openai_chat:** Access to `Azure OpenAI Chat <https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models>`_ models
+* **provider_azure_openai_chat:** Access to `Azure OpenAI <https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models>`_ chat models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-azure-openai-chat
+* **provider_chat_anyscale:** Access to `Anyscale <https://docs.anyscale.com>`_ chat models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-anyscale
+* **provider_chat_cohere:** Access to `Cohere <https://docs.cohere.com/docs/models>`_ chat models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-cohere
 * **provider_chat_vertexai:** Access to `Google Vertex AI <https://cloud.google.com/vertex-ai/docs/generative-ai/learn/models>`_ chat models.
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-vertexai
 * **provider_cohere:** Access to `Cohere <https://docs.cohere.com/docs/models>`_ models
