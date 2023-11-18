@@ -111,6 +111,8 @@ Supported providers
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-anyscale
 * **provider_chat_cohere:** Access to `Cohere <https://docs.cohere.com/docs/models>`_ chat models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-cohere
+* **provider_chat_ollama:** Access to `Ollama <https://ollama.ai/library>`_ chat models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-ollama
 * **provider_chat_vertexai:** Access to `Google Vertex AI <https://cloud.google.com/vertex-ai/docs/generative-ai/learn/models>`_ chat models.
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-vertexai
 * **provider_cohere:** Access to `Cohere <https://docs.cohere.com/docs/models>`_ models
