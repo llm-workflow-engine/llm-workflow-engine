@@ -1,3 +1,11 @@
+### v0.18.5 - 15/12/2023
+
+* **Fri Dec 15 2023:** bump langchain to 0.0.350
+* **Sun Nov 26 2023:** allow provider-specific token calculation
+* **Sat Nov 18 2023:** add Ollama plugin to doc
+* **Fri Nov 17 2023:** add chat-anyscale and chat-cohere plugin links
+* **Fri Nov 17 2023:** fix #332: force backend setting, throw user warning on legacy settings
+
 ### v0.18.4 - 16/11/2023
 
 * **Thu Nov 16 2023:** exclude example dirs that start w/ an underscore
