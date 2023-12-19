@@ -4,14 +4,6 @@ lwe.core Package
 lwe.core Submodules
 -------------------
 
-lwe.core.backend module
------------------------
-
-.. automodule:: lwe.core.backend
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 lwe.core.config module
 ----------------------
 
