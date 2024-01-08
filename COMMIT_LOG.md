@@ -1,3 +1,11 @@
+### v0.18.7 - 08/01/2024
+
+* **Mon Jan 08 2024:** fix edge cases around setting provider/model
+* **Mon Jan 08 2024:** fix conditional logic
+* **Mon Jan 08 2024:** check validate_models when verifying tokenizer
+* **Mon Jan 08 2024:** fix docker compose command in docs
+* **Mon Jan 08 2024:** move to langchain_openai partner package
+
 ### v0.18.6 - 08/01/2024
 
 * **Mon Jan 08 2024:** loosen up openai/langchain requirements
