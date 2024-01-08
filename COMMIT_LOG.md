@@ -1,3 +1,9 @@
+### v0.18.8 - 08/01/2024
+
+* **Mon Jan 08 2024:** fix bad reference to langchain tools
+* **Mon Jan 08 2024:** fix broken token manager test
+* **Mon Jan 08 2024:** allow capabilities override in provider_fake_llm
+
 ### v0.18.7 - 08/01/2024
 
 * **Mon Jan 08 2024:** fix edge cases around setting provider/model
