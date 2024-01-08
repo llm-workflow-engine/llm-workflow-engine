@@ -241,7 +241,7 @@ class ProviderBase(Plugin):
     def set_model(self, model_name):
         models = self.get_capability("models", {})
         validate_models = self.get_capability("validate_models", True)
-        if model_name in models or not validate_models:
+        if not validate_models or model_name in models:
             return self.set_customization_value(self.model_property_name, model_name)
         else:
             return False, None, f"Invalid model {model_name}"
