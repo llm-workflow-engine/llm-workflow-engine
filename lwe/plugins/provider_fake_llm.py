@@ -147,28 +147,39 @@ class CustomFakeMessagesListChatModel(FakeMessagesListChatModel):
         return super()._stream(messages, stop, run_manager, **kwargs)
 
 
+DEFAULT_CAPABILITIES = {
+    "chat": True,
+    "validate_models": False,
+    "models": {
+        "gpt-3.5-turbo": {
+            "max_tokens": 4096,
+        },
+        "gpt-3.5-turbo-1106": {
+            "max_tokens": 16384,
+        },
+        "gpt-4": {
+            "max_tokens": 8192,
+        },
+    },
+}
+
+
 class ProviderFakeLlm(Provider):
     """
     Fake LLM provider.
     """
 
+    def __init__(self, config=None):
+        self._capabilities = DEFAULT_CAPABILITIES
+        super().__init__(config)
+
     @property
     def capabilities(self):
-        return {
-            "chat": True,
-            "validate_models": False,
-            "models": {
-                "gpt-3.5-turbo": {
-                    "max_tokens": 4096,
-                },
-                "gpt-3.5-turbo-1106": {
-                    "max_tokens": 16384,
-                },
-                "gpt-4": {
-                    "max_tokens": 8192,
-                },
-            },
-        }
+        return self._capabilities
+
+    @capabilities.setter
+    def capabilities(self, value):
+        self._capabilities = value
 
     @property
     def default_model(self):
