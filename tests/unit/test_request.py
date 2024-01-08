@@ -801,7 +801,8 @@ def test_execute_llm_streaming_exception(
 
 def test_execute_llm_non_streaming(test_config, function_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
-    request.llm = Mock(return_value="response")
+    request.llm = Mock()
+    request.llm.invoke = Mock(return_value="response")
     success, response, user_message = request.execute_llm_non_streaming(TEST_BASIC_MESSAGES)
     assert success is True
     assert response == "response"
@@ -811,7 +812,8 @@ def test_execute_llm_non_streaming_failure_call_llm(
     test_config, function_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
-    request.llm = Mock(side_effect=ValueError("Error"))
+    request.llm = Mock()
+    request.llm.invoke = Mock(side_effect=ValueError("Error"))
     success, response_obj, user_message = request.execute_llm_non_streaming(TEST_BASIC_MESSAGES)
     assert success is False
     assert str(user_message) == "Error"

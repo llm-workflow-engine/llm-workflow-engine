@@ -4,7 +4,7 @@ import importlib
 
 from pathlib import Path
 
-import langchain.tools
+import langchain_community.tools
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -23,9 +23,7 @@ class FunctionManager:
         self.additional_functions = additional_functions or {}
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_function_dirs = (
-            self.config.args.function_dir
-            or util.get_environment_variable_list("function_dir")
-            or self.config.get("directories.functions")
+            self.config.args.function_dir or util.get_environment_variable_list("function_dir") or self.config.get("directories.functions")
         )
         self.make_user_function_dirs()
         self.system_function_dirs = [
@@ -82,7 +80,7 @@ class FunctionManager:
         self.log.debug(f"Loading Langchain tool: {function_name}")
         tool_name = util.remove_prefix(function_name, LANGCHAIN_TOOL_PREFIX)
         try:
-            tool = getattr(langchain.tools, tool_name)
+            tool = getattr(langchain_community.tools, tool_name)
             tool_instance = tool()
             return tool_instance
         except Exception as e:

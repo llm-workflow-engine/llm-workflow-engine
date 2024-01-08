@@ -192,7 +192,7 @@ class ConversationStorageManager:
         else:
             llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
         try:
-            result = llm(new_messages)
+            result = llm.invoke(new_messages)
             request = ApiRequest(orm=self.orm)
             title = request.extract_message_content(result)["message"]
             title = title.replace("\n", ", ").strip().strip("'\"")

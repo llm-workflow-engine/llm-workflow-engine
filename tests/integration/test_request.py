@@ -55,7 +55,8 @@ def test_execute_llm_non_streaming_failure_call_llm(
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
     request.set_request_llm()
     new_messages, messages = request.prepare_ask_request()
-    request.llm = Mock(side_effect=ValueError("Error"))
+    request.llm = Mock()
+    request.llm.invoke = Mock(side_effect=ValueError("Error"))
     success, response_obj, user_message = request.call_llm(messages)
     assert success is False
     assert str(user_message) == "Error"
