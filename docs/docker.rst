@@ -10,7 +10,7 @@ Run the following commands:
 
 .. code-block:: bash
 
-   docker-compose build && docker-compose up -d
+   docker compose build && docker compose up -d
    docker exec -it lwe-container /bin/bash -c "lwe"
 
 Follow the instructions to create the first user.
