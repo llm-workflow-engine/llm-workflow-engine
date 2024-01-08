@@ -723,8 +723,8 @@ Before you can start using the shell, you must create a new user.
             success, provider, user_message = self.backend.set_provider(provider)
             if success:
                 if model_name:
-                    self.backend.set_model(model_name)
-                self.rebuild_completions()
+                    success, model, user_message = self.backend.set_model(model_name)
+            self.rebuild_completions()
             return success, provider, user_message
         else:
             return self.command_model("")

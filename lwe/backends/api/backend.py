@@ -300,9 +300,10 @@ class ApiBackend:
         :rtype: tuple
         """
         self.log.debug(f"Setting model to: {model_name}")
-        self.model = model_name
         success, customizations, user_message = self.provider.set_model(model_name)
-        self.set_max_submission_tokens()
+        if success:
+            self.model = model_name
+            self.set_max_submission_tokens()
         return success, customizations, user_message
 
     def compact_functions(self, customizations):
