@@ -27,7 +27,8 @@ class TokenManager:
         :returns: Encoding object
         :rtype: Encoding
         """
-        if self.model_name not in self.provider.available_models:
+        validate_models = self.provider.get_capability("validate_models", True)
+        if validate_models and self.model_name not in self.provider.available_models:
             raise NotImplementedError(f"Unsupported model: {self.model_name}")
         try:
             encoding = tiktoken.encoding_for_model(self.model_name)
