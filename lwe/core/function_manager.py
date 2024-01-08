@@ -92,7 +92,7 @@ class FunctionManager:
         tool_instance = self.get_langchain_tool(function_name)
         if not tool_instance:
             raise RuntimeError(f"Langchain tool {function_name} not found")
-        spec = langchain.tools.format_tool_to_openai_function(tool_instance)
+        spec = langchain_community.tools.format_tool_to_openai_function(tool_instance)
         spec["name"] = function_name
         return spec
 
