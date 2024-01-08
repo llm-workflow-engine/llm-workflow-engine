@@ -6,6 +6,7 @@ docutils>=0.20.1
 email-validator
 Jinja2
 langchain>=0.1,<0.2
+langchain_openai
 names
 numexpr>=2.8.4
 openai~=1.6.1

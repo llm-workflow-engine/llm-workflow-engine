@@ -1,6 +1,6 @@
 import threading
 
-from langchain.chat_models.openai import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 from lwe.core.logger import Logger
 

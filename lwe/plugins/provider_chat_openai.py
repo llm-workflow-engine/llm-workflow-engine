@@ -1,4 +1,4 @@
-from langchain.chat_models.openai import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 from lwe.core.provider import Provider, PresetValue
 from lwe.core import constants
