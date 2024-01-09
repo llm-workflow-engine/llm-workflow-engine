@@ -1065,7 +1065,7 @@ The `--config-dir` and `--data-dir` arguments have changed how they interpret lo
 * Improved session refreshing (**_/session now works!_**)
 * Migrated to Prompt Toolkit
 
-[See commit log for previous updates](#commit-log)
+[See commit log for previous updates](https://github.com/llm-workflow-engine/llm-workflow-engine/commits/main/)
 
 ## OLDER RELEASES
 
