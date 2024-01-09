@@ -1,10 +1,10 @@
-### v0.18.8 - 08/01/2024
+### v0.18.8 - 01/08/2024
 
 * **Mon Jan 08 2024:** fix bad reference to langchain tools
 * **Mon Jan 08 2024:** fix broken token manager test
 * **Mon Jan 08 2024:** allow capabilities override in provider_fake_llm
 
-### v0.18.7 - 08/01/2024
+### v0.18.7 - 01/08/2024
 
 * **Mon Jan 08 2024:** fix edge cases around setting provider/model
 * **Mon Jan 08 2024:** fix conditional logic
@@ -12,7 +12,7 @@
 * **Mon Jan 08 2024:** fix docker compose command in docs
 * **Mon Jan 08 2024:** move to langchain_openai partner package
 
-### v0.18.6 - 08/01/2024
+### v0.18.6 - 01/08/2024
 
 * **Mon Jan 08 2024:** loosen up openai/langchain requirements
 * **Mon Jan 08 2024:** fix test warnings
@@ -23,7 +23,7 @@
 * **Tue Dec 19 2023:** fix doc build error
 * **Sun Dec 17 2023:** remove dead pydantic-computed dep
 
-### v0.18.5 - 15/12/2023
+### v0.18.5 - 12/15/2023
 
 * **Fri Dec 15 2023:** bump langchain to 0.0.350
 * **Sun Nov 26 2023:** allow provider-specific token calculation
@@ -31,12 +31,12 @@
 * **Fri Nov 17 2023:** add chat-anyscale and chat-cohere plugin links
 * **Fri Nov 17 2023:** fix #332: force backend setting, throw user warning on legacy settings
 
-### v0.18.4 - 16/11/2023
+### v0.18.4 - 11/16/2023
 
 * **Thu Nov 16 2023:** exclude example dirs that start w/ an underscore
 * **Thu Nov 16 2023:** fix examples plugin to work with non-dev installs
 
-### v0.18.3 - 16/11/2023
+### v0.18.3 - 11/16/2023
 
 * **Thu Nov 16 2023:** upgrade to latest langchain, openai 1.x
 * **Thu Nov 16 2023:** add provider_azure_openai_chat to plugins list
@@ -45,12 +45,12 @@
 * **Mon Nov 06 2023:** add new OpenAI provider models dated 1106, default to them in presets
 * **Fri Oct 20 2023:** remove zap plugin from plugin list
 
-### v0.18.2 - 21/09/2023
+### v0.18.2 - 09/21/2023
 
 * **Thu Sep 21 2023:** bump langchain to 0.0.298
 * **Thu Sep 21 2023:** add debug message for built LLM attributes
 
-### v0.18.1 - 19/09/2023
+### v0.18.1 - 09/19/2023
 
 * **Tue Sep 19 2023:** bump langchain to 0.0.295
 * **Sun Sep 10 2023:** integrate Backend/ApiBackend
@@ -187,7 +187,7 @@ No changes to functionality of the Python module or REPL.
 * **Tue Aug 15 2023:** add backend_options attributes to sample config
 * **Tue Aug 15 2023:** first pass to revamp streaming
 
-### v0.17.0 - 07/08/2023
+### v0.17.0 - 08/07/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -210,12 +210,12 @@ Command syntax changes for `/user*`, `/template*`, `/preset*`, `/workflow*`:
 * **Sun Aug 06 2023:** fix template / action_template doc
 * **Sun Aug 06 2023:** convert /template-* commands to '/template [action]'
 
-### v0.16.1 - 05/08/2023
+### v0.16.1 - 08/05/2023
 
 * **Sat Aug 05 2023:** rip out langchain monkey patching, switch to using .stream()
 * **Sat Aug 05 2023:** add config.properties, '/config config_dir', etc.
 
-### v0.16.0 - 03/08/2023
+### v0.16.0 - 08/03/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -236,7 +236,7 @@ Top level `title` key moved under `request_overrides` key.
 * **Thu Aug 03 2023:** fix order of overrides merge
 * **Thu Aug 03 2023:** move title override into request_overrides dict
 
-### v0.15.2 - 02/08/2023
+### v0.15.2 - 08/02/2023
 
 * **Wed Aug 02 2023:** add 'activate_preset' option to request_overrides for templates, allows switching to template-defined preset as default
 * **Wed Aug 02 2023:** add example code generator template, generates code based on written spec
@@ -246,7 +246,7 @@ Top level `title` key moved under `request_overrides` key.
 * **Mon Jul 31 2023:** fix user directories always using 'default' profile path
 * **Mon Jul 31 2023:** rip out unneeded Ansible Runner code
 
-### v0.15.1 - 29/07/2023
+### v0.15.1 - 07/29/2023
 
 * **Sat Jul 29 2023:** fix /template-edit* commands to properly re-parse edited template
 * **Fri Jul 28 2023:** add vertex provider plugins to list
@@ -258,7 +258,7 @@ Top level `title` key moved under `request_overrides` key.
 * **Sun Jul 23 2023:** add code doc for template manager
 * **Sat Jul 22 2023:** add prompt prefix token, kill parent_messsage_id
 
-### v0.15.0 - 17/07/2023
+### v0.15.0 - 07/17/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -281,7 +281,7 @@ The following deprecated items have been removed:
 * **Sun Jul 16 2023:** switch to multi-column autocomplete menu
 * **Sun Jul 16 2023:** improve config display, add options to output individual sections
 
-### v0.14.4 - 15/07/2023
+### v0.14.4 - 07/15/2023
 
 * **Sat Jul 15 2023:** always append to existing debug log
 * **Sat Jul 15 2023:** kill flask API
@@ -310,7 +310,7 @@ The following deprecated items have been removed:
 * **Thu Jul 13 2023:** dynamic reload of REPL after config edit
 * **Thu Jul 13 2023:** override preset metadata/model_customizations in templates/requests via request_overrides['preset_overrides'] dict
 
-### v0.14.3 - 12/07/2023
+### v0.14.3 - 07/12/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -329,18 +329,18 @@ See here for a list of plugins that moved, and their repository links: https://l
 * **Wed Jul 12 2023:** fix some broken docs links
 * **Wed Jul 12 2023:** switch to Sphinx/RTD documentation
 
-### v0.14.2 - 12/07/2023
+### v0.14.2 - 07/12/2023
 
 * **Wed Jul 12 2023:** add RTD build config
 * **Wed Jul 12 2023:** more improvements to Sphinx doc
 * **Wed Jul 12 2023:** enable examples plugin by default
 
-### v0.14.1 - 12/07/2023
+### v0.14.1 - 07/12/2023
 
 * **Wed Jul 12 2023:** fix bad variable when stripping out messages over max tokens
 * **Tue Jul 11 2023:** more rebranding renames
 
-### v0.14.0 - 11/07/2023
+### v0.14.0 - 07/11/2023
 
 #### ChatGPT Wrapper has been re-branded to LLM Workflow Engine
 
@@ -370,7 +370,7 @@ Currently, all functionality is the same.
 * **Sun Jul 09 2023:** flesh out workflow doc
 * **Sun Jul 09 2023:** examples plugin, installs example config files, plus more example files
 
-### v0.13.2 - 08/07/2023
+### v0.13.2 - 07/08/2023
 
 * **Sat Jul 08 2023:** support running workflows from CLI args, --workflow/--workflow-args
 * **Sat Jul 08 2023:** clean up display of workflows in /workflows command
@@ -379,7 +379,7 @@ Currently, all functionality is the same.
 * **Wed Jun 28 2023:** update docker base container, remove VNC access, API backend only
 * **Wed Jun 28 2023:** remove deprecated openai chat models
 
-### v0.13.1 - 27/06/2023
+### v0.13.1 - 06/27/2023
 
 * **Tue Jun 27 2023:** remove outdated openai chat models
 * **Tue Jun 27 2023:** touch up new Sphinx documentation
@@ -404,7 +404,7 @@ Currently, all functionality is the same.
 * **Sun Jun 25 2023:** add support for langchain tools as functions
 * **Sun Jun 25 2023:** add remove_prefix util function
 
-### v0.13.0 - 25/06/2023
+### v0.13.0 - 06/25/2023
 
 * **Sun Jun 25 2023:** documentation for OpenAI functions
 * **Sun Jun 25 2023:** add function descriptions to /functions command
@@ -445,12 +445,12 @@ Currently, all functionality is the same.
 * **Thu Jun 15 2023:** loosen sqlalchemy requirements
 * **Thu Jun 15 2023:** add post_response method, for actions after response has been received
 
-### v0.12.3 - 25/06/2023
+### v0.12.3 - 06/25/2023
 
 * **Sun Jun 25 2023:** roll custom textract, current package not well maintained
 * **Sun Jun 25 2023:** bump openai dependency
 
-### v0.12.2 - 15/06/2023
+### v0.12.2 - 06/15/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -473,11 +473,11 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Tue Jun 13 2023:** add workflow review template
 * **Tue Jun 13 2023:** add new openai chat models released 0613
 
-### v0.12.1 - 13/06/2023
+### v0.12.1 - 06/13/2023
 
 * **Tue Jun 13 2023:** monkey patch / version lock langchain with stream interruption fixes, fixes #274, fixes #180
 
-### v0.12.0 - 13/06/2023
+### v0.12.0 - 06/13/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -498,7 +498,7 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
   ```
 * For packaged plugins, the plugin namespace has changed from `chatgpt_wrapper` to `lwe`.
 
-### v0.11.7 - 12/06/2023
+### v0.11.7 - 06/12/2023
 
 * **Mon Jun 12 2023:** delete confirmation for presets/workflows
 * **Mon Jun 12 2023:** allow copying system templates to user directories
@@ -509,7 +509,7 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Sun Jun 11 2023:** add remaining customization_config values to openai providers
 * **Sun Jun 11 2023:** don't include dict values as empty completions
 
-### v0.11.6 - 10/06/2023
+### v0.11.6 - 06/10/2023
 
 * **Sat Jun 10 2023:** /preset-show defaults to current preset
 * **Sat Jun 10 2023:** fix api temperature check example
@@ -523,14 +523,14 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Thu Jun 08 2023:** cleaner infinite task workflow approach
 * **Thu Jun 08 2023:** llm-iterative-tasks workflow, infinite loop until user exits
 
-### v0.11.5 - 08/06/2023
+### v0.11.5 - 06/08/2023
 
 * **Thu Jun 08 2023:** rename lwe module to lwe_llm module
 * **Thu Jun 08 2023:** add custom lwe_input action plugin, with editor support
 * **Thu Jun 08 2023:** convert text_extractor to textract, many more extensions supported
 * **Thu Jun 08 2023:** html_extractor -> text_extractor, add PDF support, scrub non-UTF-8 in text files
 
-### v0.11.4 - 08/06/2023
+### v0.11.4 - 06/08/2023
 
 * **Thu Jun 08 2023:** don't re-init provider on new conversation
 * **Thu Jun 08 2023:** best guess cast random dict model customizations, recurse dicts when setting customization values
@@ -549,7 +549,7 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Tue Jun 06 2023:** kill dead file
 * **Tue Jun 06 2023:** clean up prompt formatting
 
-### v0.11.2 - 05/06/2023
+### v0.11.2 - 06/05/2023
 
 * **Mon Jun 05 2023:** add template/variable support for workflows
 * **Mon Jun 05 2023:** tweak lwe ansible module exit data
@@ -557,11 +557,11 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Mon Jun 05 2023:** document running workflows directly with ansible-playbook
 * **Mon Jun 05 2023:** add default ansible callback config
 
-### v0.11.1 - 05/06/2023
+### v0.11.1 - 06/05/2023
 
 * **Mon Jun 05 2023:** fix missing workflow directories
 
-### v0.11.0 - 04/06/2023
+### v0.11.0 - 06/04/2023
 
 * **Sun Jun 04 2023:** fixes to workflow CLI help
 * **Sun Jun 04 2023:** add documentation for workflows
@@ -582,7 +582,7 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Sun May 28 2023:** color-code role labels in /chat output
 * **Mon May 22 2023:** very basic workflow manager and workflow base class, with test workflow in Prefect
 
-### v0.10.7 - 27/05/2023
+### v0.10.7 - 05/27/2023
 
 * **Sat May 27 2023:** allow setting system message alias in config (model.default_system_message) or CLI (-s/--system-message)
 * **Sat May 27 2023:** read both extra params and input file for one-shot mode
@@ -590,30 +590,30 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Mon May 22 2023:** restore SQLAlchemy compat with 1.4.x
 * **Thu May 18 2023:** kill lingering deprecated chatgpt-browser/chatgpt-api
 
-### v0.10.6 - 18/05/2023
+### v0.10.6 - 05/18/2023
 
 * **Thu May 18 2023:** fix streaming when overriding a preset in templates
 
-### v0.10.5 - 17/05/2023
+### v0.10.5 - 05/17/2023
 
 * **Wed May 17 2023:** add doc for browser backend with web browser support
 * **Wed May 17 2023:** add support for ChatGPT with browsing (alpha, browser backend only)
 
-### v0.10.4 - 15/05/2023
+### v0.10.4 - 05/15/2023
 
 * **Mon May 15 2023:** fix broken streaming, clean up can/should stream logic, fixes #303
 
-### v0.10.3 - 15/05/2023
+### v0.10.3 - 05/15/2023
 
 * **Mon May 15 2023:** clean up alembic config process
 * **Mon May 15 2023:** add util function to get directory of any file
 * **Mon May 15 2023:** fix missing alembic files
 
-### v0.10.2 - 14/05/2023
+### v0.10.2 - 05/14/2023
 
 * **Sun May 14 2023:** fix missing __init__ file for schema dir
 
-### v0.10.1 - 13/05/2023
+### v0.10.1 - 05/13/2023
 
 #### **:fire_engine:Deprecations:fire_engine:**
 
@@ -627,7 +627,7 @@ If you'd like to help fix this issue, see https://github.com/llm-workflow-engine
 * **Sat May 13 2023:** fix default args to prevent mutable default args bugs
 * **Sat May 13 2023:** update backend config names, add deprecation warning for old names
 
-### v0.10.0 - 13/05/2023
+### v0.10.0 - 05/13/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -662,7 +662,7 @@ This version performs operations on the database that stores users/conversations
 * **Wed May 10 2023:** clarify doc for presets
 * **Tue May 09 2023:** timeout for trying to retrieve awesome prompts
 
-### v0.9.0 - 08/05/2023
+### v0.9.0 - 05/08/2023
 
 This is a substantial rewrite to add support for multiple providers and management of preset configurations.
 
@@ -766,7 +766,7 @@ New features are documented in the README.
 * **Mon Apr 10 2023:** add provider base class, move chat_openai provider plugin
 * **Sat Apr 08 2023:** initial provider manager implementation
 
-### v0.8.4 - 13/04/2023
+### v0.8.4 - 04/13/2023
 
 * **Thu Apr 13 2023:** loosen up timestamp string for conversion, fixes #287
 * **Tue Apr 11 2023:** Get Docker container working, clarify documentation, fixes #268, fixes #276, fixes #281
@@ -778,17 +778,17 @@ New features are documented in the README.
 * **Fri Apr 07 2023:** fix syntax error in setup script, fixes #280
 * **Fri Apr 07 2023:** add support for plugin packages
 
-### v0.8.3 - 07/04/2023
+### v0.8.3 - 04/07/2023
 
 * **Fri Apr 07 2023:** properly set user object in all login scenarios, fixes #260, fixes #262
 * **Thu Apr 06 2023:** sync docs
 
-### v0.8.2 - 05/04/2023
+### v0.8.2 - 04/05/2023
 
 * **Wed Apr 05 2023:** enable console/file debugging for --debug arg, print backtrace on command exceptionn when --debug enabled
 * **Tue Apr 04 2023:** add shell.history_file config option
 
-### v0.8.1 - 03/04/2023
+### v0.8.1 - 04/03/2023
 
 * **Mon Apr 03 2023:** add support for listing incompatible backends in plugins
 * **Mon Apr 03 2023:** abstract prompt prefixing for REPLS, add model prefix for browser backend
@@ -804,7 +804,7 @@ New features are documented in the README.
 * **Sat Apr 01 2023:** update sample config
 * **Sat Apr 01 2023:** register cleanup function for browser backend
 
-### v0.8.0 - 01/04/2023
+### v0.8.0 - 04/01/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -833,7 +833,7 @@ New features are documented in the README.
 * **Wed Mar 29 2023:** add file/directory util functions
 * **Tue Mar 28 2023:** add LLM base methods for plugins to leverage
 
-### v0.7.2 - 28/03/2023
+### v0.7.2 - 03/28/2023
 
 * **Tue Mar 28 2023:** add support for .jsonl/.xml to data_query plugin
 * **Tue Mar 28 2023:** add config options to shell plugin
@@ -853,14 +853,14 @@ New features are documented in the README.
 * **Sun Mar 26 2023:** convert to Pytest framework
 * **Sun Mar 26 2023:** fix SQLAlchemy deprecation warnings
 
-### v0.7.1 - 26/03/2023
+### v0.7.1 - 03/26/2023
 
 * **Sun Mar 26 2023:** per profile playwright sessions for browser backend
 * **Sun Mar 26 2023:** no password for test users
 * **Sun Mar 26 2023:** clean up errant `console` references, fixes #256
 * **Sun Mar 26 2023:** allow custom style for util.print_status_message()
 
-### v0.7.0 - 25/03/2023
+### v0.7.0 - 03/25/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -874,13 +874,13 @@ Lots of file/class/function reorganization:
 * **Sat Mar 25 2023:** user found/not found message helper
 * **Sat Mar 25 2023:** reorg file structure, group modules into core/backends
 
-### v0.6.6 - 24/03/2023
+### v0.6.6 - 03/24/2023
 
 * **Fri Mar 24 2023:** add troubleshooting section to docs
 * **Fri Mar 24 2023:** add 'chatgpt reinstall' one shot command
 * **Thu Mar 23 2023:** add shell plugin
 
-### v0.6.5 - 22/03/2023
+### v0.6.5 - 03/22/2023
 
 * **Wed Mar 22 2023:** inject id into get_conversation() result, add timeout logic for api requests, use for gen_title()
 * **Tue Mar 21 2023:** add comment, ctrl-c interrupt generation not working on windows
@@ -890,7 +890,7 @@ Lots of file/class/function reorganization:
 * **Sun Mar 19 2023:** attempt to fix sync wrapper when loop is always running
 * **Sun Mar 19 2023:** add upgrading section to doc
 
-### v0.6.4 - 19/03/2023
+### v0.6.4 - 03/19/2023
 
 * **Sun Mar 19 2023:** add all core plugins to example config
 * **Sun Mar 19 2023:** add init file to plugins dir, fixes #239
@@ -898,17 +898,17 @@ Lots of file/class/function reorganization:
 * **Sun Mar 19 2023:** add doc for current core plugins
 * **Sun Mar 19 2023:** add zap plugin
 
-### v0.6.3 - 18/03/2023
+### v0.6.3 - 03/18/2023
 
 * **Sat Mar 18 2023:** clean up template display/workflows
 * **Sat Mar 18 2023:** extract description separate from overrides, fixes #238
 
-### v0.6.2 - 18/03/2023
+### v0.6.2 - 03/18/2023
 
 * **Sat Mar 18 2023:** /templates command improvements
 * **Sat Mar 18 2023:** fix secondary invocations with browser backend, fixes #236
 
-### v0.6.1 - 17/03/2023
+### v0.6.1 - 03/17/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
@@ -929,7 +929,7 @@ The `--config-dir` and `--data-dir` arguments have changed how they interpret lo
 * **Thu Mar 16 2023:** check for running event loop, use if found
 * **Thu Mar 16 2023:** clarify how to use the sample config
 
-### v0.6.0 - 16/03/2023
+### v0.6.0 - 03/16/2023
 
 * **Thu Mar 16 2023:** fix crash after initial user creation on api backend
 * **Wed Mar 15 2023:** Basic plugin functionality (alpha, subject to change)
@@ -947,7 +947,7 @@ The `--config-dir` and `--data-dir` arguments have changed how they interpret lo
 * **Sun Feb 26 2023:** added flask to requirements
 * **Sun Feb 26 2023:** improvement to docker (speed up in debugging and adding api port)
 
-### v0.5.5 - 13/03/2023
+### v0.5.5 - 03/13/2023
 
 * **Mon Mar 13 2023:** fix threading error with SQLite connections
 * **Mon Mar 13 2023:** updates to example config
@@ -955,7 +955,7 @@ The `--config-dir` and `--data-dir` arguments have changed how they interpret lo
 * **Sun Mar 12 2023:** try to get windows editor from env first
 * **Sun Mar 12 2023:** add install notes for windows users
 
-### v0.5.4 - 12/03/2023
+### v0.5.4 - 03/12/2023
 
 * **Sun Mar 12 2023:** launch backend after check for config CLI arg
 * **Sun Mar 12 2023:** fix ask/ask_stream signatures to support custom titles
@@ -965,7 +965,7 @@ The `--config-dir` and `--data-dir` arguments have changed how they interpret lo
 * **Sat Mar 11 2023:** allow overriding system message in template front matter
 * **Sat Mar 11 2023:** add support for frontmatter in templates
 
-### v0.5.3 - 11/03/2023
+### v0.5.3 - 03/11/2023
 
 * **Sat Mar 11 2023:** add some example templates and API scripts
 * **Sat Mar 11 2023:** allow passing custom title to ask/ask_stream in api backend
@@ -977,7 +977,7 @@ The `--config-dir` and `--data-dir` arguments have changed how they interpret lo
 * **Fri Mar 10 2023:** add link to new video walkthrough
 * **Fri Mar 10 2023:** fix markdown filetype for vim syntax highlighting
 
-### v0.5.2 - 09/03/2023
+### v0.5.2 - 03/09/2023
 
 * **Fri Mar 10 2023:** **HOTFIX** for broken templates directory location
 * **Fri Mar 10 2023:** indicator for current conversation in /history list
@@ -988,101 +988,115 @@ The `--config-dir` and `--data-dir` arguments have changed how they interpret lo
 * **Fri Mar 10 2023:** output user id in users list
 * **Fri Mar 10 2023:** add utility scripts for commit log and pypi release
 
-### v0.5.1 - 09/03/2023
+### v0.5.1 - 03/09/2023
 
- - Add completions for many more commands
- - Show/set system message (initial context message for all conversations)
- - System message aliases
- - Template management system. See below for details (alpha, subject to change)
- - Set 'markdown' filetype for editor invocations (supports syntax highlighting)
- - Add built template variables, see below for details
- - Native editor module (removes vipe dependency)
+* Add completions for many more commands
+* Show/set system message (initial context message for all conversations)
+* System message aliases
+* Template management system. See below for details (alpha, subject to change)
+* Set 'markdown' filetype for editor invocations (supports syntax highlighting)
+* Add built template variables, see below for details
+* Native editor module (removes vipe dependency)
 
-### v0.5.0 - 08/03/2023
+### v0.5.0 - 03/08/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
- - The return values for the public methods of the `ChatGPT`/`AsyncChatGPT` classes have changed, they are now tuple with the following values:
-   - `success`: Boolean, True if the operation succeeded, False if the operation failed.
-   - `data`: Object, the data the command generated.
-   - `message`: Human-readable message about the outcome of the operation.
+* The return values for the public methods of the `ChatGPT`/`AsyncChatGPT` classes have changed, they are now tuple with the following values:
+  * `success`: Boolean, True if the operation succeeded, False if the operation failed.
+  * `data`: Object, the data the command generated.
+  * `message`: Human-readable message about the outcome of the operation.
 
- - Introduced the concept of multiple 'backends' -- see below for the currently supported ones
- - Added the 'chatgpt-api' backend, communicates via the official OpenAI REST endpoint for ChatGPT
-   - Basic multi-user support (admin party at CLI)
-   - Data stored in a database (SQLite by default, any configurable in SQLAlchemy allowed)
-   - Allows full model customiztion
-   - Numerous new shell commands and enhancements
+* Introduced the concept of multiple 'backends' -- see below for the currently supported ones
+* Added the 'chatgpt-api' backend, communicates via the official OpenAI REST endpoint for ChatGPT
+  * Basic multi-user support (admin party at CLI)
+  * Data stored in a database (SQLite by default, any configurable in SQLAlchemy allowed)
+  * Allows full model customiztion
+  * Numerous new shell commands and enhancements
 
 ### v0.4.3 - 03/03/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
- - ChatGPT/AsyncChatGPT classes have changed how they receive configuration values, be sure to investigate the new function signatues for their __init__() and create() methods.
+* ChatGPT/AsyncChatGPT classes have changed how they receive configuration values, be sure to investigate the new function signatues for their __init__() and create() methods.
 
 ### What is new?
 
- - [New configuration system](/config.sample.yaml)
- - Added '/config' command
+* [New configuration system](/config.sample.yaml)
+* Added '/config' command
 
-### v0.4.2 - 01/03/2023
+### v0.4.2 - 03/01/2023
 
- - Fix broken `ChatGPT` sync class
- - Removed nest_asyncio dependency
- - Convert CLI to use `AsyncChatGPT` class
- - Initial implementation of stop generating text response
+* Fix broken `ChatGPT` sync class
+* Removed nest_asyncio dependency
+* Convert CLI to use `AsyncChatGPT` class
+* Initial implementation of stop generating text response
 
-### v0.4.1 - 28/02/2023
+### v0.4.1 - 02/28/2023
 
-- REVERT BREAKING CHANGE: Asyncio module requirement _removed_ from usage of ChatGPT class, it is now a sync wrapper around the async class
+* REVERT BREAKING CHANGE: Asyncio module requirement _removed_ from usage of ChatGPT class, it is now a sync wrapper around the async class
 
-### v0.4.0 - 27/02/2023
+### v0.4.0 - 02/27/2023
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
 
-- Command leader changed from '!' to '/'
-- Asyncio module is now required to use ChatGPT class directly (refer to [Python usage](#python))
+* Command leader changed from '!' to '/'
+* Asyncio module is now required to use ChatGPT class directly (refer to [Python usage](#python))
 
 ### What is new?
 
 #### New commands
 
-- Added '/quit' command
-- Added '/delete' support for history IDs/UUIDs
-- Added '/chat' command
-- Added '/switch' command
-- Added '/title' command
-- Added limit/offset support for '/history'
+* Added '/quit' command
+* Added '/delete' support for history IDs/UUIDs
+* Added '/chat' command
+* Added '/switch' command
+* Added '/title' command
+* Added limit/offset support for '/history'
 
 #### New features
 
-- **_Migrated to async Playwright_**
-- **_Initial API in Flask_** (see [How to use the API](#flask-api))
-- Added tab completion for commands
-- Added '/tmp' volume for saving Playwright session
-- Added CI and CodeQL workflows
-- Added simple developer debug module
-- Improved session refreshing (**_/session now works!_**)
-- Migrated to Prompt Toolkit
+* **_Migrated to async Playwright_**
+* **_Initial API in Flask_** (see [How to use the API](#flask-api))
+* Added tab completion for commands
+* Added '/tmp' volume for saving Playwright session
+* Added CI and CodeQL workflows
+* Added simple developer debug module
+* Improved session refreshing (**_/session now works!_**)
+* Migrated to Prompt Toolkit
 
 [See commit log for previous updates](#commit-log)
 
 ## OLDER RELEASES
 
-- 21/02/2023: v0.3.17
-  - Added debug mode (visible browser window).
-  - @thehunmonkgroup fixed chat naming.
-  - @thehunmonkgroup added !delete command to remove/hide conversations.
-  - @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free').
-  - @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT.
-  - @thehunmonkgroup added !history command to show the list of the last 20 conversations.
-  - @NatLee added **docker** support.
-- 17/02/2023: v0.3.16
-  - Ability to open **multiple sessions in parallel**.
-  - Code now works with **ChatGPT Plus** subscription.
-- 14/02/2023: v0.3.15 - Updated model to text-davinci-002-render-sha (turbo model).
-- 14/02/2023: v0.3.11
-  - Fixed many bugs with installation. Code is refactored.
-  - Now able to use the python wrapper with a **proxy**.
-- 18/01/2023: v0.3.8 - Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
-- 17/01/2023: v0.3.7 - Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
+### v0.3.17 - 02/21/2023
+
+* Added debug mode (visible browser window).
+* @thehunmonkgroup fixed chat naming.
+* @thehunmonkgroup added !delete command to remove/hide conversations.
+* @thehunmonkgroup added --model flag to select model ('default' or 'legacy-paid' or 'legacy-free').
+* @thehunmonkgroup added !editor command to open the current prompt in an editor and send the edited prompt to ChatGPT.
+* @thehunmonkgroup added !history command to show the list of the last 20 conversations.
+* @NatLee added **docker** support.
+
+### v0.3.16 - 02/17/2023
+
+* Ability to open **multiple sessions in parallel**.
+* Code now works with **ChatGPT Plus** subscription.
+
+### v0.3.15 - 02/14/2023
+
+* Updated model to text-davinci-002-render-sha (turbo model).
+
+### v0.3.11 - 02/14/2023
+
+* Fixed many bugs with installation. Code is refactored.
+* Now able to use the python wrapper with a **proxy**.
+
+### v0.3.8 - 01/18/2023
+
+* Commands now are run only using !. For instance to enable read mode (for copy-paste and long prompts) you need to write now `!read` instead of `read`. This is to avoid conflicts with the chatgpt prompts. Fixed timeout issue.
+
+### v0.3.7 - 01/17/2023
+
+* Added timeout to `ask` method to prevent hanging. Fixed return to terminal breakdown. Streaming output now is activated by default.
