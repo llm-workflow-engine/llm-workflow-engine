@@ -29,7 +29,7 @@ LWE exposes some builtin variables that can be used in templates:
 Front matter
 -----------------------------------------------
 
-Templates may include front matter (see the `example templates <https://github.com/llm-workflow-engine/llm-workflow-engine/tree/main/examples/templates>`_).
+Templates may include front matter (see the `example templates <https://github.com/llm-workflow-engine/llm-workflow-engine/tree/main/lwe/examples/templates>`_).
 
 These front matter attributes have special functionality:
 
