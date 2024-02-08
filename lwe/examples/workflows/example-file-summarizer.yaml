@@ -18,11 +18,12 @@
     user_id: 1
     preset: "gpt-4-chatbot-responses"
     content_directory: "/tmp/file-content"
-    content_max_length: 22000
+    content_max_length: 400000
     summaries_directory: "/tmp/file-summaries"
     question_1: "Can you give me a very clear explanation of the core assertions, implications, and mechanics elucidated in this paper?"
     question_2: "Can you explain the value of this in basic terms? Like you're talking to a CEO. So what? What's the bottom line here?"
     question_3: "Can you give me an analogy or metaphor that will help explain this to a broad audience."
+    question_4: "Can you provide a specific example that best illustrates the key points elucidated in this paper?"
   tasks:
     - name: Find all files in the content directory
       find:

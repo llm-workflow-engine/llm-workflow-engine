@@ -57,6 +57,21 @@
       debug:
         msg: "{{ response_3.response }}"
 
+    - name: "Ask fourth question: {{ question_4 }}"
+      lwe_llm:
+        preset: "{{ preset }}"
+        user: "{{ user_id }}"
+        conversation_id: "{{ response_3.conversation_id }}"
+        message: "{{ question_4 }}"
+      register: response_4
+      until: "response_4 is not failed"
+      retries: 10
+      delay: 3
+
+    - name: Fourth answer
+      debug:
+        msg: "{{ response_4.response }}"
+
     - name: "Write summary to file: {{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
       copy:
         content: |
@@ -89,6 +104,16 @@
           ANSWER 3:
 
           {{ response_3.response }}
+
+          #################################################################
+
+          QUESTION 4:
+
+          {{ question_4 }}
+
+          ANSWER 4:
+
+          {{ response_4.response }}
         dest: "{{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
   when: not summary_file.stat.exists
 ...
