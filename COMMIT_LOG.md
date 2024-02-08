@@ -1,3 +1,13 @@
+### v0.18.9 - 02/08/2024
+
+* **Thu Feb 08 2024:** enhance file-summarizer workflow, larger character limit for paper, add a fourth question
+* **Thu Feb 08 2024:** adjust presets for new OpenAI models
+* **Thu Feb 08 2024:** add gpt-4-0125-preview, gpt-4-turbo-preview, gpt-3.5-turbo-0125 models
+* **Wed Feb 07 2024:** sync with patched FakeMessagesListChatModel langchain class
+* **Tue Jan 16 2024:** Fix 404 link in templates.rst - "example templates"
+* **Mon Jan 08 2024:** fix commit log link
+* **Mon Jan 08 2024:** clean up formatting and date format
+
 ### v0.18.8 - 01/08/2024
 
 * **Mon Jan 08 2024:** fix bad reference to langchain tools
