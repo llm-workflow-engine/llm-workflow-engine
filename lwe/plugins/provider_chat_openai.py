@@ -22,7 +22,7 @@ class ProviderChatOpenai(Provider):
             "chat": True,
             "models": {
                 "gpt-3.5-turbo": {
-                    "max_tokens": 4096,
+                    "max_tokens": 16384,
                 },
                 "gpt-3.5-turbo-16k": {
                     "max_tokens": 16384,
@@ -34,6 +34,9 @@ class ProviderChatOpenai(Provider):
                     "max_tokens": 16384,
                 },
                 "gpt-3.5-turbo-1106": {
+                    "max_tokens": 16384,
+                },
+                "gpt-3.5-turbo-0125": {
                     "max_tokens": 16384,
                 },
                 "gpt-4": {
@@ -48,7 +51,13 @@ class ProviderChatOpenai(Provider):
                 "gpt-4-32k-0613": {
                     "max_tokens": 32768,
                 },
+                "gpt-4-turbo-preview": {
+                    "max_tokens": 131072,
+                },
                 "gpt-4-1106-preview": {
+                    "max_tokens": 131072,
+                },
+                "gpt-4-0125-preview": {
                     "max_tokens": 131072,
                 },
             },
