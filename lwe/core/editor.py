@@ -29,20 +29,23 @@ def discover_editor():
     command_parts = []
     if SYSTEM == "Windows":
         editor_executable = get_environment_editor()
-        executables_search = editor_executable and [editor_executable] or WINDOWS_EDITORS
-        for editor in executables_search:
-            try:
-                editor_paths = (
-                    subprocess.check_output(f"where {editor}", shell=True).decode().strip()
-                )
-                break
-            except subprocess.CalledProcessError:
-                continue
-        if editor_paths:
-            editor_path = editor_paths.split("\r")[0].strip()
-            command_parts = [editor_path]
+        if editor_executable and os.path.isfile(editor_executable) and os.access(editor_executable, os.X_OK):
+            command_parts = [editor_executable]
         else:
-            raise Exception("No Windows editor found, tried: " + ", ".join(WINDOWS_EDITORS))
+            executables_search = editor_executable and [editor_executable] or WINDOWS_EDITORS
+            for editor in executables_search:
+                try:
+                    editor_paths = (
+                        subprocess.check_output(f"where {editor}", shell=True).decode().strip()
+                    )
+                    break
+                except subprocess.CalledProcessError:
+                    continue
+            if editor_paths:
+                editor_path = editor_paths.splitlines()[0].strip()
+                command_parts = [editor_path]
+            else:
+                raise Exception("No Windows editor found, tried: " + ", ".join(WINDOWS_EDITORS))
     elif SYSTEM == "Darwin":
         editor_path = get_environment_editor()
         command_parts = [editor_path] if editor_path else ["open", "-t"]
