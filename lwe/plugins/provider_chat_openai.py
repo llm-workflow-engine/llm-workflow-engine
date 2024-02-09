@@ -78,6 +78,7 @@ class ProviderChatOpenai(Provider):
             "verbose": PresetValue(bool),
             "model_name": PresetValue(str, options=self.available_models),
             "temperature": PresetValue(float, min_value=0.0, max_value=2.0),
+            "openai_api_base": PresetValue(str, include_none=True),
             "openai_api_key": PresetValue(str, include_none=True, private=True),
             "openai_organization": PresetValue(str, include_none=True, private=True),
             "request_timeout": PresetValue(int),
