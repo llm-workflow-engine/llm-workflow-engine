@@ -1175,7 +1175,7 @@ class Repl:
         :param template_name: The name of the template.
         :type template_name: str
         """
-        success, template_content, user_message = self.backend.template_manager.render_template(
+        success, template_content, user_message = self.backend.template_manager.get_raw_template(
             template_name
         )
         if not success:
