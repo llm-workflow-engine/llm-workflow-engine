@@ -51,6 +51,12 @@ class ProviderChatOpenai(Provider):
                 "gpt-4-32k-0613": {
                     "max_tokens": 32768,
                 },
+                "gpt-4-turbo": {
+                    "max_tokens": 131072,
+                },
+                "gpt-4-turbo-2024-04-09": {
+                    "max_tokens": 131072,
+                },
                 "gpt-4-turbo-preview": {
                     "max_tokens": 131072,
                 },
