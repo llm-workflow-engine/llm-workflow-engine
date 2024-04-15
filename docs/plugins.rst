@@ -117,6 +117,8 @@ Supported providers
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-cohere
 * **provider_chat_google_genai:** Access to `Google GenAI <https://ai.google.dev/models>`_ chat models.
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-google-genai
+* **provider_chat_groq:** Access to `Groq <https://console.groq.com/docs/models>`_ chat models.
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-groq
 * **provider_chat_mistralai:** Access to `MistralAI <https://docs.mistral.ai>`_ chat models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-mistralai
 * **provider_chat_ollama:** Access to `Ollama <https://ollama.ai/library>`_ chat models
