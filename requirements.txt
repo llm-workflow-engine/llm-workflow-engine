@@ -16,6 +16,9 @@ pyperclip
 python-frontmatter
 PyYAML
 rich
+setuptools
 textract @ git+https://github.com/thehunmonkgroup/textract@41c8a14de9facbfe21a1881cda49ced67b3bb5a4
 sqlalchemy>=1.4.48
 tiktoken
+pytest[dev]
+pytest-datadir[dev]
