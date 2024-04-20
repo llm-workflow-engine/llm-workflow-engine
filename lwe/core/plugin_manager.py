@@ -1,6 +1,6 @@
 import os
 import importlib.util
-import pkg_resources
+import importlib.metadata
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -60,26 +60,20 @@ class PluginManager:
 
     def load_package_plugins(self, plugin_list):
         self.log.info("Scanning for package plugins")
-        entry_point_group = "%splugins" % PLUGIN_PREFIX
-        for entry_point in pkg_resources.iter_entry_points(group=entry_point_group):
-            package_name = entry_point.dist.project_name
-            plugin_name = util.dash_to_underscore(package_name[len("%splugin_" % PLUGIN_PREFIX) :])
+        entry_point_group = f"{PLUGIN_PREFIX}plugins"
+        for entry_point in importlib.metadata.entry_points().select(group=entry_point_group):
+            package_name = entry_point.dist.metadata["Name"]
+            plugin_name = util.dash_to_underscore(package_name[len(f"{PLUGIN_PREFIX}plugin_"):])
             if plugin_name in plugin_list:
                 try:
                     klass = entry_point.load()
                     plugin_instance = klass(self.config)
-                    self.log.info(
-                        f"Loaded plugin: {entry_point.name},  from package: {package_name}"
-                    )
+                    self.log.info(f"Loaded plugin: {entry_point.name}, from package: {package_name}")
                     self.package_plugins[plugin_name] = plugin_instance
                 except Exception as e:
-                    self.log.error(
-                        f"Failed to load plugin {entry_point.name}, from package: {package_name}: {e}"
-                    )
+                    self.log.error(f"Failed to load plugin {entry_point.name}, from package: {package_name}: {e}")
             else:
-                self.log.info(
-                    f"Skip loading: {entry_point.name}, from package: {package_name}, reason: not enabled"
-                )
+                self.log.info(f"Skip loading: {entry_point.name}, from package: {package_name}, reason: not enabled")
 
     def setup_plugin(self, plugin_name, plugin_instance):
         plugin_instance.set_name(plugin_name)
