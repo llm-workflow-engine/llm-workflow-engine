@@ -1,3 +1,16 @@
+### v0.18.10 - 04/20/2024
+
+* **Sat Apr 20 2024:** migrate from pkg_resources to importlib.metadata
+* **Sat Apr 20 2024:** add [dev] extra for development packages
+* **Mon Apr 15 2024:** add link to chat groq provider plugin
+* **Tue Apr 09 2024:** add latest gpt-4-turbo models to available models list
+* **Tue Apr 09 2024:** switch to newest gpt-4-turbo
+* **Thu Mar 14 2024:** add get_raw_template(), use in template edit/run
+* **Thu Feb 08 2024:** check for full path in windows editor env var, more robust line splitting from where call
+* **Thu Feb 08 2024:** fix #340: fix langchain deprecation warning
+* **Thu Feb 08 2024:** add openai_api_base config option to chat_openai provider
+* **Thu Feb 08 2024:** switch to gpt-3.5-turbo for default model
+
 ### v0.18.9 - 02/08/2024
 
 * **Thu Feb 08 2024:** enhance file-summarizer workflow, larger character limit for paper, add a fourth question

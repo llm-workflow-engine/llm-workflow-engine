@@ -22,3 +22,4 @@ sqlalchemy>=1.4.48
 tiktoken
 pytest[dev]
 pytest-datadir[dev]
+pip-tools[dev]
