@@ -29,3 +29,17 @@ To run all tests:
 .. code-block:: bash
 
    pytest
+
+-----------------------------------------------
+Documentation
+-----------------------------------------------
+
+The project uses `Sphinx <https://www.sphinx-doc.org>`_.
+
+To build the documentation:
+
+.. code-block:: bash
+
+   cd doc
+   pip-compile requirements.in
+   make html
