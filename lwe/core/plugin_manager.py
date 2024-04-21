@@ -61,7 +61,12 @@ class PluginManager:
     def load_package_plugins(self, plugin_list):
         self.log.info("Scanning for package plugins")
         entry_point_group = f"{PLUGIN_PREFIX}plugins"
-        for entry_point in importlib.metadata.entry_points().select(group=entry_point_group):
+        try:
+            entry_points = importlib.metadata.entry_points().select(group=entry_point_group)
+        except AttributeError:
+            # TODO: Python 3.9 compatibility, remove when we drop support for 3.9.
+            entry_points = importlib.metadata.entry_points().get(entry_point_group, [])
+        for entry_point in entry_points:
             package_name = entry_point.dist.metadata["Name"]
             plugin_name = util.dash_to_underscore(package_name[len(f"{PLUGIN_PREFIX}plugin_"):])
             if plugin_name in plugin_list:
