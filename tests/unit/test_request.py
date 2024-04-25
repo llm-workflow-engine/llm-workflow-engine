@@ -258,7 +258,20 @@ def test_prepare_config_defaults(test_config, function_manager, provider_manager
     }
 
 
-def test_load_provider_with_preset_name(
+def test_load_provider_with_provider_in_metadata(
+    test_config, function_manager, provider_manager, preset_manager
+):
+    provider = make_provider(provider_manager)
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
+    request.provider_manager.load_provider = Mock(return_value=(True, provider, "Success"))
+    config = {"metadata": {"provider": "test_provider"}}
+    success, response, user_message = request.load_provider(config)
+    assert success is True
+    assert response == provider
+    request.provider_manager.load_provider.assert_called_once_with("test_provider")
+
+
+def test_load_provider_without_provider_in_metadata(
     test_config, function_manager, provider_manager, preset_manager
 ):
     provider = make_provider(provider_manager)
@@ -266,24 +279,11 @@ def test_load_provider_with_preset_name(
         test_config, function_manager, provider_manager, preset_manager, provider
     )
     request.provider_manager.load_provider = Mock()
-    config = {"preset_name": "test", "metadata": {"provider": "test_provider"}}
+    config = {"metadata": {}}
     success, response, user_message = request.load_provider(config)
     assert success is True
     assert response == provider
     request.provider_manager.load_provider.assert_not_called()
-
-
-def test_load_provider_without_preset_name(
-    test_config, function_manager, provider_manager, preset_manager
-):
-    provider = make_provider(provider_manager)
-    request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
-    request.provider_manager.load_provider = Mock(return_value=(True, provider, "Success"))
-    config = {"preset_name": None, "metadata": {"provider": "test_provider"}}
-    success, response, user_message = request.load_provider(config)
-    assert success is True
-    assert response == provider
-    request.provider_manager.load_provider.assert_called_once_with("test_provider")
 
 
 def test_merge_preset_overrides(test_config, function_manager, provider_manager, preset_manager):
