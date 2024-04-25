@@ -128,7 +128,7 @@ class ApiRequest:
         return config
 
     def load_provider(self, config):
-        if config["preset_name"] is None:
+        if "provider" in config["metadata"]:
             return self.provider_manager.load_provider(config["metadata"]["provider"])
         return True, self.provider, "Default provider loaded"
 
