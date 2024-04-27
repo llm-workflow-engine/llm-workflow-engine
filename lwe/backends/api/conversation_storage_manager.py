@@ -193,7 +193,7 @@ class ConversationStorageManager:
             llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
         try:
             result = llm.invoke(new_messages)
-            request = ApiRequest(orm=self.orm)
+            request = ApiRequest(orm=self.orm, config=self.config)
             title = request.extract_message_content(result)["message"]
             title = title.replace("\n", ", ").strip().strip("'\"")
             self.log.info(f"Title generated for conversation {conversation_id}: {title}")
