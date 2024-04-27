@@ -1,3 +1,13 @@
+### v0.18.11 - 04/26/2024
+
+* **Fri Apr 26 2024:** pass missing config object during title generation
+* **Fri Apr 26 2024:** add doc for backend_options.title_generation.provider
+* **Thu Apr 25 2024:** fix broken request class unit tests
+* **Thu Apr 25 2024:** improve check for custom provider in request logic
+* **Sat Apr 20 2024:** add doc for openrouter provider plugin
+* **Sat Apr 20 2024:** fix for Python 3.9 compat
+* **Sat Apr 20 2024:** update chat_openai provider args
+
 ### v0.18.10 - 04/20/2024
 
 * **Sat Apr 20 2024:** migrate from pkg_resources to importlib.metadata
