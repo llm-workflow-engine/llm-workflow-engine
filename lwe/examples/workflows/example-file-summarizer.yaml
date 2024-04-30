@@ -22,10 +22,24 @@
     summaries_directory: "/tmp/file-summaries"
     question_1: "Can you give me a very clear explanation of the core assertions, implications, and mechanics elucidated in this paper?"
     question_2: "Can you explain the value of this in basic terms? Like you're talking to a CEO. So what? What's the bottom line here?"
-    question_3: "Can you give me an analogy or metaphor that will help explain this to a broad audience."
+    question_3: "Can you give me an analogy or metaphor that will help explain this to a broad audience?"
     question_4: "Can you provide a specific example that best illustrates the key points elucidated in this paper?"
+    url: null  # Optional variable for downloading a file
   tasks:
-    - name: Find all files in the content directory
+    - name: "Ensure content directory {{ content_directory }} exists"
+      ansible.builtin.file:
+        path: "{{ content_directory }}"
+        state: directory
+    - name: "Ensure summaries directory {{ summaries_directory }} exists"
+      ansible.builtin.file:
+        path: "{{ summaries_directory }}"
+        state: directory
+    - name: "Download file from URL {{ url }} to {{ content_directory }}"
+      ansible.builtin.get_url:
+        url: "{{ url }}"
+        dest: "{{ content_directory }}/{{ url | basename }}"
+      when: url is not none
+    - name: "Find all files in the content directory {{ content_directory }}"
       find:
         paths: "{{ content_directory }}"
         recurse: yes
@@ -33,7 +47,7 @@
       register: files_to_summarize
 
     - name: Process each file
-      include_tasks: example-file-summarizer-summarize-file.yaml
+      include_tasks: file-summarizer-summarize-file.yaml
       loop: "{{ files_to_summarize.files }}"
       loop_control:
         loop_var: current_file
