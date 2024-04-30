@@ -6,11 +6,19 @@
 #
 # 1. Extract the text from the file
 # 2. Pass the text to the LLM as context
-# 3. Ask the LLM three questions about the reference text
-# 4. Store the results in a summary file
+# 3. Extract the title
+# 4. Ask the LLM four questions about the reference text
+# 5. Store the results as a conversation, and in a summary file
 #
 # Summary files are only written once -- if the summary file for a reference
 # file already exists, it's skipped.
+#
+# An optional `url` parameter can be passed when executing the workflow -- if
+# specified, the referenced file will be downloaded prior to processing the
+# contents directory.
+# NOTE: The URL must be a path to a downloadable file, and end with an extension
+# that the text extractor can support, e.g.:
+#     /workflow run file-summarizer url="https://example.com/paper.pdf"
 ---
 - name: Summarize the contents of all files in a directory
   hosts: localhost
