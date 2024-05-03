@@ -115,6 +115,8 @@ Supported providers
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-anyscale
 * **provider_chat_cohere:** Access to `Cohere <https://docs.cohere.com/docs/models>`_ chat models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-cohere
+* **provider_chat_fireworks:** Access to `Fireworks <https://fireworks.ai/models>`_ chat models.
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-fireworks
 * **provider_chat_google_genai:** Access to `Google GenAI <https://ai.google.dev/models>`_ chat models.
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-google-genai
 * **provider_chat_groq:** Access to `Groq <https://console.groq.com/docs/models>`_ chat models.
