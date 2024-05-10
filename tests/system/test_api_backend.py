@@ -62,7 +62,7 @@ def test_api_backend_non_streaming_valid_response_with_user(test_config):
     assert backend.conversation_id == 1
 
 
-def test_api_backend_creates_valid_conversation_and_messages(test_config):
+def test_api_backend_message_string_creates_valid_conversation_and_messages(test_config):
     backend = make_api_backend(test_config)
     success, response, _user_message = backend.ask("test question")
     assert success
@@ -92,6 +92,62 @@ def test_api_backend_creates_valid_conversation_and_messages(test_config):
     assert message_assistant["provider"] == "provider_fake_llm"
     assert message_assistant["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_assistant["preset"] == "test"
+
+
+def test_api_backend_messages_list_creates_valid_conversation_and_messages(test_config):
+    backend = make_api_backend(test_config)
+    system_message_content = 'test system message'
+    user_message_content = 'test user message'
+    assistant_message_content = 'test assistant response'
+    user_message_content_2 = 'test user message 2'
+    messages = [
+        {'role': 'system', 'content': system_message_content},
+        {'role': 'user', 'content': user_message_content},
+        {'role': 'assistant', 'content': assistant_message_content},
+        {'role': 'user', 'content': user_message_content_2},
+    ]
+    success, response, _user_message = backend.ask(messages)
+    assert success
+    success, response, _user_message = backend.get_conversation()
+    assert success
+    assert response["conversation"]["id"] == 1
+    assert response["conversation"]["title"] == "test response"
+    assert len(response["messages"]) == 5
+    message_system = response["messages"][0]
+    message_user = response["messages"][1]
+    message_assistant = response["messages"][2]
+    message_user_2 = response["messages"][3]
+    message_assistant_2 = response["messages"][4]
+    assert message_system["role"] == "system"
+    assert message_system["message"] == system_message_content
+    assert message_system["message_type"] == "content"
+    assert message_system["provider"] == "provider_fake_llm"
+    assert message_system["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_system["preset"] == "test"
+    assert message_user["role"] == "user"
+    assert message_user["message"] == user_message_content
+    assert message_user["message_type"] == "content"
+    assert message_user["provider"] == "provider_fake_llm"
+    assert message_user["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_user["preset"] == "test"
+    assert message_assistant["role"] == "assistant"
+    assert message_assistant["message"] == assistant_message_content
+    assert message_assistant["message_type"] == "content"
+    assert message_assistant["provider"] == "provider_fake_llm"
+    assert message_assistant["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_assistant["preset"] == "test"
+    assert message_user_2["role"] == "user"
+    assert message_user_2["message"] == user_message_content_2
+    assert message_user_2["message_type"] == "content"
+    assert message_user_2["provider"] == "provider_fake_llm"
+    assert message_user_2["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_user_2["preset"] == "test"
+    assert message_assistant_2["role"] == "assistant"
+    assert message_assistant_2["message"] == "test response"
+    assert message_assistant_2["message_type"] == "content"
+    assert message_assistant_2["provider"] == "provider_fake_llm"
+    assert message_assistant_2["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_assistant_2["preset"] == "test"
 
 
 def test_api_backend_with_function_call_creates_valid_conversation_and_messages(test_config):

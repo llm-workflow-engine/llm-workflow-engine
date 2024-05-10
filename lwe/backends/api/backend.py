@@ -677,8 +677,8 @@ class ApiBackend:
         """
         Ask the LLM a question, return and optionally stream a response.
 
-        :param input: The input to be sent to the LLM.
-        :type input: str
+        :param input: The input to be sent to the LLM, can be a string for a single user message, or a list of message dicts with 'role' and 'content' keys.
+        :type input: str | list
         :request_overrides: Overrides for this specific request.
         :type request_overrides: dict, optional
         :returns: success, LLM response, message

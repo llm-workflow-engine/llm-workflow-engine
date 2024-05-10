@@ -490,13 +490,13 @@ def test_expand_functions_missing_function(
     assert "test_missing_function not found" in str(excinfo.value)
 
 
-def test_prepare_new_conversation_messages_no_old_messages_system_message_default(
+def test_prepare_default_new_conversation_messages_no_old_messages_system_message_default(
     test_config, function_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
     request.old_messages = []
     request.input = "test message"
-    result = request.prepare_new_conversation_messages()
+    result = request.prepare_default_new_conversation_messages()
     assert len(result) == 2
     assert result[0]["role"] == "system"
     assert result[0]["message"] == constants.SYSTEM_MESSAGE_DEFAULT
@@ -504,14 +504,14 @@ def test_prepare_new_conversation_messages_no_old_messages_system_message_defaul
     assert result[1]["message"] == "test message"
 
 
-def test_prepare_new_conversation_messages_no_old_messages_system_message_override(
+def test_prepare_default_new_conversation_messages_no_old_messages_system_message_override(
     test_config, function_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
     request.old_messages = []
     request.input = "test message"
     request.request_overrides["system_message"] = "test system message"
-    result = request.prepare_new_conversation_messages()
+    result = request.prepare_default_new_conversation_messages()
     assert len(result) == 2
     assert result[0]["role"] == "system"
     assert result[0]["message"] == "test system message"
@@ -519,16 +519,63 @@ def test_prepare_new_conversation_messages_no_old_messages_system_message_overri
     assert result[1]["message"] == "test message"
 
 
-def test_prepare_new_conversation_messages_old_messages(
+def test_prepare_default_new_conversation_messages_old_messages(
     test_config, function_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
     request.old_messages = TEST_BASIC_MESSAGES
     request.input = "test message"
-    result = request.prepare_new_conversation_messages()
+    result = request.prepare_default_new_conversation_messages()
     assert len(result) == 1
     assert result[0]["role"] == "user"
     assert result[0]["message"] == "test message"
+
+
+def test_prepare_custom_new_conversation_messages(
+    test_config, function_manager, provider_manager, preset_manager
+):
+    system_message_content = 'test system message'
+    user_message_content = 'test user message'
+    assistant_message_content = 'test assistant response'
+    user_message_content_2 = 'test user message 2'
+    messages = [
+        {'role': 'system', 'content': system_message_content},
+        {'role': 'user', 'content': user_message_content},
+        {'role': 'assistant', 'content': assistant_message_content},
+        {'role': 'user', 'content': user_message_content_2},
+    ]
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, input=messages)
+    result = request.prepare_custom_new_conversation_messages()
+    assert len(result) == 4
+    assert result[0]["role"] == "system"
+    assert result[0]["message"] == system_message_content
+    assert result[1]["role"] == "user"
+    assert result[1]["message"] == user_message_content
+    assert result[2]["role"] == "assistant"
+    assert result[2]["message"] == assistant_message_content
+    assert result[3]["role"] == "user"
+    assert result[3]["message"] == user_message_content_2
+
+
+def test_prepare_new_conversation_messages_with_message_string_builds_default_messages(test_config, function_manager, provider_manager, preset_manager):
+    input = "test message"
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, input=input)
+    request.prepare_default_new_conversation_messages = Mock()
+    request.prepare_new_conversation_messages()
+    request.prepare_default_new_conversation_messages.assert_called_once()
+
+
+def test_prepare_new_conversation_messages_with_message_list_builds_custom_messages(test_config, function_manager, provider_manager, preset_manager):
+    system_message_content = 'test system message'
+    user_message_content = 'test user message'
+    messages = [
+        {'role': 'system', 'content': system_message_content},
+        {'role': 'user', 'content': user_message_content},
+    ]
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, input=messages)
+    request.prepare_custom_new_conversation_messages = Mock()
+    request.prepare_new_conversation_messages()
+    request.prepare_custom_new_conversation_messages.assert_called_once()
 
 
 def test_prepare_ask_request(test_config, function_manager, provider_manager, preset_manager):

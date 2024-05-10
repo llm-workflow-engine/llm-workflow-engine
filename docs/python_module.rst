@@ -19,7 +19,21 @@ Create an instance of the class and use the ``ask`` method to send a message to 
    else:
        raise RuntimeError(message)
 
-The ``ask`` method takes a string argument representing the message to send to the LLM, and returns a tuple with the following values:
+The ``ask`` method takes an argument representing the messages to send to the LLM, in one of the following forms:
+
+#. A string, which sends a single user message
+#. A list of message dicts.
+   Each message should have two keys: ``role`` and ``content``, e.g.:
+
+   .. code-block:: python
+
+      [
+          {'role': 'system', 'content': 'You are a helpful assistant.'},
+          {'role': 'user', 'content': 'Say hello!'},
+          {'role': 'assistant', 'content': 'Hello!'},
+      ]
+
+It returns a tuple with the following values:
 
 #. ``success``: Boolean indicating whether the operation succeeded.
 #. ``response``: An object representing the response received *(usually just a string response from the LLM)*

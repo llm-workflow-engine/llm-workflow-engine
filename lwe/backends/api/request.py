@@ -210,9 +210,9 @@ class ApiRequest:
                 ] = self.function_manager.get_function_config(function_name)
         return customizations
 
-    def prepare_new_conversation_messages(self):
+    def prepare_default_new_conversation_messages(self):
         """
-        Prepare new conversation messages.
+        Prepare default new conversation messages.
 
         :returns: List of new messages
         :rtype: list
@@ -226,6 +226,24 @@ class ApiRequest:
             )
         new_messages.append(self.message.build_message("user", self.input))
         return new_messages
+
+    def prepare_custom_new_conversation_messages(self):
+        """
+        Prepare custom new conversation messages.
+
+        :returns: List of new messages
+        :rtype: list
+        """
+        return [self.message.build_message(message['role'], message['content']) for message in self.input]
+
+    def prepare_new_conversation_messages(self):
+        """
+        Prepare new conversation messages.
+
+        :returns: List of new messages
+        :rtype: list
+        """
+        return self.prepare_custom_new_conversation_messages() if type(self.input) is list else self.prepare_default_new_conversation_messages()
 
     def prepare_ask_request(self):
         """

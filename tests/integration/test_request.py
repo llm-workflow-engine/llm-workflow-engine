@@ -33,7 +33,7 @@ def test_missing_preset(test_config, function_manager, provider_manager, preset_
     assert "Preset 'missing_preset' not found" in user_message
 
 
-def test_successful_non_streaming_request(
+def test_successful_message_string_non_streaming_request(
     test_config, function_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, function_manager, provider_manager, preset_manager)
@@ -49,6 +49,34 @@ def test_successful_non_streaming_request(
     assert new_messages[2]["role"] == "assistant"
 
 
+def test_successful_messages_list_non_streaming_request(
+    test_config, function_manager, provider_manager, preset_manager
+):
+    system_message_content = 'test system message'
+    user_message_content = 'test user message'
+    assistant_message_content = 'test assistant response'
+    user_message_content_2 = 'test user message 2'
+    messages = [
+        {'role': 'system', 'content': system_message_content},
+        {'role': 'user', 'content': user_message_content},
+        {'role': 'assistant', 'content': assistant_message_content},
+        {'role': 'user', 'content': user_message_content_2},
+    ]
+    request = make_api_request(test_config, function_manager, provider_manager, preset_manager, input=messages)
+    request.set_request_llm()
+    new_messages, messages = request.prepare_ask_request()
+    success, response_obj, _user_message = request.call_llm(messages)
+    response, new_messages = request.post_response(response_obj, new_messages)
+    assert success is True
+    assert response == "test response"
+    assert len(new_messages) == 5
+    assert new_messages[0]["role"] == "system"
+    assert new_messages[1]["role"] == "user"
+    assert new_messages[2]["role"] == "assistant"
+    assert new_messages[3]["role"] == "user"
+    assert new_messages[4]["role"] == "assistant"
+
+
 def test_execute_llm_non_streaming_failure_call_llm(
     test_config, function_manager, provider_manager, preset_manager
 ):
@@ -62,7 +90,7 @@ def test_execute_llm_non_streaming_failure_call_llm(
     assert str(user_message) == "Error"
 
 
-def test_execute_llm_streaming(test_config, function_manager, provider_manager, preset_manager):
+def test_execute_message_string_llm_streaming(test_config, function_manager, provider_manager, preset_manager):
     request = make_api_request(
         test_config,
         function_manager,
@@ -80,6 +108,39 @@ def test_execute_llm_streaming(test_config, function_manager, provider_manager, 
     assert new_messages[0]["role"] == "system"
     assert new_messages[1]["role"] == "user"
     assert new_messages[2]["role"] == "assistant"
+
+
+def test_execute_messages_list_llm_streaming(test_config, function_manager, provider_manager, preset_manager):
+    system_message_content = 'test system message'
+    user_message_content = 'test user message'
+    assistant_message_content = 'test assistant response'
+    user_message_content_2 = 'test user message 2'
+    messages = [
+        {'role': 'system', 'content': system_message_content},
+        {'role': 'user', 'content': user_message_content},
+        {'role': 'assistant', 'content': assistant_message_content},
+        {'role': 'user', 'content': user_message_content_2},
+    ]
+    request = make_api_request(
+        test_config,
+        function_manager,
+        provider_manager,
+        preset_manager,
+        input=messages,
+        request_overrides={"stream": True},
+    )
+    request.set_request_llm()
+    new_messages, messages = request.prepare_ask_request()
+    success, response_obj, _user_message = request.call_llm(messages)
+    response, new_messages = request.post_response(response_obj, new_messages)
+    assert success is True
+    assert response == "test response"
+    assert len(new_messages) == 5
+    assert new_messages[0]["role"] == "system"
+    assert new_messages[1]["role"] == "user"
+    assert new_messages[2]["role"] == "assistant"
+    assert new_messages[3]["role"] == "user"
+    assert new_messages[4]["role"] == "assistant"
 
 
 def test_execute_llm_streaming_failure_call_llm(
