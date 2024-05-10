@@ -104,14 +104,14 @@ class ApiBackend:
         response = self.make_request(message, **overrides)
         return response
 
-    def run_template(self, template_name, template_vars=None, overrides=None):
+    def build_message_from_template(self, template_name, template_vars=None, overrides=None):
         """
-        Runs the given template with the provided variables and overrides.
+        Builds the message from the template.
 
         :param template_name: Name of the template to run.
-        :param template_vars: Optional dictionary of template variables, will merged with any set in the template.
-        :param overrides: Optional dictionary of overrides, will be merged with any set in the template.
-        :return: The response tuple from the template run.
+        :param template_vars: Optional dictionary of template variables.
+        :param overrides: Optional dictionary of overrides.
+        :return: A tuple containing a success indicator, tuple of built message and overrides, and a user message.
         """
         template_vars = template_vars or {}
         overrides = overrides or {}
@@ -129,7 +129,22 @@ class ApiBackend:
             return success, response, user_message
         message, template_overrides = response
         util.merge_dicts(template_overrides, overrides)
-        response = self.run_template_compiled(message, template_overrides)
+        return True, (message, template_overrides), f"Built message from template: {template_name}"
+
+    def run_template(self, template_name, template_vars=None, overrides=None):
+        """
+        Runs the given template with the provided variables and overrides.
+
+        :param template_name: Name of the template to run.
+        :param template_vars: Optional dictionary of template variables, will merged with any set in the template.
+        :param overrides: Optional dictionary of overrides, will be merged with any set in the template.
+        :return: The response tuple from the template run.
+        """
+        success, response, user_message = self.build_message_from_template(template_name, template_vars=template_vars, overrides=overrides)
+        if not success:
+            return success, response, user_message
+        message, overrides = response
+        response = self.run_template_compiled(message, overrides)
         return response
 
     def initialize_backend(self, config=None):
