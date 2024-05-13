@@ -9,6 +9,19 @@ import docutils.nodes
 
 
 def type_mapping(dtype):
+    """
+    Map a Python data type to a corresponding JSON type string.
+
+    Parameters
+    ----------
+    dtype : type
+        The Python data type to map (e.g., float, int, str).
+
+    Returns
+    -------
+    str
+        The corresponding JSON type string (e.g., 'number', 'integer', 'string').
+    """
     if dtype == float:
         return "number"
     elif dtype == int:
