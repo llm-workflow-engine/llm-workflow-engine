@@ -91,7 +91,7 @@ For now, the function list must be attached to one of the existing :ref:`presets
      # return_on_function_response: true
    model_customizations:
      # Other attributes.
-     model_name: gpt-4
+     model_name: gpt-4o
      model_kwargs:
        # Functions are added under this key, as a list of function names.
        # Multiple functions can be added.

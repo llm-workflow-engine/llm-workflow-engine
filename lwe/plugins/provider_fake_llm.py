@@ -164,6 +164,9 @@ DEFAULT_CAPABILITIES = {
         "gpt-4": {
             "max_tokens": 8192,
         },
+        "gpt-4o": {
+            "max_tokens": 131072,
+        },
     },
 }
 

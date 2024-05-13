@@ -710,7 +710,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND}
             {COMMAND} chat_openai
-            {COMMAND} chat_openai gpt-4
+            {COMMAND} chat_openai gpt-4o
         """
         if arg:
             try:

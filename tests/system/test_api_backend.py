@@ -386,7 +386,7 @@ def test_api_backend_doesnt_override_active_preset_when_preset_in_request_overri
     assert success
     message_assistant = response["messages"][2]
     assert message_assistant["provider"] == "provider_fake_llm"
-    assert message_assistant["model"] == "gpt-4"
+    assert message_assistant["model"] == "gpt-4o"
     assert message_assistant["preset"] == "test_2"
     assert backend.active_preset_name == "test"
 
@@ -406,7 +406,7 @@ def test_api_backend_overrides_active_preset_when_activate_preset_in_request_ove
     assert success
     message_assistant = response["messages"][2]
     assert message_assistant["provider"] == "provider_fake_llm"
-    assert message_assistant["model"] == "gpt-4"
+    assert message_assistant["model"] == "gpt-4o"
     assert message_assistant["preset"] == "test_2"
     assert backend.active_preset_name == "test_2"
 
@@ -452,7 +452,7 @@ def test_api_backend_overrides_provider_model_when_in_request_overrides(test_con
     request_overrides = {
         "preset_overrides": {
             "model_customizations": {
-                "model_name": "gpt-4",
+                "model_name": "gpt-4o",
             },
         },
     }
@@ -472,9 +472,9 @@ def test_api_backend_overrides_provider_model_when_in_request_overrides(test_con
     assert messages[2]["provider"] == "provider_fake_llm"
     assert messages[2]["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert messages[3]["provider"] == "provider_fake_llm"
-    assert messages[3]["model"] == "gpt-4"
+    assert messages[3]["model"] == "gpt-4o"
     assert messages[4]["provider"] == "provider_fake_llm"
-    assert messages[3]["model"] == "gpt-4"
+    assert messages[3]["model"] == "gpt-4o"
     assert messages[5]["provider"] == "provider_fake_llm"
     assert messages[5]["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert messages[6]["provider"] == "provider_fake_llm"

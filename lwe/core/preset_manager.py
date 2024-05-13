@@ -89,7 +89,7 @@ class PresetManager:
                     "filepath": "",
                 },
                 {
-                    "model_name": "gpt-4",
+                    "model_name": "gpt-4o",
                 },
             )
             self.presets["test_2"] = test_preset_2
