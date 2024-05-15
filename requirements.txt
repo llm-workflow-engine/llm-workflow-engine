@@ -17,7 +17,7 @@ python-frontmatter
 PyYAML
 rich
 setuptools
-textract @ git+https://github.com/thehunmonkgroup/textract@41c8a14de9facbfe21a1881cda49ced67b3bb5a4
+textract @ git+https://github.com/thehunmonkgroup/textract@2109f34b4f3615004de1f2b2e635cfd61dae3cb7
 sqlalchemy>=1.4.48
 tiktoken
 pytest[dev]
