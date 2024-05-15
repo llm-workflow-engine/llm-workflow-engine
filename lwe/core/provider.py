@@ -246,7 +246,7 @@ class ProviderBase(Plugin):
         else:
             return False, None, f"Invalid model {model_name}"
 
-    def make_llm(self, customizations=None, use_defaults=False):
+    def make_llm(self, customizations=None, tools=None, tool_config=None, use_defaults=False):
         customizations = customizations or {}
         final_customizations = (
             self.get_customizations(self.default_customizations())
@@ -256,6 +256,9 @@ class ProviderBase(Plugin):
         final_customizations.update(customizations)
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
+        if tools:
+            kwargs = tool_config or {}
+            llm.bind_tools(**kwargs)
         return llm
 
     def prepare_messages_method(self):

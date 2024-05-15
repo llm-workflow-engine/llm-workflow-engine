@@ -112,8 +112,8 @@ class ApiRequest:
             return success, provider, user_message
         config = self.merge_preset_overrides(config)
         preset = (config["metadata"], config["customizations"])
-        config["customizations"] = self.expand_functions(config["customizations"])
-        llm = provider.make_llm(config["customizations"], use_defaults=True)
+        config["customizations"], tools, tool_config = self.expand_functions(config["customizations"])
+        llm = provider.make_llm(config["customizations"], tools=tools, tool_config=tool_config, use_defaults=True)
         preset_name = config["metadata"].get("name", "")
         model_name = getattr(llm, provider.model_property_name)
         token_manager = TokenManager(self.config, provider, model_name, self.function_cache)
