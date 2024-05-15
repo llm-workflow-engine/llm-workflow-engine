@@ -57,8 +57,9 @@ class FakeMessagesListChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         response = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
-        generation = ChatGeneration(message=response)
-        return ChatResult(generations=[generation])
+        responses = response if isinstance(response, list) else [response]
+        generations = [ChatGeneration(message=res) for res in responses]
+        return ChatResult(generations=generations)
 
     def _call(
         self,
@@ -91,7 +92,8 @@ class FakeMessagesListChatModel(BaseChatModel):
         for c in response:
             if self.sleep is not None:
                 time.sleep(self.sleep)
-            yield ChatGenerationChunk(message=c)
+            chunk = c if isinstance(c, AIMessageChunk) else AIMessageChunk(content=c)
+            yield ChatGenerationChunk(message=chunk)
 
     async def _astream(
         self,
@@ -109,7 +111,8 @@ class FakeMessagesListChatModel(BaseChatModel):
         for c in response:
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
-            yield ChatGenerationChunk(message=c)
+            chunk = c if isinstance(c, AIMessageChunk) else AIMessageChunk(content=c)
+            yield ChatGenerationChunk(message=chunk)
 
 
 class CustomFakeMessagesListChatModel(FakeMessagesListChatModel):
