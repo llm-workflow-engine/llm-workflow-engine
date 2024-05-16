@@ -20,7 +20,7 @@ class WorkflowManager:
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_workflow_dirs = (
-            self.config.args.workflow_dir
+            self.config.args.workflows_dir
             or util.get_environment_variable_list("workflow_dir")
             or self.config.get("directories.workflows")
         )

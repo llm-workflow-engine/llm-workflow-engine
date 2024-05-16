@@ -28,7 +28,7 @@ class TemplateManager:
         self.log = Logger(self.__class__.__name__, self.config)
         self.temp_template_dir = self.make_temp_template_dir()
         self.user_template_dirs = (
-            self.config.args.template_dir
+            self.config.args.templates_dir
             or util.get_environment_variable_list("template_dir")
             or self.config.get("directories.templates")
         )

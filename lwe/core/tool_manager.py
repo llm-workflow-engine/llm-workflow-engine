@@ -23,8 +23,22 @@ class ToolManager:
         self.additional_tools = additional_tools or {}
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_tool_dirs = (
-            self.config.args.tool_dir or util.get_environment_variable_list("tool_dir") or self.config.get("directories.tools")
+            self.config.args.tools_dir or util.get_environment_variable_list("tool_dir") or self.config.get("directories.tools")
         )
+        # TODO: Remove after deprecation period -- BEGIN
+        function_dir_env = util.get_environment_variable_list("function_dir")
+        if function_dir_env:
+            util.print_status_message(False, "`LWE_FUNCTION_DIR` is deprecated, use `LWE_TOOL_DIR` instead")
+            self.deprecated_user_tool_dirs = function_dir_env
+        else:
+            self.deprecated_user_tool_dirs = []
+            for dir in self.user_tool_dirs:
+                deprecated_dir = os.path.join(os.path.dirname(dir), "functions")
+                if os.path.exists(deprecated_dir):
+                    util.print_status_message(False, f"Directory `{deprecated_dir}` is deprecated, and will cease being scanned in a future release -- rename it to `{dir}`")
+                    self.deprecated_user_tool_dirs.append(deprecated_dir)
+        self.user_tool_dirs = self.user_tool_dirs + self.deprecated_user_tool_dirs
+        # TODO: Remove after deprecation period -- END
         self.make_user_tool_dirs()
         self.system_tool_dirs = [
             os.path.join(util.get_package_root(self), "tools"),

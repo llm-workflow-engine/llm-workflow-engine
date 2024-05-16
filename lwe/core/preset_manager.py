@@ -30,7 +30,7 @@ class PresetManager:
         self.additional_presets = additional_presets or {}
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_preset_dirs = (
-            self.config.args.preset_dir
+            self.config.args.presets_dir
             or util.get_environment_variable_list("preset_dir")
             or self.config.get("directories.presets")
         )
