@@ -12,7 +12,7 @@ import random
 import string
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 import lwe.core.util as util
 
 # revision identifiers, used by Alembic.
@@ -21,21 +21,20 @@ down_revision = 'cc8f2aecf9ff'
 branch_labels = None
 depends_on = None
 
-# Define the message table for ORM operations
-metadata = sa.MetaData()
-message_table = sa.Table(
-    'message', metadata,
-    sa.Column('id', sa.Integer, primary_key=True),
-    sa.Column('conversation_id', sa.Integer, nullable=False),
-    sa.Column('role', sa.String, nullable=False),
-    sa.Column('message', sa.String, nullable=False),
-    sa.Column('message_type', sa.String, nullable=False),
-    sa.Column('message_metadata', sa.String),
-    sa.Column('model', sa.String, nullable=False),
-    sa.Column('provider', sa.String, nullable=False),
-    sa.Column('preset', sa.String, nullable=False),
-    sa.Column('created_time', sa.DateTime, nullable=False),
-)
+Base = declarative_base()
+
+class Message(Base):
+    __tablename__ = 'message'
+    id = sa.Column(sa.Integer, primary_key=True)
+    conversation_id = sa.Column(sa.Integer, nullable=False)
+    role = sa.Column(sa.String, nullable=False)
+    message = sa.Column(sa.String, nullable=False)
+    message_type = sa.Column(sa.String, nullable=False)
+    message_metadata = sa.Column(sa.String)
+    model = sa.Column(sa.String, nullable=False)
+    provider = sa.Column(sa.String, nullable=False)
+    preset = sa.Column(sa.String, nullable=False)
+    created_time = sa.Column(sa.DateTime, nullable=False)
 
 
 def generate_tool_call_id(length=24):
@@ -76,8 +75,8 @@ def upgrade_function_calls_to_tool_calls():
     bind = op.get_bind()
     Session = sessionmaker(bind=bind)
     session = Session()
-    messages = session.query(message_table).filter(
-        message_table.c.message_type.in_(['function_call', 'function_response'])
+    messages = session.query(Message).filter(
+        Message.message_type.in_(['function_call', 'function_response'])
     ).all()
     tool_call_id = None
     if len(messages) > 0:
