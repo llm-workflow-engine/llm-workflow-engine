@@ -60,9 +60,9 @@ DEFAULT_CONFIG = {
             "$CONFIG_DIR/workflows",
             "$CONFIG_DIR/profiles/$PROFILE/workflows",
         ],
-        "functions": [
-            "$CONFIG_DIR/functions",
-            "$CONFIG_DIR/profiles/$PROFILE/functions",
+        "tools": [
+            "$CONFIG_DIR/tools",
+            "$CONFIG_DIR/profiles/$PROFILE/tools",
         ],
     },
     "shell": {

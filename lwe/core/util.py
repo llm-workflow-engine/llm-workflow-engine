@@ -411,15 +411,15 @@ def transform_messages_to_chat_messages(messages):
             "role": role,
         }
         if role == "assistant":
-            if message["message_type"] == "function_call":
-                next_message["function_call"] = {
+            if message["message_type"] == "tool_call":
+                next_message["tool_call"] = {
                     "name": message["message"]["name"],
                     "arguments": json.dumps(message["message"]["arguments"], indent=2),
                 }
                 next_message["content"] = ""
             else:
                 next_message["content"] = message["message"]
-        elif role == "function":
+        elif role == "tool":
             next_message["content"] = json.dumps(message["message"])
             next_message["name"] = message["message_metadata"]["name"]
         else:
@@ -438,8 +438,8 @@ def message_content_from_dict(message):
     :rtype: str
     """
     content = message["content"]
-    if message["message_type"] == "function_call":
-        content = json.dumps(message["function_call"])
+    if message["message_type"] == "tool_call":
+        content = json.dumps(message["tool_call"])
     return content
 
 

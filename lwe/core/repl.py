@@ -967,14 +967,13 @@ class Repl:
         else:
             customizations = self.backend.provider.get_customizations()
             model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
-            provider_name = self.backend.provider.display_name()
             customizations_data = (
                 "\n\n```yaml\n%s\n```" % yaml.dump(customizations, default_flow_style=False)
                 if customizations
                 else ""
             )
             util.print_markdown(
-                "## Provider: %s, model: %s%s" % (provider_name, model_name, customizations_data)
+                "## Provider: %s, model: %s%s" % (self.backend.provider.display_name, model_name, customizations_data)
             )
 
     def command_templates(self, arg):
@@ -1260,7 +1259,7 @@ class Repl:
 %s
 * **Workflow dirs:**
 %s
-* **Function dirs:**
+* **Tool dirs:**
 %s
 """ % (
             self.config.config_dir,
@@ -1274,8 +1273,8 @@ class Repl:
             util.list_to_markdown_list(self.backend.workflow_manager.user_workflow_dirs)
             if getattr(self.backend, "workflow_manager", None)
             else "",
-            util.list_to_markdown_list(self.backend.function_manager.user_function_dirs)
-            if getattr(self.backend, "function_manager", None)
+            util.list_to_markdown_list(self.backend.tool_manager.user_tool_dirs)
+            if getattr(self.backend, "tool_manager", None)
             else "",
         )
         util.print_markdown(output)

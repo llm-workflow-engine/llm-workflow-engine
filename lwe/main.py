@@ -101,7 +101,7 @@ def main():
         "preset",
         "plugin",
         "workflow",
-        "function",
+        "tool",
     ]
     for directory in user_directories:
         parser.add_argument(

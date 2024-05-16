@@ -8,7 +8,7 @@ TYPES = [
     "presets",
     "templates",
     "workflows",
-    "functions",
+    "tools",
 ]
 
 

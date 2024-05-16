@@ -120,7 +120,7 @@ request_overrides:
         preset: mypreset
         preset_overrides:
             metadata:
-                return_on_function_call: true
+                return_on_tool_call: true
             model_customizations:
                 temperature: 1
 

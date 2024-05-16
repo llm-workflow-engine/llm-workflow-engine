@@ -3,7 +3,7 @@ import re
 from pydantic import BaseModel, Field
 from typing import List
 
-from lwe.core.function import Function
+from lwe.core.tool import Tool
 
 
 class Sentiment(BaseModel):
@@ -19,7 +19,7 @@ class ExtractSentimentTopics(BaseModel):
     topics: List[Topic] = Field(..., description="One to three topic descriptions")
 
 
-class StoreSentimentAndTopics(Function):
+class StoreSentimentAndTopics(Tool):
     def clean_results(self, results):
         return [re.sub(r"\W", "_", elem["name"].lower()) for elem in results]
 

@@ -66,7 +66,7 @@ class ApiRepl(Repl):
                 if provider.available_models
                 else None
             )
-            provider_completions[provider.display_name()] = provider_models
+            provider_completions[provider.display_name] = provider_models
         final_completions = {
             util.command_with_leader("system-message"): util.list_to_completion_hash(
                 self.backend.get_system_message_aliases()
@@ -693,7 +693,7 @@ Before you can start using the shell, you must create a new user.
         """
         self.rebuild_completions()
         provider_plugins = [
-            f"* {provider.display_name()}"
+            f"* {provider.display_name}"
             for provider in self.backend.provider_manager.provider_plugins.values()
         ]
         util.print_markdown("## Providers:\n\n%s" % "\n".join(sorted(provider_plugins)))
@@ -1182,14 +1182,14 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, workflow_name, "Deletion aborted"
 
-    def command_functions(self, arg):
+    def command_tools(self, arg):
         """
-        List available functions
+        List available tools
 
-        Functions are executable scripts that the LLM can request to be called to perform
+        Tools are pieces of Python code that the LLM can request to be called to perform
         some action.
 
-        They are located in the 'functions' directory in the following locations:
+        They are located in the 'tools' directory in the following locations:
 
             - The main configuration directory
             - The profile configuration directory
@@ -1197,21 +1197,21 @@ Before you can start using the shell, you must create a new user.
         See {COMMAND_LEADER}config for current locations.
 
         Arguments:
-            filter_string: Optional. If provided, only functions with a name or description containing the filter string will be shown.
+            filter_string: Optional. If provided, only tools with a name or description containing the filter string will be shown.
 
         Examples:
             {COMMAND}
             {COMMAND} filterstring
         """
-        success, functions, user_message = self.backend.function_manager.load_functions()
+        success, tools, user_message = self.backend.tool_manager.load_tools()
         if not success:
-            return success, functions, user_message
-        function_names = []
-        for function_name, _filepath in functions.items():
-            function_config = self.backend.function_manager.get_function_config(function_name)
-            content = f"* **{function_name}**"
-            if "description" in function_config:
-                content += f": *{function_config['description']}*"
+            return success, tools, user_message
+        tool_names = []
+        for tool_name, _filepath in tools.items():
+            tool_config = self.backend.tool_manager.get_tool_config(tool_name)
+            content = f"* **{tool_name}**"
+            if "description" in tool_config:
+                content += f": *{tool_config['description']}*"
             if not arg or arg.lower() in content.lower():
-                function_names.append(content)
-        util.print_markdown("## Functions:\n\n%s" % "\n".join(sorted(function_names)))
+                tool_names.append(content)
+        util.print_markdown("## Tools:\n\n%s" % "\n".join(sorted(tool_names)))

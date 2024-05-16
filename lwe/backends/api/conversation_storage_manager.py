@@ -6,7 +6,7 @@ from lwe.core.logger import Logger
 
 from lwe.core import constants
 import lwe.core.util as util
-from lwe.core.function_cache import FunctionCache
+from lwe.core.tool_cache import ToolCache
 from lwe.core.token_manager import TokenManager
 
 from lwe.backends.api.orm import Orm
@@ -23,7 +23,7 @@ class ConversationStorageManager:
     def __init__(
         self,
         config,
-        function_manager,
+        tool_manager,
         current_user=None,
         conversation_id=None,
         provider=None,
@@ -34,16 +34,16 @@ class ConversationStorageManager:
     ):
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
-        self.function_manager = function_manager
+        self.tool_manager = tool_manager
         self.current_user = current_user
         self.conversation_id = conversation_id
         self.provider = provider
         self.model_name = model_name or constants.API_BACKEND_DEFAULT_MODEL
         self.preset_name = preset_name or ""
         self.provider_manager = provider_manager
-        self.function_cache = FunctionCache(self.config, self.function_manager)
+        self.tool_cache = ToolCache(self.config, self.tool_manager)
         self.token_manager = TokenManager(
-            self.config, self.provider, self.model_name, self.function_cache
+            self.config, self.provider, self.model_name, self.tool_cache
         )
         self.orm = orm or Orm(self.config)
         self.conversation = ConversationManager(config, self.orm)

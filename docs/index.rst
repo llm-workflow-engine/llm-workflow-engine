@@ -52,7 +52,7 @@ Other LWE nicities
     * Prompt templates
     * Workflows
     * Model presets
-    * OpenAI function definitions
+    * Tool definitions (for providers that support it)
 #. **Ansible-compatible playbooks**: Re-use LWE workflows inside a larger `Ansible <https://docs.ansible.com>`_ ecosystem
 #. **Automatic conversation titles**: The LLM generates short titles for your conversations
 #. **Token tracking**: For supported providers, see the number of tokens the current conversation would send in a request, and auto-prune messages from long conversations
@@ -80,7 +80,7 @@ Other LWE nicities
    templates
    presets
    workflows
-   functions
+   tools
    model_access
    docker
    troubleshooting

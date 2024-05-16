@@ -1,7 +1,7 @@
-from lwe.core.function import Function
+from lwe.core.tool import Tool
 
 
-class TestFunction(Function):
+class TestTool(Tool):
     # Ignore for pytest.
     __test__ = False
 

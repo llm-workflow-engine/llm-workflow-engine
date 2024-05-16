@@ -116,25 +116,25 @@ def test_api_backend_template_creates_valid_conversation_and_messages(test_confi
     assert message_assistant["preset"] == "test"
 
 
-def test_api_backend_template_with_function_call_creates_valid_conversation_and_messages(
+def test_api_backend_template_with_tool_call_creates_valid_conversation_and_messages(
     test_config, datadir
 ):
     backend = make_api_backend(test_config, datadir)
-    function_responses = [
+    tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                "function_call": {
-                    "name": "test_function",
+                "tool_call": {
+                    "name": "test_tool",
                     "arguments": '{\n  "word": "foo",\n  "repeats": 2\n}',
                 }
             },
         ),
         "Foo repeated twice is: foo foo",
     ]
-    overrides = {"request_overrides": fake_llm_responses(function_responses)}
+    overrides = {"request_overrides": fake_llm_responses(tool_responses)}
     success, response, _user_message = backend.run_template(
-        "test_template_function_call_basic.md", None, overrides
+        "test_template_tool_call_basic.md", None, overrides
     )
     assert success
     success, response, _user_message = backend.get_conversation()
@@ -142,8 +142,8 @@ def test_api_backend_template_with_function_call_creates_valid_conversation_and_
     assert len(response["messages"]) == 5
     message_system = response["messages"][0]
     message_user = response["messages"][1]
-    message_function_call = response["messages"][2]
-    message_function_response = response["messages"][3]
+    message_tool_call = response["messages"][2]
+    message_tool_response = response["messages"][3]
     message_assistant = response["messages"][4]
     assert message_system["role"] == "system"
     assert message_system["message"] == constants.SYSTEM_MESSAGE_DEFAULT
@@ -157,24 +157,24 @@ def test_api_backend_template_with_function_call_creates_valid_conversation_and_
     assert message_user["provider"] == "provider_fake_llm"
     assert message_user["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_user["preset"] == "test"
-    assert message_function_call["role"] == "assistant"
-    assert message_function_call["message"] == {
-        "name": "test_function",
+    assert message_tool_call["role"] == "assistant"
+    assert message_tool_call["message"] == {
+        "name": "test_tool",
         "arguments": {"word": "foo", "repeats": 2},
     }
-    assert message_function_call["message_type"] == "function_call"
-    assert message_function_call["provider"] == "provider_fake_llm"
-    assert message_function_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
-    assert message_function_call["preset"] == "test"
-    assert message_function_response["role"] == "function"
-    assert message_function_response["message"] == {
+    assert message_tool_call["message_type"] == "tool_call"
+    assert message_tool_call["provider"] == "provider_fake_llm"
+    assert message_tool_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_tool_call["preset"] == "test"
+    assert message_tool_response["role"] == "tool"
+    assert message_tool_response["message"] == {
         "message": "Repeated the word foo 2 times.",
         "result": "foo foo",
     }
-    assert message_function_response["message_type"] == "function_response"
-    assert message_function_response["provider"] == "provider_fake_llm"
-    assert message_function_response["model"] == constants.API_BACKEND_DEFAULT_MODEL
-    assert message_function_response["preset"] == "test"
+    assert message_tool_response["message_type"] == "tool_response"
+    assert message_tool_response["provider"] == "provider_fake_llm"
+    assert message_tool_response["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_tool_response["preset"] == "test"
     assert message_assistant["role"] == "assistant"
     assert message_assistant["message"] == "Foo repeated twice is: foo foo"
     assert message_assistant["message_type"] == "content"
@@ -183,26 +183,26 @@ def test_api_backend_template_with_function_call_creates_valid_conversation_and_
     assert message_assistant["preset"] == "test"
 
 
-def test_api_backend_template_with_function_call_and_return_on_function_call_creates_valid_conversation_and_messages(
+def test_api_backend_template_with_tool_call_and_return_on_tool_call_creates_valid_conversation_and_messages(
     test_config,
     datadir,
 ):
     backend = make_api_backend(test_config, datadir)
-    function_responses = [
+    tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                "function_call": {
-                    "name": "test_function",
+                "tool_call": {
+                    "name": "test_tool",
                     "arguments": '{\n  "word": "foo",\n  "repeats": 2\n}',
                 }
             },
         ),
         "Foo repeated twice is: foo foo",
     ]
-    overrides = {"request_overrides": fake_llm_responses(function_responses)}
+    overrides = {"request_overrides": fake_llm_responses(tool_responses)}
     success, response, _user_message = backend.run_template(
-        "test_template_with_function_call_and_return_on_function_call.md", None, overrides
+        "test_template_with_tool_call_and_return_on_tool_call.md", None, overrides
     )
     assert success
     success, response, _user_message = backend.get_conversation()
@@ -210,7 +210,7 @@ def test_api_backend_template_with_function_call_and_return_on_function_call_cre
     assert len(response["messages"]) == 3
     message_system = response["messages"][0]
     message_user = response["messages"][1]
-    message_function_call = response["messages"][2]
+    message_tool_call = response["messages"][2]
     assert message_system["role"] == "system"
     assert message_system["message"] == constants.SYSTEM_MESSAGE_DEFAULT
     assert message_system["message_type"] == "content"
@@ -223,37 +223,37 @@ def test_api_backend_template_with_function_call_and_return_on_function_call_cre
     assert message_user["provider"] == "provider_fake_llm"
     assert message_user["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_user["preset"] == "test"
-    assert message_function_call["role"] == "assistant"
-    assert message_function_call["message"] == {
-        "name": "test_function",
+    assert message_tool_call["role"] == "assistant"
+    assert message_tool_call["message"] == {
+        "name": "test_tool",
         "arguments": {"word": "foo", "repeats": 2},
     }
-    assert message_function_call["message_type"] == "function_call"
-    assert message_function_call["provider"] == "provider_fake_llm"
-    assert message_function_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
-    assert message_function_call["preset"] == "test"
+    assert message_tool_call["message_type"] == "tool_call"
+    assert message_tool_call["provider"] == "provider_fake_llm"
+    assert message_tool_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_tool_call["preset"] == "test"
 
 
-def test_api_backend_template_with_function_call_and_return_on_function_response_creates_valid_conversation_and_messages(
+def test_api_backend_template_with_tool_call_and_return_on_tool_response_creates_valid_conversation_and_messages(
     test_config,
     datadir,
 ):
     backend = make_api_backend(test_config, datadir)
-    function_responses = [
+    tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                "function_call": {
-                    "name": "test_function",
+                "tool_call": {
+                    "name": "test_tool",
                     "arguments": '{\n  "word": "foo",\n  "repeats": 2\n}',
                 }
             },
         ),
         "Foo repeated twice is: foo foo",
     ]
-    overrides = {"request_overrides": fake_llm_responses(function_responses)}
+    overrides = {"request_overrides": fake_llm_responses(tool_responses)}
     success, response, _user_message = backend.run_template(
-        "test_template_with_function_call_and_return_on_function_response.md", None, overrides
+        "test_template_with_tool_call_and_return_on_tool_response.md", None, overrides
     )
     assert success
     success, response, _user_message = backend.get_conversation()
@@ -261,8 +261,8 @@ def test_api_backend_template_with_function_call_and_return_on_function_response
     assert len(response["messages"]) == 4
     message_system = response["messages"][0]
     message_user = response["messages"][1]
-    message_function_call = response["messages"][2]
-    message_function_response = response["messages"][3]
+    message_tool_call = response["messages"][2]
+    message_tool_response = response["messages"][3]
     assert message_system["role"] == "system"
     assert message_system["message"] == constants.SYSTEM_MESSAGE_DEFAULT
     assert message_system["message_type"] == "content"
@@ -275,24 +275,24 @@ def test_api_backend_template_with_function_call_and_return_on_function_response
     assert message_user["provider"] == "provider_fake_llm"
     assert message_user["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_user["preset"] == "test"
-    assert message_function_call["role"] == "assistant"
-    assert message_function_call["message"] == {
-        "name": "test_function",
+    assert message_tool_call["role"] == "assistant"
+    assert message_tool_call["message"] == {
+        "name": "test_tool",
         "arguments": {"word": "foo", "repeats": 2},
     }
-    assert message_function_call["message_type"] == "function_call"
-    assert message_function_call["provider"] == "provider_fake_llm"
-    assert message_function_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
-    assert message_function_call["preset"] == "test"
-    assert message_function_response["role"] == "function"
-    assert message_function_response["message"] == {
+    assert message_tool_call["message_type"] == "tool_call"
+    assert message_tool_call["provider"] == "provider_fake_llm"
+    assert message_tool_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_tool_call["preset"] == "test"
+    assert message_tool_response["role"] == "tool"
+    assert message_tool_response["message"] == {
         "message": "Repeated the word foo 2 times.",
         "result": "foo foo",
     }
-    assert message_function_response["message_type"] == "function_response"
-    assert message_function_response["provider"] == "provider_fake_llm"
-    assert message_function_response["model"] == constants.API_BACKEND_DEFAULT_MODEL
-    assert message_function_response["preset"] == "test"
+    assert message_tool_response["message_type"] == "tool_response"
+    assert message_tool_response["provider"] == "provider_fake_llm"
+    assert message_tool_response["model"] == constants.API_BACKEND_DEFAULT_MODEL
+    assert message_tool_response["preset"] == "test"
 
 
 def test_api_backend_template_doesnt_override_active_preset_when_preset_in_request_overrides(

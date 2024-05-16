@@ -41,7 +41,7 @@ def merge_argument_attrs_from_doc(attrs, param_name, parsed_doc):
     return attrs
 
 
-def func_to_openai_function_spec(name, func):
+def func_to_openai_tool_spec(name, func):
     argspec = inspect.getfullargspec(func)
     func_doc = inspect.getdoc(func)
     parsed_doc = parse_docstring(func_doc)

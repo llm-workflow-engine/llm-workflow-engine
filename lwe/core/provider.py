@@ -92,8 +92,9 @@ class ProviderBase(Plugin):
     def __init__(self, config=None):
         super().__init__(config)
 
+    @property
     def display_name(self):
-        return self.name[len(constants.PROVIDER_PREFIX) :]
+        return self.name[len(constants.PROVIDER_PREFIX):]
 
     @property
     def plugin_type(self):
@@ -246,7 +247,7 @@ class ProviderBase(Plugin):
         else:
             return False, None, f"Invalid model {model_name}"
 
-    def make_llm(self, customizations=None, tools=None, tool_config=None, use_defaults=False):
+    def make_llm(self, customizations=None, tools=None, tool_choice=None, use_defaults=False):
         customizations = customizations or {}
         final_customizations = (
             self.get_customizations(self.default_customizations())
@@ -257,8 +258,13 @@ class ProviderBase(Plugin):
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
         if tools:
-            kwargs = tool_config or {}
-            llm.bind_tools(**kwargs)
+            kwargs = {}
+            if tool_choice:
+                kwargs = {'tool_choice': tool_choice}
+            try:
+                llm.bind_tools(**kwargs)
+            except NotImplementedError:
+                self.logger.warning(f"Provider {self.display_name} does not support tools")
         return llm
 
     def prepare_messages_method(self):

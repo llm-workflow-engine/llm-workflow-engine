@@ -326,8 +326,8 @@ class TestClass:
             {"role": "assistant", "message": "Hi", "message_type": "content"},
             {
                 "role": "assistant",
-                "message": {"name": "function_name", "arguments": {}},
-                "message_type": "function_call",
+                "message": {"name": "tool_name", "arguments": {}},
+                "message_type": "tool_call",
             },
         ]
         result = transform_messages_to_chat_messages(messages)
@@ -337,17 +337,17 @@ class TestClass:
         assert result[1]["content"] == "Hi"
         assert result[2]["role"] == "assistant"
         assert result[2]["content"] == ""
-        assert result[2]["function_call"] == {"name": "function_name", "arguments": "{}"}
+        assert result[2]["tool_call"] == {"name": "tool_name", "arguments": "{}"}
 
     def test_message_content_from_dict(self):
         message = {"content": "Hello", "message_type": "content"}
         assert message_content_from_dict(message) == "Hello"
         message = {
             "content": "",
-            "function_call": {"name": "function_name", "arguments": {}},
-            "message_type": "function_call",
+            "tool_call": {"name": "tool_name", "arguments": {}},
+            "message_type": "tool_call",
         }
-        assert message_content_from_dict(message) == '{"name": "function_name", "arguments": {}}'
+        assert message_content_from_dict(message) == '{"name": "tool_name", "arguments": {}}'
 
     def test_extract_preset_configuration_from_request_overrides(self):
         request_overrides = {

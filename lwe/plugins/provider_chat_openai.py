@@ -107,6 +107,9 @@ class ProviderChatOpenai(Provider):
                 "response_format": dict,
                 "stop": PresetValue(str, include_none=True),
                 "user": PresetValue(str),
+                "tools": None,
+                "tool_choice": None,
+                # TODO: Remove after deprecation period
                 "functions": None,
                 "function_call": None,
             },

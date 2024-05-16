@@ -2,8 +2,8 @@ import os
 import pytest
 
 from lwe.core.config import Config
-from lwe.core.function_manager import FunctionManager
-from lwe.core.function_cache import FunctionCache
+from lwe.core.tool_manager import ToolManager
+from lwe.core.tool_cache import ToolCache
 from lwe.core.plugin_manager import PluginManager
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.template_manager import TemplateManager
@@ -32,28 +32,28 @@ def test_config():
 
 
 @pytest.fixture
-def function_manager(test_config):
-    additional_functions = {
-        "test_function2": "test_function2_path",
-        "test_function3": "test_function3_path",
+def tool_manager(test_config):
+    additional_tools = {
+        "test_tool2": "test_tool2_path",
+        "test_tool3": "test_tool3_path",
     }
-    function_manager = FunctionManager(
-        config=test_config, additional_functions=additional_functions
+    tool_manager = ToolManager(
+        config=test_config, additional_tools=additional_tools
     )
-    return function_manager
+    return tool_manager
 
 
 @pytest.fixture
-def function_cache(test_config, function_manager):
-    function_cache = FunctionCache(
+def tool_cache(test_config, tool_manager):
+    tool_cache = ToolCache(
         test_config,
-        function_manager,
+        tool_manager,
     )
-    return function_cache
+    return tool_cache
 
 
 @pytest.fixture
-def plugin_manager(test_config, function_manager):
+def plugin_manager(test_config, tool_manager):
     backend = FakeBackend(test_config)
     plugin_manager = PluginManager(test_config, backend)
     return plugin_manager

@@ -1,7 +1,7 @@
-from lwe.core.function import Function
+from lwe.core.tool import Tool
 
 
-class ReverseContent(Function):
+class ReverseContent(Tool):
     def __call__(self, content: str) -> dict:
         """
         Reverse the provided content
