@@ -308,19 +308,29 @@ class ProviderBase(Plugin):
             return models[model_name]["max_tokens"]
         return constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
 
+    def convert_ai_dict_to_message(self, message: Mapping[str, Any]) -> AIMessage:
+        """Convert an LWE message dictionary to a LangChain AIMessage.
+
+        This default implementation supports a format suitable for OpenAI.
+        Other providers plugins may need to override this method depending
+        on the structure of their AI messages.
+        """
+        content = message.get("content", "")
+        additional_kwargs = {}
+        tool_calls = message.get("tool_calls", None)
+        if tool_calls:
+            additional_kwargs["tool_calls"] = tool_calls
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+
     def convert_dict_to_message(self, message: Mapping[str, Any]) -> BaseMessage:
-        """Convert a dictionary to a LangChain message.
+        """Convert an LWE message dictionary to a LangChain message.
         """
         role = message.get("role")
         content = message.get("content", "")
         if role == "user":
             return HumanMessage(content=content)
         elif role == "assistant":
-            additional_kwargs = {}
-            tool_calls = message.get("tool_calls", None)
-            if tool_calls:
-                additional_kwargs["tool_calls"] = tool_calls
-            return AIMessage(content=content, additional_kwargs=additional_kwargs)
+            return self.convert_ai_dict_to_message(message)
         elif role == "system":
             return SystemMessage(content=content)
         elif role == "tool":
