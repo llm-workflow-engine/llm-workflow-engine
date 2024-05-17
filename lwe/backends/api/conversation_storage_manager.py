@@ -156,6 +156,24 @@ class ConversationStorageManager:
             self.preset_name,
         )
 
+    def get_title_provider_llm(self):
+        """
+        Get the title provider and LLM.
+
+        :returns: provider, llm
+        :rtype: tuple
+        """
+        title_provider_name = self.config.get("backend_options.title_generation.provider")
+        if title_provider_name:
+            provider = self.provider_manager.get_provider_from_name(title_provider_name)
+            if not provider:
+                raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
+            llm = provider.make_llm()
+        else:
+            provider = self.provider_manager.get_provider_from_name('chat_openai')
+            llm = provider.make_llm(customizations={"model_name": constants.API_BACKEND_DEFAULT_MODEL, "temperature": 0}, use_defaults=True)
+        return provider, llm
+
     def gen_title_thread(self, conversation_id):
         """
         Generate the title for a conversation in a separate thread.
@@ -181,16 +199,9 @@ class ConversationStorageManager:
                 "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content),
             ),
         ]
+        provider, llm = self.get_title_provider_llm()
         new_messages = util.transform_messages_to_chat_messages(new_messages)
-        new_messages = [convert_dict_to_message(m) for m in new_messages]
-        title_provider_name = self.config.get("backend_options.title_generation.provider")
-        if title_provider_name:
-            provider = self.provider_manager.get_provider_from_name(title_provider_name)
-            if not provider:
-                raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
-            llm = provider.make_llm()
-        else:
-            llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
+        new_messages = [provider.convert_dict_to_message(m) for m in new_messages]
         try:
             result = llm.invoke(new_messages)
             request = ApiRequest(orm=self.orm, config=self.config)
