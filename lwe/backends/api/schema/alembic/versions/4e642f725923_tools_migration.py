@@ -23,6 +23,7 @@ depends_on = None
 
 Base = declarative_base()
 
+
 class Message(Base):
     __tablename__ = 'message'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -85,13 +86,16 @@ def upgrade_function_calls_to_tool_calls():
         if message.message_type == 'function_call':
             tool_call_id = generate_tool_call_id()
             message_content = json.loads(message.message)
+            args = message_content.pop('arguments', {})
+            message_content['args'] = args
+            message_content['id'] = tool_call_id
             message.message = json.dumps([message_content])
             message.message_type = 'tool_call'
-            message.message_metadata = json.dumps({'tool_call_id': tool_call_id})
             util.print_status_message(True, f"Updated function_call to tool_call for message ID {message.id}: tool_call_id={tool_call_id}", style="bold blue")
         elif message.message_type == 'function_response':
             message_metadata = json.loads(message.message_metadata) if message.message_metadata else {}
-            message_metadata['tool_call_id'] = tool_call_id
+            message_metadata['id'] = tool_call_id
+            message.role = 'tool'
             message.message_type = 'tool_response'
             message.message_metadata = json.dumps(message_metadata)
             util.print_status_message(True, f"Updated function_response to tool_response for message ID {message.id}: tool_call_id={tool_call_id}", style="bold blue")

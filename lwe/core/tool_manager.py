@@ -162,7 +162,7 @@ class ToolManager:
             spec.loader.exec_module(module)
             tool_class_name = util.snake_to_class(tool_name)
             tool_class = getattr(module, tool_class_name)
-            tool_instance = tool_class(self.config)
+            tool_instance = tool_class(config=self.config)
             tool_instance.set_name(tool_name)
             tool_instance.set_filepath(tool_path)
             return tool_instance

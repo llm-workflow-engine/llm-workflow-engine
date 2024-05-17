@@ -43,7 +43,6 @@ from lwe.core.util import (
     list_to_markdown_list,
     clean_directory,
     transform_messages_to_chat_messages,
-    message_content_from_dict,
     extract_preset_configuration_from_request_overrides,
     get_preset_name,
 )
@@ -338,16 +337,6 @@ class TestClass:
         assert result[2]["role"] == "assistant"
         assert result[2]["content"] == ""
         assert result[2]["tool_call"] == {"name": "tool_name", "arguments": "{}"}
-
-    def test_message_content_from_dict(self):
-        message = {"content": "Hello", "message_type": "content"}
-        assert message_content_from_dict(message) == "Hello"
-        message = {
-            "content": "",
-            "tool_call": {"name": "tool_name", "arguments": {}},
-            "message_type": "tool_call",
-        }
-        assert message_content_from_dict(message) == '{"name": "tool_name", "arguments": {}}'
 
     def test_extract_preset_configuration_from_request_overrides(self):
         request_overrides = {

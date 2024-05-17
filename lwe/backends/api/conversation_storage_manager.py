@@ -194,8 +194,8 @@ class ConversationStorageManager:
         try:
             result = llm.invoke(new_messages)
             request = ApiRequest(orm=self.orm, config=self.config)
-            title = request.extract_message_content(result)["message"]
-            title = title.replace("\n", ", ").strip().strip("'\"")
+            message, _tool_calls = request.extract_message_content(result)
+            title = message["message"].replace("\n", ", ").strip().strip("'\"")
             self.log.info(f"Title generated for conversation {conversation_id}: {title}")
             success, conversation, user_message = conversation_manager.edit_conversation_title(
                 conversation_id, title

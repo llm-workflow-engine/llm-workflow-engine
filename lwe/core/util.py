@@ -412,35 +412,19 @@ def transform_messages_to_chat_messages(messages):
         }
         if role == "assistant":
             if message["message_type"] == "tool_call":
-                next_message["tool_call"] = {
-                    "name": message["message"]["name"],
-                    "arguments": json.dumps(message["message"]["arguments"], indent=2),
-                }
+                next_message["tool_calls"] = json.dumps(message["message"], indent=2),
                 next_message["content"] = ""
             else:
+                next_message["tool_calls"] = None
                 next_message["content"] = message["message"]
         elif role == "tool":
             next_message["content"] = json.dumps(message["message"])
-            next_message["name"] = message["message_metadata"]["name"]
+            next_message["name"] = message["message_metadata"]["name"] if "name" in message["message_metadata"] else None
+            next_message["tool_call_id"] = message["message_metadata"]["id"] if "id" in message["message_metadata"] else None
         else:
             next_message["content"] = message["message"]
         chat_messages.append(next_message)
     return chat_messages
-
-
-def message_content_from_dict(message):
-    """
-    Extract the content from a message dict.
-
-    :param message: Message
-    :type message: dict
-    :returns: Content
-    :rtype: str
-    """
-    content = message["content"]
-    if message["message_type"] == "tool_call":
-        content = json.dumps(message["tool_call"])
-    return content
 
 
 def extract_preset_configuration_from_request_overrides(request_overrides, active_preset_name=None):

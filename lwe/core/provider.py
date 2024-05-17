@@ -1,6 +1,17 @@
 from abc import abstractmethod
 
-from langchain.adapters.openai import convert_dict_to_message
+from langchain.schema.messages import (
+    AIMessage,
+    HumanMessage,
+    BaseMessage,
+    SystemMessage,
+    ToolMessage,
+)
+
+from typing import (
+    Any,
+    Mapping,
+)
 
 from lwe.core.plugin import Plugin
 from lwe.core import constants
@@ -258,13 +269,16 @@ class ProviderBase(Plugin):
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
         if tools:
-            kwargs = {}
+            self.log.debug(f"Provider {self.display_name} called with tools")
+            kwargs = {
+                'tools': tools,
+            }
             if tool_choice:
-                kwargs = {'tool_choice': tool_choice}
+                kwargs['tool_choice'] = tool_choice
             try:
-                llm.bind_tools(**kwargs)
+                llm = llm.bind_tools(**kwargs)
             except NotImplementedError:
-                self.logger.warning(f"Provider {self.display_name} does not support tools")
+                self.log.warning(f"Provider {self.display_name} does not support tools")
         return llm
 
     def prepare_messages_method(self):
@@ -279,7 +293,7 @@ class ProviderBase(Plugin):
         return "\n\n".join(messages)
 
     def prepare_messages_for_llm_chat(self, messages):
-        messages = [convert_dict_to_message(m) for m in messages]
+        messages = [self.convert_dict_to_message(m) for m in messages]
         return messages
 
     def prepare_messages_for_llm(self, messages):
@@ -293,6 +307,30 @@ class ProviderBase(Plugin):
         if model_name and model_name in models and "max_tokens" in models[model_name]:
             return models[model_name]["max_tokens"]
         return constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
+
+    def convert_dict_to_message(self, message: Mapping[str, Any]) -> BaseMessage:
+        """Convert a dictionary to a LangChain message.
+        """
+        role = message.get("role")
+        content = message.get("content", "")
+        if role == "user":
+            return HumanMessage(content=content)
+        elif role == "assistant":
+            additional_kwargs = {}
+            tool_calls = message.get("tool_calls", None)
+            if tool_calls:
+                additional_kwargs["tool_calls"] = tool_calls
+            return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        elif role == "system":
+            return SystemMessage(content=content)
+        elif role == "tool":
+            return ToolMessage(
+                content=content,
+                tool_call_id=message.get("tool_call_id"),
+                name=message.get("name", None),
+            )
+        else:
+            raise ValueError(f"Unknown role: {role}")
 
 
 class Provider(ProviderBase):

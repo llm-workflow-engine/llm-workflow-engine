@@ -208,8 +208,9 @@ class ApiRequest:
         customizations = copy.deepcopy(customizations)
         self.tool_cache = ToolCache(self.config, self.tool_manager, customizations)
         self.tool_cache.add_message_tools(self.old_messages)
-        tools = [self.tool_manager.get_tool(tool_name) for tool_name in self.tool_cache.tools]
-        del customizations["tools"]
+        tools = [self.tool_manager.get_tool_config(tool_name) for tool_name in self.tool_cache.tools]
+        if "tools" in customizations:
+            del customizations["tools"]
         tool_choice = customizations.pop("tool_choice", None)
         return customizations, tools, tool_choice
 
@@ -393,23 +394,24 @@ class ApiRequest:
         return True, response, "Response received"
 
     def post_response(self, response_obj, new_messages):
-        response_message = self.extract_message_content(response_obj)
+        response_message, tool_calls = self.extract_message_content(response_obj)
         new_messages.append(response_message)
 
-        if response_message["message_type"] == "tool_call":
-            return self.handle_tool_call(response_message, new_messages)
+        if tool_calls:
+            return self.handle_tool_calls(response_message, new_messages, tool_calls)
 
         return self.handle_non_tool_response(response_message, new_messages)
 
-    def handle_tool_call(self, response_message, new_messages):
-        tool_call = response_message["message"]
-        self.log_tool_call(tool_call)
+    def handle_tool_calls(self, response_message, new_messages, tool_calls):
+        for tool_call in tool_calls:
+            self.log_tool_call(tool_call)
 
         if self.should_return_on_tool_call():
-            self.log.info(f"Returning directly on tool call: {tool_call['name']}")
-            return self.build_tool_definition(tool_call), new_messages
+            names = [tool_call["name"] for tool_call in tool_calls]
+            self.log.info(f"Returning directly on tool call: {names}")
+            return tool_calls, new_messages
 
-        return self.execute_tool_call(tool_call, new_messages)
+        return self.execute_tool_calls(tool_calls, new_messages)
 
     def handle_non_tool_response(self, response_message, new_messages):
         tool_response, new_messages = self.check_return_on_tool_response(new_messages)
@@ -422,23 +424,21 @@ class ApiRequest:
     def log_tool_call(self, tool_call):
         if not self.return_only:
             util.print_markdown(
-                f"### AI requested tool call:\n* Name: {tool_call['name']}\n* Arguments: {tool_call['arguments']}"
+                f"### AI requested tool call:\n* Name: {tool_call['name']}\n* Arguments: {tool_call['args']}"
             )
 
-    def build_tool_definition(self, tool_call):
-        return {
-            "name": tool_call["name"],
-            "arguments": tool_call["arguments"],
-        }
-
-    def execute_tool_call(self, tool_call, new_messages):
+    def execute_tool_call(self, tool_call):
         success, tool_response, user_message = self.run_tool(
-            tool_call["name"], tool_call["arguments"]
+            tool_call["name"], tool_call["args"]
         )
         if not success:
             raise ValueError(f"Tool call failed: {user_message}")
+        return tool_response
 
-        new_messages.append(self.build_tool_response_message(tool_call, tool_response))
+    def execute_tool_calls(self, tool_calls, new_messages):
+        for tool_call in tool_calls:
+            tool_response = self.execute_tool_call(tool_call)
+            new_messages.append(self.build_tool_response_message(tool_call, tool_response))
 
         # If a tool call is forced, we cannot recurse, as there will
         # never be a final non-tool response, and we'll recurse infinitely.
@@ -461,6 +461,8 @@ class ApiRequest:
         message_metadata = {
             "name": tool_call["name"],
         }
+        if "id" in tool_call:
+            message_metadata["id"] = tool_call["id"]
         return self.message.build_message(
             "tool",
             tool_response,
@@ -474,23 +476,23 @@ class ApiRequest:
 
         :param message: Message
         :type message: dict | BaseMessage
-        :returns: Built message
-        :rtype: dict
+        :returns: Built message, tool calls
+        :rtype: tuple
         """
-        tool_calls = None
+        tool_calls = []
         if isinstance(message, BaseMessage):
+            tool_calls = message.tool_calls
+            invalid_tool_calls = getattr(message, "invalid_tool_calls", [])
+            if invalid_tool_calls:
+                tool_call_errors = ", ".join([f"{tool_call['name']}: {tool_call['error']}" for tool_call in invalid_tool_calls])
+                raise RuntimeError(f"LLM tool call failed: {tool_call_errors}")
             message_dict = convert_message_to_dict(message)
             content = message_dict["content"]
             message_type = "content"
-            if "tool_call" in message_dict:
+            if tool_calls:
                 message_type = "tool_call"
-                message_dict["tool_call"]["arguments"] = json.loads(
-                    message_dict["tool_call"]["arguments"], strict=False
-                )
-                content = message_dict["tool_call"]
-            elif message_dict["role"] == "tool":
-                message_type = "tool_response"
-            return self.message.build_message(message_dict["role"], content, message_type)
+                content = tool_calls
+            return self.message.build_message(message_dict["role"], content, message_type), tool_calls
         return self.message.build_message("assistant", message), tool_calls
 
     def should_return_on_tool_call(self):
