@@ -433,9 +433,10 @@ class ApiRequest:
         # 1. Tracking which tools with which arguments are called, and breaking
         #    on the first duplicate call.
         # 2. Allowing a 'maximum_forced_tool_calls' metadata attribute.
-        # 3. Automatically switching the preset's 'tool_call' to 'auto' after
+        # 3. Automatically switching the preset's 'tool_choice' to 'auto' after
         #    the first call.
         if self.check_forced_tool():
+            self.log.debug("Returning directly on forced tool call")
             return tool_response, new_messages
 
         success, response_obj, user_message = self.call_llm(new_messages)
@@ -499,11 +500,12 @@ class ApiRequest:
         :rtype: bool
         """
         _metadata, customizations = self.preset
-        return (
-            "model_kwargs" in customizations
-            and "tool_call" in customizations["model_kwargs"]
-            and isinstance(customizations["model_kwargs"]["tool_call"], dict)
-        )
+        if "tool_choice" in customizations:
+            return not (
+                isinstance(customizations["tool_choice"], str)
+                and customizations["tool_choice"] in ["auto", "none"]
+            )
+        return False
 
     def check_return_on_tool_response(self, new_messages):
         """
