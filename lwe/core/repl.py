@@ -1,4 +1,5 @@
 import re
+import json
 import textwrap
 import yaml
 import os
@@ -703,7 +704,11 @@ class Repl:
                     print("\n")
                     style = "bold red3" if part["role"] == "user" else "bold green3"
                     util.print_markdown(part["display_role"], style=style)
-                    util.print_markdown(part["message"])
+                    if type(part["message"]) is str:
+                        message = part["message"]
+                    else:
+                        message = f"```json\n{json.dumps(part['message'], indent=2)}\n```"
+                    util.print_markdown(message)
             else:
                 return False, conversation_data, "Could not load chat content"
         else:

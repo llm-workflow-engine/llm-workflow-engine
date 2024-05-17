@@ -412,7 +412,15 @@ def transform_messages_to_chat_messages(messages):
         }
         if role == "assistant":
             if message["message_type"] == "tool_call":
-                next_message["tool_calls"] = json.dumps(message["message"], indent=2),
+                tool_calls = [{
+                    "id": tool["id"],
+                    "type": "function",
+                    "function": {
+                        "name": tool["name"],
+                        "arguments": json.dumps(tool["args"]),
+                    },
+                } for tool in message["message"]]
+                next_message["tool_calls"] = tool_calls
                 next_message["content"] = ""
             else:
                 next_message["tool_calls"] = None

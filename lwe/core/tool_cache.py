@@ -49,18 +49,20 @@ class ToolCache:
         for message in messages:
             m_type = message["message_type"]
             if m_type in ["tool_call", "tool_response"]:
+                tool_names = []
                 if m_type == "tool_call":
-                    tool_name = message["message"]["name"]
+                    tool_names = [m["name"] for m in message["message"]]
                 elif m_type == "tool_response":
-                    tool_name = message["message_metadata"]["name"]
-                if self.add(tool_name, raise_on_missing=False):
-                    filtered_messages.append(message)
-                else:
-                    message = (
-                        f"Tool {tool_name} not found in tool list, filtered message out"
-                    )
-                    self.log.warning(message)
-                    util.print_status_message(False, message)
+                    tool_names = [message["message_metadata"]["name"]]
+                for tool_name in tool_names:
+                    if self.add(tool_name, raise_on_missing=False):
+                        filtered_messages.append(message)
+                    else:
+                        message = (
+                            f"Tool {tool_name} not found in tool list, filtered message out"
+                        )
+                        self.log.warning(message)
+                        util.print_status_message(False, message)
             else:
                 filtered_messages.append(message)
         return filtered_messages

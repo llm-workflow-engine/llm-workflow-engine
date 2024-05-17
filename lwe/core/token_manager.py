@@ -80,11 +80,11 @@ class TokenManager:
                 if isinstance(value, dict):
                     value = json.dumps(value, indent=2)
                 if value:
-                    num_tokens += len(encoding.encode(value))
+                    token_string = json.dumps(value) if type(value) is dict else str(value)
+                    num_tokens += len(encoding.encode(token_string))
                 if key == "name":  # if there's a name, the role is omitted
                     num_tokens += -1  # role is always required and always 1 token
         num_tokens += 2  # every reply is primed with <im_start>assistant
-        # TODO: I don't think this is correct any more.
         if len(self.tool_cache.tools) > 0:
             tools = [
                 self.tool_cache.tool_manager.get_tool_config(tool_name)
