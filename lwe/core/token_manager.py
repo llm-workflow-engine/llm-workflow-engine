@@ -77,11 +77,10 @@ class TokenManager:
         for message in messages:
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             for key, value in message.items():
-                if isinstance(value, dict):
+                if isinstance(value, dict) or isinstance(value, list):
                     value = json.dumps(value, indent=2)
                 if value:
-                    token_string = json.dumps(value) if type(value) is dict else str(value)
-                    num_tokens += len(encoding.encode(token_string))
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":  # if there's a name, the role is omitted
                     num_tokens += -1  # role is always required and always 1 token
         num_tokens += 2  # every reply is primed with <im_start>assistant
