@@ -17,12 +17,12 @@
   lwe_llm:
     preset: turbo
     preset_overrides:
+      metadata:
+        return_on_function_response: true
       model_customizations:
-        model_kwargs:
-          function_call:
-            name: store_sentiment_and_topics
-          functions:
-            - store_sentiment_and_topics
+        tools:
+          - store_sentiment_and_topics
+        tool_choice: store_sentiment_and_topics
     template: example-voicemail-sentiment-analysis.md
     template_vars:
       transcription: "{{ transcription_text }}"
