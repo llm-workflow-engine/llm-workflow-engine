@@ -120,15 +120,40 @@ def test_api_backend_template_with_tool_call_creates_valid_conversation_and_mess
     test_config, datadir
 ):
     backend = make_api_backend(test_config, datadir)
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        },
+    ]
+    tool_response_metadata = {
+        'name': tool_calls[0]['name'],
+        'id': tool_calls[0]['id'],
+    }
+    tool_response_data = {
+        'message': 'Repeated the word foo 2 times.',
+        'result': 'foo foo',
+    }
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                "tool_call": {
-                    "name": "test_tool",
-                    "arguments": '{\n  "word": "foo",\n  "repeats": 2\n}',
-                }
+                'tool_calls': [
+                    {
+                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                        'type': 'function',
+                        'function': {
+                            'name': 'test_tool',
+                            'arguments': '{"word": "foo", "repeats": 2}',
+                        },
+                    },
+                ]
             },
+            tool_calls=tool_calls,
         ),
         "Foo repeated twice is: foo foo",
     ]
@@ -158,19 +183,16 @@ def test_api_backend_template_with_tool_call_creates_valid_conversation_and_mess
     assert message_user["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_user["preset"] == "test"
     assert message_tool_call["role"] == "assistant"
-    assert message_tool_call["message"] == {
-        "name": "test_tool",
-        "arguments": {"word": "foo", "repeats": 2},
-    }
     assert message_tool_call["message_type"] == "tool_call"
+    assert message_tool_call["message_metadata"] is None
+    assert message_tool_call["message"] == tool_calls
     assert message_tool_call["provider"] == "provider_fake_llm"
     assert message_tool_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_tool_call["preset"] == "test"
     assert message_tool_response["role"] == "tool"
-    assert message_tool_response["message"] == {
-        "message": "Repeated the word foo 2 times.",
-        "result": "foo foo",
-    }
+    assert message_tool_response["message_type"] == "tool_response"
+    assert message_tool_response["message_metadata"] == tool_response_metadata
+    assert message_tool_response["message"] == tool_response_data
     assert message_tool_response["message_type"] == "tool_response"
     assert message_tool_response["provider"] == "provider_fake_llm"
     assert message_tool_response["model"] == constants.API_BACKEND_DEFAULT_MODEL
@@ -188,15 +210,32 @@ def test_api_backend_template_with_tool_call_and_return_on_tool_call_creates_val
     datadir,
 ):
     backend = make_api_backend(test_config, datadir)
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        },
+    ]
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                "tool_call": {
-                    "name": "test_tool",
-                    "arguments": '{\n  "word": "foo",\n  "repeats": 2\n}',
-                }
+                'tool_calls': [
+                    {
+                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                        'type': 'function',
+                        'function': {
+                            'name': 'test_tool',
+                            'arguments': '{"word": "foo", "repeats": 2}',
+                        },
+                    },
+                ]
             },
+            tool_calls=tool_calls,
         ),
         "Foo repeated twice is: foo foo",
     ]
@@ -224,11 +263,9 @@ def test_api_backend_template_with_tool_call_and_return_on_tool_call_creates_val
     assert message_user["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_user["preset"] == "test"
     assert message_tool_call["role"] == "assistant"
-    assert message_tool_call["message"] == {
-        "name": "test_tool",
-        "arguments": {"word": "foo", "repeats": 2},
-    }
     assert message_tool_call["message_type"] == "tool_call"
+    assert message_tool_call["message_metadata"] is None
+    assert message_tool_call["message"] == tool_calls
     assert message_tool_call["provider"] == "provider_fake_llm"
     assert message_tool_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_tool_call["preset"] == "test"
@@ -239,15 +276,40 @@ def test_api_backend_template_with_tool_call_and_return_on_tool_response_creates
     datadir,
 ):
     backend = make_api_backend(test_config, datadir)
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        },
+    ]
+    tool_response_metadata = {
+        'name': tool_calls[0]['name'],
+        'id': tool_calls[0]['id'],
+    }
+    tool_response_data = {
+        'message': 'Repeated the word foo 2 times.',
+        'result': 'foo foo',
+    }
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                "tool_call": {
-                    "name": "test_tool",
-                    "arguments": '{\n  "word": "foo",\n  "repeats": 2\n}',
-                }
+                'tool_calls': [
+                    {
+                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                        'type': 'function',
+                        'function': {
+                            'name': 'test_tool',
+                            'arguments': '{"word": "foo", "repeats": 2}',
+                        },
+                    },
+                ]
             },
+            tool_calls=tool_calls,
         ),
         "Foo repeated twice is: foo foo",
     ]
@@ -276,19 +338,16 @@ def test_api_backend_template_with_tool_call_and_return_on_tool_response_creates
     assert message_user["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_user["preset"] == "test"
     assert message_tool_call["role"] == "assistant"
-    assert message_tool_call["message"] == {
-        "name": "test_tool",
-        "arguments": {"word": "foo", "repeats": 2},
-    }
     assert message_tool_call["message_type"] == "tool_call"
+    assert message_tool_call["message_metadata"] is None
+    assert message_tool_call["message"] == tool_calls
     assert message_tool_call["provider"] == "provider_fake_llm"
     assert message_tool_call["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert message_tool_call["preset"] == "test"
     assert message_tool_response["role"] == "tool"
-    assert message_tool_response["message"] == {
-        "message": "Repeated the word foo 2 times.",
-        "result": "foo foo",
-    }
+    assert message_tool_response["message_type"] == "tool_response"
+    assert message_tool_response["message_metadata"] == tool_response_metadata
+    assert message_tool_response["message"] == tool_response_data
     assert message_tool_response["message_type"] == "tool_response"
     assert message_tool_response["provider"] == "provider_fake_llm"
     assert message_tool_response["model"] == constants.API_BACKEND_DEFAULT_MODEL
