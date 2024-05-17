@@ -266,6 +266,8 @@ class ProviderBase(Plugin):
             else self.get_customizations()
         )
         final_customizations.update(customizations)
+        for key in constants.PROVIDER_PRIVATE_CUSTOMIZATION_KEYS:
+            final_customizations.pop(key, None)
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
         if tools:

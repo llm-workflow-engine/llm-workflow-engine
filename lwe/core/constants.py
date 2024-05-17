@@ -4,6 +4,10 @@ import os
 import tempfile
 
 PROVIDER_PREFIX = "provider_"
+PROVIDER_PRIVATE_CUSTOMIZATION_KEYS = [
+    "tools",
+    "tool_choice",
+]
 
 # Backend speciifc constants
 API_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
