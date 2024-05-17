@@ -81,7 +81,7 @@ class ApiRepl(Repl):
         for preset_name in preset_keys:
             final_completions[util.command_with_leader("preset")]["save"][
                 preset_name
-            ] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
+            ] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields().keys())
         workflow_keys = util.list_to_completion_hash(self.backend.workflow_manager.workflows.keys())
         final_completions[util.command_with_leader("workflow")] = {
             c: workflow_keys for c in self.get_command_actions("workflow", dashed=True)
@@ -837,6 +837,7 @@ Before you can start using the shell, you must create a new user.
         success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(
             preset_name
         )
+        user_metadata_fields = self.backend.preset_manager.user_metadata_fields()
         if success:
             existing_metadata, _customizations = existing_preset
             if self.backend.preset_manager.is_system_preset(existing_metadata["filepath"]):
@@ -845,18 +846,24 @@ Before you can start using the shell, you must create a new user.
                     args,
                     f"{existing_metadata['name']} is a system preset, and cannot be edited directly",
                 )
-            for key in self.backend.preset_manager.user_metadata_fields():
+            for key in user_metadata_fields.keys():
                 if key in existing_metadata:
                     extra_metadata[key] = existing_metadata[key]
         metadata, customizations = self.backend.make_preset()
         if args:
             metadata_field, *rest = args
-            if metadata_field not in self.backend.preset_manager.user_metadata_fields():
+            if metadata_field not in user_metadata_fields.keys():
                 return False, metadata_field, f"Invalid metadata field: {metadata_field}"
             if not rest:
                 del extra_metadata[metadata_field]
             else:
-                extra_metadata[metadata_field] = " ".join(rest)
+                if user_metadata_fields[metadata_field] is bool:
+                    if rest[0].lower() in ["true", "yes", "y", "1"]:
+                        extra_metadata[metadata_field] = True
+                    else:
+                        extra_metadata[metadata_field] = False
+                else:
+                    extra_metadata[metadata_field] = " ".join(rest)
         metadata.update(extra_metadata)
         success, file_path, user_message = self.backend.preset_manager.save_preset(
             preset_name, metadata, customizations

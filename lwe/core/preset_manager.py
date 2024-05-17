@@ -62,11 +62,12 @@ class PresetManager:
         return content["metadata"], content["model_customizations"]
 
     def user_metadata_fields(self):
-        return [
-            "description",
-            "system_message",
-            "return_on_tool_call",
-        ]
+        return {
+            "description": str,
+            "system_message": str,
+            "return_on_tool_call": bool,
+            "return_on_tool_response": bool,
+        }
 
     def load_test_preset(self):
         if self.config.profile == "test":
