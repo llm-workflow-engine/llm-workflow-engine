@@ -81,17 +81,23 @@ def test_get_num_tokens_from_messages_with_tool(test_config, tool_cache, provide
             "role": "user",
         },
         {
-            "message": {
-                "arguments": {"repeats": 2, "word": "foo"},
-                "name": "test_tool",
-            },
+            "message": [
+                {
+                    'name': 'test_tool',
+                    'args': {
+                        'word': 'foo',
+                        'repeats': 2,
+                    },
+                    'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                },
+            ],
             "message_metadata": None,
             "message_type": "tool_call",
             "role": "assistant",
         },
         {
             "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
-            "message_metadata": {"name": "test_tool"},
+            "message_metadata": {"name": "test_tool", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"},
             "message_type": "tool_response",
             "role": "tool",
         },
@@ -103,4 +109,4 @@ def test_get_num_tokens_from_messages_with_tool(test_config, tool_cache, provide
         },
     ]
     num_tokens = token_manager.get_num_tokens_from_messages(messages)
-    assert num_tokens == 253
+    assert num_tokens == 307

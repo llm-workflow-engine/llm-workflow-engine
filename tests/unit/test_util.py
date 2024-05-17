@@ -320,14 +320,16 @@ class TestClass:
         assert not os.path.isfile(filepath2)
 
     def test_transform_messages_to_chat_messages(self):
+
         messages = [
             {"role": "user", "message": "Hello", "message_type": "content"},
             {"role": "assistant", "message": "Hi", "message_type": "content"},
             {
                 "role": "assistant",
-                "message": {"name": "tool_name", "arguments": {}},
+                "message": [{"name": "tool_name", "args": {}, "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}],
                 "message_type": "tool_call",
             },
+            {"role": "tool", "message": {"word": "foo", "repeats": 2}, "message_type": "tool_response", "message_metadata": {"name": "tool_name", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}},
         ]
         result = transform_messages_to_chat_messages(messages)
         assert result[0]["role"] == "user"
@@ -336,7 +338,11 @@ class TestClass:
         assert result[1]["content"] == "Hi"
         assert result[2]["role"] == "assistant"
         assert result[2]["content"] == ""
-        assert result[2]["tool_call"] == {"name": "tool_name", "arguments": "{}"}
+        assert result[2]["tool_calls"] == [{"function": {"name": "tool_name", "arguments": "{}"}, "type": "function", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}]
+        assert result[3]["role"] == "tool"
+        assert result[3]["content"] == '{"word": "foo", "repeats": 2}'
+        assert result[3]["name"] == "tool_name"
+        assert result[3]["tool_call_id"] == "call_4MqKEs9ZWh0qTh0xCFcb9IOI"
 
     def test_extract_preset_configuration_from_request_overrides(self):
         request_overrides = {

@@ -157,7 +157,7 @@ def test_build_request_config_success_no_preset_name(
             "preset_overrides": {"five": "six"},
         }
     )
-    request.expand_tools = Mock(return_value={"key": "value"})
+    request.expand_tools = Mock(return_value=({"key": "value"}, None, None))
     request.tool_cache = Mock()
     success, response, user_message = request.build_request_config(
         {
@@ -191,7 +191,7 @@ def test_build_request_config_success_with_preset_name(
             "preset_overrides": {"five": "six"},
         }
     )
-    request.expand_tools = Mock(return_value={"key": "value"})
+    request.expand_tools = Mock(return_value=({"key": "value"}, None, None))
     request.tool_cache = Mock()
     success, response, user_message = request.build_request_config(
         {
@@ -464,27 +464,33 @@ def test_get_preset_metadata_customizations_with_failed_preset_ensuring(
 def test_expand_tools_none(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     customizations = {}
-    result = request.expand_tools(customizations)
+    result, tools, tool_choice = request.expand_tools(customizations)
     assert result == {}
+    assert tools == []
+    assert tool_choice is None
 
 
 def test_expand_tools_valid_tools(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    tools_expanded = ["tool_config1", "tool_config2"]
+    tool_choice_expanded = "test_tool_2"
     tool_manager.get_tool_config = Mock(
-        side_effect=["tool_config1", "tool_config2"]
+        side_effect=tools_expanded
     )
-    customizations = {"model_kwargs": {"tools": ["test_tool", "test_tool2"]}}
-    result = request.expand_tools(customizations)
-    assert result["model_kwargs"]["tools"] == ["tool_config1", "tool_config2"]
+    customizations = {"tools": ["test_tool", "test_tool2"], "tool_choice": tool_choice_expanded}
+    result, tools, tool_choice = request.expand_tools(customizations)
+    assert result == {}
+    assert tools == tools_expanded
+    assert tool_choice == tool_choice_expanded
 
 
 def test_expand_tools_missing_tool(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    customizations = {"model_kwargs": {"tools": ["test_missing_tool"]}}
+    customizations = {"tools": ["test_missing_tool"]}
     with pytest.raises(ValueError) as excinfo:
         request.expand_tools(customizations)
     assert "test_missing_tool not found" in str(excinfo.value)
