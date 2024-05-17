@@ -337,24 +337,11 @@ class ApiRequest:
 
     def iterate_streaming_response(self, messages, print_stream, stream_callback):
         response = None
-        is_tool_call = False
         self.log.debug(f"Streaming with LLM attributes: {self.llm.dict()}")
         for chunk in self.llm.stream(messages):
             if isinstance(chunk, AIMessageChunk):
                 content = chunk.content
-                tool_call = chunk.additional_kwargs.get("tool_call")
-                if response:
-                    response.content += content
-                    if tool_call:
-                        response.additional_kwargs["tool_call"]["arguments"] += tool_call[
-                            "arguments"
-                        ]
-                else:
-                    chunk_copy = copy.deepcopy(chunk)
-                    chunk_copy.type = 'ai'
-                    response = AIMessage(**dict(chunk_copy))
-                    if tool_call:
-                        is_tool_call = True
+                response = chunk if not response else response + chunk
             elif isinstance(chunk, str):
                 content = chunk
                 response = content if not response else response + content
@@ -362,7 +349,7 @@ class ApiRequest:
                 raise ValueError(f"Unexpected chunk type: {type(chunk)}")
             self.output_chunk_content(content, print_stream, stream_callback)
             if not self.streaming:
-                if is_tool_call:
+                if getattr(response, "tool_call_chunks", None):
                     response = None
                 util.print_status_message(False, "Generation stopped")
                 break
