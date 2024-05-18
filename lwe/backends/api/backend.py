@@ -48,6 +48,11 @@ class ApiBackend:
         self.message = MessageManager(config, self.orm)
         self.initialize_database(config)
         self.initialize_backend(config)
+        # TODO: Remove after deprecation period -- END
+        directories = self.config.get("directories")
+        if "functions" in directories:
+            util.print_status_message(False, "DEPRECATION WARNING: Configuration option `directories.functions` has been renamed to `directories.tools`.")
+        # TODO: Remove after deprecation period -- END
 
     def set_available_models(self):
         """
