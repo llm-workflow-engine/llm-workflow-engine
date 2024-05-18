@@ -187,18 +187,20 @@ class TestClass:
         method = get_class_method(self.SampleClass, "sample_method")
         assert method == self.SampleClass.sample_method
 
-    def test_output_response(self, capsys):
+    @patch('lwe.core.util.print_markdown')
+    def test_output_response_message(self, mock_print_markdown):
         output_response("Test message")
-        captured = capsys.readouterr()
-        assert "Test message" in captured.out
+        mock_print_markdown.assert_called_once_with("Test message")
 
+    @patch('lwe.core.util.print_status_message')
+    def test_output_response_success(self, mock_print_status_message):
         output_response((True, None, "Success message"))
-        captured = capsys.readouterr()
-        assert "Success message" in captured.out
+        mock_print_status_message.assert_called_once_with(True, "Success message")
 
+    @patch('lwe.core.util.print_status_message')
+    def test_output_response_failure(self, mock_print_status_message):
         output_response((False, None, "Failure message"))
-        captured = capsys.readouterr()
-        assert "Failure message" in captured.out
+        mock_print_status_message.assert_called_once_with(False, "Failure message")
 
     def test_write_temp_file(self):
         input_data = "test content"
