@@ -56,9 +56,9 @@ class ApiRepl(Repl):
         self.base_shell_completions[util.command_with_leader("user")] = {
             c: None if c == "logout" else usernames for c in user_commands
         }
-        self.base_shell_completions[
-            util.command_with_leader("model")
-        ] = self.backend.provider.customizations_to_completions()
+        self.base_shell_completions[util.command_with_leader("model")] = (
+            self.backend.provider.customizations_to_completions()
+        )
         provider_completions = {}
         for _name, provider in self.backend.get_providers().items():
             provider_models = (
@@ -79,9 +79,11 @@ class ApiRepl(Repl):
             for c in self.get_command_actions("preset", dashed=True)
         }
         for preset_name in preset_keys:
-            final_completions[util.command_with_leader("preset")]["save"][
-                preset_name
-            ] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields().keys())
+            final_completions[util.command_with_leader("preset")]["save"][preset_name] = (
+                util.list_to_completion_hash(
+                    self.backend.preset_manager.user_metadata_fields().keys()
+                )
+            )
         workflow_keys = util.list_to_completion_hash(self.backend.workflow_manager.workflows.keys())
         final_completions[util.command_with_leader("workflow")] = {
             c: workflow_keys for c in self.get_command_actions("workflow", dashed=True)
@@ -292,9 +294,11 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace(
             "$PRESET_OR_MODEL",
-            self.backend.active_preset_name
-            if self.backend.active_preset_name
-            else self.backend.model,
+            (
+                self.backend.active_preset_name
+                if self.backend.active_preset_name
+                else self.backend.model
+            ),
         )
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())

@@ -187,17 +187,17 @@ class TestClass:
         method = get_class_method(self.SampleClass, "sample_method")
         assert method == self.SampleClass.sample_method
 
-    @patch('lwe.core.util.print_markdown')
+    @patch("lwe.core.util.print_markdown")
     def test_output_response_message(self, mock_print_markdown):
         output_response("Test message")
         mock_print_markdown.assert_called_once_with("Test message")
 
-    @patch('lwe.core.util.print_status_message')
+    @patch("lwe.core.util.print_status_message")
     def test_output_response_success(self, mock_print_status_message):
         output_response((True, None, "Success message"))
         mock_print_status_message.assert_called_once_with(True, "Success message")
 
-    @patch('lwe.core.util.print_status_message')
+    @patch("lwe.core.util.print_status_message")
     def test_output_response_failure(self, mock_print_status_message):
         output_response((False, None, "Failure message"))
         mock_print_status_message.assert_called_once_with(False, "Failure message")
@@ -328,10 +328,17 @@ class TestClass:
             {"role": "assistant", "message": "Hi", "message_type": "content"},
             {
                 "role": "assistant",
-                "message": [{"name": "tool_name", "args": {}, "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}],
+                "message": [
+                    {"name": "tool_name", "args": {}, "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}
+                ],
                 "message_type": "tool_call",
             },
-            {"role": "tool", "message": {"word": "foo", "repeats": 2}, "message_type": "tool_response", "message_metadata": {"name": "tool_name", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}},
+            {
+                "role": "tool",
+                "message": {"word": "foo", "repeats": 2},
+                "message_type": "tool_response",
+                "message_metadata": {"name": "tool_name", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"},
+            },
         ]
         result = transform_messages_to_chat_messages(messages)
         assert result[0]["role"] == "user"
@@ -340,7 +347,13 @@ class TestClass:
         assert result[1]["content"] == "Hi"
         assert result[2]["role"] == "assistant"
         assert result[2]["content"] == ""
-        assert result[2]["tool_calls"] == [{"function": {"name": "tool_name", "arguments": "{}"}, "type": "function", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}]
+        assert result[2]["tool_calls"] == [
+            {
+                "function": {"name": "tool_name", "arguments": "{}"},
+                "type": "function",
+                "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            }
+        ]
         assert result[3]["role"] == "tool"
         assert result[3]["content"] == '{"word": "foo", "repeats": 2}'
         assert result[3]["name"] == "tool_name"

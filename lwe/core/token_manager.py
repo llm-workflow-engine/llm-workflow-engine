@@ -54,7 +54,11 @@ class TokenManager:
         :rtype: int
         """
         token_counter = getattr(self.provider, "get_num_tokens_from_messages", None)
-        return token_counter(messages, encoding) if token_counter else self.default_get_num_tokens_from_messages(messages, encoding)
+        return (
+            token_counter(messages, encoding)
+            if token_counter
+            else self.default_get_num_tokens_from_messages(messages, encoding)
+        )
 
     def default_get_num_tokens_from_messages(self, messages, encoding=None):
         """

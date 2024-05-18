@@ -29,7 +29,11 @@ def discover_editor():
     command_parts = []
     if SYSTEM == "Windows":
         editor_executable = get_environment_editor()
-        if editor_executable and os.path.isfile(editor_executable) and os.access(editor_executable, os.X_OK):
+        if (
+            editor_executable
+            and os.path.isfile(editor_executable)
+            and os.access(editor_executable, os.X_OK)
+        ):
             command_parts = [editor_executable]
         else:
             executables_search = editor_executable and [editor_executable] or WINDOWS_EDITORS

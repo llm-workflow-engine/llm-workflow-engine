@@ -55,14 +55,16 @@ def main():
         type=str,
         choices=["openai", "anthropic", "vertexai", "cohere", "fireworks", "mistralai"],
         required=True,
-        help="The model provider to use."
+        help="The model provider to use.",
     )
     args = parser.parse_args()
     llm = get_model_provider(args.provider)
 
     # Define messages and tools
     messages = [
-        SystemMessage(content="You are a helpful assistant, who responds with the most brief answer to the question."),
+        SystemMessage(
+            content="You are a helpful assistant, who responds with the most brief answer to the question."
+        ),
         HumanMessage(content="What is 3 * 12? Also, what is 11 + 49?"),
     ]
     tools = [add, multiply]

@@ -512,9 +512,11 @@ class Repl:
                             h["created_time"].strftime("%Y-%m-%d %H:%M"),
                             h["title"] or constants.NO_TITLE_TEXT,
                             h["id"],
-                            f" {constants.ACTIVE_ITEM_INDICATOR}"
-                            if h["id"] == self.backend.conversation_id
-                            else "",
+                            (
+                                f" {constants.ACTIVE_ITEM_INDICATOR}"
+                                if h["id"] == self.backend.conversation_id
+                                else ""
+                            ),
                         )
                         for h in history_list
                     ]
@@ -978,7 +980,8 @@ class Repl:
                 else ""
             )
             util.print_markdown(
-                "## Provider: %s, model: %s%s" % (self.backend.provider.display_name, model_name, customizations_data)
+                "## Provider: %s, model: %s%s"
+                % (self.backend.provider.display_name, model_name, customizations_data)
             )
 
     def command_templates(self, arg):
@@ -1275,12 +1278,16 @@ class Repl:
             self.config.get("database"),
             util.list_to_markdown_list(self.backend.template_manager.user_template_dirs),
             util.list_to_markdown_list(self.backend.preset_manager.user_preset_dirs),
-            util.list_to_markdown_list(self.backend.workflow_manager.user_workflow_dirs)
-            if getattr(self.backend, "workflow_manager", None)
-            else "",
-            util.list_to_markdown_list(self.backend.tool_manager.user_tool_dirs)
-            if getattr(self.backend, "tool_manager", None)
-            else "",
+            (
+                util.list_to_markdown_list(self.backend.workflow_manager.user_workflow_dirs)
+                if getattr(self.backend, "workflow_manager", None)
+                else ""
+            ),
+            (
+                util.list_to_markdown_list(self.backend.tool_manager.user_tool_dirs)
+                if getattr(self.backend, "tool_manager", None)
+                else ""
+            ),
         )
         util.print_markdown(output)
 

@@ -68,17 +68,23 @@ class PluginManager:
             entry_points = importlib.metadata.entry_points().get(entry_point_group, [])
         for entry_point in entry_points:
             package_name = entry_point.dist.metadata["Name"]
-            plugin_name = util.dash_to_underscore(package_name[len(f"{PLUGIN_PREFIX}plugin_"):])
+            plugin_name = util.dash_to_underscore(package_name[len(f"{PLUGIN_PREFIX}plugin_") :])
             if plugin_name in plugin_list:
                 try:
                     klass = entry_point.load()
                     plugin_instance = klass(self.config)
-                    self.log.info(f"Loaded plugin: {entry_point.name}, from package: {package_name}")
+                    self.log.info(
+                        f"Loaded plugin: {entry_point.name}, from package: {package_name}"
+                    )
                     self.package_plugins[plugin_name] = plugin_instance
                 except Exception as e:
-                    self.log.error(f"Failed to load plugin {entry_point.name}, from package: {package_name}: {e}")
+                    self.log.error(
+                        f"Failed to load plugin {entry_point.name}, from package: {package_name}: {e}"
+                    )
             else:
-                self.log.info(f"Skip loading: {entry_point.name}, from package: {package_name}, reason: not enabled")
+                self.log.info(
+                    f"Skip loading: {entry_point.name}, from package: {package_name}, reason: not enabled"
+                )
 
     def setup_plugin(self, plugin_name, plugin_instance):
         plugin_instance.set_name(plugin_name)

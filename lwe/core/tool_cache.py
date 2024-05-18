@@ -58,9 +58,7 @@ class ToolCache:
                     if self.add(tool_name, raise_on_missing=False):
                         filtered_messages.append(message)
                     else:
-                        message = (
-                            f"Tool {tool_name} not found in tool list, filtered message out"
-                        )
+                        message = f"Tool {tool_name} not found in tool list, filtered message out"
                         self.log.warning(message)
                         util.print_status_message(False, message)
             else:

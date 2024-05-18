@@ -51,7 +51,10 @@ class ApiBackend:
         # TODO: Remove after deprecation period -- END
         directories = self.config.get("directories")
         if "functions" in directories:
-            util.print_status_message(False, "DEPRECATION WARNING: Configuration option `directories.functions` has been renamed to `directories.tools`.")
+            util.print_status_message(
+                False,
+                "DEPRECATION WARNING: Configuration option `directories.functions` has been renamed to `directories.tools`.",
+            )
         # TODO: Remove after deprecation period -- END
 
     def set_available_models(self):
@@ -145,7 +148,9 @@ class ApiBackend:
         :param overrides: Optional dictionary of overrides, will be merged with any set in the template.
         :return: The response tuple from the template run.
         """
-        success, response, user_message = self.build_message_from_template(template_name, template_vars=template_vars, overrides=overrides)
+        success, response, user_message = self.build_message_from_template(
+            template_name, template_vars=template_vars, overrides=overrides
+        )
         if not success:
             return success, response, user_message
         message, overrides = response

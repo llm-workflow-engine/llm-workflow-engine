@@ -105,7 +105,7 @@ class ProviderBase(Plugin):
 
     @property
     def display_name(self):
-        return self.name[len(constants.PROVIDER_PREFIX):]
+        return self.name[len(constants.PROVIDER_PREFIX) :]
 
     @property
     def plugin_type(self):
@@ -259,23 +259,23 @@ class ProviderBase(Plugin):
             return False, None, f"Invalid model {model_name}"
 
     def transform_tools(self, tools):
-        if hasattr(self, 'transform_tool'):
+        if hasattr(self, "transform_tool"):
             self.log.debug(f"Transforming tools for provider {self.display_name}")
             tools = [self.transform_tool(tool) for tool in tools]
         return tools
 
     def transform_openai_tool_spec_to_json_schema_spec(self, spec):
         json_schema_spec = {
-            'description': spec['description'],
-            'title': spec['name'],
-            'properties': {}
+            "description": spec["description"],
+            "title": spec["name"],
+            "properties": {},
         }
-        for prop, details in spec['parameters']['properties'].items():
-            json_schema_spec['properties'][prop] = {
-                'description': details['description'],
-                'type': details['type'],
-                'title': prop,
-                'required': prop in spec['required']
+        for prop, details in spec["parameters"]["properties"].items():
+            json_schema_spec["properties"][prop] = {
+                "description": details["description"],
+                "type": details["type"],
+                "title": prop,
+                "required": prop in spec["required"],
             }
         return json_schema_spec
 
@@ -294,10 +294,10 @@ class ProviderBase(Plugin):
         if tools:
             self.log.debug(f"Provider {self.display_name} called with tools")
             kwargs = {
-                'tools': self.transform_tools(tools),
+                "tools": self.transform_tools(tools),
             }
             if tool_choice:
-                kwargs['tool_choice'] = tool_choice
+                kwargs["tool_choice"] = tool_choice
             try:
                 llm = llm.bind_tools(**kwargs)
             except NotImplementedError:
@@ -346,8 +346,7 @@ class ProviderBase(Plugin):
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
     def convert_dict_to_message(self, message: Mapping[str, Any]) -> BaseMessage:
-        """Convert an LWE message dictionary to a LangChain message.
-        """
+        """Convert an LWE message dictionary to a LangChain message."""
         role = message.get("role")
         content = message.get("content", "")
         if role == "user":

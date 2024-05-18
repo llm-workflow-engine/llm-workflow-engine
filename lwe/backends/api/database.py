@@ -87,12 +87,12 @@ class DatabaseDevel(Database):
                 style="white",
             )
             for j in range(self.num_conversations):
-                title = f"Conversation {j+1} for User {i+1}"
+                title = f"Conversation {j + 1} for User {i + 1}"
                 conversation = self.conversation.add_conversation(user, title)
                 # Create Messages for each Conversation
                 for k in range(self.num_messages):
                     role = "user" if k % 2 == 0 else "assistant"
-                    message = f"This is message {k+1} in conversation {j+1} for user {i+1}"
+                    message = f"This is message {k + 1} in conversation {j + 1} for user {i + 1}"
                     message = self.message.add_message(
                         conversation,
                         role,

@@ -145,7 +145,10 @@ class Config:
     def set(self, keys, value, transform=True):
         # TODO: Remove after deprecation period -- END
         if value == "directories.functions":
-            util.print_status_message(False, "DEPRECATION WARNING: Configuration option `directories.functions` has been renamed to `directories.tools`.")
+            util.print_status_message(
+                False,
+                "DEPRECATION WARNING: Configuration option `directories.functions` has been renamed to `directories.tools`.",
+            )
         # TODO: Remove after deprecation period -- END
         if isinstance(keys, str):
             keys = keys.split(".")

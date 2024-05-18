@@ -412,14 +412,17 @@ def transform_messages_to_chat_messages(messages):
         }
         if role == "assistant":
             if message["message_type"] == "tool_call":
-                tool_calls = [{
-                    "id": tool["id"],
-                    "type": "function",
-                    "function": {
-                        "name": tool["name"],
-                        "arguments": json.dumps(tool["args"]),
-                    },
-                } for tool in message["message"]]
+                tool_calls = [
+                    {
+                        "id": tool["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tool["name"],
+                            "arguments": json.dumps(tool["args"]),
+                        },
+                    }
+                    for tool in message["message"]
+                ]
                 next_message["tool_calls"] = tool_calls
                 next_message["content"] = ""
             else:
@@ -427,8 +430,14 @@ def transform_messages_to_chat_messages(messages):
                 next_message["content"] = message["message"]
         elif role == "tool":
             next_message["content"] = json.dumps(message["message"])
-            next_message["name"] = message["message_metadata"]["name"] if "name" in message["message_metadata"] else None
-            next_message["tool_call_id"] = message["message_metadata"]["id"] if "id" in message["message_metadata"] else None
+            next_message["name"] = (
+                message["message_metadata"]["name"]
+                if "name" in message["message_metadata"]
+                else None
+            )
+            next_message["tool_call_id"] = (
+                message["message_metadata"]["id"] if "id" in message["message_metadata"] else None
+            )
         else:
             next_message["content"] = message["message"]
         chat_messages.append(next_message)

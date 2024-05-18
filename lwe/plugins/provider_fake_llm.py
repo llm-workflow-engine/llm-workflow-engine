@@ -92,9 +92,7 @@ class FakeMessagesListChatModel(BaseChatModel):
             raise TypeError(f"Unexpected type for response: {type(response)}")
         if isinstance(response, BaseMessage):
             return response
-        elif isinstance(response, list) and all(
-            isinstance(item, BaseMessage) for item in response
-        ):
+        elif isinstance(response, list) and all(isinstance(item, BaseMessage) for item in response):
             return cast(List[BaseMessage], response)
         else:
             raise TypeError("Unexpected type after processing response")

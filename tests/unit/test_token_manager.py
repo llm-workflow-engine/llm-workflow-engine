@@ -4,9 +4,7 @@ from lwe.core.token_manager import TokenManager
 from ..base import make_provider
 
 
-def make_token_manager(
-    test_config, tool_cache, provider_manager, provider=None, model_name=None
-):
+def make_token_manager(test_config, tool_cache, provider_manager, provider=None, model_name=None):
     if not provider:
         provider = make_provider(provider_manager)
     if not model_name:
@@ -83,12 +81,12 @@ def test_get_num_tokens_from_messages_with_tool(test_config, tool_cache, provide
         {
             "message": [
                 {
-                    'name': 'test_tool',
-                    'args': {
-                        'word': 'foo',
-                        'repeats': 2,
+                    "name": "test_tool",
+                    "args": {
+                        "word": "foo",
+                        "repeats": 2,
                     },
-                    'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                    "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
                 },
             ],
             "message_metadata": None,

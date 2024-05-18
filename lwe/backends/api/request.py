@@ -57,7 +57,9 @@ class ApiRequest:
         self.orm = orm or Orm(self.config)
         self.message = MessageManager(config, self.orm)
         self.streaming = False
-        self.log.debug(f"Inintialized ApiRequest with input: {self.input}, default preset name: {self.default_preset_name}, system_message: {self.system_message}, max_submission_tokens: {self.max_submission_tokens}, request_overrides: {self.request_overrides}, return only: {self.return_only}")
+        self.log.debug(
+            f"Inintialized ApiRequest with input: {self.input}, default preset name: {self.default_preset_name}, system_message: {self.system_message}, max_submission_tokens: {self.max_submission_tokens}, request_overrides: {self.request_overrides}, return only: {self.return_only}"
+        )
 
     def set_request_llm(self):
         success, response, user_message = self.extract_metadata_customizations()
@@ -112,7 +114,9 @@ class ApiRequest:
         preset = (config["metadata"], config["customizations"])
         customizations, tools, tool_choice = self.expand_tools(config["customizations"])
         config["customizations"] = customizations
-        llm = provider.make_llm(config["customizations"], tools=tools, tool_choice=tool_choice, use_defaults=True)
+        llm = provider.make_llm(
+            config["customizations"], tools=tools, tool_choice=tool_choice, use_defaults=True
+        )
         preset_name = config["metadata"].get("name", "")
         model_name = getattr(llm, provider.model_property_name)
         token_manager = TokenManager(self.config, provider, model_name, self.tool_cache)
@@ -204,7 +208,7 @@ class ApiRequest:
         :rtype: tuple
         """
         # TODO: Remove after deprecation period -- BEGIN
-        if "model_kwargs" in customizations and "functions" in customizations['model_kwargs']:
+        if "model_kwargs" in customizations and "functions" in customizations["model_kwargs"]:
             raise RuntimeError(
                 "BREAKING CHNANGE: The configuration of functions in presets has changed to a `tools` configuration, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/345 for migration instructions"
             )
@@ -212,7 +216,9 @@ class ApiRequest:
         customizations = copy.deepcopy(customizations)
         self.tool_cache = ToolCache(self.config, self.tool_manager, customizations)
         self.tool_cache.add_message_tools(self.old_messages)
-        tools = [self.tool_manager.get_tool_config(tool_name) for tool_name in self.tool_cache.tools]
+        tools = [
+            self.tool_manager.get_tool_config(tool_name) for tool_name in self.tool_cache.tools
+        ]
         if "tools" in customizations:
             del customizations["tools"]
         tool_choice = customizations.pop("tool_choice", None)
@@ -242,7 +248,10 @@ class ApiRequest:
         :returns: List of new messages
         :rtype: list
         """
-        return [self.message.build_message(message['role'], message['content']) for message in self.input]
+        return [
+            self.message.build_message(message["role"], message["content"])
+            for message in self.input
+        ]
 
     def prepare_new_conversation_messages(self):
         """
@@ -251,7 +260,11 @@ class ApiRequest:
         :returns: List of new messages
         :rtype: list
         """
-        return self.prepare_custom_new_conversation_messages() if type(self.input) is list else self.prepare_default_new_conversation_messages()
+        return (
+            self.prepare_custom_new_conversation_messages()
+            if type(self.input) is list
+            else self.prepare_default_new_conversation_messages()
+        )
 
     def prepare_ask_request(self):
         """
@@ -419,9 +432,7 @@ class ApiRequest:
             )
 
     def execute_tool_call(self, tool_call):
-        success, tool_response, user_message = self.run_tool(
-            tool_call["name"], tool_call["args"]
-        )
+        success, tool_response, user_message = self.run_tool(tool_call["name"], tool_call["args"])
         if not success:
             raise ValueError(f"Tool call failed: {user_message}")
         return tool_response
@@ -476,7 +487,12 @@ class ApiRequest:
             tool_calls = message.tool_calls
             invalid_tool_calls = getattr(message, "invalid_tool_calls", [])
             if invalid_tool_calls:
-                tool_call_errors = ", ".join([f"{tool_call['name']}: {tool_call['error']}" for tool_call in invalid_tool_calls])
+                tool_call_errors = ", ".join(
+                    [
+                        f"{tool_call['name']}: {tool_call['error']}"
+                        for tool_call in invalid_tool_calls
+                    ]
+                )
                 raise RuntimeError(f"LLM tool call failed: {tool_call_errors}")
             message_dict = convert_message_to_dict(message)
             content = message_dict["content"]
@@ -484,7 +500,10 @@ class ApiRequest:
             if tool_calls:
                 message_type = "tool_call"
                 content = tool_calls
-            return self.message.build_message(message_dict["role"], content, message_type), tool_calls
+            return (
+                self.message.build_message(message_dict["role"], content, message_type),
+                tool_calls,
+            )
         return self.message.build_message("assistant", message), tool_calls
 
     def should_return_on_tool_call(self):
@@ -556,9 +575,7 @@ class ApiRequest:
         success, response, user_message = self.tool_manager.run_tool(tool_name, data)
         json_obj = response if success else {"error": user_message}
         if not self.return_only:
-            util.print_markdown(
-                f"### Tool response:\n* Name: {tool_name}\n* Success: {success}"
-            )
+            util.print_markdown(f"### Tool response:\n* Name: {tool_name}\n* Success: {success}")
             util.print_markdown(json_obj)
         return success, json_obj, user_message
 

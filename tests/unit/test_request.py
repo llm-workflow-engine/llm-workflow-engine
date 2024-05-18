@@ -38,9 +38,7 @@ def test_init_with_defaults(test_config, tool_manager, provider_manager, preset_
     assert request.preset_manager == preset_manager
 
 
-def test_init_with_request_overrides(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_init_with_request_overrides(test_config, tool_manager, provider_manager, preset_manager):
     request_overrides = {"stream": True}
     request = make_api_request(
         test_config,
@@ -91,9 +89,7 @@ def test_set_request_llm_failure(test_config, tool_manager, provider_manager, pr
     assert user_message == "Error"
 
 
-def test_setup_request_config_success(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_setup_request_config_success(test_config, tool_manager, provider_manager, preset_manager):
     provider = make_provider(provider_manager)
     request = make_api_request(
         test_config, tool_manager, provider_manager, preset_manager, provider
@@ -129,9 +125,7 @@ def test_setup_request_config_success(
     assert request.preset == preset
 
 
-def test_setup_request_config_failure(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_setup_request_config_failure(test_config, tool_manager, provider_manager, preset_manager):
     provider = make_provider(provider_manager)
     request = make_api_request(
         test_config, tool_manager, provider_manager, preset_manager, provider
@@ -211,9 +205,7 @@ def test_build_request_config_success_with_preset_name(
     assert isinstance(response[5], TokenManager)
 
 
-def test_build_request_config_failure(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_build_request_config_failure(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     request.load_provider = Mock(return_value=(False, None, "Error"))
     success, response, user_message = request.build_request_config(
@@ -471,15 +463,11 @@ def test_expand_tools_none(test_config, tool_manager, provider_manager, preset_m
     assert tool_choice is None
 
 
-def test_expand_tools_valid_tools(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_expand_tools_valid_tools(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tools_expanded = ["tool_config1", "tool_config2"]
     tool_choice_expanded = "test_tool_2"
-    tool_manager.get_tool_config = Mock(
-        side_effect=tools_expanded
-    )
+    tool_manager.get_tool_config = Mock(side_effect=tools_expanded)
     customizations = {"tools": ["test_tool", "test_tool2"], "tool_choice": tool_choice_expanded}
     result, tools, tool_choice = request.expand_tools(customizations)
     assert result == {}
@@ -487,9 +475,7 @@ def test_expand_tools_valid_tools(
     assert tool_choice == tool_choice_expanded
 
 
-def test_expand_tools_missing_tool(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_expand_tools_missing_tool(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     customizations = {"tools": ["test_missing_tool"]}
     with pytest.raises(ValueError) as excinfo:
@@ -541,17 +527,19 @@ def test_prepare_default_new_conversation_messages_old_messages(
 def test_prepare_custom_new_conversation_messages(
     test_config, tool_manager, provider_manager, preset_manager
 ):
-    system_message_content = 'test system message'
-    user_message_content = 'test user message'
-    assistant_message_content = 'test assistant response'
-    user_message_content_2 = 'test user message 2'
+    system_message_content = "test system message"
+    user_message_content = "test user message"
+    assistant_message_content = "test assistant response"
+    user_message_content_2 = "test user message 2"
     messages = [
-        {'role': 'system', 'content': system_message_content},
-        {'role': 'user', 'content': user_message_content},
-        {'role': 'assistant', 'content': assistant_message_content},
-        {'role': 'user', 'content': user_message_content_2},
+        {"role": "system", "content": system_message_content},
+        {"role": "user", "content": user_message_content},
+        {"role": "assistant", "content": assistant_message_content},
+        {"role": "user", "content": user_message_content_2},
     ]
-    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager, input=messages)
+    request = make_api_request(
+        test_config, tool_manager, provider_manager, preset_manager, input=messages
+    )
     result = request.prepare_custom_new_conversation_messages()
     assert len(result) == 4
     assert result[0]["role"] == "system"
@@ -564,22 +552,30 @@ def test_prepare_custom_new_conversation_messages(
     assert result[3]["message"] == user_message_content_2
 
 
-def test_prepare_new_conversation_messages_with_message_string_builds_default_messages(test_config, tool_manager, provider_manager, preset_manager):
+def test_prepare_new_conversation_messages_with_message_string_builds_default_messages(
+    test_config, tool_manager, provider_manager, preset_manager
+):
     input = "test message"
-    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager, input=input)
+    request = make_api_request(
+        test_config, tool_manager, provider_manager, preset_manager, input=input
+    )
     request.prepare_default_new_conversation_messages = Mock()
     request.prepare_new_conversation_messages()
     request.prepare_default_new_conversation_messages.assert_called_once()
 
 
-def test_prepare_new_conversation_messages_with_message_list_builds_custom_messages(test_config, tool_manager, provider_manager, preset_manager):
-    system_message_content = 'test system message'
-    user_message_content = 'test user message'
+def test_prepare_new_conversation_messages_with_message_list_builds_custom_messages(
+    test_config, tool_manager, provider_manager, preset_manager
+):
+    system_message_content = "test system message"
+    user_message_content = "test user message"
     messages = [
-        {'role': 'system', 'content': system_message_content},
-        {'role': 'user', 'content': user_message_content},
+        {"role": "system", "content": system_message_content},
+        {"role": "user", "content": user_message_content},
     ]
-    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager, input=messages)
+    request = make_api_request(
+        test_config, tool_manager, provider_manager, preset_manager, input=messages
+    )
     request.prepare_custom_new_conversation_messages = Mock()
     request.prepare_new_conversation_messages()
     request.prepare_custom_new_conversation_messages.assert_called_once()
@@ -589,9 +585,7 @@ def test_prepare_ask_request(test_config, tool_manager, provider_manager, preset
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     request.prepare_new_conversation_messages = Mock(return_value=["new_message"])
     request.tool_cache = Mock()
-    request.tool_cache.add_message_tools = Mock(
-        return_value=["old_message1", "old_message2"]
-    )
+    request.tool_cache.add_message_tools = Mock(return_value=["old_message1", "old_message2"])
     request.strip_out_messages_over_max_tokens = Mock(return_value=["old_message2", "new_message"])
     new_messages, messages = request.prepare_ask_request()
     assert new_messages == ["new_message"]
@@ -801,37 +795,34 @@ def test_iterate_streaming_response_interrupted_tool_call(
     request.llm.stream = Mock(
         return_value=[
             AIMessageChunk(
-                content='',
+                content="",
                 additional_kwargs={
-                    'tool_calls': [
+                    "tool_calls": [
                         {
-                            'index': 0,
-                            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                            'function': {
-                                'arguments': '{"',
-                                'name': 'test_tool'
-                            },
-                            'type': 'function'
+                            "index": 0,
+                            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                            "function": {"arguments": '{"', "name": "test_tool"},
+                            "type": "function",
                         }
                     ]
                 },
-                id='run-01744f2e-ccf8-4768-9ba4-64eb6d0644de',
+                id="run-01744f2e-ccf8-4768-9ba4-64eb6d0644de",
                 invalid_tool_calls=[
                     {
-                        'name': 'test_tool',
-                        'args': '{"',
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'error': None
+                        "name": "test_tool",
+                        "args": '{"',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "error": None,
                     }
                 ],
                 tool_call_chunks=[
                     {
-                        'name': 'test_tool',
-                        'args': '{"',
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'index': 0
+                        "name": "test_tool",
+                        "args": '{"',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "index": 0,
                     }
-                ]
+                ],
             ),
         ]
     )
@@ -902,20 +893,18 @@ def test_execute_llm_non_streaming_failure_call_llm(
     assert str(user_message) == "Error"
 
 
-def test_post_response_tool_call(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_post_response_tool_call(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     response_obj = Mock()
     new_messages = []
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     response_message = {
@@ -930,9 +919,7 @@ def test_post_response_tool_call(
     request.handle_tool_calls.assert_called_once_with(tool_calls, new_messages)
 
 
-def test_post_response_non_tool(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_post_response_non_tool(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     response_obj = Mock()
     new_messages = []
@@ -946,18 +933,16 @@ def test_post_response_non_tool(
     request.handle_non_tool_response.assert_called_once_with(response_message, new_messages)
 
 
-def test_handle_tool_calls_return(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_handle_tool_calls_return(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     new_messages = []
@@ -971,18 +956,16 @@ def test_handle_tool_calls_return(
     request.execute_tool_calls.assert_not_called()
 
 
-def test_handle_tool_calls_execute(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_handle_tool_calls_execute(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     response = "response"
@@ -1003,9 +986,7 @@ def test_handle_non_tool_response_return(
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     response_message = {"message_type": "content", "message": "Hello, world!"}
     new_messages = []
-    request.check_return_on_tool_response = Mock(
-        return_value=("tool_response", new_messages)
-    )
+    request.check_return_on_tool_response = Mock(return_value=("tool_response", new_messages))
     result = request.handle_non_tool_response(response_message, new_messages)
     assert result == ("tool_response", new_messages)
     request.check_return_on_tool_response.assert_called_once_with(new_messages)
@@ -1028,12 +1009,12 @@ def test_log_tool_call_return_only_false(
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_call = {
-        'name': 'test_tool',
-        'args': {
-            'word': 'foo',
-            'repeats': 2,
+        "name": "test_tool",
+        "args": {
+            "word": "foo",
+            "repeats": 2,
         },
-        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
     }
     util.print_markdown = Mock()
     request.return_only = False
@@ -1046,12 +1027,12 @@ def test_log_tool_call_return_only_true(
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_call = {
-        'name': 'test_tool',
-        'args': {
-            'word': 'foo',
-            'repeats': 2,
+        "name": "test_tool",
+        "args": {
+            "word": "foo",
+            "repeats": 2,
         },
-        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
     }
     util.print_markdown = Mock()
     request.return_only = True
@@ -1059,18 +1040,16 @@ def test_log_tool_call_return_only_true(
     util.print_markdown.assert_not_called()
 
 
-def test_execute_tool_calls_success(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_execute_tool_calls_success(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         }
     ]
     new_messages = []
@@ -1093,26 +1072,22 @@ def test_execute_tool_calls_success(
     result = request.execute_tool_calls(tool_calls, new_messages)
     assert result == ("test response", new_messages)
     request.execute_tool_call.assert_called_once_with(tool_calls[0])
-    request.build_tool_response_message.assert_called_once_with(
-        tool_calls[0], tool_response
-    )
+    request.build_tool_response_message.assert_called_once_with(tool_calls[0], tool_response)
     request.check_forced_tool.assert_called_once()
     request.call_llm.assert_called_once_with(new_messages)
     request.post_response.assert_called_once_with("test response", new_messages)
 
 
-def test_execute_tool_calls_forced(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_execute_tool_calls_forced(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         }
     ]
     new_messages = []
@@ -1135,9 +1110,7 @@ def test_execute_tool_calls_forced(
     result = request.execute_tool_calls(tool_calls, new_messages)
     assert result == (tool_response, new_messages)
     request.execute_tool_call.assert_called_once_with(tool_calls[0])
-    request.build_tool_response_message.assert_called_once_with(
-        tool_calls[0], tool_response
-    )
+    request.build_tool_response_message.assert_called_once_with(tool_calls[0], tool_response)
     request.check_forced_tool.assert_called_once()
     request.call_llm.assert_not_called()
     request.post_response.assert_not_called()
@@ -1149,12 +1122,12 @@ def test_execute_tool_calls_llm_failure(
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         }
     ]
     new_messages = []
@@ -1178,25 +1151,21 @@ def test_execute_tool_calls_llm_failure(
         request.execute_tool_calls(tool_calls, new_messages)
     assert "LLM call failed" in str(excinfo.value)
     request.execute_tool_call.assert_called_once_with(tool_calls[0])
-    request.build_tool_response_message.assert_called_once_with(
-        tool_calls[0], tool_response
-    )
+    request.build_tool_response_message.assert_called_once_with(tool_calls[0], tool_response)
     request.check_forced_tool.assert_called_once()
     request.call_llm.assert_called_once_with(new_messages)
     request.post_response.assert_not_called()
 
 
-def test_execute_tool_call_success(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_execute_tool_call_success(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_call = {
-        'name': 'test_tool',
-        'args': {
-            'word': 'foo',
-            'repeats': 2,
+        "name": "test_tool",
+        "args": {
+            "word": "foo",
+            "repeats": 2,
         },
-        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
     }
     tool_response = {
         "result": "foo foo",
@@ -1207,17 +1176,15 @@ def test_execute_tool_call_success(
     request.run_tool.assert_called_once_with(tool_call["name"], tool_call["args"])
 
 
-def test_execute_tool_call_failure(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_execute_tool_call_failure(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_call = {
-        'name': 'test_tool',
-        'args': {
-            'word': 'foo',
-            'repeats': 2,
+        "name": "test_tool",
+        "args": {
+            "word": "foo",
+            "repeats": 2,
         },
-        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
     }
     request.run_tool = Mock(return_value=(False, None, "Tool call failed"))
     with pytest.raises(ValueError) as excinfo:
@@ -1245,7 +1212,11 @@ def test_build_tool_response_message_with_id(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "args": {"word": "foo", "repeats": 2}, "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}
+    tool_call = {
+        "name": "test_tool",
+        "args": {"word": "foo", "repeats": 2},
+        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+    }
     tool_response = {"message": "Repeated the word foo 2 times.", "result": "foo foo"}
     result = request.build_tool_response_message(tool_call, tool_response)
     assert result == {
@@ -1256,7 +1227,7 @@ def test_build_tool_response_message_with_id(
     }
 
 
-@patch('lwe.backends.api.request.convert_message_to_dict')
+@patch("lwe.backends.api.request.convert_message_to_dict")
 def test_extract_message_content_no_tool_calls(
     mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
 ):
@@ -1278,22 +1249,24 @@ def test_extract_message_content_no_tool_calls(
     assert message_result == message_dict
     assert tool_calls_result == []
     mock_convert_message_to_dict.assert_called_once_with(ai_message)
-    request.message.build_message.assert_called_once_with(message_dict['role'], message_dict['content'], "content")
+    request.message.build_message.assert_called_once_with(
+        message_dict["role"], message_dict["content"], "content"
+    )
 
 
-@patch('lwe.backends.api.request.convert_message_to_dict')
+@patch("lwe.backends.api.request.convert_message_to_dict")
 def test_extract_message_content_tool_call(
     mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     message_dict = {
@@ -1308,13 +1281,13 @@ def test_extract_message_content_tool_call(
     ai_message = AIMessage(
         content="",
         additional_kwargs={
-            'tool_calls': [
+            "tool_calls": [
                 {
-                    'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                    'type': 'function',
-                    'function': {
-                        'name': 'test_tool',
-                        'arguments': '{"word": "foo", "repeats": 2}',
+                    "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                    "type": "function",
+                    "function": {
+                        "name": "test_tool",
+                        "arguments": '{"word": "foo", "repeats": 2}',
                     },
                 },
             ]
@@ -1328,39 +1301,38 @@ def test_extract_message_content_tool_call(
     assert message_result == message
     assert tool_calls_result == tool_calls
     mock_convert_message_to_dict.assert_called_once_with(ai_message)
-    request.message.build_message.assert_called_once_with(message_dict['role'], tool_calls, "tool_call")
+    request.message.build_message.assert_called_once_with(
+        message_dict["role"], tool_calls, "tool_call"
+    )
 
 
-@patch('lwe.backends.api.request.convert_message_to_dict')
+@patch("lwe.backends.api.request.convert_message_to_dict")
 def test_extract_message_content_invalid_tool_calls(
     mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     tool_calls = [
         {
-            'index': 0,
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-            'function': {
-                'arguments': '{"',
-                'name': 'test_tool'
-            },
-            'type': 'function'
+            "index": 0,
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "function": {"arguments": '{"', "name": "test_tool"},
+            "type": "function",
         }
     ]
     invalid_tool_calls = [
         {
-            'name': 'test_tool',
-            'args': '',
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-            'error': 'Some error occurred'
+            "name": "test_tool",
+            "args": "",
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "error": "Some error occurred",
         }
     ]
     ai_message = AIMessage(
         content="",
         additional_kwargs={
-            'tool_calls': tool_calls,
+            "tool_calls": tool_calls,
         },
-        id='run-01744f2e-ccf8-4768-9ba4-64eb6d0644de',
+        id="run-01744f2e-ccf8-4768-9ba4-64eb6d0644de",
         invalid_tool_calls=invalid_tool_calls,
     )
     with pytest.raises(RuntimeError) as excinfo:
@@ -1368,7 +1340,7 @@ def test_extract_message_content_invalid_tool_calls(
     assert "LLM tool call failed:" in str(excinfo.value)
 
 
-@patch('lwe.backends.api.request.convert_message_to_dict')
+@patch("lwe.backends.api.request.convert_message_to_dict")
 def test_extract_message_content_string(
     mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
 ):
@@ -1389,15 +1361,15 @@ def test_extract_message_content_string(
     request.message.build_message.assert_called_once_with("assistant", string_message)
 
 
-def test_should_return_on_tool_call(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_should_return_on_tool_call(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     request.preset = ({"return_on_tool_call": True}, {})
     assert request.should_return_on_tool_call() is True
 
 
-def test_check_forced_tool_no_tool_choice(test_config, tool_manager, provider_manager, preset_manager):
+def test_check_forced_tool_no_tool_choice(
+    test_config, tool_manager, provider_manager, preset_manager
+):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     request.preset = ({}, {})
     assert request.check_forced_tool() is False
@@ -1415,7 +1387,9 @@ def test_check_forced_tool_none(test_config, tool_manager, provider_manager, pre
     assert request.check_forced_tool() is False
 
 
-def test_check_forced_tool_other_string(test_config, tool_manager, provider_manager, preset_manager):
+def test_check_forced_tool_other_string(
+    test_config, tool_manager, provider_manager, preset_manager
+):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     request.preset = ({}, {"tool_choice": "any"})
     assert request.check_forced_tool() is True
@@ -1423,7 +1397,7 @@ def test_check_forced_tool_other_string(test_config, tool_manager, provider_mana
 
 def test_check_forced_tool_non_string(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    request.preset = ({}, {"tool_choice": {'name': 'test_tool'}})
+    request.preset = ({}, {"tool_choice": {"name": "test_tool"}})
     assert request.check_forced_tool() is True
 
 
@@ -1454,9 +1428,7 @@ def test_check_return_on_tool_response_true(
 def test_run_tool_success(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     run_tool_result = {"result": "test"}
-    request.tool_manager.run_tool = Mock(
-        return_value=(True, run_tool_result, "message")
-    )
+    request.tool_manager.run_tool = Mock(return_value=(True, run_tool_result, "message"))
     success, json_obj, user_message = request.run_tool("test_tool", {})
     assert success is True
     assert json_obj == run_tool_result
@@ -1470,9 +1442,7 @@ def test_run_tool_failure(test_config, tool_manager, provider_manager, preset_ma
     assert json_obj == {"error": "message"}
 
 
-def test_is_tool_response_message(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_is_tool_response_message(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     assert request.is_tool_response_message({"message_type": "tool_response"}) is True
 

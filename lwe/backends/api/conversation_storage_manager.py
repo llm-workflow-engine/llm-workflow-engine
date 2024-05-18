@@ -166,8 +166,14 @@ class ConversationStorageManager:
                 raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
             llm = provider.make_llm()
         else:
-            provider = self.provider_manager.get_provider_from_name('chat_openai')
-            llm = provider.make_llm(customizations={"model_name": constants.API_BACKEND_DEFAULT_MODEL, "temperature": 0}, use_defaults=True)
+            provider = self.provider_manager.get_provider_from_name("chat_openai")
+            llm = provider.make_llm(
+                customizations={
+                    "model_name": constants.API_BACKEND_DEFAULT_MODEL,
+                    "temperature": 0,
+                },
+                use_defaults=True,
+            )
         return provider, llm
 
     def gen_title_thread(self, conversation_id):

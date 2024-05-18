@@ -37,9 +37,7 @@ def tool_manager(test_config):
         "test_tool2": "test_tool2_path",
         "test_tool3": "test_tool3_path",
     }
-    tool_manager = ToolManager(
-        config=test_config, additional_tools=additional_tools
-    )
+    tool_manager = ToolManager(config=test_config, additional_tools=additional_tools)
     return tool_manager
 
 

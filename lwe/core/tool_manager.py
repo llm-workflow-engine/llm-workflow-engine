@@ -23,19 +23,26 @@ class ToolManager:
         self.additional_tools = additional_tools or {}
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_tool_dirs = (
-            self.config.args.tools_dir or util.get_environment_variable_list("tool_dir") or self.config.get("directories.tools")
+            self.config.args.tools_dir
+            or util.get_environment_variable_list("tool_dir")
+            or self.config.get("directories.tools")
         )
         # TODO: Remove after deprecation period -- BEGIN
         function_dir_env = util.get_environment_variable_list("function_dir")
         if function_dir_env:
-            util.print_status_message(False, "`LWE_FUNCTION_DIR` is deprecated, use `LWE_TOOL_DIR` instead")
+            util.print_status_message(
+                False, "`LWE_FUNCTION_DIR` is deprecated, use `LWE_TOOL_DIR` instead"
+            )
             self.deprecated_user_tool_dirs = function_dir_env
         else:
             self.deprecated_user_tool_dirs = []
             for dir in self.user_tool_dirs:
                 deprecated_dir = os.path.join(os.path.dirname(dir), "functions")
                 if os.path.exists(deprecated_dir):
-                    util.print_status_message(False, f"Directory `{deprecated_dir}` is deprecated, and will cease being scanned in a future release -- rename it to `{dir}`")
+                    util.print_status_message(
+                        False,
+                        f"Directory `{deprecated_dir}` is deprecated, and will cease being scanned in a future release -- rename it to `{dir}`",
+                    )
                     self.deprecated_user_tool_dirs.append(deprecated_dir)
         self.user_tool_dirs = self.user_tool_dirs + self.deprecated_user_tool_dirs
         # TODO: Remove after deprecation period -- END
@@ -59,9 +66,7 @@ class ToolManager:
                     self.log.debug(f"Processing directory: {tool_dir}")
                     filename = f"{tool_name}.py"
                     if filename in os.listdir(tool_dir):
-                        self.log.debug(
-                            f"Loading tool file {filename} from directory: {tool_dir}"
-                        )
+                        self.log.debug(f"Loading tool file {filename} from directory: {tool_dir}")
                         try:
                             filepath = os.path.join(tool_dir, filename)
                             with open(filepath, "r") as _:
@@ -79,9 +84,7 @@ class ToolManager:
             self.log.error(message)
             return False, None, message
         if tool_filepath is not None:
-            message = (
-                f"Successfully loaded tool file {tool_name} from directory: {tool_dir}"
-            )
+            message = f"Successfully loaded tool file {tool_name} from directory: {tool_dir}"
             self.log.debug(message)
             return True, tool_filepath, message
         return False, None, f"Tool {tool_name} not found"
@@ -143,9 +146,7 @@ class ToolManager:
                             )
                             self.tools[tool_name] = filepath
                 else:
-                    message = (
-                        f"Failed to load directory {tool_dir!r}: not found or not a directory"
-                    )
+                    message = f"Failed to load directory {tool_dir!r}: not found or not a directory"
                     self.log.error(message)
                     return False, None, message
             return True, self.tools, "Successfully loaded tools"
@@ -202,9 +203,7 @@ class ToolManager:
             return False, tool_instance, user_message
         try:
             output_data = tool_instance(**input_data)
-            self.log.info(
-                f"Tool {tool_name} executed successfully, output data: {output_data}"
-            )
+            self.log.info(f"Tool {tool_name} executed successfully, output data: {output_data}")
             return True, output_data, f"Tool {tool_name!r} executed successfully"
         except Exception as e:
             message = f"Error: Exception occurred while executing {tool_name}: {str(e)}"

@@ -32,9 +32,7 @@ def test_init(test_config, tool_manager, provider_manager):
     assert csm.provider_manager == provider_manager
 
 
-def test_store_conversation_messages_no_current_user(
-    test_config, tool_manager, provider_manager
-):
+def test_store_conversation_messages_no_current_user(test_config, tool_manager, provider_manager):
     csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
     success, response_content, message = csm.store_conversation_messages([], "response_content")
     assert success

@@ -61,9 +61,9 @@ def func_to_openai_tool_spec(name, func):
         "name": name,
         "description": func_description,
         "parameters": {"type": "object", "properties": params},
-        "required": argspec.args[1:-len_optional_params]
-        if len_optional_params
-        else argspec.args[1:],
+        "required": (
+            argspec.args[1:-len_optional_params] if len_optional_params else argspec.args[1:]
+        ),
     }
 
 

@@ -49,17 +49,19 @@ def test_successful_message_string_non_streaming_request(
 def test_successful_messages_list_non_streaming_request(
     test_config, tool_manager, provider_manager, preset_manager
 ):
-    system_message_content = 'test system message'
-    user_message_content = 'test user message'
-    assistant_message_content = 'test assistant response'
-    user_message_content_2 = 'test user message 2'
+    system_message_content = "test system message"
+    user_message_content = "test user message"
+    assistant_message_content = "test assistant response"
+    user_message_content_2 = "test user message 2"
     messages = [
-        {'role': 'system', 'content': system_message_content},
-        {'role': 'user', 'content': user_message_content},
-        {'role': 'assistant', 'content': assistant_message_content},
-        {'role': 'user', 'content': user_message_content_2},
+        {"role": "system", "content": system_message_content},
+        {"role": "user", "content": user_message_content},
+        {"role": "assistant", "content": assistant_message_content},
+        {"role": "user", "content": user_message_content_2},
     ]
-    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager, input=messages)
+    request = make_api_request(
+        test_config, tool_manager, provider_manager, preset_manager, input=messages
+    )
     request.set_request_llm()
     new_messages, messages = request.prepare_ask_request()
     success, response_obj, _user_message = request.call_llm(messages)
@@ -87,7 +89,9 @@ def test_execute_llm_non_streaming_failure_call_llm(
     assert str(user_message) == "Error"
 
 
-def test_execute_message_string_llm_streaming(test_config, tool_manager, provider_manager, preset_manager):
+def test_execute_message_string_llm_streaming(
+    test_config, tool_manager, provider_manager, preset_manager
+):
     request = make_api_request(
         test_config,
         tool_manager,
@@ -107,16 +111,18 @@ def test_execute_message_string_llm_streaming(test_config, tool_manager, provide
     assert new_messages[2]["role"] == "assistant"
 
 
-def test_execute_messages_list_llm_streaming(test_config, tool_manager, provider_manager, preset_manager):
-    system_message_content = 'test system message'
-    user_message_content = 'test user message'
-    assistant_message_content = 'test assistant response'
-    user_message_content_2 = 'test user message 2'
+def test_execute_messages_list_llm_streaming(
+    test_config, tool_manager, provider_manager, preset_manager
+):
+    system_message_content = "test system message"
+    user_message_content = "test user message"
+    assistant_message_content = "test assistant response"
+    user_message_content_2 = "test user message 2"
     messages = [
-        {'role': 'system', 'content': system_message_content},
-        {'role': 'user', 'content': user_message_content},
-        {'role': 'assistant', 'content': assistant_message_content},
-        {'role': 'user', 'content': user_message_content_2},
+        {"role": "system", "content": system_message_content},
+        {"role": "user", "content": user_message_content},
+        {"role": "assistant", "content": assistant_message_content},
+        {"role": "user", "content": user_message_content_2},
     ]
     request = make_api_request(
         test_config,
@@ -159,39 +165,37 @@ def test_execute_llm_streaming_failure_call_llm(
     assert str(user_message) == "Error"
 
 
-def test_post_response_full_tool_run(
-    test_config, tool_manager, provider_manager, preset_manager
-):
+def test_post_response_full_tool_run(test_config, tool_manager, provider_manager, preset_manager):
     preset = preset_manager.presets["test"]
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     tool_response_metadata = {
-        'name': tool_calls[0]['name'],
-        'id': tool_calls[0]['id'],
+        "name": tool_calls[0]["name"],
+        "id": tool_calls[0]["id"],
     }
     tool_response_data = {
-        'message': 'Repeated the word foo 2 times.',
-        'result': 'foo foo',
+        "message": "Repeated the word foo 2 times.",
+        "result": "foo foo",
     }
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
@@ -246,89 +250,73 @@ def test_request_with_tool_call_in_streaming_mode(
     preset = preset_manager.presets["test"]
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     tool_response_metadata = {
-        'name': tool_calls[0]['name'],
-        'id': tool_calls[0]['id'],
+        "name": tool_calls[0]["name"],
+        "id": tool_calls[0]["id"],
     }
     tool_response_data = {
-        'message': 'Repeated the word foo 2 times.',
-        'result': 'foo foo',
+        "message": "Repeated the word foo 2 times.",
+        "result": "foo foo",
     }
     tool_responses = [
         [
             AIMessageChunk(
-                content='',
+                content="",
                 additional_kwargs={
-                    'tool_calls': [
+                    "tool_calls": [
                         {
-                            'index': 0,
-                            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                            'function': {
-                                'arguments': '{"',
-                                'name': 'test_tool'
-                            },
-                            'type': 'function'
+                            "index": 0,
+                            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                            "function": {"arguments": '{"', "name": "test_tool"},
+                            "type": "function",
                         }
                     ]
                 },
-                id='run-01744f2e-ccf8-4768-9ba4-64eb6d0644de',
+                id="run-01744f2e-ccf8-4768-9ba4-64eb6d0644de",
                 invalid_tool_calls=[
                     {
-                        'name': 'test_tool',
-                        'args': '{"',
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'error': None
+                        "name": "test_tool",
+                        "args": '{"',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "error": None,
                     }
                 ],
                 tool_call_chunks=[
                     {
-                        'name': 'test_tool',
-                        'args': '{"',
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'index': 0
+                        "name": "test_tool",
+                        "args": '{"',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "index": 0,
                     }
-                ]
+                ],
             ),
             AIMessageChunk(
-                content='',
+                content="",
                 additional_kwargs={
-                    'tool_calls': [
+                    "tool_calls": [
                         {
-                            'index': 0,
-                            'id': None,
-                            'function': {
-                                'arguments': 'word":"foo", "repeats": 2}',
-                                'name': None
-                            },
-                            'type': None
+                            "index": 0,
+                            "id": None,
+                            "function": {"arguments": 'word":"foo", "repeats": 2}', "name": None},
+                            "type": None,
                         }
                     ]
                 },
-                id='run-01744f2e-ccf8-4768-9ba4-64eb6d0644de',
+                id="run-01744f2e-ccf8-4768-9ba4-64eb6d0644de",
                 invalid_tool_calls=[
-                    {
-                        'name': None,
-                        'args': 'word":"foo", "repeats": 2}',
-                        'id': None,
-                        'error': None
-                    }
+                    {"name": None, "args": 'word":"foo", "repeats": 2}', "id": None, "error": None}
                 ],
                 tool_call_chunks=[
-                    {
-                        'name': None,
-                        'args': 'word":"foo", "repeats": 2}',
-                        'id': None,
-                        'index': 0
-                    }
-                ]
+                    {"name": None, "args": 'word":"foo", "repeats": 2}', "id": None, "index": 0}
+                ],
             ),
         ],
         [
@@ -384,25 +372,25 @@ def test_post_response_return_on_tool_call(
     preset = preset_manager.presets["test"]
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
@@ -454,33 +442,33 @@ def test_post_response_return_on_tool_response(
     preset = preset_manager.presets["test"]
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     tool_response_metadata = {
-        'name': tool_calls[0]['name'],
-        'id': tool_calls[0]['id'],
+        "name": tool_calls[0]["name"],
+        "id": tool_calls[0]["id"],
     }
     tool_response_data = {
-        'message': 'Repeated the word foo 2 times.',
-        'result': 'foo foo',
+        "message": "Repeated the word foo 2 times.",
+        "result": "foo foo",
     }
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
@@ -536,33 +524,33 @@ def test_post_response_multiple_tool_calls_in_sequence(
     preset = preset_manager.presets["test"]
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     tool_response_metadata = {
-        'name': tool_calls[0]['name'],
-        'id': tool_calls[0]['id'],
+        "name": tool_calls[0]["name"],
+        "id": tool_calls[0]["id"],
     }
     tool_response_data = {
-        'message': 'Repeated the word foo 2 times.',
-        'result': 'foo foo',
+        "message": "Repeated the word foo 2 times.",
+        "result": "foo foo",
     }
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
@@ -572,13 +560,13 @@ def test_post_response_multiple_tool_calls_in_sequence(
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
@@ -641,53 +629,53 @@ def test_post_response_multiple_tool_calls_in_parallel(
     preset = preset_manager.presets["test"]
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9494',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9494",
         },
     ]
     tool_response_metadata_1 = {
-        'name': tool_calls[0]['name'],
-        'id': tool_calls[0]['id'],
+        "name": tool_calls[0]["name"],
+        "id": tool_calls[0]["id"],
     }
     tool_response_metadata_2 = {
-        'name': tool_calls[1]['name'],
-        'id': tool_calls[1]['id'],
+        "name": tool_calls[1]["name"],
+        "id": tool_calls[1]["id"],
     }
     tool_response_data = {
-        'message': 'Repeated the word foo 2 times.',
-        'result': 'foo foo',
+        "message": "Repeated the word foo 2 times.",
+        "result": "foo foo",
     }
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9494',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9494",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
@@ -746,33 +734,33 @@ def test_post_response_forced_tool_call(
     preset = preset_manager.presets["test"]
     tool_calls = [
         {
-            'name': 'test_tool',
-            'args': {
-                'word': 'foo',
-                'repeats': 2,
+            "name": "test_tool",
+            "args": {
+                "word": "foo",
+                "repeats": 2,
             },
-            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
         },
     ]
     tool_response_metadata = {
-        'name': tool_calls[0]['name'],
-        'id': tool_calls[0]['id'],
+        "name": tool_calls[0]["name"],
+        "id": tool_calls[0]["id"],
     }
     tool_response_data = {
-        'message': 'Repeated the word foo 2 times.',
-        'result': 'foo foo',
+        "message": "Repeated the word foo 2 times.",
+        "result": "foo foo",
     }
     tool_responses = [
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
@@ -783,13 +771,13 @@ def test_post_response_forced_tool_call(
         AIMessage(
             content="",
             additional_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     {
-                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9494',
-                        'type': 'function',
-                        'function': {
-                            'name': 'test_tool',
-                            'arguments': '{"word": "foo", "repeats": 2}',
+                        "id": "call_4MqKEs9ZWh0qTh0xCFcb9494",
+                        "type": "function",
+                        "function": {
+                            "name": "test_tool",
+                            "arguments": '{"word": "foo", "repeats": 2}',
                         },
                     },
                 ]
