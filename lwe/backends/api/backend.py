@@ -326,14 +326,6 @@ class ApiBackend:
             self.set_max_submission_tokens()
         return success, customizations, user_message
 
-    def compact_tools(self, customizations):
-        """Compact expanded tools to just their name."""
-        if "tools" in customizations:
-            customizations["tools"] = [
-                f["name"] for f in customizations["tools"]
-            ]
-        return customizations
-
     def make_preset(self):
         """Make preset from current provider customizations."""
         metadata, customizations = parse_llm_dict(self.provider.customizations)
