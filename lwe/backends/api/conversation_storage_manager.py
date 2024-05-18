@@ -1,7 +1,5 @@
 import threading
 
-from langchain_openai import ChatOpenAI
-
 from lwe.core.logger import Logger
 
 from lwe.core import constants
@@ -13,8 +11,6 @@ from lwe.backends.api.orm import Orm
 from lwe.backends.api.conversation import ConversationManager
 from lwe.backends.api.message import MessageManager
 from lwe.backends.api.request import ApiRequest
-
-from langchain.adapters.openai import convert_dict_to_message
 
 
 class ConversationStorageManager:
