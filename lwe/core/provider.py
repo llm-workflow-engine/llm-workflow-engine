@@ -1,6 +1,17 @@
 from abc import abstractmethod
 
-from langchain.adapters.openai import convert_dict_to_message
+from langchain.schema.messages import (
+    AIMessage,
+    HumanMessage,
+    BaseMessage,
+    SystemMessage,
+    ToolMessage,
+)
+
+from typing import (
+    Any,
+    Mapping,
+)
 
 from lwe.core.plugin import Plugin
 from lwe.core import constants
@@ -92,8 +103,9 @@ class ProviderBase(Plugin):
     def __init__(self, config=None):
         super().__init__(config)
 
+    @property
     def display_name(self):
-        return self.name[len(constants.PROVIDER_PREFIX) :]
+        return self.name[len(constants.PROVIDER_PREFIX):]
 
     @property
     def plugin_type(self):
@@ -246,7 +258,28 @@ class ProviderBase(Plugin):
         else:
             return False, None, f"Invalid model {model_name}"
 
-    def make_llm(self, customizations=None, use_defaults=False):
+    def transform_tools(self, tools):
+        if hasattr(self, 'transform_tool'):
+            self.log.debug(f"Transforming tools for provider {self.display_name}")
+            tools = [self.transform_tool(tool) for tool in tools]
+        return tools
+
+    def transform_openai_tool_spec_to_json_schema_spec(self, spec):
+        json_schema_spec = {
+            'description': spec['description'],
+            'title': spec['name'],
+            'properties': {}
+        }
+        for prop, details in spec['parameters']['properties'].items():
+            json_schema_spec['properties'][prop] = {
+                'description': details['description'],
+                'type': details['type'],
+                'title': prop,
+                'required': prop in spec['required']
+            }
+        return json_schema_spec
+
+    def make_llm(self, customizations=None, tools=None, tool_choice=None, use_defaults=False):
         customizations = customizations or {}
         final_customizations = (
             self.get_customizations(self.default_customizations())
@@ -254,8 +287,21 @@ class ProviderBase(Plugin):
             else self.get_customizations()
         )
         final_customizations.update(customizations)
+        for key in constants.PROVIDER_PRIVATE_CUSTOMIZATION_KEYS:
+            final_customizations.pop(key, None)
         llm_class = self.llm_factory()
         llm = llm_class(**final_customizations)
+        if tools:
+            self.log.debug(f"Provider {self.display_name} called with tools")
+            kwargs = {
+                'tools': self.transform_tools(tools),
+            }
+            if tool_choice:
+                kwargs['tool_choice'] = tool_choice
+            try:
+                llm = llm.bind_tools(**kwargs)
+            except NotImplementedError:
+                self.log.warning(f"Provider {self.display_name} does not support tools")
         return llm
 
     def prepare_messages_method(self):
@@ -270,7 +316,7 @@ class ProviderBase(Plugin):
         return "\n\n".join(messages)
 
     def prepare_messages_for_llm_chat(self, messages):
-        messages = [convert_dict_to_message(m) for m in messages]
+        messages = [self.convert_dict_to_message(m) for m in messages]
         return messages
 
     def prepare_messages_for_llm(self, messages):
@@ -284,6 +330,40 @@ class ProviderBase(Plugin):
         if model_name and model_name in models and "max_tokens" in models[model_name]:
             return models[model_name]["max_tokens"]
         return constants.OPEN_AI_DEFAULT_MAX_SUBMISSION_TOKENS
+
+    def convert_ai_dict_to_message(self, message: Mapping[str, Any]) -> AIMessage:
+        """Convert an LWE message dictionary to a LangChain AIMessage.
+
+        This default implementation supports a format suitable for OpenAI.
+        Other providers plugins may need to override this method depending
+        on the structure of their AI messages.
+        """
+        content = message.get("content", "")
+        additional_kwargs = {}
+        tool_calls = message.get("tool_calls", None)
+        if tool_calls:
+            additional_kwargs["tool_calls"] = tool_calls
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+
+    def convert_dict_to_message(self, message: Mapping[str, Any]) -> BaseMessage:
+        """Convert an LWE message dictionary to a LangChain message.
+        """
+        role = message.get("role")
+        content = message.get("content", "")
+        if role == "user":
+            return HumanMessage(content=content)
+        elif role == "assistant":
+            return self.convert_ai_dict_to_message(message)
+        elif role == "system":
+            return SystemMessage(content=content)
+        elif role == "tool":
+            return ToolMessage(
+                content=content,
+                tool_call_id=message.get("tool_call_id"),
+                name=message.get("name", None),
+            )
+        else:
+            raise ValueError(f"Unknown role: {role}")
 
 
 class Provider(ProviderBase):

@@ -41,7 +41,7 @@ def merge_argument_attrs_from_doc(attrs, param_name, parsed_doc):
     return attrs
 
 
-def func_to_openai_function_spec(name, func):
+def func_to_openai_tool_spec(name, func):
     argspec = inspect.getfullargspec(func)
     func_doc = inspect.getdoc(func)
     parsed_doc = parse_docstring(func_doc)
@@ -65,6 +65,36 @@ def func_to_openai_function_spec(name, func):
         if len_optional_params
         else argspec.args[1:],
     }
+
+
+# def func_to_json_schema_spec(name, func):
+#     argspec = inspect.getfullargspec(func)
+#     func_doc = inspect.getdoc(func)
+#     parsed_doc = parse_docstring(func_doc)
+#     func_description = parsed_doc.get("__description", "")
+#     params = argspec.annotations
+#     if "return" in params.keys():
+#         del params["return"]
+#     len_optional_params = len(argspec.defaults) if argspec.defaults else 0
+#     required_params = argspec.args[:-len_optional_params] if len_optional_params else argspec.args
+#     for param_name in argspec.args:
+#         if param_name == "self":
+#             continue
+#         params[param_name] = {
+#             "type": type_mapping(argspec.annotations[param_name]),
+#             "title": param_name,
+#             "description": param_name,
+#         }
+#         params[param_name] = merge_argument_attrs_from_doc(
+#             params[param_name], param_name, parsed_doc
+#         )
+#         if param_name in required_params:
+#             params[param_name]["required"] = True
+#     return {
+#         "title": name,
+#         "description": func_description,
+#         "properties": params,
+#     }
 
 
 def parse_rst(text: str) -> docutils.nodes.document:

@@ -6,7 +6,7 @@ from sqlalchemy.orm import object_mapper
 from lwe.backends.api.orm import Manager, Message
 from lwe.backends.api.conversation import ConversationManager
 
-JSON_MESSAGE_TYPES = ["function_call", "function_response"]
+JSON_MESSAGE_TYPES = ["tool_call", "tool_response"]
 
 
 class MessageManager(Manager):

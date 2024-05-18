@@ -6,13 +6,13 @@ from lwe.backends.api.conversation_storage_manager import ConversationStorageMan
 
 from ..base import (
     TEST_BASIC_MESSAGES,
-    TEST_FUNCTION_CALL_RESPONSE_MESSAGES,
+    TEST_TOOL_CALL_RESPONSE_MESSAGES,
 )
 
 
 def make_conversation_storage_manager(
     test_config,
-    function_manager,
+    tool_manager,
     provider_manager,
     current_user=False,
     conversation_id=None,
@@ -26,7 +26,7 @@ def make_conversation_storage_manager(
         current_user = manager.orm_add_user("test", None, None)
     return ConversationStorageManager(
         config=test_config,
-        function_manager=function_manager,
+        tool_manager=tool_manager,
         current_user=current_user,
         conversation_id=conversation_id,
         provider=provider_manager.get_provider_from_name("fake_llm"),
@@ -37,9 +37,9 @@ def make_conversation_storage_manager(
 
 
 def test_store_conversation_messages_new_messages_with_current_user(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
-    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
+    csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
     new_messages = copy.deepcopy(TEST_BASIC_MESSAGES)
     success, conversation, message = csm.store_conversation_messages(new_messages)
     assert success
@@ -51,11 +51,11 @@ def test_store_conversation_messages_new_messages_with_current_user(
     assert len(stored_messages) == len(new_messages)
 
 
-def test_store_conversation_messages_new_messages_with_function_call_with_current_user(
-    test_config, function_manager, provider_manager
+def test_store_conversation_messages_new_messages_with_tool_call_with_current_user(
+    test_config, tool_manager, provider_manager
 ):
-    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
-    new_messages = copy.deepcopy(TEST_FUNCTION_CALL_RESPONSE_MESSAGES)
+    csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
+    new_messages = copy.deepcopy(TEST_TOOL_CALL_RESPONSE_MESSAGES)
     success, conversation, message = csm.store_conversation_messages(new_messages)
     assert success
     assert conversation is not None
@@ -67,9 +67,9 @@ def test_store_conversation_messages_new_messages_with_function_call_with_curren
 
 
 def test_store_conversation_messages_existing_messages_with_current_user(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
-    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
+    csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
     new_messages = copy.deepcopy(TEST_BASIC_MESSAGES)
     success, conversation, message = csm.store_conversation_messages(new_messages)
     assert success
@@ -84,10 +84,10 @@ def test_store_conversation_messages_existing_messages_with_current_user(
 
 
 def test_store_conversation_messages_without_current_user(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=None
+        test_config, tool_manager, provider_manager, current_user=None
     )
     new_messages = copy.deepcopy(TEST_BASIC_MESSAGES)
     success, response_content, message = csm.store_conversation_messages(new_messages, "test")
@@ -96,8 +96,8 @@ def test_store_conversation_messages_without_current_user(
     assert message == "No current user, conversation not saved"
 
 
-def test_get_conversation_token_count(test_config, function_manager, provider_manager):
-    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
+def test_get_conversation_token_count(test_config, tool_manager, provider_manager):
+    csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
     new_messages = copy.deepcopy(TEST_BASIC_MESSAGES)
     success, conversation, message = csm.store_conversation_messages(new_messages)
     assert success
@@ -105,8 +105,8 @@ def test_get_conversation_token_count(test_config, function_manager, provider_ma
     assert tokens > 10
 
 
-def test_gen_title_with_in_memory_sqlite(test_config, function_manager, provider_manager):
-    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
+def test_gen_title_with_in_memory_sqlite(test_config, tool_manager, provider_manager):
+    csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
     new_messages = copy.deepcopy(TEST_BASIC_MESSAGES)
     success, conversation, message = csm.store_conversation_messages(new_messages)
     assert success

@@ -3,11 +3,7 @@ import os
 import tempfile
 
 from langchain.schema.messages import (
-    # SystemMessage,
-    # HumanMessage,
     AIMessage,
-    # FunctionMessage,
-    # AIMessageChunk,
 )
 
 from lwe.core import constants
@@ -41,7 +37,7 @@ TEST_BASIC_MESSAGES = [
     },
 ]
 
-TEST_FUNCTION_CALL_RESPONSE_MESSAGES = [
+TEST_TOOL_CALL_RESPONSE_MESSAGES = [
     {
         "message": "You are a helpful assistant.",
         "message_metadata": None,
@@ -57,17 +53,17 @@ TEST_FUNCTION_CALL_RESPONSE_MESSAGES = [
     {
         "message": {
             "arguments": {"repeats": 2, "word": "foo"},
-            "name": "test_function",
+            "name": "test_tool",
         },
         "message_metadata": None,
-        "message_type": "function_call",
+        "message_type": "tool_call",
         "role": "assistant",
     },
     {
         "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
-        "message_metadata": {"name": "test_function"},
-        "message_type": "function_response",
-        "role": "function",
+        "message_metadata": {"name": "test_tool"},
+        "message_type": "tool_response",
+        "role": "tool",
     },
     {
         "message": 'The word "foo" repeated twice is: "foo foo".',
@@ -202,7 +198,7 @@ def make_provider(provider_manager, provider_name="provider_fake_llm"):
 
 def make_api_request(
     test_config,
-    function_manager,
+    tool_manager,
     provider_manager,
     preset_manager,
     provider=None,
@@ -219,7 +215,7 @@ def make_api_request(
         config=test_config,
         provider=provider,
         provider_manager=provider_manager,
-        function_manager=function_manager,
+        tool_manager=tool_manager,
         input=input,
         preset=preset,
         preset_manager=preset_manager,

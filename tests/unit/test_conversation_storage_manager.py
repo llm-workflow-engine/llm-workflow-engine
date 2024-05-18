@@ -6,7 +6,7 @@ from lwe.backends.api.conversation_storage_manager import ConversationStorageMan
 
 def make_conversation_storage_manager(
     test_config,
-    function_manager,
+    tool_manager,
     provider_manager,
     current_user=None,
     conversation_id=None,
@@ -14,7 +14,7 @@ def make_conversation_storage_manager(
 ):
     return ConversationStorageManager(
         config=test_config,
-        function_manager=function_manager,
+        tool_manager=tool_manager,
         current_user=current_user,
         conversation_id=conversation_id,
         provider=provider_manager.get_provider_from_name("fake_llm"),
@@ -25,17 +25,17 @@ def make_conversation_storage_manager(
     )
 
 
-def test_init(test_config, function_manager, provider_manager):
-    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
+def test_init(test_config, tool_manager, provider_manager):
+    csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
     assert csm.config == test_config
-    assert csm.function_manager == function_manager
+    assert csm.tool_manager == tool_manager
     assert csm.provider_manager == provider_manager
 
 
 def test_store_conversation_messages_no_current_user(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
-    csm = make_conversation_storage_manager(test_config, function_manager, provider_manager)
+    csm = make_conversation_storage_manager(test_config, tool_manager, provider_manager)
     success, response_content, message = csm.store_conversation_messages([], "response_content")
     assert success
     assert response_content == "response_content"
@@ -43,10 +43,10 @@ def test_store_conversation_messages_no_current_user(
 
 
 def test_store_conversation_messages_with_current_user_no_title(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=Mock()
+        test_config, tool_manager, provider_manager, current_user=Mock()
     )
     conversation_mock = Mock()
     conversation_mock.title = None
@@ -63,10 +63,10 @@ def test_store_conversation_messages_with_current_user_no_title(
 
 
 def test_store_conversation_messages_with_current_user_with_title(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=Mock()
+        test_config, tool_manager, provider_manager, current_user=Mock()
     )
     conversation_mock = Mock()
     conversation_mock.title = "title"
@@ -83,10 +83,10 @@ def test_store_conversation_messages_with_current_user_with_title(
 
 
 def test_create_new_conversation_if_needed_existing_conversation(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=Mock(), conversation_id=1
+        test_config, tool_manager, provider_manager, current_user=Mock(), conversation_id=1
     )
     conversation_mock = Mock()
     csm.conversation.get_conversation = Mock(return_value=(True, conversation_mock, "Success"))
@@ -96,10 +96,10 @@ def test_create_new_conversation_if_needed_existing_conversation(
 
 
 def test_create_new_conversation_if_needed_new_conversation(
-    test_config, function_manager, provider_manager
+    test_config, tool_manager, provider_manager
 ):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=Mock()
+        test_config, tool_manager, provider_manager, current_user=Mock()
     )
     conversation_mock = Mock()
     conversation_mock.id = 1
@@ -109,9 +109,9 @@ def test_create_new_conversation_if_needed_new_conversation(
     assert csm.conversation.add_conversation.call_count == 1
 
 
-def test_add_new_messages_to_conversation(test_config, function_manager, provider_manager):
+def test_add_new_messages_to_conversation(test_config, tool_manager, provider_manager):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=Mock()
+        test_config, tool_manager, provider_manager, current_user=Mock()
     )
     message_mock = Mock()
     conversation_mock = Mock()
@@ -130,9 +130,9 @@ def test_add_new_messages_to_conversation(test_config, function_manager, provide
     assert message.startswith("Added new messages to conversation")
 
 
-def test_add_message(test_config, function_manager, provider_manager):
+def test_add_message(test_config, tool_manager, provider_manager):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=Mock(), conversation_id=1
+        test_config, tool_manager, provider_manager, current_user=Mock(), conversation_id=1
     )
     message_mock = Mock()
     success_message = "Message added successfully"
@@ -151,9 +151,9 @@ def test_add_message(test_config, function_manager, provider_manager):
     assert csm.message.add_message.call_args.args[7] == ""
 
 
-def test_get_conversation_token_count(test_config, function_manager, provider_manager):
+def test_get_conversation_token_count(test_config, tool_manager, provider_manager):
     csm = make_conversation_storage_manager(
-        test_config, function_manager, provider_manager, current_user=Mock(), conversation_id=1
+        test_config, tool_manager, provider_manager, current_user=Mock(), conversation_id=1
     )
     messages = [
         {"role": "user", "message": "Hello", "message_type": "content", "message_metadata": None}

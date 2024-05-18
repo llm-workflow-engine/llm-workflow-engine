@@ -44,26 +44,26 @@ lwe.core.error module
    :undoc-members:
    :show-inheritance:
 
-lwe.core.function module
+lwe.core.tool module
 ------------------------
 
-.. automodule:: lwe.core.function
+.. automodule:: lwe.core.tool
    :members:
    :undoc-members:
    :show-inheritance:
 
-lwe.core.function\_cache module
+lwe.core.tool\_cache module
 -------------------------------
 
-.. automodule:: lwe.core.function_cache
+.. automodule:: lwe.core.tool_cache
    :members:
    :undoc-members:
    :show-inheritance:
 
-lwe.core.function\_manager module
+lwe.core.tool\_manager module
 ---------------------------------
 
-.. automodule:: lwe.core.function_manager
+.. automodule:: lwe.core.tool_manager
    :members:
    :undoc-members:
    :show-inheritance:

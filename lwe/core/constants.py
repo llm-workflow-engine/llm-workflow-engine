@@ -4,6 +4,10 @@ import os
 import tempfile
 
 PROVIDER_PREFIX = "provider_"
+PROVIDER_PRIVATE_CUSTOMIZATION_KEYS = [
+    "tools",
+    "tool_choice",
+]
 
 # Backend speciifc constants
 API_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
@@ -60,9 +64,9 @@ DEFAULT_CONFIG = {
             "$CONFIG_DIR/workflows",
             "$CONFIG_DIR/profiles/$PROFILE/workflows",
         ],
-        "functions": [
-            "$CONFIG_DIR/functions",
-            "$CONFIG_DIR/profiles/$PROFILE/functions",
+        "tools": [
+            "$CONFIG_DIR/tools",
+            "$CONFIG_DIR/profiles/$PROFILE/tools",
         ],
     },
     "shell": {

@@ -8,7 +8,7 @@ from lwe.core.template_manager import TemplateManager
 from lwe.core.preset_manager import PresetManager
 from lwe.core.provider_manager import ProviderManager
 from lwe.core.workflow_manager import WorkflowManager
-from lwe.core.function_manager import FunctionManager
+from lwe.core.tool_manager import ToolManager
 from lwe.core.plugin_manager import PluginManager
 import lwe.core.constants as constants
 import lwe.core.util as util
@@ -48,6 +48,11 @@ class ApiBackend:
         self.message = MessageManager(config, self.orm)
         self.initialize_database(config)
         self.initialize_backend(config)
+        # TODO: Remove after deprecation period -- END
+        directories = self.config.get("directories")
+        if "functions" in directories:
+            util.print_status_message(False, "DEPRECATION WARNING: Configuration option `directories.functions` has been renamed to `directories.tools`.")
+        # TODO: Remove after deprecation period -- END
 
     def set_available_models(self):
         """
@@ -170,7 +175,7 @@ class ApiBackend:
         )
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.workflow_manager = WorkflowManager(self.config)
-        self.function_manager = FunctionManager(self.config)
+        self.tool_manager = ToolManager(self.config)
         self.workflow_manager.load_workflows()
         self.init_provider()
         self.set_available_models()
@@ -321,18 +326,10 @@ class ApiBackend:
             self.set_max_submission_tokens()
         return success, customizations, user_message
 
-    def compact_functions(self, customizations):
-        """Compact expanded functions to just their name."""
-        if "model_kwargs" in customizations and "functions" in customizations["model_kwargs"]:
-            customizations["model_kwargs"]["functions"] = [
-                f["name"] for f in customizations["model_kwargs"]["functions"]
-            ]
-        return customizations
-
     def make_preset(self):
         """Make preset from current provider customizations."""
         metadata, customizations = parse_llm_dict(self.provider.customizations)
-        customizations = self.compact_functions(customizations)
+        customizations = self.compact_tools(customizations)
         return metadata, customizations
 
     def activate_preset(self, preset_name):
@@ -448,7 +445,7 @@ class ApiBackend:
             self.init_provider()
         conversation_storage_manager = ConversationStorageManager(
             self.config,
-            self.function_manager,
+            self.tool_manager,
             self.current_user,
             self.conversation_id,
             self.provider,
@@ -700,7 +697,7 @@ class ApiBackend:
             self.config,
             self.provider,
             self.provider_manager,
-            self.function_manager,
+            self.tool_manager,
             input,
             self.active_preset,
             self.preset_manager,
@@ -720,7 +717,7 @@ class ApiBackend:
             title = request_overrides.get("title")
             conversation_storage_manager = ConversationStorageManager(
                 self.config,
-                self.function_manager,
+                self.tool_manager,
                 self.current_user,
                 self.conversation_id,
                 request.provider,

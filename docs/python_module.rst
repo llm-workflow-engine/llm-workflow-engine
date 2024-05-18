@@ -104,7 +104,7 @@ The ``ApiBackend`` class has full access to most of the features available in th
 * Templates
 * Presets
 * Workflows
-* OpenAI functions
+* Tools
 * etc...
 
 If you're a moderately skilled Python programmer, you should be able to figure out how to

@@ -1,20 +1,16 @@
 import threading
 
-from langchain_openai import ChatOpenAI
-
 from lwe.core.logger import Logger
 
 from lwe.core import constants
 import lwe.core.util as util
-from lwe.core.function_cache import FunctionCache
+from lwe.core.tool_cache import ToolCache
 from lwe.core.token_manager import TokenManager
 
 from lwe.backends.api.orm import Orm
 from lwe.backends.api.conversation import ConversationManager
 from lwe.backends.api.message import MessageManager
 from lwe.backends.api.request import ApiRequest
-
-from langchain.adapters.openai import convert_dict_to_message
 
 
 class ConversationStorageManager:
@@ -23,7 +19,7 @@ class ConversationStorageManager:
     def __init__(
         self,
         config,
-        function_manager,
+        tool_manager,
         current_user=None,
         conversation_id=None,
         provider=None,
@@ -34,16 +30,16 @@ class ConversationStorageManager:
     ):
         self.config = config
         self.log = Logger(self.__class__.__name__, self.config)
-        self.function_manager = function_manager
+        self.tool_manager = tool_manager
         self.current_user = current_user
         self.conversation_id = conversation_id
         self.provider = provider
         self.model_name = model_name or constants.API_BACKEND_DEFAULT_MODEL
         self.preset_name = preset_name or ""
         self.provider_manager = provider_manager
-        self.function_cache = FunctionCache(self.config, self.function_manager)
+        self.tool_cache = ToolCache(self.config, self.tool_manager)
         self.token_manager = TokenManager(
-            self.config, self.provider, self.model_name, self.function_cache
+            self.config, self.provider, self.model_name, self.tool_cache
         )
         self.orm = orm or Orm(self.config)
         self.conversation = ConversationManager(config, self.orm)
@@ -156,6 +152,24 @@ class ConversationStorageManager:
             self.preset_name,
         )
 
+    def get_title_provider_llm(self):
+        """
+        Get the title provider and LLM.
+
+        :returns: provider, llm
+        :rtype: tuple
+        """
+        title_provider_name = self.config.get("backend_options.title_generation.provider")
+        if title_provider_name:
+            provider = self.provider_manager.get_provider_from_name(title_provider_name)
+            if not provider:
+                raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
+            llm = provider.make_llm()
+        else:
+            provider = self.provider_manager.get_provider_from_name('chat_openai')
+            llm = provider.make_llm(customizations={"model_name": constants.API_BACKEND_DEFAULT_MODEL, "temperature": 0}, use_defaults=True)
+        return provider, llm
+
     def gen_title_thread(self, conversation_id):
         """
         Generate the title for a conversation in a separate thread.
@@ -181,21 +195,14 @@ class ConversationStorageManager:
                 "%s: %s" % (constants.DEFAULT_TITLE_GENERATION_USER_PROMPT, user_content),
             ),
         ]
+        provider, llm = self.get_title_provider_llm()
         new_messages = util.transform_messages_to_chat_messages(new_messages)
-        new_messages = [convert_dict_to_message(m) for m in new_messages]
-        title_provider_name = self.config.get("backend_options.title_generation.provider")
-        if title_provider_name:
-            provider = self.provider_manager.get_provider_from_name(title_provider_name)
-            if not provider:
-                raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
-            llm = provider.make_llm()
-        else:
-            llm = ChatOpenAI(model_name=constants.API_BACKEND_DEFAULT_MODEL, temperature=0)
+        new_messages = [provider.convert_dict_to_message(m) for m in new_messages]
         try:
             result = llm.invoke(new_messages)
             request = ApiRequest(orm=self.orm, config=self.config)
-            title = request.extract_message_content(result)["message"]
-            title = title.replace("\n", ", ").strip().strip("'\"")
+            message, _tool_calls = request.extract_message_content(result)
+            title = message["message"].replace("\n", ", ").strip().strip("'\"")
             self.log.info(f"Title generated for conversation {conversation_id}: {title}")
             success, conversation, user_message = conversation_manager.edit_conversation_title(
                 conversation_id, title

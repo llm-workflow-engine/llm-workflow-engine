@@ -97,6 +97,8 @@ class ProviderChatOpenai(Provider):
             "max_retries": PresetValue(int, 1, 10),
             "n": PresetValue(int, 1, 10),
             "max_tokens": PresetValue(int, include_none=True),
+            "tools": None,
+            "tool_choice": None,
             "model_kwargs": {
                 "top_p": PresetValue(float, min_value=0.0, max_value=1.0),
                 "presence_penalty": PresetValue(float, min_value=-2.0, max_value=2.0),
@@ -107,7 +109,5 @@ class ProviderChatOpenai(Provider):
                 "response_format": dict,
                 "stop": PresetValue(str, include_none=True),
                 "user": PresetValue(str),
-                "functions": None,
-                "function_call": None,
             },
         }
