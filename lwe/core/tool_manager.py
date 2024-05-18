@@ -207,7 +207,7 @@ class ToolManager:
             )
             return True, output_data, f"Tool {tool_name!r} executed successfully"
         except Exception as e:
-            message = f"Error: Exception occurred while executing {tool_path}: {str(e)}"
+            message = f"Error: Exception occurred while executing {tool_name}: {str(e)}"
             self.log.error(message)
             return False, None, message
 
