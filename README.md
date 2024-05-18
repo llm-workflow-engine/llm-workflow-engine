@@ -61,7 +61,7 @@ ChatGPT Wrapper was an amazing tool for its time, thank you to its original crea
 
 🔄[**Build workflows**](https://llm-workflow-engine.readthedocs.io/en/latest/workflows.html). Easily integrate calls to an LLM into larger workflows via Ansible Playbooks
 
-𝑓(𝑥) [**Execute functions**](https://llm-workflow-engine.readthedocs.io/en/latest/functions.html). Support for [OpenAI functions](https://platform.openai.com/docs/guides/gpt/function-calling)
+🔧 [**Tool use**](https://llm-workflow-engine.readthedocs.io/en/latest/tools.html). (for supported providers)
 
 🐳 **Docker image**. LWE is also available as a docker image. (experimental)
 
