@@ -25,7 +25,7 @@ At its heart, LWE has four main components:
     * Configure LLMs across different providers
     * Customize model attributes (temperature, etc.)
     * Save/reload existing configurations
-    * Attach and tools to models (supported providers)
+    * Use tools with models (Python functions, with supported providers)
 #. **Prompt templates:**
     * Design/save new prompts
     * Include/pass variables to prompts during execution
