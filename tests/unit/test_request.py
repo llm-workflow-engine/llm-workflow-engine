@@ -1226,11 +1226,11 @@ def test_execute_tool_call_failure(
     request.run_tool.assert_called_once_with(tool_call["name"], tool_call["args"])
 
 
-def test_build_tool_response_message(
+def test_build_tool_response_message_no_id(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
+    tool_call = {"name": "test_tool", "args": {"word": "foo", "repeats": 2}}
     tool_response = {"message": "Repeated the word foo 2 times.", "result": "foo foo"}
     result = request.build_tool_response_message(tool_call, tool_response)
     assert result == {
@@ -1238,6 +1238,21 @@ def test_build_tool_response_message(
         "message": tool_response,
         "message_type": "tool_response",
         "message_metadata": {"name": tool_call["name"]},
+    }
+
+
+def test_build_tool_response_message_with_id(
+    test_config, tool_manager, provider_manager, preset_manager
+):
+    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    tool_call = {"name": "test_tool", "args": {"word": "foo", "repeats": 2}, "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"}
+    tool_response = {"message": "Repeated the word foo 2 times.", "result": "foo foo"}
+    result = request.build_tool_response_message(tool_call, tool_response)
+    assert result == {
+        "role": "tool",
+        "message": tool_response,
+        "message_type": "tool_response",
+        "message_metadata": {"name": tool_call["name"], "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"},
     }
 
 
@@ -1421,7 +1436,7 @@ def test_check_return_on_tool_response_not_set(
         copy.deepcopy(TEST_TOOL_CALL_RESPONSE_MESSAGES)
     )
     assert tool_response is None
-    assert len(new_messages) == len(TEST_TOOL_CALL_RESPONSE_MESSAGES)
+    assert new_messages == TEST_TOOL_CALL_RESPONSE_MESSAGES
 
 
 def test_check_return_on_tool_response_true(
