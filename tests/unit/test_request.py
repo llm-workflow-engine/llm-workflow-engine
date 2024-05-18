@@ -1,18 +1,19 @@
 import copy
 import pytest
 
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from langchain.schema.messages import (
     SystemMessage,
     HumanMessage,
     AIMessage,
-    ToolMessage,
     AIMessageChunk,
 )
 
 from lwe.core import constants
+from lwe.core import util
 from lwe.core.token_manager import TokenManager
+from lwe.backends.api.request import ApiRequest  # noqa: F401
 from ..base import (
     clean_output,
     make_provider,
@@ -800,8 +801,37 @@ def test_iterate_streaming_response_interrupted_tool_call(
     request.llm.stream = Mock(
         return_value=[
             AIMessageChunk(
-                content="",
-                additional_kwargs={"tool_call": {"name": "test_tool", "arguments": ""}},
+                content='',
+                additional_kwargs={
+                    'tool_calls': [
+                        {
+                            'index': 0,
+                            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                            'function': {
+                                'arguments': '{"',
+                                'name': 'test_tool'
+                            },
+                            'type': 'function'
+                        }
+                    ]
+                },
+                id='run-01744f2e-ccf8-4768-9ba4-64eb6d0644de',
+                invalid_tool_calls=[
+                    {
+                        'name': 'test_tool',
+                        'args': '{"',
+                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                        'error': None
+                    }
+                ],
+                tool_call_chunks=[
+                    {
+                        'name': 'test_tool',
+                        'args': '{"',
+                        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                        'index': 0
+                    }
+                ]
             ),
         ]
     )
@@ -878,16 +908,26 @@ def test_post_response_tool_call(
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     response_obj = Mock()
     new_messages = []
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        },
+    ]
     response_message = {
         "message_type": "tool_call",
-        "message": {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}},
+        "message": tool_calls,
     }
-    request.extract_message_content = Mock(return_value=response_message)
-    request.handle_tool_call = Mock(return_value=("response", new_messages))
+    request.extract_message_content = Mock(return_value=(response_message, tool_calls))
+    request.handle_tool_calls = Mock(return_value=("response", new_messages))
     result = request.post_response(response_obj, new_messages)
     assert result == ("response", new_messages)
     request.extract_message_content.assert_called_once_with(response_obj)
-    request.handle_tool_call.assert_called_once_with(response_message, new_messages)
+    request.handle_tool_calls.assert_called_once_with(tool_calls, new_messages)
 
 
 def test_post_response_non_tool(
@@ -896,8 +936,9 @@ def test_post_response_non_tool(
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     response_obj = Mock()
     new_messages = []
+    tool_calls = []
     response_message = {"message_type": "content", "message": "Hello, world!"}
-    request.extract_message_content = Mock(return_value=response_message)
+    request.extract_message_content = Mock(return_value=(response_message, tool_calls))
     request.handle_non_tool_response = Mock(return_value=("response", new_messages))
     result = request.post_response(response_obj, new_messages)
     assert result == ("response", new_messages)
@@ -905,42 +946,55 @@ def test_post_response_non_tool(
     request.handle_non_tool_response.assert_called_once_with(response_message, new_messages)
 
 
-def test_handle_tool_call_return(
+def test_handle_tool_calls_return(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    response_message = {
-        "message_type": "tool_call",
-        "message": {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}},
-    }
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        },
+    ]
     new_messages = []
     request.log_tool_call = Mock()
     request.should_return_on_tool_call = Mock(return_value=True)
-    request.build_tool_definition = Mock(return_value="tool_definition")
-    result = request.handle_tool_call(response_message, new_messages)
-    assert result == ("tool_definition", new_messages)
-    request.log_tool_call.assert_called_once_with(response_message["message"])
+    request.execute_tool_calls = Mock()
+    result = request.handle_tool_calls(tool_calls, new_messages)
+    assert result == (tool_calls, new_messages)
+    request.log_tool_call.assert_called_once_with(tool_calls[0])
     request.should_return_on_tool_call.assert_called_once()
-    request.build_tool_definition.assert_called_once_with(response_message["message"])
+    request.execute_tool_calls.assert_not_called()
 
 
-def test_handle_tool_call_execute(
+def test_handle_tool_calls_execute(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    response_message = {
-        "message_type": "tool_call",
-        "message": {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}},
-    }
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        },
+    ]
+    response = "response"
     new_messages = []
     request.log_tool_call = Mock()
     request.should_return_on_tool_call = Mock(return_value=False)
-    request.execute_tool_call = Mock(return_value=("tool_response", new_messages))
-    result = request.handle_tool_call(response_message, new_messages)
-    assert result == ("tool_response", new_messages)
-    request.log_tool_call.assert_called_once_with(response_message["message"])
+    request.execute_tool_calls = Mock(return_value=(response, new_messages))
+    result = request.handle_tool_calls(tool_calls, new_messages)
+    assert result == (response, new_messages)
+    request.log_tool_call.assert_called_once_with(tool_calls[0])
     request.should_return_on_tool_call.assert_called_once()
-    request.execute_tool_call.assert_called_once_with(response_message["message"], new_messages)
+    request.execute_tool_calls.assert_called_once_with(tool_calls, new_messages)
 
 
 def test_handle_non_tool_response_return(
@@ -973,138 +1027,203 @@ def test_log_tool_call_return_only_false(
     test_config, tool_manager, provider_manager, preset_manager, capsys
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
+    tool_call = {
+        'name': 'test_tool',
+        'args': {
+            'word': 'foo',
+            'repeats': 2,
+        },
+        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+    }
+    util.print_markdown = Mock()
     request.return_only = False
     request.log_tool_call(tool_call)
-    captured = capsys.readouterr()
-    assert "AI requested tool call" in captured.out
+    util.print_markdown.assert_called_once()
 
 
 def test_log_tool_call_return_only_true(
     test_config, tool_manager, provider_manager, preset_manager, capsys
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
+    tool_call = {
+        'name': 'test_tool',
+        'args': {
+            'word': 'foo',
+            'repeats': 2,
+        },
+        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+    }
+    util.print_markdown = Mock()
     request.return_only = True
     request.log_tool_call(tool_call)
-    captured = capsys.readouterr()
-    assert captured.out == ""
+    util.print_markdown.assert_not_called()
 
 
-def test_build_tool_definition(test_config, tool_manager, provider_manager, preset_manager):
-    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
-    result = request.build_tool_definition(tool_call)
-    assert result["name"] == tool_call["name"]
-    assert result["arguments"] == tool_call["arguments"]
-
-
-def test_execute_tool_call_success(
+def test_execute_tool_calls_success(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        }
+    ]
     new_messages = []
     tool_response = {
         "result": "foo foo",
     }
-    request.run_tool = Mock(return_value=(True, tool_response, "Tool call succeeded"))
     tool_response_message = (
         {
             "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
-            "message_metadata": {"name": "test_tool"},
+            "message_metadata": {"name": "test_tool", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"},
             "message_type": "tool_response",
             "role": "tool",
         },
     )
+    request.execute_tool_call = Mock(return_value=tool_response)
     request.build_tool_response_message = Mock(return_value=tool_response_message)
     request.check_forced_tool = Mock(return_value=False)
     request.call_llm = Mock(return_value=(True, "test response", "LLM call succeeded"))
     request.post_response = Mock(return_value=("test response", new_messages))
-    result = request.execute_tool_call(tool_call, new_messages)
+    result = request.execute_tool_calls(tool_calls, new_messages)
     assert result == ("test response", new_messages)
-    request.run_tool.assert_called_once_with(tool_call["name"], tool_call["arguments"])
+    request.execute_tool_call.assert_called_once_with(tool_calls[0])
     request.build_tool_response_message.assert_called_once_with(
-        tool_call, tool_response
+        tool_calls[0], tool_response
     )
     request.check_forced_tool.assert_called_once()
     request.call_llm.assert_called_once_with(new_messages)
     request.post_response.assert_called_once_with("test response", new_messages)
 
 
-def test_execute_tool_call_forced(
+def test_execute_tool_calls_forced(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
-
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        }
+    ]
+    new_messages = []
     tool_response = {
         "result": "foo foo",
     }
     tool_response_message = (
         {
             "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
-            "message_metadata": {"name": "test_tool"},
+            "message_metadata": {"name": "test_tool", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"},
             "message_type": "tool_response",
             "role": "tool",
         },
     )
-    new_messages = []
-    request.run_tool = Mock(return_value=(True, tool_response, "Tool call succeeded"))
+    request.execute_tool_call = Mock(return_value=tool_response)
     request.build_tool_response_message = Mock(return_value=tool_response_message)
     request.check_forced_tool = Mock(return_value=True)
-    result = request.execute_tool_call(tool_call, new_messages)
+    request.call_llm = Mock()
+    request.post_response = Mock()
+    result = request.execute_tool_calls(tool_calls, new_messages)
     assert result == (tool_response, new_messages)
-    request.run_tool.assert_called_once_with(tool_call["name"], tool_call["arguments"])
+    request.execute_tool_call.assert_called_once_with(tool_calls[0])
     request.build_tool_response_message.assert_called_once_with(
-        tool_call, tool_response
+        tool_calls[0], tool_response
     )
     request.check_forced_tool.assert_called_once()
+    request.call_llm.assert_not_called()
+    request.post_response.assert_not_called()
 
 
-def test_execute_tool_call_llm_failure(
+def test_execute_tool_calls_llm_failure(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        }
+    ]
+    new_messages = []
     tool_response = {
         "result": "foo foo",
     }
     tool_response_message = (
         {
             "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
-            "message_metadata": {"name": "test_tool"},
+            "message_metadata": {"name": "test_tool", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"},
             "message_type": "tool_response",
             "role": "tool",
         },
     )
-    new_messages = []
-    request.run_tool = Mock(return_value=(True, tool_response, "Tool call succeeded"))
+    request.execute_tool_call = Mock(return_value=tool_response)
     request.build_tool_response_message = Mock(return_value=tool_response_message)
     request.check_forced_tool = Mock(return_value=False)
     request.call_llm = Mock(return_value=(False, None, "LLM call failed"))
+    request.post_response = Mock()
     with pytest.raises(ValueError) as excinfo:
-        request.execute_tool_call(tool_call, new_messages)
+        request.execute_tool_calls(tool_calls, new_messages)
     assert "LLM call failed" in str(excinfo.value)
-    request.run_tool.assert_called_once_with(tool_call["name"], tool_call["arguments"])
+    request.execute_tool_call.assert_called_once_with(tool_calls[0])
     request.build_tool_response_message.assert_called_once_with(
-        tool_call, tool_response
+        tool_calls[0], tool_response
     )
     request.check_forced_tool.assert_called_once()
     request.call_llm.assert_called_once_with(new_messages)
+    request.post_response.assert_not_called()
+
+
+def test_execute_tool_call_success(
+    test_config, tool_manager, provider_manager, preset_manager
+):
+    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    tool_call = {
+        'name': 'test_tool',
+        'args': {
+            'word': 'foo',
+            'repeats': 2,
+        },
+        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+    }
+    tool_response = {
+        "result": "foo foo",
+    }
+    request.run_tool = Mock(return_value=(True, tool_response, "Tool executed successfully"))
+    result = request.execute_tool_call(tool_call)
+    assert result == tool_response
+    request.run_tool.assert_called_once_with(tool_call["name"], tool_call["args"])
 
 
 def test_execute_tool_call_failure(
     test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_call = {"name": "test_tool", "arguments": {"word": "foo", "repeats": 2}}
-    new_messages = []
+    tool_call = {
+        'name': 'test_tool',
+        'args': {
+            'word': 'foo',
+            'repeats': 2,
+        },
+        'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+    }
     request.run_tool = Mock(return_value=(False, None, "Tool call failed"))
     with pytest.raises(ValueError) as excinfo:
-        request.execute_tool_call(tool_call, new_messages)
+        request.execute_tool_call(tool_call)
     assert "Tool call failed" in str(excinfo.value)
-    request.run_tool.assert_called_once_with(tool_call["name"], tool_call["arguments"])
+    request.run_tool.assert_called_once_with(tool_call["name"], tool_call["args"])
 
 
 def test_build_tool_response_message(
@@ -1122,43 +1241,137 @@ def test_build_tool_response_message(
     }
 
 
-def test_extract_message_content_tool_call(
-    test_config, tool_manager, provider_manager, preset_manager
+@patch('lwe.backends.api.request.convert_message_to_dict')
+def test_extract_message_content_no_tool_calls(
+    mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    content = "test"
+    message_dict = {
+        "role": "assistant",
+        "content": content,
+    }
+    ai_message = AIMessage(
+        content=content,
+        additional_kwargs={},
+        tool_calls=[],
+    )
+    mock_convert_message_to_dict.return_value = message_dict
+    request.message = Mock()
+    request.message.build_message = Mock(return_value=message_dict)
+    message_result, tool_calls_result = request.extract_message_content(ai_message)
+    assert message_result == message_dict
+    assert tool_calls_result == []
+    mock_convert_message_to_dict.assert_called_once_with(ai_message)
+    request.message.build_message.assert_called_once_with(message_dict['role'], message_dict['content'], "content")
+
+
+@patch('lwe.backends.api.request.convert_message_to_dict')
+def test_extract_message_content_tool_call(
+    mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
+):
+    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': {
+                'word': 'foo',
+                'repeats': 2,
+            },
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+        },
+    ]
+    message_dict = {
+        "role": "assistant",
+        "content": "",
+    }
+    message = {
+        "role": "assistant",
+        "message": tool_calls,
+        "message_type": "tool_call",
+    }
     ai_message = AIMessage(
         content="",
         additional_kwargs={
-            "tool_call": {"name": "test_tool", "arguments": '{\n  "one": "test"\n}'}
+            'tool_calls': [
+                {
+                    'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+                    'type': 'function',
+                    'function': {
+                        'name': 'test_tool',
+                        'arguments': '{"word": "foo", "repeats": 2}',
+                    },
+                },
+            ]
         },
+        tool_calls=tool_calls,
     )
-    message = request.extract_message_content(ai_message)
-    assert message["role"] == "assistant"
-    assert message["message"]["name"] == "test_tool"
-    assert message["message_type"] == "tool_call"
+    mock_convert_message_to_dict.return_value = message_dict
+    request.message = Mock()
+    request.message.build_message = Mock(return_value=message)
+    message_result, tool_calls_result = request.extract_message_content(ai_message)
+    assert message_result == message
+    assert tool_calls_result == tool_calls
+    mock_convert_message_to_dict.assert_called_once_with(ai_message)
+    request.message.build_message.assert_called_once_with(message_dict['role'], tool_calls, "tool_call")
 
 
-def test_extract_message_content_tool_response(
-    test_config, tool_manager, provider_manager, preset_manager
+@patch('lwe.backends.api.request.convert_message_to_dict')
+def test_extract_message_content_invalid_tool_calls(
+    mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    tool_response = '{"result": "test"}'
-    ai_message = ToolMessage(content=tool_response, name="test_tool")
-    message = request.extract_message_content(ai_message)
-    assert message["role"] == "tool"
-    assert message["message"] == tool_response
-    assert message["message_type"] == "tool_response"
+    tool_calls = [
+        {
+            'index': 0,
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            'function': {
+                'arguments': '{"',
+                'name': 'test_tool'
+            },
+            'type': 'function'
+        }
+    ]
+    invalid_tool_calls = [
+        {
+            'name': 'test_tool',
+            'args': '',
+            'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
+            'error': 'Some error occurred'
+        }
+    ]
+    ai_message = AIMessage(
+        content="",
+        additional_kwargs={
+            'tool_calls': tool_calls,
+        },
+        id='run-01744f2e-ccf8-4768-9ba4-64eb6d0644de',
+        invalid_tool_calls=invalid_tool_calls,
+    )
+    with pytest.raises(RuntimeError) as excinfo:
+        request.extract_message_content(ai_message)
+    assert "LLM tool call failed:" in str(excinfo.value)
 
 
+@patch('lwe.backends.api.request.convert_message_to_dict')
 def test_extract_message_content_string(
-    test_config, tool_manager, provider_manager, preset_manager
+    mock_convert_message_to_dict, test_config, tool_manager, provider_manager, preset_manager
 ):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    tool_calls = []
     string_message = "test_message"
-    message = request.extract_message_content(string_message)
-    assert message["role"] == "assistant"
-    assert message["message"] == string_message
-    assert message["message_type"] == "content"
+    message = {
+        "role": "assistant",
+        "message": string_message,
+        "message_type": "content",
+    }
+    request.message = Mock()
+    request.message.build_message = Mock(return_value=message)
+    message_result, tool_calls_result = request.extract_message_content(string_message)
+    assert message_result == message
+    assert tool_calls_result == tool_calls
+    mock_convert_message_to_dict.assert_not_called()
+    request.message.build_message.assert_called_once_with("assistant", string_message)
 
 
 def test_should_return_on_tool_call(
@@ -1169,9 +1382,33 @@ def test_should_return_on_tool_call(
     assert request.should_return_on_tool_call() is True
 
 
-def test_check_forced_tool(test_config, tool_manager, provider_manager, preset_manager):
+def test_check_forced_tool_no_tool_choice(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
-    request.preset = ({}, {"model_kwargs": {"tool_call": {}}})
+    request.preset = ({}, {})
+    assert request.check_forced_tool() is False
+
+
+def test_check_forced_tool_auto(test_config, tool_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    request.preset = ({}, {"tool_choice": "auto"})
+    assert request.check_forced_tool() is False
+
+
+def test_check_forced_tool_none(test_config, tool_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    request.preset = ({}, {"tool_choice": "none"})
+    assert request.check_forced_tool() is False
+
+
+def test_check_forced_tool_other_string(test_config, tool_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    request.preset = ({}, {"tool_choice": "any"})
+    assert request.check_forced_tool() is True
+
+
+def test_check_forced_tool_non_string(test_config, tool_manager, provider_manager, preset_manager):
+    request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
+    request.preset = ({}, {"tool_choice": {'name': 'test_tool'}})
     assert request.check_forced_tool() is True
 
 
