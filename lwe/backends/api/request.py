@@ -203,6 +203,12 @@ class ApiRequest:
         :returns: customizations, tools, tool_choice
         :rtype: tuple
         """
+        # TODO: Remove after deprecation period -- BEGIN
+        if "model_kwargs" in customizations and "functions" in customizations['model_kwargs']:
+            raise RuntimeError(
+                "BREAKING CHNANGE: The configuration of functions in presets has changed to a `tools` configuration, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/345 for migration instructions"
+            )
+        # TODO: Remove after deprecation period -- END
         customizations = copy.deepcopy(customizations)
         self.tool_cache = ToolCache(self.config, self.tool_manager, customizations)
         self.tool_cache.add_message_tools(self.old_messages)

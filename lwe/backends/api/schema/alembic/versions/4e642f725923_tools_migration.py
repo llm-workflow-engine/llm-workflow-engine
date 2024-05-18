@@ -62,13 +62,19 @@ def print_directory_deprecation_warnings():
                 print_deprectated_functions_dir_migration_path(functions_dir)
 
 
+def print_breaking_changes():
+    print()
+    print()
+    util.print_status_message(False, "BREAKING CHANGES:")
+    util.print_status_message(False, "The configuration of functions in presets has changed to a `tools` configuration, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/345 for migration instructions.")
+
+
 def print_deprecation_warnings():
     print()
     print()
     util.print_status_message(False, "DEPRECATION WARNINGS:")
     util.print_status_message(False, "Environment variable `LWE_FUNCTION_DIR` has been renamed to `LWE_TOOL_DIR`.")
     util.print_status_message(False, "Configuration variable `directories.functions` has been renamed to `directories.tools`.")
-    util.print_status_message(False, "The configuration of functions in presets has changed to a `tools` configuration, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/345 for migration instructions.")
     print_directory_deprecation_warnings()
 
 
@@ -105,6 +111,7 @@ def upgrade_function_calls_to_tool_calls():
 
 def execute_upgrade():
     upgrade_function_calls_to_tool_calls()
+    print_breaking_changes()
     print_deprecation_warnings()
 
 
