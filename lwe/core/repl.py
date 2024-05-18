@@ -704,10 +704,10 @@ class Repl:
                     print("\n")
                     style = "bold red3" if part["role"] == "user" else "bold green3"
                     util.print_markdown(part["display_role"], style=style)
-                    if type(part["message"]) is str:
-                        message = part["message"]
-                    else:
+                    if type(part["message"]) is dict or type(part["message"]) is list:
                         message = f"```json\n{json.dumps(part['message'], indent=2)}\n```"
+                    else:
+                        message = part["message"]
                     util.print_markdown(message)
             else:
                 return False, conversation_data, "Could not load chat content"
