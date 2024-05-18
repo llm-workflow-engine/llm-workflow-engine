@@ -262,14 +262,6 @@ def test_api_backend_with_tool_call_and_return_on_tool_call_creates_valid_conver
             'id': 'call_4MqKEs9ZWh0qTh0xCFcb9IOI',
         },
     ]
-    tool_response_metadata = {
-        'name': tool_calls[0]['name'],
-        'id': tool_calls[0]['id'],
-    }
-    tool_response_data = {
-        'message': 'Repeated the word foo 2 times.',
-        'result': 'foo foo',
-    }
     tool_responses = [
         AIMessage(
             content="",
