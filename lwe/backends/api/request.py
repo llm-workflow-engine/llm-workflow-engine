@@ -383,11 +383,11 @@ class ApiRequest:
         new_messages.append(response_message)
 
         if tool_calls:
-            return self.handle_tool_calls(response_message, new_messages, tool_calls)
+            return self.handle_tool_calls(tool_calls, new_messages)
 
         return self.handle_non_tool_response(response_message, new_messages)
 
-    def handle_tool_calls(self, response_message, new_messages, tool_calls):
+    def handle_tool_calls(self, tool_calls, new_messages):
         for tool_call in tool_calls:
             self.log_tool_call(tool_call)
 
