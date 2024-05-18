@@ -258,6 +258,27 @@ class ProviderBase(Plugin):
         else:
             return False, None, f"Invalid model {model_name}"
 
+    def transform_tools(self, tools):
+        if hasattr(self, 'transform_tool'):
+            self.log.debug(f"Transforming tools for provider {self.display_name}")
+            tools = [self.transform_tool(tool) for tool in tools]
+        return tools
+
+    def transform_openai_tool_spec_to_json_schema_spec(self, spec):
+        json_schema_spec = {
+            'description': spec['description'],
+            'title': spec['name'],
+            'properties': {}
+        }
+        for prop, details in spec['parameters']['properties'].items():
+            json_schema_spec['properties'][prop] = {
+                'description': details['description'],
+                'type': details['type'],
+                'title': prop,
+                'required': prop in spec['required']
+            }
+        return json_schema_spec
+
     def make_llm(self, customizations=None, tools=None, tool_choice=None, use_defaults=False):
         customizations = customizations or {}
         final_customizations = (
@@ -273,7 +294,7 @@ class ProviderBase(Plugin):
         if tools:
             self.log.debug(f"Provider {self.display_name} called with tools")
             kwargs = {
-                'tools': tools,
+                'tools': self.transform_tools(tools),
             }
             if tool_choice:
                 kwargs['tool_choice'] = tool_choice
