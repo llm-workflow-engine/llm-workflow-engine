@@ -334,7 +334,6 @@ class ApiBackend:
     def make_preset(self):
         """Make preset from current provider customizations."""
         metadata, customizations = parse_llm_dict(self.provider.customizations)
-        customizations = self.compact_tools(customizations)
         return metadata, customizations
 
     def activate_preset(self, preset_name):
