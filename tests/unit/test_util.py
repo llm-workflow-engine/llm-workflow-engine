@@ -349,8 +349,8 @@ class TestClass:
         assert result[2]["content"] == ""
         assert result[2]["tool_calls"] == [
             {
-                "function": {"name": "tool_name", "arguments": "{}"},
-                "type": "function",
+                "name": "tool_name",
+                "args": {},
                 "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
             }
         ]
