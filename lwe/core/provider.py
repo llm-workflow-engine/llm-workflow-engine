@@ -339,11 +339,16 @@ class ProviderBase(Plugin):
         on the structure of their AI messages.
         """
         content = message.get("content", "")
-        additional_kwargs = {}
+        kwargs = {}
         tool_calls = message.get("tool_calls", None)
         if tool_calls:
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+            kwargs["tool_calls"] = tool_calls
+        # NOTE: Remove this if Langchain intetrations ever consistently
+        # support using AIMessage.tool_calls property.
+        additional_kwargs = message.get("additional_kwargs", None)
+        if additional_kwargs:
+            kwargs["additional_kwargs"] = additional_kwargs
+        return AIMessage(content=content, **kwargs)
 
     def convert_dict_to_message(self, message: Mapping[str, Any]) -> BaseMessage:
         """Convert an LWE message dictionary to a LangChain message."""

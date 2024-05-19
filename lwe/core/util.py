@@ -412,18 +412,24 @@ def transform_messages_to_chat_messages(messages):
         }
         if role == "assistant":
             if message["message_type"] == "tool_call":
-                tool_calls = [
-                    {
-                        "id": tool["id"],
-                        "type": "function",
-                        "function": {
-                            "name": tool["name"],
-                            "arguments": json.dumps(tool["args"]),
-                        },
-                    }
-                    for tool in message["message"]
-                ]
-                next_message["tool_calls"] = tool_calls
+                # NOTE: This should not be necessary, as Langchain tool intergrations
+                # *should* use AIMessage.tool_calls if present, but not all do.
+                # This is a workaround for those integrations that do not.
+                additional_kwargs = {
+                    "tool_calls":  [
+                        {
+                            "id": tool["id"],
+                            "type": "function",
+                            "function": {
+                                "name": tool["name"],
+                                "arguments": json.dumps(tool["args"]),
+                            },
+                        }
+                        for tool in message["message"]
+                    ]
+                }
+                next_message["additional_kwargs"] = additional_kwargs
+                next_message["tool_calls"] = message["message"]
                 next_message["content"] = ""
             else:
                 next_message["tool_calls"] = None
