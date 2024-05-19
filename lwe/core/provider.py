@@ -275,7 +275,7 @@ class ProviderBase(Plugin):
                 "description": details["description"],
                 "type": details["type"],
                 "title": prop,
-                "required": prop in spec["required"],
+                "required": prop in spec["parameters"]["required"],
             }
         return json_schema_spec
 
