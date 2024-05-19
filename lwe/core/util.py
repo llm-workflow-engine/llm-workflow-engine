@@ -416,7 +416,7 @@ def transform_messages_to_chat_messages(messages):
                 # *should* use AIMessage.tool_calls if present, but not all do.
                 # This is a workaround for those integrations that do not.
                 additional_kwargs = {
-                    "tool_calls":  [
+                    "tool_calls": [
                         {
                             "id": tool["id"],
                             "type": "function",
