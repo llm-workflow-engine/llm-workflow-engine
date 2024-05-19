@@ -1326,7 +1326,7 @@ class Repl:
         output = """
 # Configuration section '%s':
 
-```
+```yaml
 %s
 ```
 """ % (
