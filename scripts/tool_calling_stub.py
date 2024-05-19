@@ -65,7 +65,7 @@ def main():
         SystemMessage(
             content="You are a helpful assistant, who responds with the most brief answer to the question."
         ),
-        HumanMessage(content="What is 3 * 12? Also, what is 11 + 49?"),
+        HumanMessage(content="What is 3 * 12? Use the provided 'multiply' tool"),
     ]
     tools = [add, multiply]
 
