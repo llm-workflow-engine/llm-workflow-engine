@@ -1,3 +1,18 @@
+### v0.19.1 - 05/19/2024
+
+* **Sun May 19 2024:** formatting cleanup
+* **Sun May 19 2024:** better formatting for config section outputs in CLI
+* **Sun May 19 2024:** hack to support tool calling for providers that are not correctly supuporting AIMessage.tool_calls property when building messages
+* **Sun May 19 2024:** remove call to dead compact_tools() method
+* **Sun May 19 2024:** tweak test prompt
+* **Sun May 19 2024:** fix bad location of 'required' parameter in openai tool spec
+* **Sat May 18 2024:** tests on python 3.12
+* **Sat May 18 2024:** rename file to avoid test suite runs
+* **Sat May 18 2024:** formatting cleanup
+* **Sat May 18 2024:** add black to dev deps
+* **Sat May 18 2024:** fix bad variable name
+* **Sat May 18 2024:** add flake8 to dev deps
+
 ### v0.19.0 - 05/18/2024
 
 This release migrates from the legacy OpenAI function calling to general tool calling.
