@@ -14,9 +14,9 @@ There is nothing this project can do to fix the error for you -- contact OpenAI 
 
 Follow one of the methods below to utilize non-default models:
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Method 1: Set a default preset configured with GPT-4o
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 See :ref:`presets_doc` to configure a preset using GPT-4o
 
