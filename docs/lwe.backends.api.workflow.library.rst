@@ -4,6 +4,14 @@ lwe.backends.api.workflow.library package
 lwe.backends.api.workflow.library Submodules
 --------------------------------------------
 
+lwe.backends.api.workflow.library.lwe\_command module
+-----------------------------------------------------
+
+.. automodule:: lwe.backends.api.workflow.library.lwe_command
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 lwe.backends.api.workflow.library.lwe\_llm module
 -------------------------------------------------
 
