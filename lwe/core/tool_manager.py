@@ -175,10 +175,10 @@ class ToolManager:
     def cleanup_tool_definition(self, tool):
         """Remove items that are not needed in the tool definition."""
         if "parameters" in tool:
-            tool["parameters"].pop('$defs', None)
+            tool["parameters"].pop("$defs", None)
             if "properties" in tool["parameters"]:
                 for prop in tool["parameters"]["properties"]:
-                    tool["parameters"]["properties"][prop].pop('items', None)
+                    tool["parameters"]["properties"][prop].pop("items", None)
         return tool
 
     def get_tool_config(self, tool_name):
