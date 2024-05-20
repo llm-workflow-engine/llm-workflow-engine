@@ -40,6 +40,10 @@ class Config:
         self._transform_config()
 
     @property
+    def debug(self):
+        return self.get("log.console.level").lower() == "debug"
+
+    @property
     def properties(self):
         return [
             "config_dir",

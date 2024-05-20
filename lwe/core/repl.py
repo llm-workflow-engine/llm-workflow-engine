@@ -72,7 +72,6 @@ class Repl:
     def initialize_repl(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self.debug = self.config.get("log.console.level").lower() == "debug"
         self._set_logging()
 
     def reload_repl(self):
@@ -1430,7 +1429,7 @@ class Repl:
                 util.output_response(response)
             else:
                 print(repr(response))
-                if self.debug:
+                if self.config.debug:
                     traceback.print_exc()
 
     def cmdloop(self):
