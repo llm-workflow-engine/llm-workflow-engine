@@ -1,6 +1,7 @@
 import os
 import json
 import importlib
+import traceback
 
 from pathlib import Path
 
@@ -171,6 +172,15 @@ class ToolManager:
             self.log.error(f"Error creating tool instance for {tool_name}: {e}")
             raise RuntimeError(f"Error creating tool instance for {tool_name}") from e
 
+    def cleanup_tool_definition(self, tool):
+        """Remove items that are not needed in the tool definition."""
+        if "parameters" in tool:
+            tool["parameters"].pop('$defs', None)
+            if "properties" in tool["parameters"]:
+                for prop in tool["parameters"]["properties"]:
+                    tool["parameters"]["properties"][prop].pop('items', None)
+        return tool
+
     def get_tool_config(self, tool_name):
         self.log.debug(f"Getting config for tool: {tool_name}")
         if self.is_langchain_tool(tool_name):
@@ -178,7 +188,7 @@ class ToolManager:
         try:
             _success, tool_path, user_message = self.load_tool(tool_name)
             tool_instance = self.setup_tool_instance(tool_name, tool_path)
-            config = tool_instance.get_config()
+            config = self.cleanup_tool_definition(tool_instance.get_config())
             return config
         except Exception as e:
             self.log.error(f"Error loading tool configuration for {tool_name}: {str(e)}")
@@ -208,6 +218,8 @@ class ToolManager:
         except Exception as e:
             message = f"Error: Exception occurred while executing {tool_name}: {str(e)}"
             self.log.error(message)
+            if self.config.debug:
+                traceback.print_exc()
             return False, None, message
 
     def is_system_tool(self, filepath):
