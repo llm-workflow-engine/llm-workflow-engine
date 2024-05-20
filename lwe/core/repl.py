@@ -1410,23 +1410,28 @@ class Repl:
                 return method, plugin
         raise AttributeError(f"{method_string} method not found in any shell class")
 
-    def run_command(self, command, argument):
+    def run_command_get_response(self, command, argument):
         command = util.dash_to_underscore(command)
+        if command in self.commands:
+            method, obj = self.get_command_method(command)
+            try:
+                response = method(obj, argument)
+                return True, response
+            except Exception as e:
+                return False, e
+        return False, f"Unknown command: {command}"
+
+    def run_command(self, command, argument):
         if command == "help":
             self.help(argument)
         else:
-            if command in self.commands:
-                method, obj = self.get_command_method(command)
-                try:
-                    response = method(obj, argument)
-                except Exception as e:
-                    print(repr(e))
-                    if self.debug:
-                        traceback.print_exc()
-                else:
-                    util.output_response(response)
+            success, response = self.run_command_get_response(command, argument)
+            if success:
+                util.output_response(response)
             else:
-                print(f"Unknown command: {command}")
+                print(repr(response))
+                if self.debug:
+                    traceback.print_exc()
 
     def cmdloop(self):
         print("")
