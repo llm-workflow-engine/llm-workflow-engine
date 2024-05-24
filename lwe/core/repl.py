@@ -1437,12 +1437,15 @@ class Repl:
         util.print_markdown("### %s" % self.intro)
         while True:
             self.set_user_prompt()
-            user_input = self.prompt_session.prompt(
-                self.prompt,
-                completer=self.command_completer,
-                complete_style=CompleteStyle.MULTI_COLUMN,
-                reserve_space_for_menu=3,
-            )
+            try:
+                user_input = self.prompt_session.prompt(
+                    self.prompt,
+                    completer=self.command_completer,
+                    complete_style=CompleteStyle.MULTI_COLUMN,
+                    reserve_space_for_menu=3,
+                )
+            except (KeyboardInterrupt, EOFError):
+                break
             try:
                 command, argument = util.parse_shell_input(user_input)
             except NoInputError:
