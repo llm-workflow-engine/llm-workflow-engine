@@ -54,6 +54,7 @@ These plugins are built into LWE core:
 
 * **echo:** Simple echo plugin, echos back the text you give it
 * **examples:** Easily install example configuration files (see :ref:`Installing examples`)
+* **provider_chat_openai_compat:** Allows access to third-party providers that offer an OpenAI compatible API.
 
 They can be disabled by removing them from ``plugins.enabled`` in your configuration file.
 
