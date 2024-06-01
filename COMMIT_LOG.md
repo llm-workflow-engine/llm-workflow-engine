@@ -1,3 +1,18 @@
+### v0.19.2 - 06/01/2024
+
+* **Sat Jun 01 2024:** migrate to langchain 0.2.x
+* **Fri May 24 2024:** clean exit on Ctrl+c/Ctrl+d
+* **Fri May 24 2024:** add doc for lwe-plugin-provider-chat-together
+* **Fri May 24 2024:** add core plugin: provider_chat_openai_compat Allows access to third-party providers that offer an OpenAI compatible API.
+* **Mon May 20 2024:** syntax cleanup
+* **Mon May 20 2024:** cleanup tool definitions, add debug traceback
+* **Mon May 20 2024:** add debug property to Config class
+* **Sun May 19 2024:** EXPERIMENTAL: lwe_command Ansible module, allows executing REPL commands via workflows
+* **Sun May 19 2024:** fix doc build warning
+* **Sun May 19 2024:** split execution of REPL commands into execution and output methods
+* **Sun May 19 2024:** add support for async compat
+* **Sun May 19 2024:** fix broken tests
+
 ### v0.19.1 - 05/19/2024
 
 * **Sun May 19 2024:** formatting cleanup
