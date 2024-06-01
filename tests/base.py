@@ -2,9 +2,7 @@ import re
 import os
 import tempfile
 
-from langchain.schema.messages import (
-    AIMessage,
-)
+from langchain_core.messages import AIMessage
 
 from lwe.core import constants
 import lwe.core.util as util

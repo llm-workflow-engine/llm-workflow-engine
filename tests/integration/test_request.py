@@ -1,11 +1,7 @@
 import pytest
 
 from unittest.mock import Mock
-
-from langchain.schema.messages import (
-    AIMessage,
-    AIMessageChunk,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk
 from ..base import (
     fake_llm_responses,
     make_api_request,

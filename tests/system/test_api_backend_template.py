@@ -3,9 +3,7 @@
 from unittest.mock import patch
 import logging
 
-from langchain.schema.messages import (
-    AIMessage,
-)
+from langchain_core.messages import AIMessage
 
 from ..base import (
     fake_llm_responses,

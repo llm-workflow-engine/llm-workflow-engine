@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 import logging
 
-from langchain.schema.messages import (
-    AIMessage,
-)
+from langchain_core.messages import AIMessage
 
 from ..base import (
     store_conversation_threads,

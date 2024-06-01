@@ -1,8 +1,7 @@
 import copy
 
-from langchain.schema.messages import (
-    AIMessageChunk,
-)
+from langchain_community.adapters.openai import convert_message_to_dict
+from langchain_core.messages import AIMessageChunk, BaseMessage
 
 from lwe.core.logger import Logger
 
@@ -13,9 +12,6 @@ from lwe.core.token_manager import TokenManager
 
 from lwe.backends.api.orm import Orm
 from lwe.backends.api.message import MessageManager
-
-from langchain.schema import BaseMessage
-from langchain.adapters.openai import convert_message_to_dict
 
 
 class ApiRequest:

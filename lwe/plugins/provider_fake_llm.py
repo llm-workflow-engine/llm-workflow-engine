@@ -1,15 +1,13 @@
 from typing import Any, Iterator, List, Optional, Union
 
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
 )
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.outputs import ChatGenerationChunk
 
 # TODO: Re-enable if https://github.com/langchain-ai/langchain/pull/10200 lands.
 # from langchain.chat_models.fake import FakeMessagesListChatModel
@@ -21,14 +19,10 @@ from lwe.core import constants
 import asyncio
 import time
 from typing import cast, AsyncIterator, Dict
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.schema.messages import BaseMessageChunk
-from langchain.schema import ChatResult
-from langchain.schema.output import ChatGeneration
+from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import BaseMessageChunk
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 # TODO: Remove these definitions if https://github.com/langchain-ai/langchain/pull/10200 lands.
 

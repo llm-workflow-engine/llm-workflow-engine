@@ -3,12 +3,7 @@ import pytest
 
 from unittest.mock import Mock, patch
 
-from langchain.schema.messages import (
-    SystemMessage,
-    HumanMessage,
-    AIMessage,
-    AIMessageChunk,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
 
 from lwe.core import constants
 from lwe.core import util

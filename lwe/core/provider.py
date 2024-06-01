@@ -1,17 +1,11 @@
 from abc import abstractmethod
 
-from langchain.schema.messages import (
-    AIMessage,
-    HumanMessage,
-    BaseMessage,
-    SystemMessage,
-    ToolMessage,
-)
-
 from typing import (
     Any,
     Mapping,
 )
+
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 
 from lwe.core.plugin import Plugin
 from lwe.core import constants

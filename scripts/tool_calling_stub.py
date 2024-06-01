@@ -2,7 +2,7 @@
 
 import argparse
 from langchain_core.tools import tool
-from langchain.schema.messages import SystemMessage, HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from lwe import debug
 
 # Import model providers

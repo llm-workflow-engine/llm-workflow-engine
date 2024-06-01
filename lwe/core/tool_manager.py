@@ -6,6 +6,7 @@ import traceback
 from pathlib import Path
 
 import langchain_community.tools
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -110,7 +111,7 @@ class ToolManager:
         tool_instance = self.get_langchain_tool(tool_name)
         if not tool_instance:
             raise RuntimeError(f"Langchain tool {tool_name} not found")
-        spec = langchain_community.tools.format_tool_to_openai_function(tool_instance)
+        spec = convert_to_openai_function(tool_instance)
         spec["name"] = tool_name
         return spec
 
