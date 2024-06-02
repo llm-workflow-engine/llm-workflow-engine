@@ -1,3 +1,8 @@
+### v0.19.3 - 06/02/2024
+
+* **Sun Jun 02 2024:** fix spelling error
+* **Sun Jun 02 2024:** fix missing langchain-community requirement
+
 ### v0.19.2 - 06/01/2024
 
 * **Sat Jun 01 2024:** migrate to langchain 0.2.x
