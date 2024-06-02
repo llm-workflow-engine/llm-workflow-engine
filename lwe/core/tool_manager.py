@@ -103,7 +103,7 @@ class ToolManager:
             tool_instance = tool()
             return tool_instance
         except Exception as e:
-            self.log.warning(f"Could not load Langchaine tool: {tool_name}: {str(e)}")
+            self.log.warning(f"Could not load Langchain tool: {tool_name}: {str(e)}")
             return None
 
     def get_langchain_tool_spec(self, tool_name):
