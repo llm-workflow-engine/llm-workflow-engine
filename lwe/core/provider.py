@@ -197,6 +197,8 @@ class ProviderBase(Plugin):
     def set_value(self, keys, value):
         customizations = self.customizations
         for key in keys[:-1]:
+            if customizations.get(key) is None:
+                customizations[key] = {}
             customizations = customizations.setdefault(key, {})
         customizations[keys[-1]] = value
 
