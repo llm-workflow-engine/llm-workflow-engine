@@ -448,9 +448,7 @@ def test_api_backend_template_overrides_provider_model_when_in_request_overrides
     assert messages[6]["model"] == constants.API_BACKEND_DEFAULT_MODEL
 
 
-def test_api_backend_template_include_another_template(
-    test_config, datadir
-):
+def test_api_backend_template_include_another_template(test_config, datadir):
     backend = make_api_backend(test_config, datadir)
     success, response, _user_message = backend.run_template(
         "test_template_include_base_template.md"
