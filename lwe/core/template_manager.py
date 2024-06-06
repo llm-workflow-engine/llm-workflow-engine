@@ -3,7 +3,7 @@ import frontmatter
 import shutil
 import tempfile
 
-from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound, meta
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, meta
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -277,7 +277,7 @@ class TemplateManager:
         template_substitutions, overrides = self.extract_template_run_overrides(source.metadata)
         final_substitutions = {**template_substitutions, **substitutions}
         self.log.debug(f"Rendering template: {template_name}")
-        final_template = Template(source.content)
+        final_template = self.templates_env.from_string(source.content)
         message = final_template.render(**final_substitutions)
         return message, overrides
 

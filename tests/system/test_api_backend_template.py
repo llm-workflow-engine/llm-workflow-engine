@@ -446,3 +446,17 @@ def test_api_backend_template_overrides_provider_model_when_in_request_overrides
     assert messages[5]["model"] == constants.API_BACKEND_DEFAULT_MODEL
     assert messages[6]["provider"] == "provider_fake_llm"
     assert messages[6]["model"] == constants.API_BACKEND_DEFAULT_MODEL
+
+
+def test_api_backend_template_include_another_template(
+    test_config, datadir
+):
+    backend = make_api_backend(test_config, datadir)
+    success, response, _user_message = backend.run_template(
+        "test_template_include_base_template.md"
+    )
+    assert success
+    success, response, _user_message = backend.get_conversation()
+    assert success
+    message_user = response["messages"][1]
+    assert message_user["message"] == "Template is included"
