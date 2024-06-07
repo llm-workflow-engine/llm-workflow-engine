@@ -173,13 +173,25 @@ class ToolManager:
             self.log.error(f"Error creating tool instance for {tool_name}: {e}")
             raise RuntimeError(f"Error creating tool instance for {tool_name}") from e
 
+    def dereference_tool_schema(self, schema, defs):
+        if isinstance(schema, dict):
+            if "$ref" in schema:
+                ref_path = schema["$ref"].split("/")[-1]  # Get the last part after '/'
+                return self.dereference_tool_schema(defs[ref_path], defs)
+            else:
+                for key, value in schema.items():
+                    schema[key] = self.dereference_tool_schema(value, defs)
+        elif isinstance(schema, list):
+            return [self.dereference_tool_schema(item, defs) for item in schema]
+        return schema
+
     def cleanup_tool_definition(self, tool):
         """Remove items that are not needed in the tool definition."""
         if "parameters" in tool:
-            tool["parameters"].pop("$defs", None)
-            if "properties" in tool["parameters"]:
-                for prop in tool["parameters"]["properties"]:
-                    tool["parameters"]["properties"][prop].pop("items", None)
+            defs = tool["parameters"].pop("$defs", None)
+            if defs:
+                self.log.debug("Dereferencing $defs in tool parameters")
+                tool["parameters"] = self.dereference_tool_schema(tool["parameters"], defs)
         return tool
 
     def get_tool_config(self, tool_name):
