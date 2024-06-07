@@ -387,6 +387,7 @@ class ApiRequest:
 
     def execute_llm_non_streaming(self, messages):
         self.log.info("Starting non-streaming request")
+        self.log.debug(f"Non-streaming with LLM attributes: {self.llm.dict()}")
         try:
             response = self.llm.invoke(messages)
         except ValueError as e:
