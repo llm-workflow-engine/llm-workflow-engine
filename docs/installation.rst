@@ -66,7 +66,7 @@ LWE provides several features that are controlled by adding correctly formatted 
 * Templates
 * Workflows
 * Model presets
-* OpenAI function definitions
+* Tool definitions
 
 If you'd like to jump start your setup with some examples of each, you can use the ``examples`` plugin (enabled by default).
 

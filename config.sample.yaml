@@ -20,6 +20,12 @@ backend_options:
   default_user: None
   # Load this conversation when bootstrapping the backend. Must be an existing conversation id.
   default_conversation_id: None
+  # Options for title generation.
+  title_generation:
+    # Use a different provider for generating titles.
+    # The default is chat_openai.
+    # If an alternate provider is set, the default model will be used for the generation.
+    provider: None
 
 # The database connection string, in a format SQLAlchemy understands.
 # DO NOT USE THE LINE AS IT IS WRITTEN BELOW, IT ONLY ILLUSTRATES THE DEFAULT LOCATION.

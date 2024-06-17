@@ -8,15 +8,14 @@ from lwe.core import util
 
 
 class TokenManager:
-    """Manage functions in a cache."""
+    """Manage model tokens."""
 
-    def __init__(self, config, provider, model_name, function_cache):
-        """Initialize the function cache."""
+    def __init__(self, config, provider, model_name, tool_cache):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.provider = provider
         self.model_name = model_name
-        self.function_cache = function_cache
+        self.tool_cache = tool_cache
 
     def get_token_encoding(self):
         """
@@ -27,7 +26,8 @@ class TokenManager:
         :returns: Encoding object
         :rtype: Encoding
         """
-        if self.model_name not in self.provider.available_models:
+        validate_models = self.provider.get_capability("validate_models", True)
+        if validate_models and self.model_name not in self.provider.available_models:
             raise NotImplementedError(f"Unsupported model: {self.model_name}")
         try:
             encoding = tiktoken.encoding_for_model(self.model_name)
@@ -43,6 +43,29 @@ class TokenManager:
         """
         Get number of tokens for a list of messages.
 
+        If a provider does not have a get num_tokens_from_messages() method,
+        default_get_num_tokens_from_messages() will be used.
+
+        :param messages: List of messages
+        :type messages: list
+        :param encoding: Encoding to use, defaults to None to auto-detect
+        :type encoding: Encoding, optional
+        :returns: Number of tokens
+        :rtype: int
+        """
+        token_counter = getattr(self.provider, "get_num_tokens_from_messages", None)
+        return (
+            token_counter(messages, encoding)
+            if token_counter
+            else self.default_get_num_tokens_from_messages(messages, encoding)
+        )
+
+    def default_get_num_tokens_from_messages(self, messages, encoding=None):
+        """
+        Get number of tokens for a list of messages.
+
+        The default implementation uses tiktoken, which is the OpenAI implementation.
+
         :param messages: List of messages
         :type messages: list
         :param encoding: Encoding to use, defaults to None to auto-detect
@@ -53,22 +76,23 @@ class TokenManager:
         if not encoding:
             encoding = self.get_token_encoding()
         num_tokens = 0
-        messages = self.function_cache.add_message_functions(messages)
+        messages = self.tool_cache.add_message_tools(messages)
         messages = util.transform_messages_to_chat_messages(messages)
         for message in messages:
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             for key, value in message.items():
-                if isinstance(value, dict):
+                if isinstance(value, dict) or isinstance(value, list):
                     value = json.dumps(value, indent=2)
-                num_tokens += len(encoding.encode(value))
+                if value:
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":  # if there's a name, the role is omitted
                     num_tokens += -1  # role is always required and always 1 token
         num_tokens += 2  # every reply is primed with <im_start>assistant
-        if len(self.function_cache.functions) > 0:
-            functions = [
-                self.function_cache.function_manager.get_function_config(function_name)
-                for function_name in self.function_cache.functions
+        if len(self.tool_cache.tools) > 0:
+            tools = [
+                self.tool_cache.tool_manager.get_tool_config(tool_name)
+                for tool_name in self.tool_cache.tools
             ]
-            functions_string = json.dumps(functions, indent=2)
-            num_tokens += len(encoding.encode(functions_string))
+            tools_string = json.dumps(tools, indent=2)
+            num_tokens += len(encoding.encode(tools_string))
         return num_tokens

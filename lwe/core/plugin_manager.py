@@ -1,6 +1,6 @@
 import os
 import importlib.util
-import pkg_resources
+import importlib.metadata
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -24,7 +24,7 @@ class PluginManager:
 
     def get_default_plugin_paths(self):
         user_plugin_dirs = (
-            self.config.args.plugin_dir
+            self.config.args.plugins_dir
             or util.get_environment_variable_list("plugin_dir")
             or self.config.get("directories.plugins")
         )
@@ -60,16 +60,21 @@ class PluginManager:
 
     def load_package_plugins(self, plugin_list):
         self.log.info("Scanning for package plugins")
-        entry_point_group = "%splugins" % PLUGIN_PREFIX
-        for entry_point in pkg_resources.iter_entry_points(group=entry_point_group):
-            package_name = entry_point.dist.project_name
-            plugin_name = util.dash_to_underscore(package_name[len("%splugin_" % PLUGIN_PREFIX) :])
+        entry_point_group = f"{PLUGIN_PREFIX}plugins"
+        try:
+            entry_points = importlib.metadata.entry_points().select(group=entry_point_group)
+        except AttributeError:
+            # TODO: Python 3.9 compatibility, remove when we drop support for 3.9.
+            entry_points = importlib.metadata.entry_points().get(entry_point_group, [])
+        for entry_point in entry_points:
+            package_name = entry_point.dist.metadata["Name"]
+            plugin_name = util.dash_to_underscore(package_name[len(f"{PLUGIN_PREFIX}plugin_") :])
             if plugin_name in plugin_list:
                 try:
                     klass = entry_point.load()
                     plugin_instance = klass(self.config)
                     self.log.info(
-                        f"Loaded plugin: {entry_point.name},  from package: {package_name}"
+                        f"Loaded plugin: {entry_point.name}, from package: {package_name}"
                     )
                     self.package_plugins[plugin_name] = plugin_instance
                 except Exception as e:

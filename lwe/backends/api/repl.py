@@ -56,9 +56,9 @@ class ApiRepl(Repl):
         self.base_shell_completions[util.command_with_leader("user")] = {
             c: None if c == "logout" else usernames for c in user_commands
         }
-        self.base_shell_completions[
-            util.command_with_leader("model")
-        ] = self.backend.provider.customizations_to_completions()
+        self.base_shell_completions[util.command_with_leader("model")] = (
+            self.backend.provider.customizations_to_completions()
+        )
         provider_completions = {}
         for _name, provider in self.backend.get_providers().items():
             provider_models = (
@@ -66,7 +66,7 @@ class ApiRepl(Repl):
                 if provider.available_models
                 else None
             )
-            provider_completions[provider.display_name()] = provider_models
+            provider_completions[provider.display_name] = provider_models
         final_completions = {
             util.command_with_leader("system-message"): util.list_to_completion_hash(
                 self.backend.get_system_message_aliases()
@@ -79,9 +79,11 @@ class ApiRepl(Repl):
             for c in self.get_command_actions("preset", dashed=True)
         }
         for preset_name in preset_keys:
-            final_completions[util.command_with_leader("preset")]["save"][
-                preset_name
-            ] = util.list_to_completion_hash(self.backend.preset_manager.user_metadata_fields())
+            final_completions[util.command_with_leader("preset")]["save"][preset_name] = (
+                util.list_to_completion_hash(
+                    self.backend.preset_manager.user_metadata_fields().keys()
+                )
+            )
         workflow_keys = util.list_to_completion_hash(self.backend.workflow_manager.workflows.keys())
         final_completions[util.command_with_leader("workflow")] = {
             c: workflow_keys for c in self.get_command_actions("workflow", dashed=True)
@@ -292,9 +294,11 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace("$MODEL", self.backend.model)
         prompt_prefix = prompt_prefix.replace(
             "$PRESET_OR_MODEL",
-            self.backend.active_preset_name
-            if self.backend.active_preset_name
-            else self.backend.model,
+            (
+                self.backend.active_preset_name
+                if self.backend.active_preset_name
+                else self.backend.model
+            ),
         )
         prompt_prefix = prompt_prefix.replace("$NEWLINE", "\n")
         prompt_prefix = prompt_prefix.replace("$TEMPERATURE", self.get_model_temperature())
@@ -693,7 +697,7 @@ Before you can start using the shell, you must create a new user.
         """
         self.rebuild_completions()
         provider_plugins = [
-            f"* {provider.display_name()}"
+            f"* {provider.display_name}"
             for provider in self.backend.provider_manager.provider_plugins.values()
         ]
         util.print_markdown("## Providers:\n\n%s" % "\n".join(sorted(provider_plugins)))
@@ -710,7 +714,7 @@ Before you can start using the shell, you must create a new user.
         Examples:
             {COMMAND}
             {COMMAND} chat_openai
-            {COMMAND} chat_openai gpt-4
+            {COMMAND} chat_openai gpt-4o
         """
         if arg:
             try:
@@ -723,8 +727,8 @@ Before you can start using the shell, you must create a new user.
             success, provider, user_message = self.backend.set_provider(provider)
             if success:
                 if model_name:
-                    self.backend.set_model(model_name)
-                self.rebuild_completions()
+                    success, model, user_message = self.backend.set_model(model_name)
+            self.rebuild_completions()
             return success, provider, user_message
         else:
             return self.command_model("")
@@ -837,6 +841,7 @@ Before you can start using the shell, you must create a new user.
         success, existing_preset, user_message = self.backend.preset_manager.ensure_preset(
             preset_name
         )
+        user_metadata_fields = self.backend.preset_manager.user_metadata_fields()
         if success:
             existing_metadata, _customizations = existing_preset
             if self.backend.preset_manager.is_system_preset(existing_metadata["filepath"]):
@@ -845,18 +850,24 @@ Before you can start using the shell, you must create a new user.
                     args,
                     f"{existing_metadata['name']} is a system preset, and cannot be edited directly",
                 )
-            for key in self.backend.preset_manager.user_metadata_fields():
+            for key in user_metadata_fields.keys():
                 if key in existing_metadata:
                     extra_metadata[key] = existing_metadata[key]
         metadata, customizations = self.backend.make_preset()
         if args:
             metadata_field, *rest = args
-            if metadata_field not in self.backend.preset_manager.user_metadata_fields():
+            if metadata_field not in user_metadata_fields.keys():
                 return False, metadata_field, f"Invalid metadata field: {metadata_field}"
             if not rest:
                 del extra_metadata[metadata_field]
             else:
-                extra_metadata[metadata_field] = " ".join(rest)
+                if user_metadata_fields[metadata_field] is bool:
+                    if rest[0].lower() in ["true", "yes", "y", "1"]:
+                        extra_metadata[metadata_field] = True
+                    else:
+                        extra_metadata[metadata_field] = False
+                else:
+                    extra_metadata[metadata_field] = " ".join(rest)
         metadata.update(extra_metadata)
         success, file_path, user_message = self.backend.preset_manager.save_preset(
             preset_name, metadata, customizations
@@ -1182,14 +1193,18 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, workflow_name, "Deletion aborted"
 
+    # TODO: Remove after deprecation period
     def command_functions(self, arg):
-        """
-        List available functions
+        return False, None, "DEPRECATED: /functions CLI command is now /tools"
 
-        Functions are executable scripts that the LLM can request to be called to perform
+    def command_tools(self, arg):
+        """
+        List available tools
+
+        Tools are pieces of Python code that the LLM can request to be called to perform
         some action.
 
-        They are located in the 'functions' directory in the following locations:
+        They are located in the 'tools' directory in the following locations:
 
             - The main configuration directory
             - The profile configuration directory
@@ -1197,21 +1212,21 @@ Before you can start using the shell, you must create a new user.
         See {COMMAND_LEADER}config for current locations.
 
         Arguments:
-            filter_string: Optional. If provided, only functions with a name or description containing the filter string will be shown.
+            filter_string: Optional. If provided, only tools with a name or description containing the filter string will be shown.
 
         Examples:
             {COMMAND}
             {COMMAND} filterstring
         """
-        success, functions, user_message = self.backend.function_manager.load_functions()
+        success, tools, user_message = self.backend.tool_manager.load_tools()
         if not success:
-            return success, functions, user_message
-        function_names = []
-        for function_name, _filepath in functions.items():
-            function_config = self.backend.function_manager.get_function_config(function_name)
-            content = f"* **{function_name}**"
-            if "description" in function_config:
-                content += f": *{function_config['description']}*"
+            return success, tools, user_message
+        tool_names = []
+        for tool_name, _filepath in tools.items():
+            tool_config = self.backend.tool_manager.get_tool_config(tool_name)
+            content = f"* **{tool_name}**"
+            if "description" in tool_config:
+                content += f": *{tool_config['description']}*"
             if not arg or arg.lower() in content.lower():
-                function_names.append(content)
-        util.print_markdown("## Functions:\n\n%s" % "\n".join(sorted(function_names)))
+                tool_names.append(content)
+        util.print_markdown("## Tools:\n\n%s" % "\n".join(sorted(tool_names)))

@@ -4,9 +4,7 @@ from lwe.core.token_manager import TokenManager
 from ..base import make_provider
 
 
-def make_token_manager(
-    test_config, function_cache, provider_manager, provider=None, model_name=None
-):
+def make_token_manager(test_config, tool_cache, provider_manager, provider=None, model_name=None):
     if not provider:
         provider = make_provider(provider_manager)
     if not model_name:
@@ -15,27 +13,32 @@ def make_token_manager(
         test_config,
         provider,
         model_name,
-        function_cache,
+        tool_cache,
     )
     return token_manager
 
 
-def test_get_token_encoding(test_config, function_cache, provider_manager):
-    token_manager = make_token_manager(test_config, function_cache, provider_manager)
+def test_get_token_encoding(test_config, tool_cache, provider_manager):
+    token_manager = make_token_manager(test_config, tool_cache, provider_manager)
     encoding = token_manager.get_token_encoding()
     assert encoding is not None
 
 
-def test_get_token_encoding_unsupported_model(test_config, function_cache, provider_manager):
+def test_get_token_encoding_unsupported_model(test_config, tool_cache, provider_manager):
+    provider = make_provider(provider_manager)
+    # Monkey patch provider_fake_llm to validate models.
+    capabilities = provider.capabilities
+    capabilities["validate_models"] = True
+    provider.capabilities = capabilities
     token_manager = make_token_manager(
-        test_config, function_cache, provider_manager, model_name="unsupported_model"
+        test_config, tool_cache, provider_manager, provider, model_name="unsupported_model"
     )
     with pytest.raises(NotImplementedError):
         token_manager.get_token_encoding()
 
 
-def test_get_num_tokens_from_messages(test_config, function_cache, provider_manager):
-    token_manager = make_token_manager(test_config, function_cache, provider_manager)
+def test_get_num_tokens_from_messages(test_config, tool_cache, provider_manager):
+    token_manager = make_token_manager(test_config, tool_cache, provider_manager)
     messages = [
         {
             "message": "You are a helpful assistant.",
@@ -60,8 +63,8 @@ def test_get_num_tokens_from_messages(test_config, function_cache, provider_mana
     assert num_tokens == 30
 
 
-def test_get_num_tokens_from_messages_with_function(test_config, function_cache, provider_manager):
-    token_manager = make_token_manager(test_config, function_cache, provider_manager)
+def test_get_num_tokens_from_messages_with_tool(test_config, tool_cache, provider_manager):
+    token_manager = make_token_manager(test_config, tool_cache, provider_manager)
     messages = [
         {
             "message": "You are a helpful assistant.",
@@ -76,19 +79,25 @@ def test_get_num_tokens_from_messages_with_function(test_config, function_cache,
             "role": "user",
         },
         {
-            "message": {
-                "arguments": {"repeats": 2, "word": "foo"},
-                "name": "test_function",
-            },
+            "message": [
+                {
+                    "name": "test_tool",
+                    "args": {
+                        "word": "foo",
+                        "repeats": 2,
+                    },
+                    "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+                },
+            ],
             "message_metadata": None,
-            "message_type": "function_call",
+            "message_type": "tool_call",
             "role": "assistant",
         },
         {
             "message": {"message": "Repeated the word foo 2 times.", "result": "foo foo"},
-            "message_metadata": {"name": "test_function"},
-            "message_type": "function_response",
-            "role": "function",
+            "message_metadata": {"name": "test_tool", "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI"},
+            "message_type": "tool_response",
+            "role": "tool",
         },
         {
             "message": 'The word "foo" repeated twice is "foo foo".',
@@ -98,4 +107,4 @@ def test_get_num_tokens_from_messages_with_function(test_config, function_cache,
         },
     ]
     num_tokens = token_manager.get_num_tokens_from_messages(messages)
-    assert num_tokens == 253
+    assert num_tokens == 376

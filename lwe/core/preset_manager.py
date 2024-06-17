@@ -30,7 +30,7 @@ class PresetManager:
         self.additional_presets = additional_presets or {}
         self.log = Logger(self.__class__.__name__, self.config)
         self.user_preset_dirs = (
-            self.config.args.preset_dir
+            self.config.args.presets_dir
             or util.get_environment_variable_list("preset_dir")
             or self.config.get("directories.presets")
         )
@@ -62,11 +62,12 @@ class PresetManager:
         return content["metadata"], content["model_customizations"]
 
     def user_metadata_fields(self):
-        return [
-            "description",
-            "system_message",
-            "return_on_function_call",
-        ]
+        return {
+            "description": str,
+            "system_message": str,
+            "return_on_tool_call": bool,
+            "return_on_tool_response": bool,
+        }
 
     def load_test_preset(self):
         if self.config.profile == "test":
@@ -89,7 +90,7 @@ class PresetManager:
                     "filepath": "",
                 },
                 {
-                    "model_name": "gpt-4",
+                    "model_name": "gpt-4o",
                 },
             )
             self.presets["test_2"] = test_preset_2

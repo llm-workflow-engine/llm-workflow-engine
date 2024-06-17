@@ -411,36 +411,43 @@ def transform_messages_to_chat_messages(messages):
             "role": role,
         }
         if role == "assistant":
-            if message["message_type"] == "function_call":
-                next_message["function_call"] = {
-                    "name": message["message"]["name"],
-                    "arguments": json.dumps(message["message"]["arguments"], indent=2),
+            if message["message_type"] == "tool_call":
+                # NOTE: This should not be necessary, as Langchain tool intergrations
+                # *should* use AIMessage.tool_calls if present, but not all do.
+                # This is a workaround for those integrations that do not.
+                additional_kwargs = {
+                    "tool_calls": [
+                        {
+                            "id": tool["id"],
+                            "type": "function",
+                            "function": {
+                                "name": tool["name"],
+                                "arguments": json.dumps(tool["args"]),
+                            },
+                        }
+                        for tool in message["message"]
+                    ]
                 }
+                next_message["additional_kwargs"] = additional_kwargs
+                next_message["tool_calls"] = message["message"]
                 next_message["content"] = ""
             else:
+                next_message["tool_calls"] = None
                 next_message["content"] = message["message"]
-        elif role == "function":
+        elif role == "tool":
             next_message["content"] = json.dumps(message["message"])
-            next_message["name"] = message["message_metadata"]["name"]
+            next_message["name"] = (
+                message["message_metadata"]["name"]
+                if "name" in message["message_metadata"]
+                else None
+            )
+            next_message["tool_call_id"] = (
+                message["message_metadata"]["id"] if "id" in message["message_metadata"] else None
+            )
         else:
             next_message["content"] = message["message"]
         chat_messages.append(next_message)
     return chat_messages
-
-
-def message_content_from_dict(message):
-    """
-    Extract the content from a message dict.
-
-    :param message: Message
-    :type message: dict
-    :returns: Content
-    :rtype: str
-    """
-    content = message["content"]
-    if message["message_type"] == "function_call":
-        content = json.dumps(message["function_call"])
-    return content
 
 
 def extract_preset_configuration_from_request_overrides(request_overrides, active_preset_name=None):

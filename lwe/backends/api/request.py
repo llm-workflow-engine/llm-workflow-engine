@@ -1,23 +1,17 @@
 import copy
-import json
 
-from langchain.schema.messages import (
-    AIMessage,
-    AIMessageChunk,
-)
+from langchain_community.adapters.openai import convert_message_to_dict
+from langchain_core.messages import AIMessageChunk, BaseMessage
 
 from lwe.core.logger import Logger
 
 from lwe.core import constants
 import lwe.core.util as util
-from lwe.core.function_cache import FunctionCache
+from lwe.core.tool_cache import ToolCache
 from lwe.core.token_manager import TokenManager
 
 from lwe.backends.api.orm import Orm
 from lwe.backends.api.message import MessageManager
-
-from langchain.schema import BaseMessage
-from langchain.adapters.openai import convert_message_to_dict
 
 
 class ApiRequest:
@@ -28,7 +22,7 @@ class ApiRequest:
         config=None,
         provider=None,
         provider_manager=None,
-        function_manager=None,
+        tool_manager=None,
         input=None,
         preset=None,
         preset_manager=None,
@@ -44,7 +38,7 @@ class ApiRequest:
         self.default_provider = provider
         self.provider = self.default_provider
         self.provider_manager = provider_manager
-        self.function_manager = function_manager
+        self.tool_manager = tool_manager
         self.input = input
         self.default_preset = preset
         self.default_preset_name = util.get_preset_name(self.default_preset)
@@ -59,7 +53,9 @@ class ApiRequest:
         self.orm = orm or Orm(self.config)
         self.message = MessageManager(config, self.orm)
         self.streaming = False
-        self.log.debug(f"Inintialized ApiRequest with input: {self.input}, default preset name: {self.default_preset_name}, system_message: {self.system_message}, max_submission_tokens: {self.max_submission_tokens}, request_overrides: {self.request_overrides}, return only: {self.return_only}")
+        self.log.debug(
+            f"Inintialized ApiRequest with input: {self.input}, default preset name: {self.default_preset_name}, system_message: {self.system_message}, max_submission_tokens: {self.max_submission_tokens}, request_overrides: {self.request_overrides}, return only: {self.return_only}"
+        )
 
     def set_request_llm(self):
         success, response, user_message = self.extract_metadata_customizations()
@@ -112,11 +108,14 @@ class ApiRequest:
             return success, provider, user_message
         config = self.merge_preset_overrides(config)
         preset = (config["metadata"], config["customizations"])
-        config["customizations"] = self.expand_functions(config["customizations"])
-        llm = provider.make_llm(config["customizations"], use_defaults=True)
+        customizations, tools, tool_choice = self.expand_tools(config["customizations"])
+        config["customizations"] = customizations
+        llm = provider.make_llm(
+            config["customizations"], tools=tools, tool_choice=tool_choice, use_defaults=True
+        )
         preset_name = config["metadata"].get("name", "")
         model_name = getattr(llm, provider.model_property_name)
-        token_manager = TokenManager(self.config, provider, model_name, self.function_cache)
+        token_manager = TokenManager(self.config, provider, model_name, self.tool_cache)
         message = f"Built LLM based on preset_name: {preset_name}, metadata: {config['metadata']}, customizations: {config['customizations']}, preset_overrides: {config['preset_overrides']}"
         self.log.debug(message)
         return True, (provider, preset, llm, preset_name, model_name, token_manager), message
@@ -128,7 +127,7 @@ class ApiRequest:
         return config
 
     def load_provider(self, config):
-        if config["preset_name"] is None:
+        if "provider" in config["metadata"]:
             return self.provider_manager.load_provider(config["metadata"]["provider"])
         return True, self.provider, "Default provider loaded"
 
@@ -196,23 +195,34 @@ class ApiRequest:
             f"Retrieved metadata and customizations for preset: {preset_name}",
         )
 
-    def expand_functions(self, customizations):
-        """Expand any configured functions to their full definition."""
-        self.function_cache = FunctionCache(self.config, self.function_manager, customizations)
-        self.function_cache.add_message_functions(self.old_messages)
-        if len(self.function_cache.functions) > 0:
-            customizations.setdefault("model_kwargs", {})
-            customizations["model_kwargs"].setdefault("functions", [])
-            for function_name in self.function_cache.functions:
-                idx = customizations["model_kwargs"]["functions"].index(function_name)
-                customizations["model_kwargs"]["functions"][
-                    idx
-                ] = self.function_manager.get_function_config(function_name)
-        return customizations
+    def expand_tools(self, customizations):
+        """Expand any configured tools to their full definition.
 
-    def prepare_new_conversation_messages(self):
+        :param customizations: Model customizations
+        :type customizations: dict
+        :returns: customizations, tools, tool_choice
+        :rtype: tuple
         """
-        Prepare new conversation messages.
+        # TODO: Remove after deprecation period -- BEGIN
+        if "model_kwargs" in customizations and "functions" in customizations["model_kwargs"]:
+            raise RuntimeError(
+                "BREAKING CHNANGE: The configuration of functions in presets has changed to a `tools` configuration, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/345 for migration instructions"
+            )
+        # TODO: Remove after deprecation period -- END
+        customizations = copy.deepcopy(customizations)
+        self.tool_cache = ToolCache(self.config, self.tool_manager, customizations)
+        self.tool_cache.add_message_tools(self.old_messages)
+        tools = [
+            self.tool_manager.get_tool_config(tool_name) for tool_name in self.tool_cache.tools
+        ]
+        if "tools" in customizations:
+            del customizations["tools"]
+        tool_choice = customizations.pop("tool_choice", None)
+        return customizations, tools, tool_choice
+
+    def prepare_default_new_conversation_messages(self):
+        """
+        Prepare default new conversation messages.
 
         :returns: List of new messages
         :rtype: list
@@ -227,6 +237,31 @@ class ApiRequest:
         new_messages.append(self.message.build_message("user", self.input))
         return new_messages
 
+    def prepare_custom_new_conversation_messages(self):
+        """
+        Prepare custom new conversation messages.
+
+        :returns: List of new messages
+        :rtype: list
+        """
+        return [
+            self.message.build_message(message["role"], message["content"])
+            for message in self.input
+        ]
+
+    def prepare_new_conversation_messages(self):
+        """
+        Prepare new conversation messages.
+
+        :returns: List of new messages
+        :rtype: list
+        """
+        return (
+            self.prepare_custom_new_conversation_messages()
+            if type(self.input) is list
+            else self.prepare_default_new_conversation_messages()
+        )
+
     def prepare_ask_request(self):
         """
         Prepare the request for the LLM.
@@ -235,7 +270,7 @@ class ApiRequest:
         :rtype: tuple
         """
         new_messages = self.prepare_new_conversation_messages()
-        old_messages = self.function_cache.add_message_functions(self.old_messages)
+        old_messages = self.tool_cache.add_message_tools(self.old_messages)
         messages = old_messages + new_messages
         messages = self.strip_out_messages_over_max_tokens(messages, self.max_submission_tokens)
         return new_messages, messages
@@ -315,24 +350,11 @@ class ApiRequest:
 
     def iterate_streaming_response(self, messages, print_stream, stream_callback):
         response = None
-        is_function_call = False
         self.log.debug(f"Streaming with LLM attributes: {self.llm.dict()}")
         for chunk in self.llm.stream(messages):
             if isinstance(chunk, AIMessageChunk):
                 content = chunk.content
-                function_call = chunk.additional_kwargs.get("function_call")
-                if response:
-                    response.content += content
-                    if function_call:
-                        response.additional_kwargs["function_call"]["arguments"] += function_call[
-                            "arguments"
-                        ]
-                else:
-                    chunk_copy = copy.deepcopy(chunk)
-                    chunk_copy.type = 'ai'
-                    response = AIMessage(**dict(chunk_copy))
-                    if function_call:
-                        is_function_call = True
+                response = chunk if not response else response + chunk
             elif isinstance(chunk, str):
                 content = chunk
                 response = content if not response else response + content
@@ -340,7 +362,7 @@ class ApiRequest:
                 raise ValueError(f"Unexpected chunk type: {type(chunk)}")
             self.output_chunk_content(content, print_stream, stream_callback)
             if not self.streaming:
-                if is_function_call:
+                if getattr(response, "tool_call_chunks", None):
                     response = None
                 util.print_status_message(False, "Generation stopped")
                 break
@@ -365,70 +387,69 @@ class ApiRequest:
 
     def execute_llm_non_streaming(self, messages):
         self.log.info("Starting non-streaming request")
+        self.log.debug(f"Non-streaming with LLM attributes: {self.llm.dict()}")
         try:
-            response = self.llm(messages)
+            response = self.llm.invoke(messages)
         except ValueError as e:
             return False, messages, e
         return True, response, "Response received"
 
     def post_response(self, response_obj, new_messages):
-        response_message = self.extract_message_content(response_obj)
+        response_message, tool_calls = self.extract_message_content(response_obj)
         new_messages.append(response_message)
 
-        if response_message["message_type"] == "function_call":
-            return self.handle_function_call(response_message, new_messages)
+        if tool_calls:
+            return self.handle_tool_calls(tool_calls, new_messages)
 
-        return self.handle_non_function_response(response_message, new_messages)
+        return self.handle_non_tool_response(response_message, new_messages)
 
-    def handle_function_call(self, response_message, new_messages):
-        function_call = response_message["message"]
-        self.log_function_call(function_call)
+    def handle_tool_calls(self, tool_calls, new_messages):
+        for tool_call in tool_calls:
+            self.log_tool_call(tool_call)
 
-        if self.should_return_on_function_call():
-            self.log.info(f"Returning directly on function call: {function_call['name']}")
-            return self.build_function_definition(function_call), new_messages
+        if self.should_return_on_tool_call():
+            names = [tool_call["name"] for tool_call in tool_calls]
+            self.log.info(f"Returning directly on tool call: {names}")
+            return tool_calls, new_messages
 
-        return self.execute_function_call(function_call, new_messages)
+        return self.execute_tool_calls(tool_calls, new_messages)
 
-    def handle_non_function_response(self, response_message, new_messages):
-        function_response, new_messages = self.check_return_on_function_response(new_messages)
-        if function_response:
-            self.log.info("Returning directly on function response")
-            return function_response, new_messages
+    def handle_non_tool_response(self, response_message, new_messages):
+        tool_response, new_messages = self.check_return_on_tool_response(new_messages)
+        if tool_response:
+            self.log.info("Returning directly on tool response")
+            return tool_response, new_messages
 
         return response_message["message"], new_messages
 
-    def log_function_call(self, function_call):
+    def log_tool_call(self, tool_call):
         if not self.return_only:
             util.print_markdown(
-                f"### AI requested function call:\n* Name: {function_call['name']}\n* Arguments: {function_call['arguments']}"
+                f"### AI requested tool call:\n* Name: {tool_call['name']}\n* Arguments: {tool_call['args']}"
             )
 
-    def build_function_definition(self, function_call):
-        return {
-            "name": function_call["name"],
-            "arguments": function_call["arguments"],
-        }
-
-    def execute_function_call(self, function_call, new_messages):
-        success, function_response, user_message = self.run_function(
-            function_call["name"], function_call["arguments"]
-        )
+    def execute_tool_call(self, tool_call):
+        success, tool_response, user_message = self.run_tool(tool_call["name"], tool_call["args"])
         if not success:
-            raise ValueError(f"Function call failed: {user_message}")
+            raise ValueError(f"Tool call failed: {user_message}")
+        return tool_response
 
-        new_messages.append(self.build_function_response_message(function_call, function_response))
+    def execute_tool_calls(self, tool_calls, new_messages):
+        for tool_call in tool_calls:
+            tool_response = self.execute_tool_call(tool_call)
+            new_messages.append(self.build_tool_response_message(tool_call, tool_response))
 
-        # If a function call is forced, we cannot recurse, as there will
-        # never be a final non-function response, and we'll recurse infinitely.
+        # If a tool call is forced, we cannot recurse, as there will
+        # never be a final non-tool response, and we'll recurse infinitely.
         # TODO: Perhaps in the future we can handle this more elegantly by:
-        # 1. Tracking which functions with which arguments are called, and breaking
+        # 1. Tracking which tools with which arguments are called, and breaking
         #    on the first duplicate call.
-        # 2. Allowing a 'maximum_forced_function_calls' metadata attribute.
-        # 3. Automatically switching the preset's 'function_call' to 'auto' after
+        # 2. Allowing a 'maximum_forced_tool_calls' metadata attribute.
+        # 3. Automatically switching the preset's 'tool_choice' to 'auto' after
         #    the first call.
-        if self.check_forced_function():
-            return function_response, new_messages
+        if self.check_forced_tool():
+            self.log.debug("Returning directly on forced tool call")
+            return tool_response, new_messages
 
         success, response_obj, user_message = self.call_llm(new_messages)
         if not success:
@@ -436,14 +457,16 @@ class ApiRequest:
 
         return self.post_response(response_obj, new_messages)
 
-    def build_function_response_message(self, function_call, function_response):
+    def build_tool_response_message(self, tool_call, tool_response):
         message_metadata = {
-            "name": function_call["name"],
+            "name": tool_call["name"],
         }
+        if "id" in tool_call:
+            message_metadata["id"] = tool_call["id"]
         return self.message.build_message(
-            "function",
-            function_response,
-            message_type="function_response",
+            "tool",
+            tool_response,
+            message_type="tool_response",
             message_metadata=message_metadata,
         )
 
@@ -452,108 +475,116 @@ class ApiRequest:
         Extract the content from an LLM message.
 
         :param message: Message
-        :type message: dict
-        :returns: Built message
-        :rtype: dict
+        :type message: dict | BaseMessage
+        :returns: Built message, tool calls
+        :rtype: tuple
         """
+        tool_calls = []
         if isinstance(message, BaseMessage):
+            tool_calls = message.tool_calls
+            invalid_tool_calls = getattr(message, "invalid_tool_calls", [])
+            if invalid_tool_calls:
+                tool_call_errors = ", ".join(
+                    [
+                        f"{tool_call['name']}: {tool_call['error']}"
+                        for tool_call in invalid_tool_calls
+                    ]
+                )
+                raise RuntimeError(f"LLM tool call failed: {tool_call_errors}")
             message_dict = convert_message_to_dict(message)
             content = message_dict["content"]
             message_type = "content"
-            if "function_call" in message_dict:
-                message_type = "function_call"
-                message_dict["function_call"]["arguments"] = json.loads(
-                    message_dict["function_call"]["arguments"], strict=False
-                )
-                content = message_dict["function_call"]
-            elif message_dict["role"] == "function":
-                message_type = "function_response"
-            return self.message.build_message(message_dict["role"], content, message_type)
-        return self.message.build_message("assistant", message)
+            if tool_calls:
+                message_type = "tool_call"
+                content = tool_calls
+            return (
+                self.message.build_message(message_dict["role"], content, message_type),
+                tool_calls,
+            )
+        return self.message.build_message("assistant", message), tool_calls
 
-    def should_return_on_function_call(self):
+    def should_return_on_tool_call(self):
         """
-        Check if should return on function call.
+        Check if should return on tool call.
 
-        :returns: Whether to return on function call
+        :returns: Whether to return on tool call
         :rtype: bool
         """
         metadata, _customizations = self.preset
-        return "return_on_function_call" in metadata and metadata["return_on_function_call"]
+        return "return_on_tool_call" in metadata and metadata["return_on_tool_call"]
 
-    def check_forced_function(self):
-        """Check if a function call is forced.
+    def check_forced_tool(self):
+        """Check if a tool call is forced.
 
-        :returns: True if forced function
+        :returns: True if forced tool
         :rtype: bool
         """
         _metadata, customizations = self.preset
-        return (
-            "model_kwargs" in customizations
-            and "function_call" in customizations["model_kwargs"]
-            and isinstance(customizations["model_kwargs"]["function_call"], dict)
-        )
+        if "tool_choice" in customizations:
+            return not (
+                isinstance(customizations["tool_choice"], str)
+                and customizations["tool_choice"] in ["auto", "none"]
+            )
+        return False
 
-    def check_return_on_function_response(self, new_messages):
+    def check_return_on_tool_response(self, new_messages):
         """
-        Check for return on function response.
+        Check for return on tool response.
 
-        Supports multiple function calls.
+        Supports multiple tool calls.
 
         :param new_messages: List of new messages
         :type new_messages: list
-        :returns: Function response or None, updated messages
+        :returns: Tool response or None, updated messages
         :rtype: tuple
         """
         metadata, _customizations = self.preset
-        if "return_on_function_response" in metadata and metadata["return_on_function_response"]:
-            # NOTE: In order to allow for multiple function calling and
-            # returning on the LAST function response, we need to allow
-            # the LLM to respond to all previous function responses, as
-            # it may respond with another function call.
+        if "return_on_tool_response" in metadata and metadata["return_on_tool_response"]:
+            # NOTE: In order to allow for multiple tool calling and
+            # returning on the LAST tool response, we need to allow
+            # the LLM to respond to all previous tool responses, as
+            # it may respond with another tool call.
             #
             # Thus, at the end of all responses from the LLM, the last
             # message will be a natural language reponse, and the previous
-            # message will be the last function response.
+            # message will be the last tool response.
             #
-            # To correctly return the function response and message list
+            # To correctly return the tool response and message list
             # we need to:
             # 1. Remove the last message
-            # 2. Extract and return the function response
-            if self.is_function_response_message(new_messages[-2]):
+            # 2. Extract and return the tool response
+            if self.is_tool_response_message(new_messages[-2]):
                 new_messages.pop()
-                function_response = new_messages[-1]["message"]
-                return function_response, new_messages
+                tool_response = new_messages[-1]["message"]
+                return tool_response, new_messages
         return None, new_messages
 
-    def run_function(self, function_name, data):
-        """Run a function.
+    def run_tool(self, tool_name, data):
+        """Run a tool.
 
-        :param function_name: Function name
-        :type function_name: str
-        :param data: Function arguments
+        :param tool_name: Tool name
+        :type tool_name: str
+        :param data: Tool arguments
         :type data: dict
         :returns: success, response, message
         :rtype: tuple
         """
-        success, response, user_message = self.function_manager.run_function(function_name, data)
+        success, response, user_message = self.tool_manager.run_tool(tool_name, data)
         json_obj = response if success else {"error": user_message}
         if not self.return_only:
-            util.print_markdown(
-                f"### Function response:\n* Name: {function_name}\n* Success: {success}"
-            )
+            util.print_markdown(f"### Tool response:\n* Name: {tool_name}\n* Success: {success}")
             util.print_markdown(json_obj)
         return success, json_obj, user_message
 
-    def is_function_response_message(self, message):
-        """Check if a message is a function response.
+    def is_tool_response_message(self, message):
+        """Check if a message is a tool response.
 
         :param message: The message
         :type message: dict
-        :returns: True if function response
+        :returns: True if tool response
         :rtype: bool
         """
-        return message["message_type"] == "function_response"
+        return message["message_type"] == "tool_response"
 
     def terminate_stream(self, _signal, _frame):
         """

@@ -47,6 +47,16 @@ def test_ensure_template(template_manager):
     assert "not found" in user_message
 
 
+def test_get_raw_template(template_manager):
+    template_name = "raw_template.md"
+    content = "test {{ variable }}"
+    make_template_file(template_manager, template_name, content)
+    success, raw_content, user_message = template_manager.get_raw_template(template_name)
+    remove_template_file(template_manager, template_name)
+    assert success is True
+    assert raw_content == content
+
+
 def test_extract_metadata_keys(template_manager):
     metadata = {"title": "Test Title", "description": "Test Description", "custom": "Custom Value"}
     keys = ["title", "custom"]

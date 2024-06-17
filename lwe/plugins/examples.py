@@ -8,7 +8,7 @@ TYPES = [
     "presets",
     "templates",
     "workflows",
-    "functions",
+    "tools",
 ]
 
 
@@ -47,7 +47,7 @@ class Examples(Plugin):
         examples = []
         for root, dirs, files in os.walk(example_type_dir):
             # Exclude directories that start with an underscore
-            dirs[:] = [d for d in dirs if not d.startswith('_')]
+            dirs[:] = [d for d in dirs if not d.startswith("_")]
             for file in files:
                 file_path = os.path.join(root, file)
                 if os.path.isfile(file_path):

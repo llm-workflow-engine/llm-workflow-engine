@@ -9,14 +9,20 @@ If you have an idea for a new feature or have found a bug, please
 on the GitHub repository.
 
 -----------------------------------------------
+Development Dependencies
+-----------------------------------------------
+
+To install LWE in development mode, run the following from the project root:
+
+.. code-block:: bash
+
+   pip install -e .[dev]
+
+-----------------------------------------------
 Test suite
 -----------------------------------------------
 
 The project uses `Pytest <https://docs.pytest.org>`_.
-
-.. code-block:: bash
-
-  pip install pytest
 
 To run all tests:
 
@@ -24,3 +30,16 @@ To run all tests:
 
    pytest
 
+-----------------------------------------------
+Documentation
+-----------------------------------------------
+
+The project uses `Sphinx <https://www.sphinx-doc.org>`_.
+
+To build the documentation:
+
+.. code-block:: bash
+
+   cd doc
+   pip-compile requirements.in
+   make html

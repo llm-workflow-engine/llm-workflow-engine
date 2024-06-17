@@ -41,7 +41,7 @@ class PluginBase:
     def query_llm(self, messages):
         llm = self.make_llm()
         try:
-            result = llm(messages)
+            result = llm.invoke(messages)
             result_string = result.content
         except ValueError as e:
             return False, None, e

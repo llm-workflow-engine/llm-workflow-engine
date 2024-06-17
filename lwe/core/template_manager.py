@@ -3,7 +3,7 @@ import frontmatter
 import shutil
 import tempfile
 
-from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound, meta
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, meta
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -28,7 +28,7 @@ class TemplateManager:
         self.log = Logger(self.__class__.__name__, self.config)
         self.temp_template_dir = self.make_temp_template_dir()
         self.user_template_dirs = (
-            self.config.args.template_dir
+            self.config.args.templates_dir
             or util.get_environment_variable_list("template_dir")
             or self.config.get("directories.templates")
         )
@@ -71,6 +71,21 @@ class TemplateManager:
         message = f"Template {template_name} exists"
         self.log.debug(message)
         return True, template_name, message
+
+    def get_raw_template(self, template_name):
+        """
+        Retrieve the raw source of a template by its name.
+
+        :param template_name: The name of the template to retrieve.
+        :type template_name: str
+        :return: A tuple containing a boolean success flag, the raw template source as a string, and a user message.
+        :rtype: tuple
+        """
+        success, template_name, user_message = self.ensure_template(template_name)
+        if not success:
+            return success, template_name, user_message
+        template_source = self.templates_env.loader.get_source(self.templates_env, template_name)
+        return True, template_source[0], f"Retrieved raw template: {template_name}"
 
     def get_template_variables_substitutions(self, template_name):
         """
@@ -262,7 +277,7 @@ class TemplateManager:
         template_substitutions, overrides = self.extract_template_run_overrides(source.metadata)
         final_substitutions = {**template_substitutions, **substitutions}
         self.log.debug(f"Rendering template: {template_name}")
-        final_template = Template(source.content)
+        final_template = self.templates_env.from_string(source.content)
         message = final_template.render(**final_substitutions)
         return message, overrides
 

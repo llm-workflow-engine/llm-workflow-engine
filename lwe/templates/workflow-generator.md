@@ -71,6 +71,12 @@ request_overrides:
             required: false
             default: None (anonymous, or new conversation if user is provided)
             type: int
+        title:
+            description: Custom title for the conversation.
+                         NOTE: This is only used if a user_id is provided for a new conversation.
+            required: false
+            default: None
+            type: str
 
     EXAMPLES:
 
@@ -79,10 +85,11 @@ request_overrides:
       lwe_llm:
         message: "Say Hello!"
 
-    # Start a new conversation with this response
+    # Start a new conversation with a custom title with this response
     - name: Start conversation
       lwe_llm:
         message: "What are the three primary colors?"
+        title: "The three primary colors"
         max_submission_tokens: 512
         # User ID or username
         user: 1
@@ -113,7 +120,7 @@ request_overrides:
         preset: mypreset
         preset_overrides:
             metadata:
-                return_on_function_call: true
+                return_on_tool_call: true
             model_customizations:
                 temperature: 1
 

@@ -73,6 +73,12 @@ options:
         required: false
         default: None (anonymous, or new conversation if user is provided)
         type: int
+    title:
+        description: Custom title for the conversation.
+                     NOTE: This is only used if a user_id is provided for a new conversation.
+        required: false
+        default: None
+        type: str
 
 author:
     - Chad Phillips (@thehunmonkgroup)
@@ -118,7 +124,7 @@ EXAMPLES = r"""
     preset: mypreset
     preset_overrides:
         metadata:
-            return_on_function_call: true
+            return_on_tool_call: true
         model_customizations:
             temperature: 1
 
@@ -154,6 +160,7 @@ def run_module():
         template_vars=dict(type="dict", required=False),
         user=dict(type="raw", required=False),
         conversation_id=dict(type="int", required=False),
+        title=dict(type="str", required=False),
     )
 
     result = dict(changed=False, response=dict())
@@ -176,6 +183,7 @@ def run_module():
     except Exception:
         pass
     conversation_id = module.params["conversation_id"]
+    title = module.params["title"]
 
     if (message is None and template_name is None) or (
         message is not None and template_name is not None
@@ -205,6 +213,8 @@ def run_module():
         overrides["request_overrides"]["preset_overrides"] = preset_overrides
     if system_message:
         overrides["request_overrides"]["system_message"] = system_message
+    if title:
+        overrides["request_overrides"]["title"] = title
     if template_name is not None:
         gpt.log.debug(f"[lwe_llm module]: Using template: {template_name}")
         success, response, user_message = gpt.template_manager.get_template_variables_substitutions(

@@ -1,4 +1,4 @@
-from langchain.chat_models.openai import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 from lwe.core.provider import Provider, PresetValue
 from lwe.core import constants
@@ -22,7 +22,7 @@ class ProviderChatOpenai(Provider):
             "chat": True,
             "models": {
                 "gpt-3.5-turbo": {
-                    "max_tokens": 4096,
+                    "max_tokens": 16384,
                 },
                 "gpt-3.5-turbo-16k": {
                     "max_tokens": 16384,
@@ -34,6 +34,9 @@ class ProviderChatOpenai(Provider):
                     "max_tokens": 16384,
                 },
                 "gpt-3.5-turbo-1106": {
+                    "max_tokens": 16384,
+                },
+                "gpt-3.5-turbo-0125": {
                     "max_tokens": 16384,
                 },
                 "gpt-4": {
@@ -48,7 +51,25 @@ class ProviderChatOpenai(Provider):
                 "gpt-4-32k-0613": {
                     "max_tokens": 32768,
                 },
+                "gpt-4-turbo": {
+                    "max_tokens": 131072,
+                },
+                "gpt-4-turbo-2024-04-09": {
+                    "max_tokens": 131072,
+                },
+                "gpt-4-turbo-preview": {
+                    "max_tokens": 131072,
+                },
                 "gpt-4-1106-preview": {
+                    "max_tokens": 131072,
+                },
+                "gpt-4-0125-preview": {
+                    "max_tokens": 131072,
+                },
+                "gpt-4o": {
+                    "max_tokens": 131072,
+                },
+                "gpt-4o-2024-05-13": {
                     "max_tokens": 131072,
                 },
             },
@@ -69,20 +90,24 @@ class ProviderChatOpenai(Provider):
             "verbose": PresetValue(bool),
             "model_name": PresetValue(str, options=self.available_models),
             "temperature": PresetValue(float, min_value=0.0, max_value=2.0),
+            "openai_api_base": PresetValue(str, include_none=True),
             "openai_api_key": PresetValue(str, include_none=True, private=True),
             "openai_organization": PresetValue(str, include_none=True, private=True),
             "request_timeout": PresetValue(int),
             "max_retries": PresetValue(int, 1, 10),
             "n": PresetValue(int, 1, 10),
             "max_tokens": PresetValue(int, include_none=True),
+            "tools": None,
+            "tool_choice": None,
             "model_kwargs": {
                 "top_p": PresetValue(float, min_value=0.0, max_value=1.0),
                 "presence_penalty": PresetValue(float, min_value=-2.0, max_value=2.0),
                 "frequency_penalty": PresetValue(float, min_value=-2.0, max_value=2.0),
                 "logit_bias": dict,
+                "logprobs": PresetValue(bool, include_none=True),
+                "top_logprobs": PresetValue(int, min_value=0, max_value=20, include_none=True),
+                "response_format": dict,
                 "stop": PresetValue(str, include_none=True),
                 "user": PresetValue(str),
-                "functions": None,
-                "function_call": None,
             },
         }
