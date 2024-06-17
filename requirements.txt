@@ -26,3 +26,4 @@ pytest-datadir[dev]
 pip-tools[dev]
 flake8[dev]
 black[dev]
+tenacity==8.3.0
