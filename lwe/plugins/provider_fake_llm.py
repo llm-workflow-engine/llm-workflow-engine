@@ -73,13 +73,13 @@ class FakeMessagesListChatModel(BaseChatModel):
         else:
             self.i = 0
         if isinstance(response, str):
-            response = BaseMessage(content=response)
+            response = AIMessage(content=response)
         elif isinstance(response, BaseMessage):
             pass
         elif isinstance(response, list):
             for i, item in enumerate(response):
                 if isinstance(item, str):
-                    response[i] = BaseMessage(content=item)
+                    response[i] = AIMessage(content=item)
                 elif not isinstance(item, BaseMessage):
                     raise TypeError(f"Unexpected type in response list: {type(item)}")
         else:
