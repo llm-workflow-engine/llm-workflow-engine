@@ -363,6 +363,17 @@ class ApiBackend:
                 self.set_system_message(metadata["system_message"])
         return success, preset, user_message
 
+    def reload_plugin(self, plugin_name):
+        """
+        Reload a plugin.
+
+        :param plugin_name: Name of plugin
+        :type plugin_name: str
+        :returns: success, plugin_instance, message
+        :rtype: tuple
+        """
+        return self.plugin_manager.reload_plugin(plugin_name)
+
     def _handle_response(self, success, obj, message):
         """
         Handle response tuple.

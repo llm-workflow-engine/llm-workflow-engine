@@ -144,6 +144,9 @@ class Repl:
         commands_with_leader[util.command_with_leader("template")] = {
             c: template_completions for c in self.get_command_actions("template", dashed=True)
         }
+        commands_with_leader[util.command_with_leader("plugin")] = {
+            "reload": util.list_to_completion_hash(self.backend.plugin_manager.plugin_list)
+        }
         self.base_shell_completions = commands_with_leader
 
     def rebuild_completions(self):
@@ -1211,6 +1214,25 @@ class Repl:
         substitutions = self.collect_template_variable_values(template_name, variables)
         template_content = template.render(**substitutions)
         return self.edit_run_template(template_content)
+
+    def command_plugin(self, args):
+        """
+        Perform operations on plugins.
+
+        Arguments:
+            action: The action to perform. One of: reload
+            target: The target for the action.
+              reload: The name of the plugin to reload
+
+        Examples:
+            {COMMAND} reload echo
+        """
+        return self.dispatch_command_action("plugin", args)
+
+    def action_plugin_reload(self, plugin_name):
+        result = self.backend.reload_plugin(plugin_name)
+        self.rebuild_completions()
+        return result
 
     def command_plugins(self, arg):
         """

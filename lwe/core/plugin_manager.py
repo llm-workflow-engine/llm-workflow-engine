@@ -42,6 +42,20 @@ class PluginManager:
         self.setup_plugin(plugin_name, plugin_instance)
         self.plugins[plugin_name] = plugin_instance
 
+    def reload_plugin(self, plugin_name):
+        if plugin_name in self.plugin_list:
+            plugin_instance = self.load_plugin(plugin_name)
+            if plugin_instance is not None:
+                self.plugins[plugin_name] = plugin_instance
+                message = f"Plugin {plugin_name} reloaded successfully"
+                self.log.info(message)
+                return True, plugin_instance, message
+            return False, None, f"Failed to reload plugin {plugin_name}"
+        else:
+            message = f"Plugin {plugin_name} not found in plugin list"
+            self.log.error(message)
+            return False, None, message
+
     def load_plugins(self, plugin_list):
         for plugin_name in plugin_list:
             plugin_instance = self.load_plugin(plugin_name)
