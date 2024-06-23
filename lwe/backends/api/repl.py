@@ -363,12 +363,12 @@ Before you can start using the shell, you must create a new user.
             Login can be username or email.
 
         Examples:
-            * /user delete [myuser]
-            * /user edit [myuser]
-            * /user login [myuser]
-            * /user logout
-            * /user register [myuser]
-            * /user show [myuser]
+            * {COMMAND} delete [myuser]
+            * {COMMAND} edit [myuser]
+            * {COMMAND} login [myuser]
+            * {COMMAND} logout
+            * {COMMAND} register [myuser]
+            * {COMMAND} show [myuser]
         """
         return self.dispatch_command_action("user", args)
 
