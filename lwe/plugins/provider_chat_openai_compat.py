@@ -12,7 +12,7 @@ class CustomChatOpenAICompat(ChatOpenAI):
 
 class ProviderChatOpenaiCompat(Provider):
     """
-    Access to third-party chat models via and OpenAI compatible API
+    Access to third-party chat models via an OpenAI compatible API
     """
 
     @property
