@@ -1260,6 +1260,8 @@ class Repl:
 * **Data dir:** %s
 * **Data profile dir:** %s
 * **Database:** %s
+* **Cache dirs:**
+%s
 * **Template dirs:**
 %s
 * **Preset dirs:**
@@ -1275,6 +1277,7 @@ class Repl:
             self.config.data_dir,
             self.config.data_profile_dir,
             self.config.get("database"),
+            util.list_to_markdown_list(self.backend.cache_manager.cache_dirs),
             util.list_to_markdown_list(self.backend.template_manager.user_template_dirs),
             util.list_to_markdown_list(self.backend.preset_manager.user_preset_dirs),
             (

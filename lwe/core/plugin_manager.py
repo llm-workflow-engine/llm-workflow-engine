@@ -4,17 +4,19 @@ import importlib.metadata
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
+from lwe.core.cache_manager import CacheManager
 import lwe.core.util as util
 
 PLUGIN_PREFIX = "lwe_"
 
 
 class PluginManager:
-    def __init__(self, config=None, backend=None, search_path=None, additional_plugins=None):
+    def __init__(self, config=None, backend=None, cache_manager=None, search_path=None, additional_plugins=None):
         additional_plugins = additional_plugins or []
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
         self.backend = backend
+        self.cache_manager = cache_manager or CacheManager(self.config)
         self.search_path = search_path if search_path else self.get_default_plugin_paths()
         self.plugins = {}
         self.package_plugins = {}

@@ -4,6 +4,7 @@ from lwe.core.config import Config
 from lwe.core.logger import Logger
 from lwe.backends.api.database import Database
 from lwe.backends.api.orm import Orm, User
+from lwe.core.cache_manager import CacheManager
 from lwe.core.template_manager import TemplateManager
 from lwe.core.preset_manager import PresetManager
 from lwe.core.provider_manager import ProviderManager
@@ -173,10 +174,11 @@ class ApiBackend:
         self.provider = None
         self.message_clipboard = None
         self.return_only = False
+        self.cache_manager = CacheManager(self.config)
         self.template_manager = TemplateManager(self.config)
         self.preset_manager = PresetManager(self.config)
         self.plugin_manager = PluginManager(
-            self.config, self, additional_plugins=ADDITIONAL_PLUGINS
+            self.config, self, self.cache_manager, additional_plugins=ADDITIONAL_PLUGINS
         )
         self.provider_manager = ProviderManager(self.config, self.plugin_manager)
         self.workflow_manager = WorkflowManager(self.config)

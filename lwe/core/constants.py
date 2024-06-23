@@ -49,6 +49,9 @@ DEFAULT_CONFIG = {
         },
     },
     "directories": {
+        "cache": [
+            "$DATA_DIR/cache",
+        ],
         "templates": [
             "$CONFIG_DIR/profiles/$PROFILE/templates",
             "$CONFIG_DIR/templates",
