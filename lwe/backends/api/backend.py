@@ -716,6 +716,7 @@ class ApiBackend:
         new_messages, messages = request.prepare_ask_request()
         success, response_obj, user_message = request.call_llm(messages)
         if success:
+            self.log.debug(f"LLM Response: {vars(response_obj)}")
             response_content, new_messages = request.post_response(response_obj, new_messages)
             self.message_clipboard = response_content
             title = request_overrides.get("title")
