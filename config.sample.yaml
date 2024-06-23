@@ -26,6 +26,8 @@ backend_options:
     # The default is chat_openai.
     # If an alternate provider is set, the default model will be used for the generation.
     provider: None
+    # Specify the model used for title generation. Only used if 'provider' is set.
+    model: None
 
 # The database connection string, in a format SQLAlchemy understands.
 # DO NOT USE THE LINE AS IT IS WRITTEN BELOW, IT ONLY ILLUSTRATES THE DEFAULT LOCATION.

@@ -45,6 +45,7 @@ DEFAULT_CONFIG = {
         "default_conversation_id": None,
         "title_generation": {
             "provider": None,
+            "model": None,
         },
     },
     "directories": {

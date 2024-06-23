@@ -164,7 +164,13 @@ class ConversationStorageManager:
             provider = self.provider_manager.get_provider_from_name(title_provider_name)
             if not provider:
                 raise RuntimeError(f"Failed to load title provider: {title_provider_name}")
-            llm = provider.make_llm()
+            customizations = {
+                "temperature": 0,
+            }
+            title_provider_model = self.config.get("backend_options.title_generation.model")
+            if title_provider_model:
+                customizations[provider.model_property_name] = title_provider_model
+            llm = provider.make_llm(customizations=customizations)
         else:
             provider = self.provider_manager.get_provider_from_name("chat_openai")
             llm = provider.make_llm(
@@ -205,6 +211,9 @@ class ConversationStorageManager:
         new_messages = util.transform_messages_to_chat_messages(new_messages)
         new_messages = [provider.convert_dict_to_message(m) for m in new_messages]
         try:
+            self.log.debug(
+                f"Title generation LLM provider: {provider.name}, model: {getattr(llm, provider.model_property_name, 'N/A')}"
+            )
             result = llm.invoke(new_messages)
             request = ApiRequest(orm=self.orm, config=self.config)
             message, _tool_calls = request.extract_message_content(result)
