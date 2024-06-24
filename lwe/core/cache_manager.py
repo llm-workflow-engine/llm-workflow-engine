@@ -106,3 +106,20 @@ class CacheManager:
             return False, None, f"Cache directory not found: {cache_dir}"
         cache_path = os.path.join(cache_dir, key)
         return self.save_file(cache_path, value)
+
+    def cache_delete(self, key, cache_dir=None):
+        """
+        Delete a value from the cache.
+
+        :param key: The key to delete.
+        :param cache_dir: The cache directory to use. If not provided, the first cache directory is used.
+        :return: A tuple containing a success indicator, the deleted content, and a message.
+        """
+        cache_dir = cache_dir or self.cache_dirs[0]
+        if not os.path.exists(cache_dir):
+            return False, None, f"Cache directory not found: {cache_dir}"
+        cache_path = os.path.join(cache_dir, key)
+        if os.path.exists(cache_path):
+            os.remove(cache_path)
+            return True, None, f"Cache entry {key} deleted successfully"
+        return False, None, f"Cache entry not found: {key}"
