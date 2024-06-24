@@ -11,7 +11,14 @@ PLUGIN_PREFIX = "lwe_"
 
 
 class PluginManager:
-    def __init__(self, config=None, backend=None, cache_manager=None, search_path=None, additional_plugins=None):
+    def __init__(
+        self,
+        config=None,
+        backend=None,
+        cache_manager=None,
+        search_path=None,
+        additional_plugins=None,
+    ):
         additional_plugins = additional_plugins or []
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
@@ -38,7 +45,7 @@ class PluginManager:
         return plugin_paths
 
     def inject_plugin(self, plugin_name, plugin_class):
-        plugin_instance = plugin_class(self.config)
+        plugin_instance = plugin_class(self.config, cache_manager=self.cache_manager)
         self.setup_plugin(plugin_name, plugin_instance)
         self.plugins[plugin_name] = plugin_instance
 
@@ -88,7 +95,7 @@ class PluginManager:
             if plugin_name in plugin_list:
                 try:
                     klass = entry_point.load()
-                    plugin_instance = klass(self.config)
+                    plugin_instance = klass(self.config, cache_manager=self.cache_manager)
                     self.log.info(
                         f"Loaded plugin: {entry_point.name}, from package: {package_name}"
                     )
@@ -127,7 +134,7 @@ class PluginManager:
                     spec.loader.exec_module(module)
                     plugin_class_name = util.snake_to_class(plugin_name)
                     plugin_class = getattr(module, plugin_class_name)
-                    plugin_instance = plugin_class(self.config)
+                    plugin_instance = plugin_class(self.config, cache_manager=self.cache_manager)
                     break
                 except Exception as e:
                     self.log.error(f"Error loading plugin {plugin_name} from {plugin_file}: {e}")

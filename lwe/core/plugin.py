@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
+import datetime
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
+from lwe.core.cache_manager import CacheManager
+
+PLUGIN_CACHE_API_VERSION = 1
 
 
 class PluginBase:
-    def __init__(self, config=None):
+    def __init__(self, config=None, cache_manager=None):
         self.config = config or Config()
+        self.cache_manager = cache_manager or CacheManager(self.config)
         self.log = Logger(self.__class__.__name__, self.config)
 
     @property
@@ -18,6 +23,15 @@ class PluginBase:
         if self.__class__.__doc__:
             return self.__class__.__doc__.strip().split("\n")[0]
         return ""
+
+    @property
+    def plugin_cache_filename(self):
+        return f"{self.name}.yaml"
+
+    def write_plugin_cache_file(self, data):
+        data["api_version"] = PLUGIN_CACHE_API_VERSION
+        data["last_updated"] = datetime.datetime.now().isoformat()
+        self.cache_manager.cache_set(self.plugin_cache_filename, data)
 
     def set_name(self, name):
         self.name = name

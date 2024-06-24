@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import copy
 
 from typing import (
     Any,
@@ -94,8 +95,6 @@ class PresetValue:
 
 
 class ProviderBase(Plugin):
-    def __init__(self, config=None):
-        super().__init__(config)
 
     @property
     def display_name(self):
@@ -114,9 +113,38 @@ class ProviderBase(Plugin):
         return self.get_capability("models", {}).keys()
 
     def setup(self):
+        self.load_models()
         self.set_customizations(self.default_customizations())
 
     def default_config(self):
+        return {}
+
+    def load_models(self):
+        self.models = self.config.get(f"plugins.{self.name}.models")
+        if not self.models:
+            if hasattr(self, "fetch_models"):
+                try:
+                    success, data, _user_message = self.cache_manager.cache_get(
+                        self.plugin_cache_filename
+                    )
+                    if success:
+                        self.models = data["models"]
+                    else:
+                        message = f"Fetching data for {self.name}"
+                        self.log.info(message)
+                        util.print_status_message(True, message)
+                        self.models = self.fetch_models()
+                        self.write_plugin_cache_file({"models": self.models})
+                except Exception as e:
+                    message = f"Could not fetch data for {self.name}: {e}"
+                    self.log.error(message)
+                    util.print_status_message(False, message)
+                    self.models = copy.deepcopy(self.static_models)
+            else:
+                self.models = copy.deepcopy(self.static_models)
+
+    @property
+    def static_models(self):
         return {}
 
     def default_customizations(self, defaults=None):
@@ -239,6 +267,8 @@ class ProviderBase(Plugin):
         return completions
 
     def get_capability(self, capability, default=False):
+        if capability == "models":
+            return self.models
         return self.capabilities[capability] if capability in self.capabilities else default
 
     def get_model(self):

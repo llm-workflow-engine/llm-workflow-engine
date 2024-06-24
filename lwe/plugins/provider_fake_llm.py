@@ -204,9 +204,9 @@ class ProviderFakeLlm(Provider):
     Fake LLM provider.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, **kwargs):
         self._capabilities = DEFAULT_CAPABILITIES
-        super().__init__(config)
+        super().__init__(config, **kwargs)
 
     @property
     def capabilities(self):
