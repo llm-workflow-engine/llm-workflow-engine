@@ -1,3 +1,40 @@
+### v0.20.0 - 06/25/2024
+
+This release introduces support for data caching, including data caching for plugins.
+
+Some provider plugins now cache their available models after retrieving the data via an API call.
+
+Plugins can now be reloaded using the `/plugin reload [plugin_name]` command. For provider plugins that cache available models, this will update the available models to the latest ones available via the API.
+
+If `backend_options.title_generation.provider` is being used for a custom title provider, the new `backend_options.title_generation.model` configuration option will allow selecting the provider model as well.
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+The plugin caching/reloading functionality required a refactor of some plugin architecture -- make sure to update to the latest code for all plugins at the same time as the update to this release.
+
+#### Commit log
+
+* **Tue Jun 25 2024:** formatting cleanup
+* **Tue Jun 25 2024:** add doc for reloading plugins
+* **Tue Jun 25 2024:** add help for reloading plugins
+* **Tue Jun 25 2024:** clear cache when reloading plugin
+* **Mon Jun 24 2024:** fallback on non-standard response object
+* **Mon Jun 24 2024:** standardize provider data caching, overriding provider settings in config
+* **Mon Jun 24 2024:** add cache_delete method to CacheManager
+* **Sun Jun 23 2024:** add /plugin command, plugin reload API
+* **Sun Jun 23 2024:** fix docstring
+* **Sun Jun 23 2024:** fix user help doc
+* **Sun Jun 23 2024:** simple cache manager, expose to plugins
+* **Sat Jun 22 2024:** add backend_options.title_generation.model
+* **Sat Jun 22 2024:** log full LLM response object
+* **Sat Jun 22 2024:** update FakeMessagesListChatModel to match latest in PR
+* **Fri Jun 07 2024:** more robust cleanup of tool definitions, by dereferencing
+* **Fri Jun 07 2024:** add debug log for non-streaming LLM attributes
+* **Thu Jun 06 2024:** formatting cleanup
+* **Thu Jun 06 2024:** use full template env in build_message_from_template()
+* **Thu Jun 06 2024:** gpt-4o -> gpt-4-turbo for coding preset As evidenced by https://scale.com/leaderboard/coding and personal use, gpt-4o is worse at coding than gpt-4-turbo at this time.
+* **Mon Jun 03 2024:** fix provider set_value() to support defaults explicitly set to None
+
 ### v0.19.3 - 06/02/2024
 
 * **Sun Jun 02 2024:** fix spelling error
