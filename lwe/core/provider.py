@@ -130,7 +130,7 @@ class ProviderBase(Plugin):
                     if success:
                         self.models = data["models"]
                     else:
-                        message = f"Fetching data for {self.name}"
+                        message = f"Fetching data for {self.name}\nData can be refreshed by running '{constants.COMMAND_LEADER}plugin reload {self.name}'"
                         self.log.info(message)
                         util.print_status_message(True, message)
                         self.models = self.fetch_models()
