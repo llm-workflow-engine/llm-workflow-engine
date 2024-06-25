@@ -729,7 +729,9 @@ class ApiBackend:
         new_messages, messages = request.prepare_ask_request()
         success, response_obj, user_message = request.call_llm(messages)
         if success:
-            response_data = vars(response_obj) if hasattr(response_obj, "__dict__") else f"{response_obj}"
+            response_data = (
+                vars(response_obj) if hasattr(response_obj, "__dict__") else f"{response_obj}"
+            )
             self.log.debug(f"LLM Response: {response_data}")
             response_content, new_messages = request.post_response(response_obj, new_messages)
             self.message_clipboard = response_content

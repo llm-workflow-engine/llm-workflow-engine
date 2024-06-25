@@ -1231,7 +1231,11 @@ class Repl:
 
     def action_plugin_reload(self, plugin_name):
         if plugin_name not in self.backend.plugin_manager.plugins:
-            return False, plugin_name, f"Plugin {plugin_name} not found in list of installed plugins"
+            return (
+                False,
+                plugin_name,
+                f"Plugin {plugin_name} not found in list of installed plugins",
+            )
         plugin_instance = self.backend.plugin_manager.plugins[plugin_name]
         self.backend.cache_manager.cache_delete(plugin_instance.plugin_cache_filename)
         result = self.backend.reload_plugin(plugin_name)
