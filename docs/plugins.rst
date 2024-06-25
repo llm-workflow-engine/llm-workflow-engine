@@ -46,6 +46,22 @@ Enable the plugin in your configuration:
 Note that setting ``plugins.enabled`` will overwrite the default enabled plugins. Use the ``/plugins`` command for a list of currently enabled plugins.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reloading plugins
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To dynamically reload a plugin:
+
+.. code-block:: sh
+
+   /plugin reload [plugin_name]
+
+Reloading a plugin will also clear the main cache file for the plugin -- as some provider plugins cache data on current models, this command can be used to refresh the available models for the provider. For example:
+
+.. code-block:: sh
+
+   /plugin reload provider_chat_fireworks
+
 -----------------------------------------------
 Core plugins
 -----------------------------------------------

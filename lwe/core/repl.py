@@ -1222,10 +1222,10 @@ class Repl:
         Arguments:
             action: The action to perform. One of: reload
             target: The target for the action.
-              reload: The name of the plugin to reload
 
         Examples:
             {COMMAND} reload echo
+            {COMMAND} reload provider_chat_openai
         """
         return self.dispatch_command_action("plugin", args)
 
