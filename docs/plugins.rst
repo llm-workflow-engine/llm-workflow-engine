@@ -146,8 +146,6 @@ Supported providers
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-together
 * **provider_chat_vertexai:** Access to `Google Vertex AI <https://cloud.google.com/vertex-ai/docs/generative-ai/learn/models>`_ chat models.
    https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-vertexai
-* **provider_cohere:** Access to `Cohere <https://docs.cohere.com/docs/models>`_ models
-   https://github.com/llm-workflow-engine/lwe-plugin-provider-cohere
 * **provider_huggingface_hub:** Access to `Hugging Face Hub <https://huggingface.co/models>`_ models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-huggingface-hub
 * **provider_openai:** Access to non-chat `OpenAI <https://platform.openai.com/docs/models)>`_ models (GPT-3, etc.)
