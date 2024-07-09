@@ -791,6 +791,11 @@ Before you can start using the shell, you must create a new user.
             * /preset edit mypreset
             * /preset save mypreset
             * /preset save mypreset description This is my description
+            * /preset save mypreset system_message Speak like a pirate
+            * /preset save mypreset max_submission_tokens 4000
+            * /preset save mypreset return_on_tool_call true
+            * /preset save mypreset return_on_tool_response true
+            * /preset save mypreset max_submission_tokens (without value, setting is deleted)
             * /preset show mypreset
         """
         return self.dispatch_command_action("preset", args)
