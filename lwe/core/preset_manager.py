@@ -65,6 +65,7 @@ class PresetManager:
         return {
             "description": str,
             "system_message": str,
+            "max_submission_tokens": int,
             "return_on_tool_call": bool,
             "return_on_tool_response": bool,
         }

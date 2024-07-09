@@ -866,6 +866,8 @@ Before you can start using the shell, you must create a new user.
                         extra_metadata[metadata_field] = True
                     else:
                         extra_metadata[metadata_field] = False
+                elif user_metadata_fields[metadata_field] is int:
+                    extra_metadata[metadata_field] = int(rest[0])
                 else:
                     extra_metadata[metadata_field] = " ".join(rest)
         metadata.update(extra_metadata)

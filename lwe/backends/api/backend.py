@@ -361,6 +361,8 @@ class ApiBackend:
             self.active_preset_name = preset_name
             if "system_message" in metadata:
                 self.set_system_message(metadata["system_message"])
+            if "max_submission_tokens" in metadata:
+                self.set_max_submission_tokens(metadata["max_submission_tokens"])
         return success, preset, user_message
 
     def reload_plugin(self, plugin_name):
