@@ -116,7 +116,7 @@ class ApiRequest:
         preset_name = config["metadata"].get("name", "")
         model_name = getattr(llm, provider.model_property_name)
         token_manager = TokenManager(self.config, provider, model_name, self.tool_cache)
-        message = f"Built LLM based on preset_name: {preset_name}, metadata: {config['metadata']}, customizations: {config['customizations']}, preset_overrides: {config['preset_overrides']}"
+        message = f"Built LLM based on preset_name: {preset_name or "None"}, metadata: {config['metadata']}, customizations: {config['customizations']}, preset_overrides: {config['preset_overrides']}"
         self.log.debug(message)
         return True, (provider, preset, llm, preset_name, model_name, token_manager), message
 
@@ -168,12 +168,13 @@ class ApiRequest:
                 metadata, customizations = response
             else:
                 return success, response, user_message
-        elif self.default_preset:
-            self.log.debug("Using default preset")
-            metadata, customizations = self.default_preset
         else:
-            self.log.debug("Using current provider")
-            metadata["provider"] = self.provider.name
+            if self.default_preset:
+                self.log.debug("Using default preset")
+                metadata, _ = self.default_preset
+            else:
+                self.log.debug("Using current provider")
+                metadata["provider"] = self.provider.name
             customizations = self.provider.get_customizations()
         return (
             success,

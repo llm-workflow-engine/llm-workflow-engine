@@ -343,7 +343,7 @@ def test_extract_metadata_customizations_with_default_preset(
         None,
         None,
         {"name": "default_preset", "provider": "test_provider"},
-        {"key": "value"},
+        request.provider.get_customizations(),
     )
 
 
