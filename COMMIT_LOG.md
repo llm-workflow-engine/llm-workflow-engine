@@ -1,3 +1,12 @@
+### v0.20.1 - 07/13/2024
+
+* **Sat Jul 13 2024:** fix tests function -> tool_calls data structure change
+* **Sat Jul 13 2024:** bump required langchain version to 0.2.7
+* **Sat Jul 13 2024:** use configured provider customizations instead of reloading preset customizations.
+* **Tue Jul 09 2024:** add more help doc for /preset save action
+* **Tue Jul 09 2024:** fix #322 Add support for max_submission_tokens to presets
+* **Sat Jul 06 2024:** remove old Cohere provider plugin
+
 ### v0.20.0 - 06/25/2024
 
 This release introduces support for data caching, including data caching for plugins.
