@@ -797,7 +797,7 @@ def test_iterate_streaming_response_interrupted_tool_call(
                             "index": 0,
                             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
                             "function": {"arguments": '{"', "name": "test_tool"},
-                            "type": "function",
+                            "type": "tool_calls",
                         }
                     ]
                 },
@@ -1262,6 +1262,7 @@ def test_extract_message_content_tool_call(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     message_dict = {
@@ -1279,7 +1280,7 @@ def test_extract_message_content_tool_call(
             "tool_calls": [
                 {
                     "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                    "type": "function",
+                    "type": "tool_call",
                     "function": {
                         "name": "test_tool",
                         "arguments": '{"word": "foo", "repeats": 2}',
@@ -1311,7 +1312,7 @@ def test_extract_message_content_invalid_tool_calls(
             "index": 0,
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
             "function": {"arguments": '{"', "name": "test_tool"},
-            "type": "function",
+            "type": "tool_calls",
         }
     ]
     invalid_tool_calls = [

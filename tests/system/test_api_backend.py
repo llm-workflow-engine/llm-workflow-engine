@@ -158,6 +158,7 @@ def test_api_backend_with_tool_call_creates_valid_conversation_and_messages(test
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata = {
@@ -175,7 +176,7 @@ def test_api_backend_with_tool_call_creates_valid_conversation_and_messages(test
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -258,6 +259,7 @@ def test_api_backend_with_tool_call_and_return_on_tool_call_creates_valid_conver
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_responses = [
@@ -267,7 +269,7 @@ def test_api_backend_with_tool_call_and_return_on_tool_call_creates_valid_conver
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -337,6 +339,7 @@ def test_api_backend_with_tool_call_and_return_on_tool_response_creates_valid_co
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata = {
@@ -354,7 +357,7 @@ def test_api_backend_with_tool_call_and_return_on_tool_response_creates_valid_co
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',

@@ -171,6 +171,7 @@ def test_post_response_full_tool_run(test_config, tool_manager, provider_manager
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata = {
@@ -188,7 +189,7 @@ def test_post_response_full_tool_run(test_config, tool_manager, provider_manager
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -252,6 +253,7 @@ def test_request_with_tool_call_in_streaming_mode(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata = {
@@ -272,7 +274,7 @@ def test_request_with_tool_call_in_streaming_mode(
                             "index": 0,
                             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
                             "function": {"arguments": '{"', "name": "test_tool"},
-                            "type": "function",
+                            "type": "tool_calls",
                         }
                     ]
                 },
@@ -374,6 +376,7 @@ def test_post_response_return_on_tool_call(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_responses = [
@@ -383,7 +386,7 @@ def test_post_response_return_on_tool_call(
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -444,6 +447,7 @@ def test_post_response_return_on_tool_response(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata = {
@@ -461,7 +465,7 @@ def test_post_response_return_on_tool_response(
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -526,6 +530,7 @@ def test_post_response_multiple_tool_calls_in_sequence(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata = {
@@ -543,7 +548,7 @@ def test_post_response_multiple_tool_calls_in_sequence(
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -559,7 +564,7 @@ def test_post_response_multiple_tool_calls_in_sequence(
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -631,6 +636,7 @@ def test_post_response_multiple_tool_calls_in_parallel(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
         {
             "name": "test_tool",
@@ -639,6 +645,7 @@ def test_post_response_multiple_tool_calls_in_parallel(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9494",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata_1 = {
@@ -660,7 +667,7 @@ def test_post_response_multiple_tool_calls_in_parallel(
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -668,7 +675,7 @@ def test_post_response_multiple_tool_calls_in_parallel(
                     },
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9494",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -736,6 +743,7 @@ def test_post_response_forced_tool_call(
                 "repeats": 2,
             },
             "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
+            "type": "tool_call",
         },
     ]
     tool_response_metadata = {
@@ -753,7 +761,7 @@ def test_post_response_forced_tool_call(
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9IOI",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',
@@ -770,7 +778,7 @@ def test_post_response_forced_tool_call(
                 "tool_calls": [
                     {
                         "id": "call_4MqKEs9ZWh0qTh0xCFcb9494",
-                        "type": "function",
+                        "type": "tool_calls",
                         "function": {
                             "name": "test_tool",
                             "arguments": '{"word": "foo", "repeats": 2}',

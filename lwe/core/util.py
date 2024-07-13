@@ -419,7 +419,7 @@ def transform_messages_to_chat_messages(messages):
                     "tool_calls": [
                         {
                             "id": tool["id"],
-                            "type": "function",
+                            "type": "tool_calls",
                             "function": {
                                 "name": tool["name"],
                                 "arguments": json.dumps(tool["args"]),
