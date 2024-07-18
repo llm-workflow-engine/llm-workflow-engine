@@ -80,6 +80,12 @@ class ProviderChatOpenai(Provider):
             "gpt-4o-2024-05-13": {
                 "max_tokens": 131072,
             },
+            "gpt-4o-mini": {
+                "max_tokens": 131072,
+            },
+            "gpt-4o-mini-2024-07-18": {
+                "max_tokens": 131072,
+            },
         }
 
     def prepare_messages_method(self):
