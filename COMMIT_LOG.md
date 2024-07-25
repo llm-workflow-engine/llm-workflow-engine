@@ -1,3 +1,8 @@
+### v0.20.2 - 07/25/2024
+
+* **Thu Jul 25 2024:** fix #347: broken plugin package handling in Python 3.9
+* **Thu Jul 18 2024:** add gpt-4o-mini models
+
 ### v0.20.1 - 07/13/2024
 
 * **Sat Jul 13 2024:** fix tests function -> tool_calls data structure change
