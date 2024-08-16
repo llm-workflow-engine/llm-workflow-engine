@@ -1200,10 +1200,6 @@ Before you can start using the shell, you must create a new user.
         else:
             return False, workflow_name, "Deletion aborted"
 
-    # TODO: Remove after deprecation period
-    def command_functions(self, arg):
-        return False, None, "DEPRECATED: /functions CLI command is now /tools"
-
     def command_tools(self, arg):
         """
         List available tools
