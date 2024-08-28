@@ -7,7 +7,7 @@ email-validator
 Jinja2
 langchain>=0.2.7,<0.3
 langchain-community>=0.2,<0.3
-langchain_openai
+langchain_openai>=0.1.23
 names
 numexpr>=2.8.4
 openpyxl
