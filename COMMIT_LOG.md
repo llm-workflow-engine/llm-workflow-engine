@@ -1,3 +1,43 @@
+### v0.21.0 - 08/28/2024
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+The OpenAI support library that LWE uses changed how it validates some custom parameters passed to the OpenAI API.
+
+New installs should not be affected by this, but existing installs may need to repair any created presets for the OpenAI provider.
+
+Example presets installed via the `examples` plugin can simply re-install those examples:
+
+```
+/examples presets
+```
+
+Hand created OpenAI presets will need to move most of the parameters under `model_kwargs` into the top level of the configuration, e.g.:
+
+```yaml
+# Old
+model_customizations:
+  model_kwargs:
+    top_p: 0.1
+  model_name: gpt-3.5-turbo
+  temperature: 0.2
+```
+
+```yaml
+# New
+model_customizations:
+  model_name: gpt-3.5-turbo
+  top_p: 0.1
+  temperature: 0.2
+```
+
+#### Commit log
+
+* **Wed Aug 28 2024:** fix presets/examples/doc for openai param refactor
+* **Wed Aug 28 2024:** fix location of openai customizations, bump openai lib requirement
+* **Fri Aug 16 2024:** remove all deprecation warnings for function -> tool migration
+* **Thu Aug 08 2024:** add gpt-4o-2024-08-06 model to chat_openai provider
+
 ### v0.20.2 - 07/25/2024
 
 * **Thu Jul 25 2024:** fix #347: broken plugin package handling in Python 3.9
