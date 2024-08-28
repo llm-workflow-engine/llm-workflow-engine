@@ -15,7 +15,7 @@ For example:
 
    /provider chat_openai gpt-3.5-turbo
    /model temperature 0
-   /model model_kwargs.top_p 0.2
+   /model model_kwargs.user foo
 
 Once you have the configuration set up, you can 'capture' it by saving it as a
 preset.

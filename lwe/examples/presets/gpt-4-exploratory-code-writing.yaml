@@ -4,9 +4,8 @@ metadata:
   provider: chat_openai
 model_customizations:
   max_tokens: null
-  model_kwargs:
-    top_p: 0.7
   model_name: gpt-4o
   n: 1
+  top_p: 0.7
   request_timeout: 60
   temperature: 0.6
