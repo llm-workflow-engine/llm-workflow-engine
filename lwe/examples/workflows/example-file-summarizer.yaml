@@ -9,6 +9,9 @@
 # 3. Extract the title
 # 4. Ask the LLM four questions about the reference text
 # 5. Store the results as a conversation, and in a summary file
+# 6. If the GITHUB_GIST_ACCESS_TOKEN environment variable is set:
+#    - Upload the summary file to a Gist
+#    - Output the URL of the Gist
 #
 # Summary files are only written once -- if the summary file for a reference
 # file already exists, it's skipped.
@@ -24,15 +27,17 @@
   hosts: localhost
   vars:
     user_id: 1
+    extract_title_preset: "gpt-4o-mini"
     preset: "gpt-4-chatbot-responses"
-    content_directory: "/tmp/file-content"
+    content_directory: "{{ lookup('pipe', 'python -c \"import tempfile; print(tempfile.gettempdir())\"') }}/file-content"
     content_max_length: 400000
-    summaries_directory: "/tmp/file-summaries"
+    summaries_directory: "{{ lookup('pipe', 'python -c \"import tempfile; print(tempfile.gettempdir())\"') }}/file-summaries"
     question_1: "Can you give me a very clear explanation of the core assertions, implications, and mechanics elucidated in this paper?"
     question_2: "Can you explain the value of this in basic terms? Like you're talking to a CEO. So what? What's the bottom line here?"
     question_3: "Can you give me an analogy or metaphor that will help explain this to a broad audience?"
     question_4: "Can you provide a specific example that best illustrates the key points elucidated in this paper?"
     url: null  # Optional variable for downloading a file
+    github_token: "{{ lookup('env', 'GITHUB_GIST_ACCESS_TOKEN') | default(none) }}"
   tasks:
     - name: "Ensure content directory {{ content_directory }} exists"
       ansible.builtin.file:

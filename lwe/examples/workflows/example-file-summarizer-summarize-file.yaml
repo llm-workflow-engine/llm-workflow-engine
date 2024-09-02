@@ -14,9 +14,15 @@
 
     - name: "Extract title"
       lwe_llm:
-        preset: "{{ preset }}"
-        system_message: "{{ extracted_text.content }}"
-        message: "Extract the title from the paper, output ONLY the extracted title"
+        preset: "{{ extract_title_preset }}"
+        preset_overrides:
+            model_customizations:
+                temperature: 0
+        system_message: "You are a title extractor, you examine content and output ONLY the extracted title."
+        message: |
+          Extract the title from the following paper, output ONLY the extracted title:
+
+          {{ extracted_text.content }}
       register: extracted_title
       until: "extracted_title is not failed"
       retries: 10
@@ -30,9 +36,18 @@
       lwe_llm:
         preset: "{{ preset }}"
         user: "{{ user_id }}"
-        system_message: "{{ extracted_text.content }}"
+        system_message: "You are an expert at reviewing academic papers and accurately answering user questions based on the content provided in the paper. You treat the paper as the source of truth when answering any questions"
         title: "Summary: {{ extracted_title.response }}"
-        message: "{{ question_1 }}"
+        message: |
+          Review the following paper and answer any questions based on the content of the paper. The paper should be regarded as the source of truth when answering any questions.
+
+          # Paper
+
+          {{ extracted_text.content }}
+
+          # First question:
+
+          {{ question_1 }}
       register: response_1
       until: "response_1 is not failed"
       retries: 10
@@ -47,7 +62,10 @@
         preset: "{{ preset }}"
         user: "{{ user_id }}"
         conversation_id: "{{ response_1.conversation_id }}"
-        message: "{{ question_2 }}"
+        message: |
+          # Second question:
+
+          {{ question_2 }}
       register: response_2
       until: "response_2 is not failed"
       retries: 10
@@ -62,7 +80,10 @@
         preset: "{{ preset }}"
         user: "{{ user_id }}"
         conversation_id: "{{ response_2.conversation_id }}"
-        message: "{{ question_3 }}"
+        message: |
+          # Third question:
+
+          {{ question_3 }}
       register: response_3
       until: "response_3 is not failed"
       retries: 10
@@ -77,7 +98,10 @@
         preset: "{{ preset }}"
         user: "{{ user_id }}"
         conversation_id: "{{ response_3.conversation_id }}"
-        message: "{{ question_4 }}"
+        message: |
+          # Fourth question:
+
+          {{ question_4 }}
       register: response_4
       until: "response_4 is not failed"
       retries: 10
@@ -90,47 +114,79 @@
     - name: "Write summary to file: {{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
       copy:
         content: |
+          {% if url is defined and url -%}
+          <sub>URL: {{ url }}</sub>
+          {% endif %}
           # {{ extracted_title.response }}
 
-          #################################################################
+          ---
 
-          QUESTION 1:
+          ## QUESTION 1:
 
           {{ question_1 }}
 
-          ANSWER 1:
+          ### ANSWER 1:
 
           {{ response_1.response }}
 
-          #################################################################
+          ---
 
-          QUESTION 2:
+          ## QUESTION 2:
 
           {{ question_2 }}
 
-          ANSWER 2:
+          ### ANSWER 2:
 
           {{ response_2.response }}
 
-          #################################################################
+          ---
 
-          QUESTION 3:
+          ## QUESTION 3:
 
           {{ question_3 }}
 
-          ANSWER 3:
+          ### ANSWER 3:
 
           {{ response_3.response }}
 
-          #################################################################
+          ---
 
-          QUESTION 4:
+          ## QUESTION 4:
 
           {{ question_4 }}
 
-          ANSWER 4:
+          ### ANSWER 4:
 
           {{ response_4.response }}
         dest: "{{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
+
+    - name: Read summary file content
+      ansible.builtin.slurp:
+        src: "{{ summaries_directory }}/{{ current_file.path | basename }}.summarize.txt"
+      register: summary_content
+
+    - name: Create Gist using GitHub API
+      uri:
+        url: https://api.github.com/gists
+        method: POST
+        body_format: json
+        headers:
+          Authorization: "token {{ github_token }}"
+          Accept: "application/vnd.github.v3+json"
+        body:
+          description: "Summary: {{ extracted_title.response }}"
+          public: true
+          files:
+            "summary.md":
+              content: "{{ summary_content['content'] | b64decode }}"
+        status_code: 201
+      register: gist_response
+      when: github_token is defined and github_token is not none
+
+    - name: Display Gist URL
+      debug:
+        msg: "Gist created: {{ gist_response.json.html_url }}"
+      when: github_token is defined and github_token is not none and gist_response is defined
+
   when: not summary_file.stat.exists
 ...
