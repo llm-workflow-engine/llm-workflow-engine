@@ -1,0 +1,7 @@
+metadata:
+  name: gpt-4o-mini
+  description: GPT-4o mini
+  provider: chat_openai
+model_customizations:
+  model_name: gpt-4o-mini
+  n: 1
