@@ -184,6 +184,10 @@ class ProviderBase(Plugin):
                     return True, new_value, "Passing through value."
                 elif config == dict:
                     return True, self.cast_dict_value(new_value), "Found dict key."
+                # Special case: some LLM classes return an unset key for a nested config by default
+                # so pass through this unset key.
+                elif len(keys) == 0 and isinstance(config, dict):
+                    return True, None, f"Returning None for unconfigured dict '{key}'."
                 elif isinstance(config, PresetValue):
                     success, new_value, user_message = config.cast(new_value)
                     if success:
@@ -203,6 +207,10 @@ class ProviderBase(Plugin):
                 customizations = customizations[key]
                 if not isinstance(customizations, dict):
                     return True, customizations, f"Found key {key}"
+                # Special case: some LLM classes return an unset key for a nested config by default
+                # so pass through this unset key.
+                elif len(keys) == 0:
+                    return True, None, f"Returning None for unconfigured dict '{key}'."
         return False, None, f"Invalid key {key}."
 
     def set_customization_value(self, keys, new_value):
