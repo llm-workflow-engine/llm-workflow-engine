@@ -1,3 +1,16 @@
+### v0.21.1 - 09/23/2024
+
+* **Mon Sep 23 2024:** support for OpenAI o1-mini/o1-preview
+* **Mon Sep 02 2024:** improvements to file summarizer workflow
+  - separate preset for title extraction
+  - fix paper/question workflow to be more model agnostic
+  - add URL to file summary if it exists
+  - format summary file as markdown
+  - upload summary file contents as Gist if GITHUB_GIST_ACCESS_TOKEN env var is set
+  - output Gist URL if Gist is created
+  - extract temp dir via Python (platform-agnostic)
+* **Mon Sep 02 2024:** add gpt-4o built-in preset
+
 ### v0.21.0 - 08/28/2024
 
 #### **:fire_engine:Breaking Changes:fire_engine:**
