@@ -788,6 +788,15 @@ class Repl:
         """
         return self.default(input)
 
+    # TODO: Remove this when o1 models support system messages.
+    def is_openai_o1_series(self):
+        if self.backend.provider.name == "provider_chat_openai":
+            customizations = self.backend.provider.get_customizations()
+            model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
+            if model_name.startswith("o1-"):
+                return True
+        return False
+
     def default(self, input, request_overrides=None):
         # TODO: This signal is recognized on Windows, and calls the callback, but the entire
         # process is still killed.
@@ -796,7 +805,10 @@ class Repl:
             return
 
         request_overrides = request_overrides or {}
-        if self.stream:
+        # TODO: Remove this when o1 models support streaming.
+        if self.stream and not self.is_openai_o1_series():
+        # TODO: Enable this when o1 models support streaming
+        # if self.stream:
             request_overrides["print_stream"] = True
             print("")
             success, response, user_message = self.backend.ask_stream(

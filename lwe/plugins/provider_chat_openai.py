@@ -89,6 +89,18 @@ class ProviderChatOpenai(Provider):
             "gpt-4o-mini-2024-07-18": {
                 "max_tokens": 131072,
             },
+            "o1-preview": {
+                "max_tokens": 131072,
+            },
+            "o1-preview-2024-09-12": {
+                "max_tokens": 131072,
+            },
+            "o1-mini": {
+                "max_tokens": 131072,
+            },
+            "o1-mini-2024-09-12": {
+                "max_tokens": 131072,
+            },
         }
 
     def prepare_messages_method(self):
