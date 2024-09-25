@@ -1,3 +1,14 @@
+### v0.22.0 - 09/25/2024
+
+#### **:fire_engine:Breaking Changes:fire_engine:**
+
+Provider plugins and their dependencies listed in `requirements.txt` should be upgraded when upgrading to this version.
+
+#### Commit log
+
+* **Wed Sep 25 2024:** bump langchain requirements to 0.3.x versions
+* **Tue Sep 24 2024:** handle special case: some LLM classes return an unset key for a nested config by default, pass through
+
 ### v0.21.1 - 09/23/2024
 
 * **Mon Sep 23 2024:** support for OpenAI o1-mini/o1-preview
