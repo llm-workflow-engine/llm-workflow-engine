@@ -4,6 +4,8 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+import os
+
 from ansible.module_utils.basic import AnsibleModule
 
 # from lwe.core import constants
@@ -193,7 +195,16 @@ def run_module():
     if module.check_mode:
         module.exit_json(**result)
 
-    config = Config(profile=profile)
+    config_args = {
+        "profile": profile,
+    }
+    config_dir = os.environ.get("LWE_CONFIG_DIR", None)
+    data_dir = os.environ.get("LWE_DATA_DIR", None)
+    if config_dir:
+        config_args["config_dir"] = config_dir
+    if data_dir:
+        config_args["data_dir"] = data_dir
+    config = Config(**config_args)
     config.load_from_file()
     config.set("debug.log.enabled", True)
     config.set("model.default_preset", preset)
