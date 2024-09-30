@@ -10,7 +10,7 @@ PROVIDER_PRIVATE_CUSTOMIZATION_KEYS = [
 ]
 
 # Backend speciifc constants
-API_BACKEND_DEFAULT_MODEL = "gpt-3.5-turbo"
+API_BACKEND_DEFAULT_MODEL = "gpt-4o-mini"
 
 SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
 SYSTEM_MESSAGE_PROGRAMMER = (
