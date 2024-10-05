@@ -7,6 +7,9 @@ import tempfile
 from urllib.parse import urlparse
 
 import textract
+import pymupdf4llm
+import fitz
+fitz.TOOLS.mupdf_display_errors(False)
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -17,7 +20,7 @@ config = Config()
 config.set("debug.log.enabled", True)
 log = Logger("text_extractor", config)
 
-SUPPORTED_FILE_EXTENSIONS = [
+TEXTRACT_SUPPORTED_FILE_EXTENSIONS = [
     # Microsoft Office formats
     ".docx",
     ".pptx",
@@ -31,14 +34,10 @@ SUPPORTED_FILE_EXTENSIONS = [
     ".odf",
     ".odi",
     ".odm",
-    # Portable Document Format
-    ".pdf",
     # Rich Text Format
     ".rtf",
     # Markdown
     ".md",
-    # ePub
-    ".epub",
     # Text files
     ".txt",
     ".csv",
@@ -52,6 +51,16 @@ SUPPORTED_FILE_EXTENSIONS = [
     ".msg",
 ]
 
+PYMUPDF_SUPPORTED_EXTENSIONS = [
+    ".pdf",
+    ".xps",
+    ".oxps",
+    ".epub",
+    ".cbz",
+    ".fb2"
+]
+
+
 DOCUMENTATION = r"""
 ---
 module: text_extractor
@@ -59,7 +68,7 @@ short_description: Extract text content from a file or URL
 description:
     - This module extracts the main text content from a given file or URL
     - For URLs, it extracts the main text content from the page, excluding header and footer.
-    - For files, see SUPPORTED_FILE_EXTENSIONS in the module code.
+    - For files, see the SUPPORTED_FILE_EXTENSIONS variables in the module code.
 options:
     path:
       description:
@@ -71,6 +80,11 @@ options:
           - Limit the return of the extracted content to this length.
       type: int
       required: false
+    default_extension:
+      description:
+          - Default file extension to use if the file has no extension.
+      type: str
+      default: ".pdf"
 author:
     - Chad Phillips (@thehunmonkgroup)
 """
@@ -84,11 +98,16 @@ EXAMPLES = r"""
     text_extractor:
       path: "https://example.com/sample.html"
       max_length: 3000
+
+  - name: Extract content from a file with no extension
+    text_extractor:
+      path: "/path/to/your/file"
+      default_extension: ".txt"
 """
 
 RETURN = r"""
   content:
-      description: The extracted main text content from the HTML.
+      description: The extracted main text content from the file or URL.
       type: str
       returned: success
   length:
@@ -98,9 +117,21 @@ RETURN = r"""
 """
 
 
-def extract_text(path):
-    text = textract.process(path).decode("utf-8")
-    return text
+def extract_text_pymupdf(path):
+    return pymupdf4llm.to_markdown(path)
+
+
+def extract_text_textract(path):
+    return textract.process(path).decode("utf-8")
+
+
+def get_file_extension(path, default_extension):
+    file_extension = default_extension
+    for ext in set(TEXTRACT_SUPPORTED_FILE_EXTENSIONS + PYMUPDF_SUPPORTED_EXTENSIONS):
+        if path.lower().endswith(ext):
+            file_extension = ext
+            break
+    return file_extension
 
 
 def main():
@@ -109,11 +140,15 @@ def main():
         argument_spec=dict(
             path=dict(type="path", required=True),
             max_length=dict(type="int", required=False),
+            default_extension=dict(type="str", default=".pdf"),
         ),
         supports_check_mode=True,
     )
     path = module.params["path"]
     max_length = module.params["max_length"]
+    default_extension = module.params["default_extension"].lower()
+    if not default_extension.startswith("."):
+        default_extension = f".{default_extension}"
 
     if module.check_mode:
         module.exit_json(**result)
@@ -122,6 +157,7 @@ def main():
     is_url = parsed_url.scheme in ["http", "https"]
     cleanup_tmpfile_path = None
     if is_url:
+        log.debug(f"Downloading content from URL: {path}")
         try:
             response = requests.get(path)
             response.raise_for_status()
@@ -137,20 +173,32 @@ def main():
         message = f"File not found or not readable: {path}"
         log.error(message)
         module.fail_json(msg=message)
-    _, file_extension = os.path.splitext(path)
-    file_extension = file_extension.lower()
-    if file_extension in SUPPORTED_FILE_EXTENSIONS:
+
+    file_extension = get_file_extension(path, default_extension)
+
+    if file_extension in PYMUPDF_SUPPORTED_EXTENSIONS:
+        log.debug(f"Extracting content from {path} with pymupdf4llm")
         try:
-            content = extract_text(path)
+            content = extract_text_pymupdf(path)
         except Exception as e:
-            message = f"Error extracting {file_extension} content: {str(e)}"
+            message = f"Error extracting {path} content with pymupdf4llm: {str(e)}"
+            log.error(message)
+            module.fail_json(msg=message)
+    elif file_extension in TEXTRACT_SUPPORTED_FILE_EXTENSIONS:
+        log.debug(f"Extracting content from {path} with textract")
+        try:
+            content = extract_text_textract(path)
+        except Exception as e:
+            message = f"Error extracting {file_extension} content with textract: {str(e)}"
             log.error(message)
             module.fail_json(msg=message)
     else:
+        log.warning(f"Unsupported file extension: {file_extension}, trying to read as UTF-8")
         # Last ditch, try to read the file as UTF-8.
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             # Get rid of any non-ascii characters.
             content = re.sub(r"[^\x00-\x7F]+", "", f.read())
+
     if max_length:
         content = content[:max_length]
     if cleanup_tmpfile_path:

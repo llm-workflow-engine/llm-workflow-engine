@@ -13,6 +13,7 @@ numexpr>=2.8.4
 openpyxl
 pdfminer.six
 prompt-toolkit
+pymupdf4llm
 pyperclip
 python-frontmatter
 PyYAML
