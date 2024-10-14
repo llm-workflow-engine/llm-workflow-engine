@@ -30,14 +30,14 @@
 
     - name: "Extracted title"
       debug:
-        msg: "{{ extracted_title.response }}"
+        msg: "{{ extracted_title.response | title }}"
 
     - name: "Ask first question: {{ question_1 }}"
       lwe_llm:
         preset: "{{ preset }}"
         user: "{{ user_id }}"
         system_message: "You are an expert at reviewing academic papers and accurately answering user questions based on the content provided in the paper. You treat the paper as the source of truth when answering any questions"
-        title: "Summary: {{ extracted_title.response }}"
+        title: "Summary: {{ extracted_title.response | title }}"
         message: |
           Review the following paper and answer any questions based on the content of the paper. The paper should be regarded as the source of truth when answering any questions.
 
@@ -117,7 +117,7 @@
           {% if url is defined and url -%}
           <sub>URL: {{ url }}</sub>
           {% endif %}
-          # {{ extracted_title.response }}
+          # {{ extracted_title.response | title }}
 
           ---
 
@@ -174,7 +174,7 @@
           Authorization: "token {{ github_token }}"
           Accept: "application/vnd.github.v3+json"
         body:
-          description: "Summary: {{ extracted_title.response }}"
+          description: "Summary: {{ extracted_title.response | title}}"
           public: true
           files:
             "summary.md":
