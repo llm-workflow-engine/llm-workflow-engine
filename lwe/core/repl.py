@@ -790,6 +790,12 @@ class Repl:
 
     # TODO: Remove this when o1 models support system messages.
     def is_openai_o1_series(self):
+        """
+        Check if the current model is part of the OpenAI O1 series.
+
+        Returns:
+            bool: True if the model is an O1 series model, False otherwise.
+        """
         if self.backend.provider.name == "provider_chat_openai":
             customizations = self.backend.provider.get_customizations()
             model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
