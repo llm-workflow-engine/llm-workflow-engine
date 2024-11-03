@@ -27,6 +27,7 @@ def discover_editor():
     command_parts = []
     if SYSTEM == "Windows":
         editor_path = get_environment_editor("notepad")
+        command_parts = [editor_path]
     elif SYSTEM == "Darwin":
         editor_path = get_environment_editor()
         command_parts = [editor_path] if editor_path else ["open", "-t"]
