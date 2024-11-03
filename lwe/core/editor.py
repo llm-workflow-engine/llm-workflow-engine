@@ -62,7 +62,13 @@ def discover_editor():
 def file_editor(filepath):
     command_parts = discover_editor()
     command_parts.append(filepath)
-    subprocess.call(command_parts)
+    if SYSTEM == "Windows":
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        si.wShowWindow = subprocess.SW_HIDE
+        subprocess.call(command_parts, startupinfo=si)
+    else:
+        subprocess.call(command_parts)
 
 
 def pipe_editor(input_data="", suffix=None):
@@ -70,14 +76,8 @@ def pipe_editor(input_data="", suffix=None):
     file_editor(filepath)
     with open(filepath, "r") as f:
         output_data = f.read()
-    # This is ugly, but Windows is throwing an error on deletion of the temp file.
-    if SYSTEM == "Windows":
-        print(
-            f"Deletion of temporary files on Windows is not currently supported, editor content was saved to {filepath!r}, and can be deleted manually if desired"
-        )
-        print(
-            "If you'd like to help fix this issue, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/224"
-        )
-    else:
+    try:
         os.remove(filepath)
+    except PermissionError:
+        util.print_status_message(False, f"WARNING: Unable to delete temporary file {filepath!r}. You may need to delete it manually.")
     return output_data

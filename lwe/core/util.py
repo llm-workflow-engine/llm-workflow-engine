@@ -228,9 +228,13 @@ def write_temp_file(input_data="", suffix=None, prefix=None, dir=None):
     kwargs = {"prefix": prefix, "dir": dir}
     if suffix:
         kwargs["suffix"] = f".{suffix}"
-    _, filepath = tempfile.mkstemp(**kwargs)
-    with open(filepath, "w") as f:
-        f.write(input_data)
+    fd, filepath = tempfile.mkstemp(**kwargs)
+    try:
+        with os.fdopen(fd, 'w') as f:
+            f.write(input_data)
+    except Exception:
+        os.close(fd)
+        raise
     return filepath
 
 
