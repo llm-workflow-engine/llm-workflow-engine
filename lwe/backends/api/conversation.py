@@ -21,6 +21,8 @@ class ConversationManager(Manager):
             return self._handle_error(f"Failed to create conversation: {str(e)}")
 
     def get_conversation(self, conversation_id):
+        if not conversation_id:
+            return False, None, "No conversation ID provided."
         try:
             conversation = self.orm_get_conversation(conversation_id)
             if conversation:
