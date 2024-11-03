@@ -40,13 +40,7 @@ def discover_editor():
 def file_editor(filepath):
     command_parts = discover_editor()
     command_parts.append(filepath)
-    if SYSTEM == "Windows":
-        si = subprocess.STARTUPINFO()
-        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        si.wShowWindow = subprocess.SW_HIDE
-        subprocess.call(command_parts, startupinfo=si)
-    else:
-        subprocess.call(command_parts)
+    subprocess.call(command_parts)
 
 
 def pipe_editor(input_data="", suffix=None):
