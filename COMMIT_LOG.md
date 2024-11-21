@@ -1,3 +1,9 @@
+### v0.22.2 - 11/21/2024
+
+* **Thu Nov 21 2024:** add chatgpt-4o-latest/gpt-4o-2024-11-20 to chat_openai provider
+* **Thu Nov 21 2024:** support streaming for o1 models
+* **Sun Nov 03 2024:** more robust parsing of editor setting
+
 ### v0.22.1 - 11/03/2024
 
 * **Sun Nov 03 2024:** better error handling when no conversation_id provided
