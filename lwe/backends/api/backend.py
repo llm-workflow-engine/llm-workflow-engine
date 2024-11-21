@@ -1,4 +1,5 @@
 import copy
+import os
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -39,16 +40,19 @@ class ApiBackend:
 
         :param config: Optional configuration for the backend. If not provided, it uses a default configuration.
         """
+        self.config = config or Config()
         self.conversation_id = None
         self.conversation_title = None
         self.current_user = None
         self.request = None
+        self.logfile = None
         self.orm = orm or Orm(config)
         self.user_manager = UserManager(config, self.orm)
         self.conversation = ConversationManager(config, self.orm)
         self.message = MessageManager(config, self.orm)
-        self.initialize_database(config)
-        self.initialize_backend(config)
+        self.initialize_database()
+        self.initialize_backend(self.config)
+        self.initialize_file_logging()
 
     def set_available_models(self):
         """
@@ -183,8 +187,8 @@ class ApiBackend:
         self.load_default_user()
         self.load_default_conversation()
 
-    def initialize_database(self, config):
-        database = Database(config, orm=self.orm)
+    def initialize_database(self):
+        database = Database(self.config, orm=self.orm)
         database.create_schema()
 
     def auto_create_first_user(self):
@@ -467,6 +471,7 @@ class ApiBackend:
         )
         tokens = conversation_storage_manager.get_conversation_token_count()
         self.set_conversation_tokens(tokens)
+        self.write_log_context()
 
     def get_system_message(self, system_message="default"):
         """
@@ -680,6 +685,66 @@ class ApiBackend:
         self.conversation_title = None
         self.message_clipboard = None
         self.set_conversation_tokens(0)
+        self.write_log_context()
+
+    def write_log(self, prompt, response):
+        """Write prompt and response to log file if logging is enabled."""
+        if self.logfile is not None:
+            contents = f"""
+USER:
+
+{prompt}
+
+ASSISTANT:
+
+{response}
+
+"""
+            try:
+                self.logfile.write(contents)
+            except OSError as e:
+                message = f"Failed to write content to log file '{self.logfile.name}': {e}"
+                self.log.error(message)
+            self.write_log_context()
+
+    def write_log_context(self):
+        """Write current conversation context to log file if logging is enabled."""
+        if self.logfile is not None:
+            try:
+                self.logfile.write(f"## context {self.conversation_id}\n")
+                self.logfile.flush()
+            except OSError as e:
+                message = f"Failed to write log context to log file '{self.logfile.name}': {e}"
+                self.log.error(message)
+
+    def initialize_file_logging(self):
+        """Initialize file logging based on configuration."""
+        if self.config.get("chat.log.enabled"):
+            log_file = self.config.get("chat.log.filepath")
+            if log_file:
+                self.open_log(log_file)
+
+    def open_log(self, filename):
+        """Open a log file for writing."""
+        self.close_log()
+        self.log.debug(f"Opening log file '{filename}'")
+        try:
+            if not os.path.isabs(filename):
+                filename = os.path.join(os.getcwd(), filename)
+            self.logfile = open(filename, "a", encoding="utf-8")
+            self.log.debug(f"Opened log file '{self.logfile.name}'")
+            return True
+        except OSError as e:
+            message = f"Failed to open log file '{filename}': {e}"
+            self.log.error(message)
+            return False
+
+    def close_log(self):
+        """Close the current log file if one is open."""
+        if self.logfile is not None:
+            self.log.debug("Closing log file")
+            self.logfile.close()
+            self.logfile = None
 
     def make_request(self, input, request_overrides: dict = None):
         """
@@ -759,6 +824,7 @@ class ApiBackend:
                 if activate_preset:
                     self.log.info(f"Activating preset from request override: {preset_name}")
                     self.activate_preset(preset_name)
+                self.write_log(input, response_obj)
         self.request = None
         return self._handle_response(success, response_obj, user_message)
 
