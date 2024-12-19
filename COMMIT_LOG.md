@@ -1,3 +1,9 @@
+### v0.22.3 - 12/19/2024
+
+* **Thu Dec 19 2024:** o1
+* **Sat Dec 07 2024:** bump custom textract version
+* **Thu Nov 21 2024:** move file logging from REPL to API backend, clean up formatting
+
 ### v0.22.2 - 11/21/2024
 
 * **Thu Nov 21 2024:** add chatgpt-4o-latest/gpt-4o-2024-11-20 to chat_openai provider
