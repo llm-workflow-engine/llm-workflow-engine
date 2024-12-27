@@ -1,13 +1,33 @@
+import os
+
+from typing import Optional
+from pydantic import Field
+
 from langchain_openai import ChatOpenAI
 
 from lwe.core.provider import Provider, PresetValue
 
 
 class CustomChatOpenAICompat(ChatOpenAI):
+
+    api_key_env_var: Optional[str] = Field(default=None)
+    """Name of the environment variable storing the OpenAI API key."""
+
     @property
     def _llm_type(self):
         """Return type of llm."""
         return "chat_openai_compat"
+
+    def __init__(self, **kwargs):
+        openai_api_key = None
+        if 'api_key_env_var' in kwargs:
+            openai_api_key = os.getenv(kwargs.pop('api_key_env_var'))
+        elif 'openai_api_key' in kwargs:
+            openai_api_key = kwargs.pop('openai_api_key')
+        if openai_api_key is not None:
+            super().__init__(openai_api_key=openai_api_key, **kwargs)
+        else:
+            super().__init__(**kwargs)
 
 
 class ProviderChatOpenaiCompat(Provider):
@@ -39,6 +59,7 @@ class ProviderChatOpenaiCompat(Provider):
             "model_name": PresetValue(str, options=self.available_models),
             "temperature": PresetValue(float, min_value=0.0, max_value=2.0),
             "openai_api_base": PresetValue(str, include_none=True),
+            "api_key_env_var": PresetValue(str, include_none=True),
             "openai_api_key": PresetValue(str, include_none=True, private=True),
             "openai_organization": PresetValue(str, include_none=True, private=True),
             "request_timeout": PresetValue(int),
