@@ -11,6 +11,8 @@ import pyperclip
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.filters import Condition
 
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import NestedCompleter, PathCompleter
@@ -56,6 +58,16 @@ class Repl:
     message_map = {}
     logfile = None
 
+    @staticmethod
+    def _setup_key_bindings():
+        bindings = KeyBindings()
+
+        @bindings.add('c-z', filter=Condition(lambda: hasattr(signal, 'SIGTSTP')))
+        def _(event):
+            event.app.suspend_to_background()
+
+        return bindings
+
     def __init__(self, config=None):
         self.initialize_repl(config)
         self.history = self.get_shell_history()
@@ -66,6 +78,7 @@ class Repl:
             # so we don't use it. Leaving it here for reference.
             # auto_suggest=AutoSuggestFromHistory(),
             style=self.style,
+            key_bindings=self._setup_key_bindings(),
         )
         self._setup_signal_handlers()
 
