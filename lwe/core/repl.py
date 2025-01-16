@@ -3,7 +3,6 @@ import json
 import textwrap
 import yaml
 import os
-import sys
 import traceback
 import signal
 import frontmatter
