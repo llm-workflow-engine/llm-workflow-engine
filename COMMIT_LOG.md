@@ -1,3 +1,9 @@
+### v0.22.4 - 01/18/2025
+
+* **Sat Jan 18 2025:** allow passing files in request_overrides for supported providers
+* **Wed Jan 15 2025:** add suspend via CTRL+Z on supported operating systems
+* **Fri Dec 27 2024:** add api_key_env_var parameter to OpenAI compat provider This setting supercedes openai_api_key, when set it attempts to read the API key value from the specified environment variable name
+
 ### v0.22.3 - 12/19/2024
 
 * **Thu Dec 19 2024:** o1
