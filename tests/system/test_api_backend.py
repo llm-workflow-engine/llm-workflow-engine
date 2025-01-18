@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import logging
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from ..base import (
     store_conversation_threads,
@@ -602,3 +602,27 @@ def test_api_backend_streaming_with_print_stream(test_config, capsys):
     assert response == "test response"
     captured = capsys.readouterr()
     assert "test response" in captured.out
+
+
+def test_api_backend_with_files(test_config):
+    """Test that backend handles files in request_overrides correctly."""
+    backend = make_api_backend(test_config)
+    file = HumanMessage([{"type": "image", "url": "test.jpg"}])
+    request_overrides = {"files": [file]}
+    success, response, _user_message = backend.ask("Describe this image", request_overrides=request_overrides)
+    assert success is True
+    assert response == "test response"
+    # Since files cause direct return, no conversation should be created
+    assert backend.conversation_id is None
+
+
+def test_api_backend_with_files_streaming(test_config):
+    """Test that backend handles files in request_overrides correctly in streaming mode."""
+    backend = make_api_backend(test_config)
+    file = HumanMessage([{"type": "image", "url": "test.jpg"}])
+    request_overrides = {"files": [file]}
+    success, response, _user_message = backend.ask_stream("Describe this image", request_overrides=request_overrides)
+    assert success is True
+    assert response == "test response"
+    # Since files cause direct return, no conversation should be created
+    assert backend.conversation_id is None

@@ -346,6 +346,15 @@ class ApiRequest:
         self.log.debug(f"Building messages for LLM, message count: {len(messages)}")
         messages = util.transform_messages_to_chat_messages(messages)
         messages = self.provider.prepare_messages_for_llm(messages)
+        messages = self.attach_files(messages)
+        return messages
+
+    def attach_files(self, messages):
+        files = self.request_overrides.get("files", [])
+        if files:
+            for file in files:
+                file_data = self.provider.prepare_file_for_llm(file)
+                messages.append(file_data)
         return messages
 
     def output_chunk_content(self, content, print_stream, stream_callback):

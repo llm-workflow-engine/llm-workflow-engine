@@ -787,6 +787,12 @@ ASSISTANT:
         request.set_request_llm()
         new_messages, messages = request.prepare_ask_request()
         success, response_obj, user_message = request.call_llm(messages)
+        files = request_overrides.get("files", [])
+        if files:
+            self.log.debug("Files attached, returning directly")
+            self.request = None
+            response_content = response_obj and response_obj.content or response_obj
+            return self._handle_response(success, response_content, user_message)
         if success:
             response_data = (
                 vars(response_obj) if hasattr(response_obj, "__dict__") else f"{response_obj}"

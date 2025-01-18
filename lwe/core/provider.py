@@ -403,6 +403,9 @@ class ProviderBase(Plugin):
         else:
             raise ValueError(f"Unknown role: {role}")
 
+    def prepare_file_for_llm(self, file: dict):
+        return file
+
 
 class Provider(ProviderBase):
     @property

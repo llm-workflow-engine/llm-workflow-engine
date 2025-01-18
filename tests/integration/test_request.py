@@ -1,7 +1,7 @@
 import pytest
 
 from unittest.mock import Mock
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from ..base import (
     fake_llm_responses,
     make_api_request,
@@ -838,3 +838,67 @@ def test_request_exceeds_max_submission_tokens(
     with pytest.raises(Exception) as excinfo:
         request.prepare_ask_request()
     assert "over max submission tokens: 1" in str(excinfo.value)
+
+
+def test_request_with_files(test_config, tool_manager, provider_manager, preset_manager):
+    """Test that requests with files return directly after LLM call."""
+    file = HumanMessage([{"type": "image", "url": "test.jpg"}])
+    request_overrides = {"files": [file]}
+    request = make_api_request(
+        test_config,
+        tool_manager,
+        provider_manager,
+        preset_manager,
+        request_overrides=request_overrides
+    )
+    request.set_request_llm()
+    new_messages, messages = request.prepare_ask_request()
+    success, response_obj, user_message = request.call_llm(messages)
+    assert success is True
+    assert type(response_obj) is AIMessage
+    assert response_obj.content == "test response"
+
+
+def test_request_with_multiple_files(test_config, tool_manager, provider_manager, preset_manager):
+    """Test that requests with multiple files are handled correctly."""
+    files = [
+        HumanMessage([{"type": "image", "url": "test1.jpg"}]),
+        HumanMessage([{"type": "image", "url": "test2.jpg"}])
+    ]
+    request_overrides = {"files": files}
+    request = make_api_request(
+        test_config,
+        tool_manager,
+        provider_manager,
+        preset_manager,
+        request_overrides=request_overrides
+    )
+    request.set_request_llm()
+    new_messages, messages = request.prepare_ask_request()
+    success, response_obj, user_message = request.call_llm(messages)
+    assert success is True
+    assert type(response_obj) is AIMessage
+    assert response_obj.content == "test response"
+    assert len(messages) == len(request.old_messages) + len(files)
+
+
+def test_request_with_files_and_streaming(test_config, tool_manager, provider_manager, preset_manager):
+    """Test that files work with streaming requests."""
+    file = HumanMessage([{"type": "image", "url": "test.jpg"}])
+    request_overrides = {
+        "files": [file],
+        "stream": True
+    }
+    request = make_api_request(
+        test_config,
+        tool_manager,
+        provider_manager,
+        preset_manager,
+        request_overrides=request_overrides
+    )
+    request.set_request_llm()
+    new_messages, messages = request.prepare_ask_request()
+    success, response_obj, user_message = request.call_llm(messages)
+    assert success is True
+    assert type(response_obj) is AIMessageChunk
+    assert response_obj.content == "test response"
