@@ -1,3 +1,7 @@
+### v0.22.5 - 01/31/2025
+
+* **Fri Jan 31 2025:** o3-mini
+
 ### v0.22.4 - 01/18/2025
 
 * **Sat Jan 18 2025:** allow passing files in request_overrides for supported providers
