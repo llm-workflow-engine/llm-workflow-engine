@@ -113,6 +113,12 @@ class ProviderChatOpenai(Provider):
             "o1-2024-12-17": {
                 "max_tokens": 204800,
             },
+            "o3-mini": {
+                "max_tokens": 204800,
+            },
+            "o3-mini-2025-01-31": {
+                "max_tokens": 204800,
+            },
         }
 
     def prepare_messages_method(self):
