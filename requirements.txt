@@ -5,9 +5,9 @@ beautifulsoup4
 docutils>=0.20.1
 email-validator
 Jinja2
-langchain>=0.3,<0.4
-langchain-community>=0.3,<0.4
-langchain_openai>=0.1.23
+langchain>=0.3.17,<0.4
+langchain-community>=0.3.16,<0.4
+langchain_openai>=0.3.3
 names
 numexpr>=2.8.4
 openpyxl
