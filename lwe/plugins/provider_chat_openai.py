@@ -16,10 +16,21 @@ class ProviderChatOpenai(Provider):
     Access to OpenAI chat models via the OpenAI API
     """
 
+    def default_config(self):
+        return {
+            "validate_models": True,
+        }
+
+    def setup(self):
+        self.log.info(f"Setting up Provider Chat OpenAI plugin, running with backend: {self.backend.name}")
+        super().setup()
+        self.validate_models = self.config.get("plugins.provider_chat_openai.validate_models")
+
     @property
     def capabilities(self):
         return {
             "chat": True,
+            "validate_models": self.validate_models,
         }
 
     @property
