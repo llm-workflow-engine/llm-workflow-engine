@@ -257,14 +257,14 @@ class ProviderBase(Plugin):
                 elif value == dict:
                     completions[full_key] = {}
                 elif isinstance(value, dict):
-                    prefix.append(key)
+                    new_prefix = prefix + [key]
                     for k, v in value.items():
                         dict_key = "%s.%s" % (full_key, k)
                         if isinstance(v, PresetValue):
                             completions[dict_key] = v.completions
                         else:
                             completions[dict_key] = None
-                    dict_to_completions(completions, value, prefix, is_dict)
+                    dict_to_completions(completions, value, new_prefix, is_dict)
                 elif isinstance(value, PresetValue):
                     completions[full_key] = value.completions
                 else:
