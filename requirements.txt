@@ -5,7 +5,8 @@ beautifulsoup4
 docutils>=0.20.1
 email-validator
 Jinja2
-langchain>=0.3.17,<0.4
+langchain>=0.3.19,<0.4
+langchain-core>=0.3.39,<0.4
 langchain-community>=0.3.16,<0.4
 langchain_openai>=0.3.3
 names
