@@ -366,9 +366,14 @@ class ApiRequest:
 
     def iterate_streaming_response(self, messages, print_stream, stream_callback):
         response = None
+        previous_chunks = []
         self.log.debug(f"Streaming with LLM attributes: {self.llm.dict()}")
+        provider_streaming_method = getattr(self.provider, "handle_streaming_chunk", None)
         for chunk in self.llm.stream(messages):
-            if isinstance(chunk, AIMessageChunk):
+            if provider_streaming_method:
+                content = provider_streaming_method(chunk, previous_chunks)
+                response = content if not response else response + content
+            elif isinstance(chunk, AIMessageChunk):
                 content = chunk.content
                 response = chunk if not response else response + chunk
             elif isinstance(chunk, str):
@@ -382,6 +387,7 @@ class ApiRequest:
                     response = None
                 util.print_status_message(False, "Generation stopped")
                 break
+            previous_chunks.append(chunk)
         return response
 
     def execute_llm_streaming(self, messages):
@@ -404,8 +410,11 @@ class ApiRequest:
     def execute_llm_non_streaming(self, messages):
         self.log.info("Starting non-streaming request")
         self.log.debug(f"Non-streaming with LLM attributes: {self.llm.dict()}")
+        provider_non_streaming_method = getattr(self.provider, "handle_non_streaming_response", None)
         try:
             response = self.llm.invoke(messages)
+            if provider_non_streaming_method:
+                response = provider_non_streaming_method(response)
         except ValueError as e:
             return False, messages, e
         return True, response, "Response received"
