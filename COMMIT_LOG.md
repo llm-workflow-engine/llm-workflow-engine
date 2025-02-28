@@ -1,3 +1,13 @@
+### v0.22.6 - 02/27/2025
+
+* **Thu Feb 27 2025:** GPT 4.5 preview
+* **Mon Feb 24 2025:** fix side effect in recursive function
+* **Mon Feb 24 2025:** alpha support for provider specific overrides for handling streaming/non-streaming response
+* **Mon Feb 24 2025:** bump langchain/langchain-core requirements
+* **Tue Feb 11 2025:** validate_models config setting for provider_chat_openai, default True
+* **Fri Jan 31 2025:** add reasoning_effort param to chat_openai provider
+* **Fri Jan 31 2025:** bump requirements
+
 ### v0.22.5 - 01/31/2025
 
 * **Fri Jan 31 2025:** o3-mini
