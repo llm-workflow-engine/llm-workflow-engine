@@ -1,7 +1,9 @@
+import os
 import pprint
 import tempfile
 
-LOG_FILE = "%s/%s" % (tempfile.gettempdir(), "lwe-debug.log")
+DEFAULT_LOG_FILE = "%s/%s" % (tempfile.gettempdir(), "lwe-debug.log")
+LOG_FILE = os.environ.get("LWE_DEBUG_LOG_FILE", DEFAULT_LOG_FILE)
 
 pp = pprint.PrettyPrinter()
 pf = pprint.PrettyPrinter(stream=open(LOG_FILE, "w"))
