@@ -18,10 +18,6 @@ from rich.markdown import Markdown
 
 import lwe.core.constants as constants
 from lwe.core.error import NoInputError
-from lwe import debug
-
-if False:
-    debug.console(None)
 
 console = Console()
 

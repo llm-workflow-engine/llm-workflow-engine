@@ -25,7 +25,6 @@ def make_api_backend(test_config, datadir, user_id=1):
         test_config.set("debug.log.enabled", True)
     template_dir = str(datadir.absolute())
     test_config.set("directories.templates", [template_dir])
-    util.debug.console(test_config.get("directories.templates"))
     backend = ApiBackend(test_config)
     if DEBUG:
         root_logger = logging.getLogger()
