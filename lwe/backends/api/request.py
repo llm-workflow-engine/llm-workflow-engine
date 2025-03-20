@@ -1,7 +1,7 @@
 import copy
 
 from langchain_community.adapters.openai import convert_message_to_dict
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 
 from lwe.core.logger import Logger
 
@@ -381,7 +381,7 @@ class ApiRequest:
             if provider_streaming_method:
                 content = provider_streaming_method(chunk, previous_chunks)
                 response = content if not response else response + content
-            elif isinstance(chunk, AIMessageChunk):
+            elif isinstance(chunk, AIMessageChunk) or isinstance(chunk, AIMessage):
                 content = chunk.content
                 response = chunk if not response else response + chunk
             elif isinstance(chunk, str):
