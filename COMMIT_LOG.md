@@ -1,3 +1,10 @@
+### v0.22.7 - 03/19/2025
+
+* **Wed Mar 19 2025:** support AIMessage objects in streaming
+* **Wed Mar 19 2025:** workaround for inconsistent system message types in OpenAI reasoning models
+* **Fri Feb 28 2025:** kill unneeded debug imports
+* **Fri Feb 28 2025:** override debug log file location with LWE_DEBUG_LOG_FILE env var
+
 ### v0.22.6 - 02/27/2025
 
 * **Thu Feb 27 2025:** GPT 4.5 preview
