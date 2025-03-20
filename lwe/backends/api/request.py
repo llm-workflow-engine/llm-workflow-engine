@@ -313,6 +313,13 @@ class ApiRequest:
                 return True
         return False
 
+    def is_openai_legacy_reasoning_model(self):
+        if self.provider.name == "provider_chat_openai":
+            model_name = getattr(self.llm, self.provider.model_property_name)
+            if model_name.startswith("o1-mini") or model_name.startswith("o1-preview"):
+                return True
+        return False
+
     def call_llm(self, messages):
         """
         Call the LLM.
@@ -326,7 +333,8 @@ class ApiRequest:
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
         # TODO: Remove this when o1 models support system messages.
         if self.is_openai_o_series():
-            messages = [{**m, "role": "user"} if m["role"] == "system" else m for m in messages]
+            if self.is_openai_legacy_reasoning_model():
+                messages = [{**m, "role": "user"} if m["role"] == "system" else m for m in messages]
             self.llm.temperature = 1
         messages = self.build_chat_request(messages)
         if stream:
