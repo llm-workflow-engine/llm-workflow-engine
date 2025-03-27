@@ -152,6 +152,8 @@ Supported providers
    https://github.com/llm-workflow-engine/lwe-plugin-provider-openai
 * **provider_openrouter:** Access to `OpenRouter <https://openrouter.ai/models)>`_ models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-openrouter
+* **provider_requesty:** Access to `Requesty <https://www.requesty.ai/solution/llm-routing/models)>`_ models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-requesty
 * **provider_vertexai:** Access to `Google Vertex AI <https://cloud.google.com/vertex-ai/docs/generative-ai/learn/models>`_ text/code models.
    https://github.com/llm-workflow-engine/lwe-plugin-provider-vertexai
 
