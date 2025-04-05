@@ -1,5 +1,5 @@
 [![Test status](https://github.com/llm-workflow-engine/llm-workflow-engine/actions/workflows/python-app.yml/badge.svg)](https://github.com/llm-workflow-engine/llm-workflow-engine/actions/workflows/python-app.yml)
-[![CodeQL status](https://github.com/llm-workflow-engine/llm-workflow-engine/actions/workflows/codeql.yml/badge.svg)](https://github.com/llm-workflow-engine/llm-workflow-engine/actions/workflows/codeql.yml)
+[![CodeQL](https://github.com/llm-workflow-engine/llm-workflow-engine/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/llm-workflow-engine/llm-workflow-engine/actions/workflows/github-code-scanning/codeql)
 
 <p align="center">
   <img alt="lwe-logo-small" src="https://github.com/llm-workflow-engine/llm-workflow-engine/assets/43772/6921deac-0964-41a9-84fd-7c2ebce198c0" />
