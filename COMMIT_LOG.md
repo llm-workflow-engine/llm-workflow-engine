@@ -1,3 +1,7 @@
+### v0.22.8 - 04/07/2025
+
+* **Mon Apr 07 2025:** workflow for auto-publish to PyPi
+
 ### v0.22.7 - 03/19/2025
 
 * **Wed Mar 19 2025:** support AIMessage objects in streaming
