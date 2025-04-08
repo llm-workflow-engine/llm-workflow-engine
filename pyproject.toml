@@ -25,6 +25,7 @@ dependencies = [
     "docutils>=0.20.1",
     "email-validator",
     "Jinja2",
+    "kreuzberg",
     "langchain>=0.3.19,<0.4",
     "langchain-core>=0.3.39,<0.4",
     "langchain-community>=0.3.16,<0.4",
@@ -41,7 +42,6 @@ dependencies = [
     "rich",
     "setuptools",
     "sqlalchemy>=1.4.48",
-    "textract @ git+https://github.com/thehunmonkgroup/textract@61a25dcb6f1d3e747b6e58b716d058f3dfe3d662",
     "tiktoken",
 ]
 

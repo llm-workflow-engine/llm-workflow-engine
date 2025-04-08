@@ -16,9 +16,10 @@ Requirements
 
 To use this project, you need:
 
-* Python 3.9 or later
-* ``setuptools`` installed. You can install it using ``pip install setuptools``. Make sure that you have the last version of pip: ``pip install --upgrade pip``
+* Python 3.9 or later with pip installed.
 * A database backend (`SQLite <https://www.sqlite.org/>`_ by default, any configurable in `SQLAlchemy <https://www.sqlalchemy.org/>`_ allowed).
+* Optional:
+    * `Pandoc <https://pandoc.org/>`_ for document extraction *other than* PDFs.
 
 -----------------------------------------------
 From packages

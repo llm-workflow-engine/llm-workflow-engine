@@ -6,7 +6,7 @@ import requests
 import tempfile
 from urllib.parse import urlparse
 
-import textract
+import kreuzberg
 import pymupdf4llm
 import fitz
 fitz.TOOLS.mupdf_display_errors(False)
@@ -20,7 +20,7 @@ config = Config()
 config.set("debug.log.enabled", True)
 log = Logger("text_extractor", config)
 
-TEXTRACT_SUPPORTED_FILE_EXTENSIONS = [
+KREUZBERG_SUPPORTED_FILE_EXTENSIONS = [
     # Microsoft Office formats
     ".docx",
     ".pptx",
@@ -121,13 +121,13 @@ def extract_text_pymupdf(path):
     return pymupdf4llm.to_markdown(path)
 
 
-def extract_text_textract(path):
-    return textract.process(path).decode("utf-8")
+def extract_text_kreuzberg(path):
+    return kreuzberg.extract_file_sync(path)
 
 
 def get_file_extension(path, default_extension):
     file_extension = default_extension
-    for ext in set(TEXTRACT_SUPPORTED_FILE_EXTENSIONS + PYMUPDF_SUPPORTED_EXTENSIONS):
+    for ext in set(KREUZBERG_SUPPORTED_FILE_EXTENSIONS + PYMUPDF_SUPPORTED_EXTENSIONS):
         if path.lower().endswith(ext):
             file_extension = ext
             break
@@ -184,12 +184,13 @@ def main():
             message = f"Error extracting {path} content with pymupdf4llm: {str(e)}"
             log.error(message)
             module.fail_json(msg=message)
-    elif file_extension in TEXTRACT_SUPPORTED_FILE_EXTENSIONS:
-        log.debug(f"Extracting content from {path} with textract")
+    elif file_extension in KREUZBERG_SUPPORTED_FILE_EXTENSIONS:
+        log.debug(f"Extracting content from {path} with kreuzberg")
         try:
-            content = extract_text_textract(path)
+            extraction = extract_text_kreuzberg(path)
+            content = extraction.content
         except Exception as e:
-            message = f"Error extracting {file_extension} content with textract: {str(e)}"
+            message = f"Error extracting {file_extension} content with kreuzberg: {str(e)}"
             log.error(message)
             module.fail_json(msg=message)
     else:

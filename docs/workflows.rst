@@ -66,7 +66,7 @@ Example:
      retries: 10
      delay: 3
 
-``text_extractor``: Provides an easy way to extract text content from many different file types. For supported arguments and return values, see the `text_extractor module documentation <https://github.com/llm-workflow-engine/llm-workflow-engine/blob/main/lwe/backends/api/workflow/library/text_extractor.py>`_.
+``text_extractor``: Provides an easy way to extract text content from many different file types. For supported arguments and return values, see the `text_extractor module documentation <https://github.com/llm-workflow-engine/llm-workflow-engine/blob/main/lwe/backends/api/workflow/library/text_extractor.py>`_. *NOTE: PDF document extraction is supported natively, to extract other document types (.docx, .xlsx, etc.) you need to install* `pandoc <https://pandoc.org>`_ *and make sure it's available in your PATH.*
 
 Example:
 
