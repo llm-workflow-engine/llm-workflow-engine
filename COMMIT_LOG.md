@@ -1,5 +1,6 @@
-### v0.22.9 - 04/07/2025
+### v0.22.9 - 04/08/2025
 
+* **Mon Apr 07 2025:** migrate from textract to kreuzberg
 * **Mon Apr 07 2025:** switch to newer build system
 
 ### v0.22.8 - 04/07/2025
