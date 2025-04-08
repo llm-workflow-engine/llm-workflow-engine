@@ -12,10 +12,9 @@ authors = [
     {name = "Chad Phillips"}
 ]
 requires-python = ">=3.9"
-license = {text = "MIT License"}
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
