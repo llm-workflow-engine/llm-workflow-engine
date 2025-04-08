@@ -1,2 +1,91 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-workflow-engine"
+dynamic = ["version"]
+description = "CLI tool and workflow manager for common LLMs"
+readme = "README.md"
+authors = [
+    {name = "Mahmoud Mabrouk", email = "mahmoudmabrouk.mail@gmail.com"},
+    {name = "Chad Phillips"}
+]
+requires-python = ">=3.9"
+license = {text = "MIT License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "ansible>=8.0",
+    "ansible-core>=2.15",
+    "alembic",
+    "beautifulsoup4",
+    "docutils>=0.20.1",
+    "email-validator",
+    "Jinja2",
+    "langchain>=0.3.19,<0.4",
+    "langchain-core>=0.3.39,<0.4",
+    "langchain-community>=0.3.16,<0.4",
+    "langchain_openai>=0.3.3",
+    "names",
+    "numexpr>=2.8.4",
+    "openpyxl",
+    "pdfminer.six",
+    "prompt-toolkit",
+    "pymupdf4llm",
+    "pyperclip",
+    "python-frontmatter",
+    "PyYAML",
+    "rich",
+    "setuptools",
+    "sqlalchemy>=1.4.48",
+    "textract @ git+https://github.com/thehunmonkgroup/textract@61a25dcb6f1d3e747b6e58b716d058f3dfe3d662",
+    "tiktoken",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-datadir",
+    "pip-tools",
+    "flake8",
+    "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/llm-workflow-engine/llm-workflow-engine"
+Repository = "https://github.com/llm-workflow-engine/llm-workflow-engine"
+
+[project.scripts]
+lwe = "lwe.main:main"
+
+[project.entry-points."lwe_plugins"]
+
+[tool.setuptools]
+packages = {find = {}}
+
+[tool.setuptools.package-data]
+"lwe" = [
+    "backends/api/schema/alembic.ini",
+    "backends/api/schema/alembic/*",
+    "backends/api/schema/alembic/**/*",
+    "examples/*",
+    "examples/**/*",
+    "tools/*",
+    "tools/**/*",
+    "presets/*",
+    "presets/**/*",
+    "templates/*",
+    "templates/**/*",
+    "workflows/*",
+    "workflows/**/*",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "lwe.version.__version__"}
+
 [tool.black]
 line-length = 100
