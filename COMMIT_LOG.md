@@ -1,3 +1,7 @@
+### v0.22.10 - 04/14/2025
+
+* **Mon Apr 14 2025:** gpt-4.1
+
 ### v0.22.9 - 04/08/2025
 
 * **Mon Apr 07 2025:** migrate from textract to kreuzberg *(NOTE: with kreuzberg, pandoc is a required dependency for using workflows with non-PDF documents)*
