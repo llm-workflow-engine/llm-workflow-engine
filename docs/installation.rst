@@ -25,7 +25,13 @@ To use this project, you need:
 From packages
 -----------------------------------------------
 
-Install the latest version of this software directly from github with pip:
+Install the latest release of this software via pip:
+
+.. code-block:: bash
+
+   pip install llm-workflow-engine
+
+Install the 'bleeding edge' of this software directly from github with pip:
 
 .. code-block:: bash
 
