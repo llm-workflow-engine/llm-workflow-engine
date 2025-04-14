@@ -106,6 +106,12 @@ class ProviderChatOpenai(Provider):
             "gpt-4o-mini-2024-07-18": {
                 "max_tokens": 131072,
             },
+            "gpt-4.1": {
+                "max_tokens": 1047576,
+            },
+            "gpt-4.1-2025-04-14": {
+                "max_tokens": 1047576,
+            },
             "gpt-4.5-preview": {
                 "max_tokens": 131072,
             },
