@@ -309,7 +309,7 @@ class ApiRequest:
     def is_openai_o_series(self):
         if self.provider.name == "provider_chat_openai":
             model_name = getattr(self.llm, self.provider.model_property_name)
-            if model_name.startswith("o1-") or model_name.startswith("o3-"):
+            if model_name.startswith("o1") or model_name.startswith("o3") or model_name.startswith("o4"):
                 return True
         return False
 

@@ -148,10 +148,29 @@ class ProviderChatOpenai(Provider):
             "o1-2024-12-17": {
                 "max_tokens": 204800,
             },
+            # TODO: These are not chat models, how to support?
+            # "o1-pro": {
+            #     "max_tokens": 204800,
+            # },
+            # "o1-pro-2025-03-19": {
+            #     "max_tokens": 204800,
+            # },
             "o3-mini": {
                 "max_tokens": 204800,
             },
             "o3-mini-2025-01-31": {
+                "max_tokens": 204800,
+            },
+            "o3": {
+                "max_tokens": 204800,
+            },
+            "o3-2025-04-16": {
+                "max_tokens": 204800,
+            },
+            "o4-mini": {
+                "max_tokens": 204800,
+            },
+            "o4-mini-2025-04-16": {
                 "max_tokens": 204800,
             },
         }
