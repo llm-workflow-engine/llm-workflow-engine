@@ -122,8 +122,8 @@ Supported providers
 
 **NOTE:** While these provider integrations are working, none have been well-tested yet.
 
-* **provider_ai21:** Access to `AI21 <https://docs.ai21.com/docs/jurassic-2-models>`_ models
-   https://github.com/llm-workflow-engine/lwe-plugin-provider-ai21
+* **provider_ai21:** Access to `Chat AI21 <https://docs.ai21.com/docs/jamba-foundation-models>`_ models
+   https://github.com/llm-workflow-engine/lwe-plugin-provider-chat-ai21
 * **provider_azure_openai_chat:** Access to `Azure OpenAI <https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models>`_ chat models
    https://github.com/llm-workflow-engine/lwe-plugin-provider-azure-openai-chat
 * **provider_chat_anthropic:** Access to `Anthropic <https://docs.anthropic.com/claude/reference/selecting-a-model>`_ chat models
