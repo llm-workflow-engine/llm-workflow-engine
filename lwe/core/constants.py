@@ -9,7 +9,7 @@ PROVIDER_PRIVATE_CUSTOMIZATION_KEYS = [
     "tool_choice",
 ]
 
-# Backend speciifc constants
+# Backend specific constants
 API_BACKEND_DEFAULT_MODEL = "gpt-4o-mini"
 
 SYSTEM_MESSAGE_DEFAULT = "You are a helpful assistant."
