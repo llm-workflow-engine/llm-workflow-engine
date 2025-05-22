@@ -57,7 +57,7 @@ ChatGPT Wrapper was an amazing tool for its time, thank you to its original crea
 
 🔌 [**Simple plugin architecture**](https://llm-workflow-engine.readthedocs.io/en/latest/plugins.html#core-plugins). Extend LWE with custom functionality
 
-🗣 **Supports multiple LLM providers**. Provider plugins allow interacting with other LLMs (GPT-3, Cohere, Hugginface, etc.)
+🗣 **Supports multiple LLM providers**. Provider plugins allow interacting with other LLMs (GPT-3, Cohere, Huggingface, etc.)
 
 🔄[**Build workflows**](https://llm-workflow-engine.readthedocs.io/en/latest/workflows.html). Easily integrate calls to an LLM into larger workflows via Ansible Playbooks
 
