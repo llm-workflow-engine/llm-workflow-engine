@@ -1,4 +1,5 @@
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import AIMessage, AIMessageChunk
 
 from lwe.core.provider import Provider, PresetValue
 from lwe.core import constants
@@ -148,13 +149,12 @@ class ProviderChatOpenai(Provider):
             "o1-2024-12-17": {
                 "max_tokens": 204800,
             },
-            # TODO: These are not chat models, how to support?
-            # "o1-pro": {
-            #     "max_tokens": 204800,
-            # },
-            # "o1-pro-2025-03-19": {
-            #     "max_tokens": 204800,
-            # },
+            "o1-pro": {
+                "max_tokens": 204800,
+            },
+            "o1-pro-2025-03-19": {
+                "max_tokens": 204800,
+            },
             "o3-mini": {
                 "max_tokens": 204800,
             },
@@ -165,6 +165,12 @@ class ProviderChatOpenai(Provider):
                 "max_tokens": 204800,
             },
             "o3-2025-04-16": {
+                "max_tokens": 204800,
+            },
+            "o3-pro": {
+                "max_tokens": 204800,
+            },
+            "o3-pro-2025-06-10": {
                 "max_tokens": 204800,
             },
             "o4-mini": {
@@ -180,6 +186,21 @@ class ProviderChatOpenai(Provider):
 
     def llm_factory(self):
         return CustomChatOpenAI
+
+    def format_responses_content(self, content_list):
+        return "".join([content['text'] for content in content_list if 'text' in content])
+
+    def handle_non_streaming_response(self, response: AIMessage):
+        if isinstance(response.content, list):
+            response.content = self.format_responses_content(response.content)
+        return response
+
+    def handle_streaming_chunk(self, chunk: AIMessageChunk | str, _previous_chunks: list[AIMessageChunk | str]) -> str:
+        if isinstance(chunk, str):
+            return chunk
+        elif isinstance(chunk.content, str):
+            return chunk.content
+        return self.format_responses_content(chunk.content)
 
     def customization_config(self):
         return {
