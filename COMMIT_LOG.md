@@ -1,3 +1,9 @@
+### v0.22.12 - 06/10/2025
+
+* **Tue Jun 10 2025:** add support for o1-pro/o3-pro
+* **Thu May 08 2025:** update AI21 plugin doc
+* **Sat May 03 2025:** add doc for xAI provider plugin
+
 ### v0.22.11 - 04/16/2025
 
 * **Wed Apr 16 2025:** o3/o4-mini
