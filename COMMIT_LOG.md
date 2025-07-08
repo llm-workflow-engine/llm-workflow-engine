@@ -1,3 +1,7 @@
+### v0.22.13 - 07/08/2025
+
+* **Tue Jul 08 2025:** fix outdated documentation
+
 ### v0.22.12 - 06/10/2025
 
 * **Tue Jun 10 2025:** add support for o1-pro/o3-pro
