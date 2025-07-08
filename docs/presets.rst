@@ -24,12 +24,12 @@ To save an existing configuration as a preset:
 
 .. code-block:: console
 
-   /preset-save mypresetname
+   /preset save mypresetname
 
 Later, to load that configuration for use:
 
 .. code-block:: console
 
-   /preset-load mypresetname
+   /preset load mypresetname
 
 See ``/help`` for the various other preset commands.

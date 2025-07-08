@@ -44,6 +44,6 @@ These front matter attributes have special functionality:
       * ``model_customizations```: A dictionary of model customization overrides
 
      This dictionary is recursively merged with the struture of the preset configuration. To see the exact structure of a preset,
-     use the ``/preset-edit`` command.
+     use the ``/preset edit`` command.
 
 All other attributes will be passed to the template as variable substitutions.

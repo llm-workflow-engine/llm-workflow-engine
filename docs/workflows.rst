@@ -6,13 +6,13 @@ Workflows
 
 LWE supports more complex linear workflows via built-in integration for `Ansible playbooks <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html>`_.
 
-If you chose to install the example workflows, you can run ``/workflows`` to list them, and ``/workflow-show workflowname`` to view the playbook configuration for a particular workflow.
+If you chose to install the example workflows, you can run ``/workflows`` to list them, and ``/workflow show workflowname`` to view the playbook configuration for a particular workflow.
 
 To execute a workflow from within the program:
 
 .. code-block:: console
 
-   /workflow-run workflowname
+   /workflow run workflowname
 
 To run a workflow from the command line:
 
@@ -115,7 +115,7 @@ Here's how to use the templates to generate workflows:
 
    .. code-block:: console
 
-      /template-edit-run workflow-spec-generator.md
+      /template edit-run workflow-spec-generator.md
 
    This opens the template in your editor. Under the ``GOAL`` section, describe the goal you're trying to accomplish. Try to be fairly specific -- the more detail you can give the LLM, the better it will be at producing the spec.
 
@@ -135,7 +135,7 @@ Here's how to use the templates to generate workflows:
 
    .. code-block:: console
 
-      /template-edit-run workflow-generator.md
+      /template edit-run workflow-generator.md
 
    Paste your original goal and the spec written by the LLM into the appropriate sections in the template, save and close the editor to run the template.
 
@@ -147,7 +147,7 @@ Here's how to use the templates to generate workflows:
 
    .. code-block:: console
 
-      /workflow-edit workflowname
+      /workflow edit workflowname
 
    Then paste in the generated workflow.
 
@@ -157,7 +157,7 @@ Here's how to use the templates to generate workflows:
 
    .. code-block:: console
 
-      /workflow-run workflowname
+      /workflow run workflowname
 
 At this point the workflow should either just work, or you may need to do a little troubleshooting to work out the last kinks.
 

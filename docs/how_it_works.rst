@@ -67,7 +67,7 @@ List available presets:
 
 Show configuration of the current preset:
 
-.. image:: https://user-images.githubusercontent.com/43772/249006348-88746adc-cf42-47aa-91a8-dfe000ea35e3.png
+.. image:: https://github.com/user-attachments/assets/8f4c89b0-d0ef-4fbb-a4be-d80306462ac8
   :alt: Show configuration of the current preset
 
 
@@ -82,7 +82,7 @@ List available templates:
 
 Run a template and provide input:
 
-.. image:: https://user-images.githubusercontent.com/43772/249006386-9877218d-5112-46cd-9d89-d3a892515110.png
+.. image:: https://github.com/user-attachments/assets/592b8fcd-4afa-4205-a0e6-8c9362e3f577
   :alt: Run a template and provide input
 
 
@@ -97,12 +97,12 @@ List available workflows:
 
 Show a workflow:
 
-.. image:: https://user-images.githubusercontent.com/43772/249006985-bd92f8c2-a19b-4f2e-9508-9d6875a2672a.png
+.. image:: https://github.com/user-attachments/assets/af67b8c2-544d-4627-a084-4a22ed1137ce
   :alt: Show a workflow
 
 Run a workflow:
 
-.. image:: https://user-images.githubusercontent.com/43772/249007169-3917cc85-5bbe-4e87-9f95-f3ab65a1e915.png
+.. image:: https://github.com/user-attachments/assets/07a9c680-335c-4350-a10d-4c34ce39b818
   :alt: Run a workflow
 
 See :ref:`python_module_doc` for details on using LWE as an API from Python.
