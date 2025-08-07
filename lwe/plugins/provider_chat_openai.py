@@ -179,6 +179,24 @@ class ProviderChatOpenai(Provider):
             "o4-mini-2025-04-16": {
                 "max_tokens": 204800,
             },
+            "gpt-5": {
+                "max_tokens": 409600,
+            },
+            "gpt-5-2025-08-07": {
+                "max_tokens": 409600,
+            },
+            "gpt-5-mini": {
+                "max_tokens": 409600,
+            },
+            "gpt-5-mini-2025-08-07": {
+                "max_tokens": 409600,
+            },
+            "gpt-5-nano": {
+                "max_tokens": 409600,
+            },
+            "gpt-5-nano-2025-08-07": {
+                "max_tokens": 409600,
+            },
         }
 
     def prepare_messages_method(self):

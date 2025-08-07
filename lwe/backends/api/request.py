@@ -306,10 +306,10 @@ class ApiRequest:
         return messages
 
     # TODO: Remove this when o1 models support system messages.
-    def is_openai_o_series(self):
+    def is_openai_reasoning_model(self):
         if self.provider.name == "provider_chat_openai":
             model_name = getattr(self.llm, self.provider.model_property_name)
-            if model_name.startswith("o1") or model_name.startswith("o3") or model_name.startswith("o4"):
+            if model_name.startswith("o1") or model_name.startswith("o3") or model_name.startswith("o4") or model_name.startswith("gpt-5"):
                 return True
         return False
 
@@ -339,7 +339,7 @@ class ApiRequest:
         stream = self.request_overrides.get("stream", False)
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
         # TODO: Remove this when o1 models support system messages.
-        if self.is_openai_o_series():
+        if self.is_openai_reasoning_model():
             if self.is_openai_responses_api_series():
                 self.llm.use_responses_api = True
             if self.is_openai_legacy_reasoning_model():
