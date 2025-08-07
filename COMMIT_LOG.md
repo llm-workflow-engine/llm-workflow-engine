@@ -1,3 +1,7 @@
+### v0.22.14 - 08/07/2025
+
+* **Thu Aug 07 2025:** gpt-5
+
 ### v0.22.13 - 07/08/2025
 
 * **Tue Jul 08 2025:** fix outdated documentation
