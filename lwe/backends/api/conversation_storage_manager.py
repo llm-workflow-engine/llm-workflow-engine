@@ -215,6 +215,9 @@ class ConversationStorageManager:
                 f"Title generation LLM provider: {provider.name}, model: {getattr(llm, provider.model_property_name, 'N/A')}"
             )
             result = llm.invoke(new_messages)
+            provider_non_streaming_method = getattr(provider, "handle_non_streaming_response", None)
+            if provider_non_streaming_method:
+                result = provider_non_streaming_method(result)
             request = ApiRequest(orm=self.orm, config=self.config)
             message, _tool_calls = request.extract_message_content(result)
             title = message["message"].replace("\n", ", ").strip().strip("'\"")
