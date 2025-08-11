@@ -1,3 +1,11 @@
+### v0.22.15 - 08/11/2025
+
+* **Mon Aug 11 2025:** bump langchain deps
+* **Mon Aug 11 2025:** add llm_pre_init/llm_pre_call hooks to provider class. migrate provider_chat_openai to Responses API
+* **Mon Aug 11 2025:** use per-provider non-streaming method for title gen if available
+* **Mon Aug 11 2025:** change default backend model to GPT 4.1 Nano
+* **Sun Aug 10 2025:** add verbosity parameter
+
 ### v0.22.14 - 08/07/2025
 
 * **Thu Aug 07 2025:** gpt-5
