@@ -107,4 +107,4 @@ def test_get_num_tokens_from_messages_with_tool(test_config, tool_cache, provide
         },
     ]
     num_tokens = token_manager.get_num_tokens_from_messages(messages)
-    assert num_tokens == 381
+    assert num_tokens == 377

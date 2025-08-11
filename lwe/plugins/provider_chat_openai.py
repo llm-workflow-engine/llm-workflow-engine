@@ -205,6 +205,30 @@ class ProviderChatOpenai(Provider):
     def llm_factory(self):
         return CustomChatOpenAI
 
+    def llm_pre_init(self, customizations):
+        model_name = customizations.get(self.model_property_name, "")
+        if self.is_reasoning_model(model_name):
+            customizations["temperature"] = 1
+        if not self.is_legacy_reasoning_model(model_name):
+            customizations["use_responses_api"] = True
+        return customizations
+
+    def llm_pre_call(self, llm, messages):
+        model_name = getattr(llm, self.model_property_name)
+        if self.is_legacy_reasoning_model(model_name):
+            messages = [{**m, "role": "user"} if m["role"] == "system" else m for m in messages]
+        return messages
+
+    def is_reasoning_model(self, model_name):
+        if model_name.startswith("o1") or model_name.startswith("o3") or model_name.startswith("o4") or model_name.startswith("gpt-5"):
+            return True
+        return False
+
+    def is_legacy_reasoning_model(self, model_name):
+        if model_name.startswith("o1-mini") or model_name.startswith("o1-preview"):
+            return True
+        return False
+
     def format_responses_content(self, content_list):
         return "".join([content['text'] for content in content_list if 'text' in content])
 
@@ -232,7 +256,6 @@ class ProviderChatOpenai(Provider):
             "openai_organization": PresetValue(str, include_none=True, private=True),
             "request_timeout": PresetValue(int),
             "max_retries": PresetValue(int, 1, 10),
-            "n": PresetValue(int, 1, 10),
             "max_tokens": PresetValue(int, include_none=True),
             "top_p": PresetValue(float, min_value=0.0, max_value=1.0),
             "presence_penalty": PresetValue(float, min_value=-2.0, max_value=2.0),

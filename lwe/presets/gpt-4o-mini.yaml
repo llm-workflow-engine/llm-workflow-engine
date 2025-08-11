@@ -4,4 +4,3 @@ metadata:
   provider: chat_openai
 model_customizations:
   model_name: gpt-4o-mini
-  n: 1

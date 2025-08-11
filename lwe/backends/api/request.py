@@ -305,28 +305,6 @@ class ApiRequest:
             util.print_status_message(False, max_tokens_exceeded_warning)
         return messages
 
-    # TODO: Remove this when o1 models support system messages.
-    def is_openai_reasoning_model(self):
-        if self.provider.name == "provider_chat_openai":
-            model_name = getattr(self.llm, self.provider.model_property_name)
-            if model_name.startswith("o1") or model_name.startswith("o3") or model_name.startswith("o4") or model_name.startswith("gpt-5"):
-                return True
-        return False
-
-    def is_openai_responses_api_series(self):
-        if self.provider.name == "provider_chat_openai":
-            model_name = getattr(self.llm, self.provider.model_property_name)
-            if model_name.startswith("o1-pro") or model_name.startswith("o3-pro"):
-                return True
-        return False
-
-    def is_openai_legacy_reasoning_model(self):
-        if self.provider.name == "provider_chat_openai":
-            model_name = getattr(self.llm, self.provider.model_property_name)
-            if model_name.startswith("o1-mini") or model_name.startswith("o1-preview"):
-                return True
-        return False
-
     def call_llm(self, messages):
         """
         Call the LLM.
@@ -338,13 +316,9 @@ class ApiRequest:
         """
         stream = self.request_overrides.get("stream", False)
         self.log.debug(f"Calling LLM with message count: {len(messages)}")
-        # TODO: Remove this when o1 models support system messages.
-        if self.is_openai_reasoning_model():
-            if self.is_openai_responses_api_series():
-                self.llm.use_responses_api = True
-            if self.is_openai_legacy_reasoning_model():
-                messages = [{**m, "role": "user"} if m["role"] == "system" else m for m in messages]
-            self.llm.temperature = 1
+        llm_pre_call_method = getattr(self.provider, "llm_pre_call", None)
+        if llm_pre_call_method:
+            messages = llm_pre_call_method(self.llm, messages)
         messages = self.build_chat_request(messages)
         if stream:
             return self.execute_llm_streaming(messages)

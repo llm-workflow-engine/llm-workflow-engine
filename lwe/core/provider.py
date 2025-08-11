@@ -324,6 +324,9 @@ class ProviderBase(Plugin):
         for key in constants.PROVIDER_PRIVATE_CUSTOMIZATION_KEYS:
             final_customizations.pop(key, None)
         llm_class = self.llm_factory()
+        llm_pre_init_method = getattr(self, "llm_pre_init", None)
+        if llm_pre_init_method:
+            final_customizations = llm_pre_init_method(final_customizations)
         llm = llm_class(**final_customizations)
         if tools:
             self.log.debug(f"Provider {self.display_name} called with tools")
