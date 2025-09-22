@@ -1,3 +1,7 @@
+### v0.22.16 - 09/22/2025
+
+* **Mon Sep 22 2025:** fix #353: missing Ansible config files in Python package
+
 ### v0.22.15 - 08/11/2025
 
 * **Mon Aug 11 2025:** bump langchain deps
