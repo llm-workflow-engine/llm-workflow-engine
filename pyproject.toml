@@ -65,12 +65,15 @@ lwe = "lwe.main:main"
 
 [tool.setuptools]
 packages = {find = {}}
+include-package-data = true
 
 [tool.setuptools.package-data]
 "lwe" = [
     "backends/api/schema/alembic.ini",
     "backends/api/schema/alembic/*",
     "backends/api/schema/alembic/**/*",
+    "backends/api/workflow/*.cfg",
+    "backends/api/workflow/*.yaml",
     "examples/*",
     "examples/**/*",
     "tools/*",
