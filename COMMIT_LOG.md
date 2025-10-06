@@ -1,3 +1,7 @@
+### v0.22.17 - 10/06/2025
+
+* **Mon Oct 06 2025:** GPT-5 Pro
+
 ### v0.22.16 - 09/22/2025
 
 * **Mon Sep 22 2025:** fix #353: missing Ansible config files in Python package
