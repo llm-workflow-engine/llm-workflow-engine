@@ -197,6 +197,12 @@ class ProviderChatOpenai(Provider):
             "gpt-5-nano-2025-08-07": {
                 "max_tokens": 409600,
             },
+            "gpt-5-pro": {
+                "max_tokens": 409600,
+            },
+            "gpt-5-pro-2025-10-06": {
+                "max_tokens": 409600,
+            },
         }
 
     def prepare_messages_method(self):
