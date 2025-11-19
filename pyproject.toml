@@ -11,7 +11,7 @@ authors = [
     {name = "Mahmoud Mabrouk", email = "mahmoudmabrouk.mail@gmail.com"},
     {name = "Chad Phillips"}
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
