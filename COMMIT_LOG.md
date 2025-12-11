@@ -1,3 +1,8 @@
+### v0.22.19 - 12/11/2025
+
+* **Thu Dec 11 2025:** GPT-5.2
+* **Wed Nov 19 2025:** remove support for Python 3.9
+
 ### v0.22.18 - 11/19/2025
 
 * **Wed Nov 19 2025:** bump deps
