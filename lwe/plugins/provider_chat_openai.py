@@ -209,6 +209,21 @@ class ProviderChatOpenai(Provider):
             "gpt-5.1-2025-11-13": {
                 "max_tokens": 409600,
             },
+            "gpt-5.2-chat-latest": {
+                "max_tokens": 131072,
+            },
+            "gpt-5.2-pro": {
+                "max_tokens": 409600,
+            },
+            "gpt-5.2-pro-2025-12-11": {
+                "max_tokens": 409600,
+            },
+            "gpt-5.2": {
+                "max_tokens": 409600,
+            },
+            "gpt-5.2-2025-12-11": {
+                "max_tokens": 409600,
+            },
         }
 
     def prepare_messages_method(self):
@@ -261,7 +276,7 @@ class ProviderChatOpenai(Provider):
             "verbose": PresetValue(bool),
             "model_name": PresetValue(str, options=self.available_models),
             "temperature": PresetValue(float, min_value=0.0, max_value=2.0),
-            "reasoning_effort": PresetValue(str, options=["low", "medium", "high"], include_none=True),
+            "reasoning_effort": PresetValue(str, options=["low", "medium", "high", "xhigh"], include_none=True),
             "verbosity": PresetValue(str, options=["low", "medium", "high"], include_none=True),
             "openai_api_base": PresetValue(str, include_none=True),
             "openai_api_key": PresetValue(str, include_none=True, private=True),
