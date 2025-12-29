@@ -1,3 +1,7 @@
+### v0.22.20 - 12/28/2025
+
+* **Sun Dec 28 2025:** Fix #354: Ansible 'community.general.yaml' callback plugin has been removed
+
 ### v0.22.19 - 12/11/2025
 
 * **Thu Dec 11 2025:** GPT-5.2
