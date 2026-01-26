@@ -3,7 +3,7 @@ import frontmatter
 import shutil
 import tempfile
 
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound, meta
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, meta, select_autoescape
 
 from lwe.core.config import Config
 from lwe.core.logger import Logger
@@ -358,7 +358,10 @@ class TemplateManager:
         :return: None
         """
         self.log.debug("Loading templates from dirs: %s" % ", ".join(self.all_template_dirs))
-        jinja_env = Environment(loader=FileSystemLoader(self.all_template_dirs))
+        jinja_env = Environment(
+            loader=FileSystemLoader(self.all_template_dirs),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
         filenames = jinja_env.list_templates()
         self.templates_env = jinja_env
         self.templates = filenames or []
