@@ -146,7 +146,6 @@ def main():
     )
     path = module.params["path"]
     max_length = module.params["max_length"]
-    content = ""
     default_extension = module.params["default_extension"].lower()
     if not default_extension.startswith("."):
         default_extension = f".{default_extension}"
