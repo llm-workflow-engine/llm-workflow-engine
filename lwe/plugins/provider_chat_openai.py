@@ -224,6 +224,9 @@ class ProviderChatOpenai(Provider):
             "gpt-5.2-2025-12-11": {
                 "max_tokens": 409600,
             },
+            "gpt-5.3-chat-latest": {
+                "max_tokens": 131072,
+            },
         }
 
     def prepare_messages_method(self):
