@@ -1,3 +1,8 @@
+### v0.22.21 - 03/05/2026
+
+* **Thu Mar 05 2026:** GPT 5.4
+* **Tue Mar 03 2026:** GPT 5.3 Chat
+
 ### v0.22.20 - 12/28/2025
 
 * **Sun Dec 28 2025:** Fix #354: Ansible 'community.general.yaml' callback plugin has been removed
