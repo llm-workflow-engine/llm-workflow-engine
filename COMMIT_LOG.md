@@ -1,3 +1,8 @@
+### v0.22.23 - 04/30/2026
+
+* **Thu Apr 30 2026:** Handle invalid provider models explicitly
+* **Thu Apr 30 2026:** bump deps
+
 ### v0.22.22 - 04/24/2026
 
 * **Fri Apr 24 2026:** GPT-5.5
