@@ -215,6 +215,31 @@ def test_build_request_config_failure(test_config, tool_manager, provider_manage
     assert response is None
 
 
+def test_build_request_config_failure_with_invalid_model(
+    test_config, tool_manager, provider_manager, preset_manager
+):
+    provider = make_provider(provider_manager)
+    capabilities = copy.deepcopy(provider.capabilities)
+    capabilities["validate_models"] = True
+    provider.capabilities = capabilities
+    request = make_api_request(
+        test_config, tool_manager, provider_manager, preset_manager, provider
+    )
+    success, response, user_message = request.build_request_config(
+        {
+            "preset_name": "test_missing_model",
+            "metadata": {"name": "test_missing_model", "provider": "fake_llm"},
+            "customizations": {"model_name": "missing-model"},
+            "preset_overrides": {},
+        }
+    )
+    assert success is False
+    assert response is None
+    assert "missing-model" in user_message
+    assert "provider_fake_llm" in user_message
+    assert "/plugin reload provider_fake_llm" in user_message
+
+
 def test_prepare_config(test_config, tool_manager, provider_manager, preset_manager):
     request = make_api_request(test_config, tool_manager, provider_manager, preset_manager)
     config = request.prepare_config(

@@ -284,13 +284,26 @@ class ProviderBase(Plugin):
         if success:
             return model_name
 
-    def set_model(self, model_name):
+    def invalid_model_message(self, model_name):
+        provider_name = getattr(self, "name", self.__class__.__name__)
+        return (
+            f"Invalid model {model_name!r} for {provider_name!r}; model is not present "
+            f"in the provider model list/cache. Refresh the provider cache with "
+            f"'/plugin reload {provider_name}' or update the preset."
+        )
+
+    def validate_model(self, model_name):
         models = self.get_capability("models", {})
         validate_models = self.get_capability("validate_models", True)
         if not validate_models or model_name in models:
+            return True, model_name, f"Model {model_name!r} is valid"
+        return False, None, self.invalid_model_message(model_name)
+
+    def set_model(self, model_name):
+        success, _model_name, user_message = self.validate_model(model_name)
+        if success:
             return self.set_customization_value(self.model_property_name, model_name)
-        else:
-            return False, None, f"Invalid model {model_name}"
+        return success, None, user_message
 
     def transform_tools(self, tools):
         if hasattr(self, "transform_tool"):

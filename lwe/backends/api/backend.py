@@ -285,6 +285,15 @@ class ApiBackend:
         self.log.debug(
             f"Setting provider to: {provider_name}, with customizations: {customizations}, reset: {reset}"
         )
+        previous_state = {
+            "active_preset": self.active_preset,
+            "active_preset_name": self.active_preset_name,
+            "provider_name": self.provider_name,
+            "provider": self.provider,
+            "llm": getattr(self, "llm", None),
+            "model": getattr(self, "model", None),
+            "max_submission_tokens": getattr(self, "max_submission_tokens", None),
+        }
         self.active_preset = None
         self.active_preset_name = None
         provider_full_name = self.provider_manager.full_name(provider_name)
@@ -303,10 +312,29 @@ class ApiBackend:
                         customization_message,
                     ) = self.provider.set_customization_value(key, value)
                     if not success:
+                        self.restore_provider_state(previous_state)
                         return success, customizations, customization_message
             self.llm = self.make_llm()
-            self.set_model(getattr(self.llm, self.provider.model_property_name))
+            model_name = getattr(self.llm, self.provider.model_property_name)
+            success, customizations, user_message = self.set_model(model_name)
+            if not success:
+                self.restore_provider_state(previous_state)
+                return success, customizations, user_message
         return success, provider, user_message
+
+    def restore_provider_state(self, previous_state):
+        """Restore backend provider attributes after a failed provider change."""
+        self.active_preset = previous_state["active_preset"]
+        self.active_preset_name = previous_state["active_preset_name"]
+        self.provider_name = previous_state["provider_name"]
+        self.provider = previous_state["provider"]
+        self.llm = previous_state["llm"]
+        self.model = previous_state["model"]
+        if previous_state["max_submission_tokens"] is None:
+            if hasattr(self, "max_submission_tokens"):
+                del self.max_submission_tokens
+        else:
+            self.max_submission_tokens = previous_state["max_submission_tokens"]
 
     # TODO: This feels hacky, perhaps better to have a shell register itself
     # for output from the backend?
@@ -784,7 +812,10 @@ ASSISTANT:
             orm=self.orm,
         )
         self.request = request
-        request.set_request_llm()
+        success, response, user_message = request.set_request_llm()
+        if not success:
+            self.request = None
+            return self._handle_response(success, response, user_message)
         new_messages, messages = request.prepare_ask_request()
         success, response_obj, user_message = request.call_llm(messages)
         files = request_overrides.get("files", [])

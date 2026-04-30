@@ -115,6 +115,9 @@ class ApiRequest:
         )
         preset_name = config["metadata"].get("name", "")
         model_name = getattr(llm, provider.model_property_name)
+        success, response, user_message = provider.validate_model(model_name)
+        if not success:
+            return success, response, user_message
         token_manager = TokenManager(self.config, provider, model_name, self.tool_cache)
         message = f"Built LLM based on preset_name: {preset_name or 'None'}, metadata: {config['metadata']}, customizations: {config['customizations']}, preset_overrides: {config['preset_overrides']}"
         self.log.debug(message)

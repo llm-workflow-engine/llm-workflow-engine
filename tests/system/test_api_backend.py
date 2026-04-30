@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import copy
 import logging
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -467,6 +468,49 @@ def test_api_backend_overrides_active_preset_when_activate_preset_in_request_ove
     assert message_assistant["model"] == "gpt-4o"
     assert message_assistant["preset"] == "test_2"
     assert backend.active_preset_name == "test_2"
+
+
+def test_api_backend_activate_preset_fails_with_invalid_model(test_config):
+    backend = make_api_backend(test_config)
+    provider = backend.provider_manager.get_provider_from_name("provider_fake_llm")
+    capabilities = copy.deepcopy(provider.capabilities)
+    capabilities["validate_models"] = True
+    provider.capabilities = capabilities
+    backend.preset_manager.presets["missing_model"] = (
+        {"name": "missing_model", "provider": "fake_llm"},
+        {"model_name": "missing-model"},
+    )
+    success, response, user_message = backend.activate_preset("missing_model")
+    assert success is False
+    assert response == (
+        {"name": "missing_model", "provider": "fake_llm"},
+        {"model_name": "missing-model"},
+    )
+    assert "missing-model" in user_message
+    assert "provider_fake_llm" in user_message
+    assert "/plugin reload provider_fake_llm" in user_message
+    assert backend.active_preset_name == "test"
+
+
+def test_api_backend_request_preset_fails_with_invalid_model(test_config):
+    backend = make_api_backend(test_config)
+    provider = backend.provider_manager.get_provider_from_name("provider_fake_llm")
+    capabilities = copy.deepcopy(provider.capabilities)
+    capabilities["validate_models"] = True
+    provider.capabilities = capabilities
+    backend.preset_manager.presets["missing_model"] = (
+        {"name": "missing_model", "provider": "fake_llm"},
+        {"model_name": "missing-model"},
+    )
+    success, response, user_message = backend.ask(
+        "test question", request_overrides={"preset": "missing_model"}
+    )
+    assert success is False
+    assert response is None
+    assert "missing-model" in user_message
+    assert "provider_fake_llm" in user_message
+    assert "/plugin reload provider_fake_llm" in user_message
+    assert backend.active_preset_name == "test"
 
 
 def test_api_backend_doesnt_override_system_message_when_system_message_in_request_overrides(
