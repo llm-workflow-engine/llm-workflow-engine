@@ -1,3 +1,7 @@
+### v0.22.24 - 07/15/2026
+
+* **Wed Jul 15 2026:** GPT-5.6
+
 ### v0.22.23 - 04/30/2026
 
 * **Thu Apr 30 2026:** Handle invalid provider models explicitly
