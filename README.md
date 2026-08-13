@@ -91,4 +91,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=llm-workflow-engine/llm-workflow-engine&type=Date)](https://star-history.com/#llm-workflow-engine/llm-workflow-engine&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=llm-workflow-engine/llm-workflow-engine&type=Date)](https://star-history.dera.page/#llm-workflow-engine/llm-workflow-engine&Date)
