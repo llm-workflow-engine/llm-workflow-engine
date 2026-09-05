@@ -251,6 +251,9 @@ class ProviderChatOpenai(Provider):
             "gpt-5.6-luna": {
                 "max_tokens": 1047576,
             },
+            "gpt-6-astra": {
+                "max_tokens": 1047576,
+            },
         }
 
     def prepare_messages_method(self):
