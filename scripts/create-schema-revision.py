@@ -41,8 +41,7 @@ def create_schema_revision(message, database_url=None):
         logger.info("Starting schema revision generation...")
         command.revision(alembic_cfg, message, autogenerate=True)
         logger.info("Schema revision created successfully.")
-        util.print_markdown(
-            """
+        util.print_markdown("""
 ## To dump and re-import data into a fresh schema:
 
  * `sudo apt install libsqlite3-mod-impexp`
@@ -52,8 +51,7 @@ def create_schema_revision(message, database_url=None):
  * *...backup original database, then delete it...*
  * *...create fresh database, and open it in Sqlite...*
  * `.read /tmp/dump.sql`
-          """
-        )
+          """)
     except Exception as e:
         logger.error(f"Error creating schema revision: {e}")
         sys.exit(1)

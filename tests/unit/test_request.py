@@ -688,6 +688,7 @@ def test_attach_files_no_files(test_config, tool_manager, provider_manager, pres
     result = request.attach_files(messages)
     assert result == messages
 
+
 def test_attach_files_with_files(test_config, tool_manager, provider_manager, preset_manager):
     file = {"type": "image", "url": "test.jpg"}
     request = make_api_request(
@@ -695,7 +696,7 @@ def test_attach_files_with_files(test_config, tool_manager, provider_manager, pr
         tool_manager,
         provider_manager,
         preset_manager,
-        request_overrides={"files": [file]}
+        request_overrides={"files": [file]},
     )
     messages = ["test message"]
     result = request.attach_files(messages)
@@ -703,17 +704,15 @@ def test_attach_files_with_files(test_config, tool_manager, provider_manager, pr
     assert result[0] == "test message"
     assert result[1] == file
 
+
 def test_attach_files_multiple_files(test_config, tool_manager, provider_manager, preset_manager):
-    files = [
-        {"type": "image", "url": "test1.jpg"},
-        {"type": "image", "url": "test2.jpg"}
-    ]
+    files = [{"type": "image", "url": "test1.jpg"}, {"type": "image", "url": "test2.jpg"}]
     request = make_api_request(
         test_config,
         tool_manager,
         provider_manager,
         preset_manager,
-        request_overrides={"files": files}
+        request_overrides={"files": files},
     )
     messages = ["test message"]
     result = request.attach_files(messages)
@@ -721,6 +720,7 @@ def test_attach_files_multiple_files(test_config, tool_manager, provider_manager
     assert result[0] == "test message"
     assert result[1] == files[0]
     assert result[2] == files[1]
+
 
 def test_build_chat_request(test_config, tool_manager, provider_manager, preset_manager):
     messages = copy.deepcopy(TEST_BASIC_MESSAGES)
@@ -734,6 +734,7 @@ def test_build_chat_request(test_config, tool_manager, provider_manager, preset_
     assert result[1].content != ""
     assert result[2].content != ""
 
+
 def test_build_chat_request_with_files(test_config, tool_manager, provider_manager, preset_manager):
     file = {"type": "image", "url": "test.jpg"}
     request = make_api_request(
@@ -741,7 +742,7 @@ def test_build_chat_request_with_files(test_config, tool_manager, provider_manag
         tool_manager,
         provider_manager,
         preset_manager,
-        request_overrides={"files": [file]}
+        request_overrides={"files": [file]},
     )
     messages = copy.deepcopy(TEST_BASIC_MESSAGES)
     result = request.build_chat_request(messages)

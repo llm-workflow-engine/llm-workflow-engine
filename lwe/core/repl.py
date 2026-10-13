@@ -61,7 +61,7 @@ class Repl:
     def _setup_key_bindings():
         bindings = KeyBindings()
 
-        @bindings.add('c-z', filter=Condition(lambda: hasattr(signal, 'SIGTSTP')))
+        @bindings.add("c-z", filter=Condition(lambda: hasattr(signal, "SIGTSTP")))
         def _(event):
             event.app.suspend_to_background()
 
@@ -1254,9 +1254,7 @@ class Repl:
     def show_backend_config(self):
         output = """
 # Backend configuration: %s
-""" % (
-            self.backend.name,
-        )
+""" % (self.backend.name,)
         util.print_markdown(output)
 
     def show_files_config(self):

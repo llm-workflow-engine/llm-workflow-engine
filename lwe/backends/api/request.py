@@ -404,7 +404,9 @@ class ApiRequest:
     def execute_llm_non_streaming(self, messages):
         self.log.info("Starting non-streaming request")
         self.log.debug(f"Non-streaming with LLM attributes: {self.llm.dict()}")
-        provider_non_streaming_method = getattr(self.provider, "handle_non_streaming_response", None)
+        provider_non_streaming_method = getattr(
+            self.provider, "handle_non_streaming_response", None
+        )
         try:
             response = self.llm.invoke(messages)
             if provider_non_streaming_method:

@@ -5,15 +5,15 @@ Revises: 4e642f725923
 Create Date: 2025-08-10 10:22:37.929701
 
 """
+
 from alembic import op
 import os
 import yaml
 import traceback
 
-
 # revision identifiers, used by Alembic.
-revision = 'e7373d57cace'
-down_revision = '4e642f725923'
+revision = "e7373d57cace"
+down_revision = "4e642f725923"
 branch_labels = None
 depends_on = None
 
@@ -24,7 +24,11 @@ def upgrade_preset(preset_path):
         return
     with open(preset_path, "r") as f:
         preset_data = yaml.safe_load(f)
-    if "metadata" in preset_data and "provider" in preset_data["metadata"] and preset_data["metadata"]["provider"] == "chat_openai":
+    if (
+        "metadata" in preset_data
+        and "provider" in preset_data["metadata"]
+        and preset_data["metadata"]["provider"] == "chat_openai"
+    ):
         if "model_customizations" in preset_data and "n" in preset_data["model_customizations"]:
             print(f"'n' setting found in preset {preset_path}, removing.")
             del preset_data["model_customizations"]["n"]

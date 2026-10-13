@@ -28,7 +28,9 @@ def get_environment_editor(default=None):
     :return: The preferred editor as specified by environment variables or the default value.
     :rtype: str or None
     """
-    editor = os.environ.get("LWE_EDITOR", os.environ.get("VISUAL", os.environ.get("EDITOR", default)))
+    editor = os.environ.get(
+        "LWE_EDITOR", os.environ.get("VISUAL", os.environ.get("EDITOR", default))
+    )
     return editor
 
 
@@ -89,5 +91,8 @@ def pipe_editor(input_data="", suffix=None):
     try:
         os.remove(filepath)
     except PermissionError:
-        util.print_status_message(False, f"WARNING: Unable to delete temporary file {filepath!r}. You may need to delete it manually.")
+        util.print_status_message(
+            False,
+            f"WARNING: Unable to delete temporary file {filepath!r}. You may need to delete it manually.",
+        )
     return output_data

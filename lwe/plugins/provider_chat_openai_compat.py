@@ -20,10 +20,10 @@ class CustomChatOpenAICompat(ChatOpenAI):
 
     def __init__(self, **kwargs):
         openai_api_key = None
-        if 'api_key_env_var' in kwargs:
-            openai_api_key = os.getenv(kwargs.pop('api_key_env_var'))
-        elif 'openai_api_key' in kwargs:
-            openai_api_key = kwargs.pop('openai_api_key')
+        if "api_key_env_var" in kwargs:
+            openai_api_key = os.getenv(kwargs.pop("api_key_env_var"))
+        elif "openai_api_key" in kwargs:
+            openai_api_key = kwargs.pop("openai_api_key")
         if openai_api_key is not None:
             super().__init__(openai_api_key=openai_api_key, **kwargs)
         else:

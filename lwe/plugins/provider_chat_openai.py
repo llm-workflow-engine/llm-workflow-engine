@@ -23,7 +23,9 @@ class ProviderChatOpenai(Provider):
         }
 
     def setup(self):
-        self.log.info(f"Setting up Provider Chat OpenAI plugin, running with backend: {self.backend.name}")
+        self.log.info(
+            f"Setting up Provider Chat OpenAI plugin, running with backend: {self.backend.name}"
+        )
         super().setup()
         self.validate_models = self.config.get("plugins.provider_chat_openai.validate_models")
 
@@ -277,7 +279,12 @@ class ProviderChatOpenai(Provider):
         return messages
 
     def is_reasoning_model(self, model_name):
-        if model_name.startswith("o1") or model_name.startswith("o3") or model_name.startswith("o4") or model_name.startswith("gpt-5"):
+        if (
+            model_name.startswith("o1")
+            or model_name.startswith("o3")
+            or model_name.startswith("o4")
+            or model_name.startswith("gpt-5")
+        ):
             return True
         return False
 
@@ -287,14 +294,16 @@ class ProviderChatOpenai(Provider):
         return False
 
     def format_responses_content(self, content_list):
-        return "".join([content['text'] for content in content_list if 'text' in content])
+        return "".join([content["text"] for content in content_list if "text" in content])
 
     def handle_non_streaming_response(self, response: AIMessage):
         if isinstance(response.content, list):
             response.content = self.format_responses_content(response.content)
         return response
 
-    def handle_streaming_chunk(self, chunk: AIMessageChunk | str, _previous_chunks: list[AIMessageChunk | str]) -> str:
+    def handle_streaming_chunk(
+        self, chunk: AIMessageChunk | str, _previous_chunks: list[AIMessageChunk | str]
+    ) -> str:
         if isinstance(chunk, str):
             return chunk
         elif isinstance(chunk.content, str):
@@ -306,7 +315,9 @@ class ProviderChatOpenai(Provider):
             "verbose": PresetValue(bool),
             "model_name": PresetValue(str, options=self.available_models),
             "temperature": PresetValue(float, min_value=0.0, max_value=2.0),
-            "reasoning_effort": PresetValue(str, options=["minimal", "low", "medium", "high", "xhigh", "max"], include_none=True),
+            "reasoning_effort": PresetValue(
+                str, options=["minimal", "low", "medium", "high", "xhigh", "max"], include_none=True
+            ),
             "verbosity": PresetValue(str, options=["low", "medium", "high"], include_none=True),
             "openai_api_base": PresetValue(str, include_none=True),
             "openai_api_key": PresetValue(str, include_none=True, private=True),

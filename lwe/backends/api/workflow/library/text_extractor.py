@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 import kreuzberg
 import pymupdf4llm
 import fitz
+
 fitz.TOOLS.mupdf_display_errors(False)
 
 from ansible.module_utils.basic import AnsibleModule
@@ -51,14 +52,7 @@ KREUZBERG_SUPPORTED_FILE_EXTENSIONS = [
     ".msg",
 ]
 
-PYMUPDF_SUPPORTED_EXTENSIONS = [
-    ".pdf",
-    ".xps",
-    ".oxps",
-    ".epub",
-    ".cbz",
-    ".fb2"
-]
+PYMUPDF_SUPPORTED_EXTENSIONS = [".pdf", ".xps", ".oxps", ".epub", ".cbz", ".fb2"]
 
 
 DOCUMENTATION = r"""

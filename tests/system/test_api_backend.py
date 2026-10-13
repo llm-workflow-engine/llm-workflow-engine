@@ -653,7 +653,9 @@ def test_api_backend_with_files(test_config):
     backend = make_api_backend(test_config)
     file = HumanMessage([{"type": "image", "url": "test.jpg"}])
     request_overrides = {"files": [file]}
-    success, response, _user_message = backend.ask("Describe this image", request_overrides=request_overrides)
+    success, response, _user_message = backend.ask(
+        "Describe this image", request_overrides=request_overrides
+    )
     assert success is True
     assert response == "test response"
     # Since files cause direct return, no conversation should be created
@@ -665,7 +667,9 @@ def test_api_backend_with_files_streaming(test_config):
     backend = make_api_backend(test_config)
     file = HumanMessage([{"type": "image", "url": "test.jpg"}])
     request_overrides = {"files": [file]}
-    success, response, _user_message = backend.ask_stream("Describe this image", request_overrides=request_overrides)
+    success, response, _user_message = backend.ask_stream(
+        "Describe this image", request_overrides=request_overrides
+    )
     assert success is True
     assert response == "test response"
     # Since files cause direct return, no conversation should be created

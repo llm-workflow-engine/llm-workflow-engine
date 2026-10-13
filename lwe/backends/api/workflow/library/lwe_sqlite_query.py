@@ -88,7 +88,7 @@ def run_query(db, query, params=()):
             total_row_count += row_count
             conn.commit()
         else:
-            conn.execute('BEGIN TRANSACTION')
+            conn.execute("BEGIN TRANSACTION")
             for q, p in zip(query, params):
                 data, row_count = run_single_query(cursor, q, p)
                 total_data.extend(data)
