@@ -68,6 +68,7 @@ lwe = "lwe.main:main"
 [project.entry-points."lwe_plugins"]
 
 [tool.setuptools]
+package-dir = {"" = "."}
 packages = {find = {}}
 include-package-data = true
 
