@@ -46,32 +46,14 @@ class ProviderChatOpenai(Provider):
             "gpt-3.5-turbo": {
                 "max_tokens": 16384,
             },
-            "gpt-3.5-turbo-16k": {
-                "max_tokens": 16384,
-            },
-            "gpt-3.5-turbo-0613": {
-                "max_tokens": 4096,
-            },
-            "gpt-3.5-turbo-16k-0613": {
-                "max_tokens": 16384,
-            },
-            "gpt-3.5-turbo-1106": {
-                "max_tokens": 16384,
-            },
             "gpt-3.5-turbo-0125": {
                 "max_tokens": 16384,
             },
             "gpt-4": {
                 "max_tokens": 8192,
             },
-            "gpt-4-32k": {
-                "max_tokens": 32768,
-            },
             "gpt-4-0613": {
                 "max_tokens": 8192,
-            },
-            "gpt-4-32k-0613": {
-                "max_tokens": 32768,
             },
             "gpt-4-turbo": {
                 "max_tokens": 131072,
@@ -79,19 +61,7 @@ class ProviderChatOpenai(Provider):
             "gpt-4-turbo-2024-04-09": {
                 "max_tokens": 131072,
             },
-            "gpt-4-turbo-preview": {
-                "max_tokens": 131072,
-            },
-            "gpt-4-1106-preview": {
-                "max_tokens": 131072,
-            },
-            "gpt-4-0125-preview": {
-                "max_tokens": 131072,
-            },
             "gpt-4o": {
-                "max_tokens": 131072,
-            },
-            "chatgpt-4o-latest": {
                 "max_tokens": 131072,
             },
             "gpt-4o-2024-05-13": {
@@ -126,24 +96,6 @@ class ProviderChatOpenai(Provider):
             },
             "gpt-4.1-nano-2025-04-14": {
                 "max_tokens": 1047576,
-            },
-            "gpt-4.5-preview": {
-                "max_tokens": 131072,
-            },
-            "gpt-4.5-preview-2025-02-27": {
-                "max_tokens": 131072,
-            },
-            "o1-preview": {
-                "max_tokens": 131072,
-            },
-            "o1-preview-2024-09-12": {
-                "max_tokens": 131072,
-            },
-            "o1-mini": {
-                "max_tokens": 131072,
-            },
-            "o1-mini-2024-09-12": {
-                "max_tokens": 131072,
             },
             "o1": {
                 "max_tokens": 204800,
@@ -211,9 +163,6 @@ class ProviderChatOpenai(Provider):
             "gpt-5.1-2025-11-13": {
                 "max_tokens": 409600,
             },
-            "gpt-5.2-chat-latest": {
-                "max_tokens": 131072,
-            },
             "gpt-5.2-pro": {
                 "max_tokens": 409600,
             },
@@ -225,9 +174,6 @@ class ProviderChatOpenai(Provider):
             },
             "gpt-5.2-2025-12-11": {
                 "max_tokens": 409600,
-            },
-            "gpt-5.3-chat-latest": {
-                "max_tokens": 131072,
             },
             "gpt-5.4-2026-03-05": {
                 "max_tokens": 1047576,
