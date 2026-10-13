@@ -163,31 +163,49 @@ class ProviderChatOpenai(Provider):
             "gpt-5.1-2025-11-13": {
                 "max_tokens": 409600,
             },
-            "gpt-5.2-pro": {
-                "max_tokens": 409600,
-            },
-            "gpt-5.2-pro-2025-12-11": {
-                "max_tokens": 409600,
-            },
             "gpt-5.2": {
                 "max_tokens": 409600,
             },
             "gpt-5.2-2025-12-11": {
                 "max_tokens": 409600,
             },
-            "gpt-5.4-2026-03-05": {
-                "max_tokens": 1047576,
+            "gpt-5.2-pro": {
+                "max_tokens": 409600,
+            },
+            "gpt-5.2-pro-2025-12-11": {
+                "max_tokens": 409600,
             },
             "gpt-5.4": {
                 "max_tokens": 1047576,
             },
+            "gpt-5.4-2026-03-05": {
+                "max_tokens": 1047576,
+            },
+            "gpt-5.4-mini": {
+                "max_tokens": 409600,
+            },
+            "gpt-5.4-mini-2026-03-17": {
+                "max_tokens": 409600,
+            },
             "gpt-5.4-pro": {
+                "max_tokens": 1047576,
+            },
+            "gpt-5.4-pro-2026-03-05": {
+                "max_tokens": 1047576,
+            },
+            "gpt-5.5": {
                 "max_tokens": 1047576,
             },
             "gpt-5.5-2026-04-23": {
                 "max_tokens": 1047576,
             },
-            "gpt-5.5": {
+            "gpt-5.5-pro": {
+                "max_tokens": 1047576,
+            },
+            "gpt-5.5-pro-2026-04-23": {
+                "max_tokens": 1047576,
+            },
+            "gpt-5.6": {
                 "max_tokens": 1047576,
             },
             "gpt-5.6-sol": {
@@ -200,6 +218,15 @@ class ProviderChatOpenai(Provider):
                 "max_tokens": 1047576,
             },
             "gpt-6-astra": {
+                "max_tokens": 1047576,
+            },
+            "gpt-6-sol": {
+                "max_tokens": 1047576,
+            },
+            "gpt-6-luna": {
+                "max_tokens": 1047576,
+            },
+            "gpt-6.1-sol": {
                 "max_tokens": 1047576,
             },
         }
