@@ -4,11 +4,13 @@ alembic
 beautifulsoup4
 docutils>=0.20.1
 email-validator
+filetype>=1.2
+httpx>=0.28
 Jinja2
-langchain>=0.3.19,<0.4
-langchain-core>=0.3.39,<0.4
-langchain-community>=0.3.16,<0.4
-langchain_openai>=0.3.3
+langchain>=1.4.5
+langchain-core>=1.6.10
+langchain-community>=0.4.2
+langchain_openai>=1.7.1
 names
 numexpr>=2.8.4
 openpyxl
@@ -16,6 +18,7 @@ pdfminer.six
 prompt-toolkit
 pymupdf4llm
 pyperclip
+pydantic>=2.12
 python-frontmatter
 PyYAML
 rich

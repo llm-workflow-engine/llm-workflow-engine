@@ -55,6 +55,8 @@ Other LWE nicities
     * Model presets
     * Tool definitions (for providers that support it)
 #. **Ansible-compatible playbooks**: Re-use LWE workflows inside a larger `Ansible <https://docs.ansible.com>`_ ecosystem
+#. **Decision models:** Use :doc:`decisions` from Python and Ansible to classify
+   structured state and branch on typed answers and probabilities.
 #. **Automatic conversation titles**: The LLM generates short titles for your conversations
 #. **Token tracking**: For supported providers, see the number of tokens the current conversation would send in a request, and auto-prune messages from long conversations
 #. **Customizable user prompt**
@@ -77,6 +79,7 @@ Other LWE nicities
    upgrading
    shell
    python_module
+   decisions
    plugins
    templates
    presets

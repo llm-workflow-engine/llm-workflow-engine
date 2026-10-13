@@ -1,0 +1,28 @@
+- name: Classify a support request with a decision model
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Evaluate urgency and department
+      lwe_decide:
+        settings:
+          provider: cloudflare
+          model: clef-omni
+        state: "{{ support_request | default('Checkout is unavailable.') }}"
+        questions:
+          urgent:
+            type: noul
+            instructions: Does this require urgent attention?
+          department:
+            type: choice
+            instructions: Which department should handle this request?
+            criteria:
+              support: Product problems and outages
+              billing: Invoices and payment questions
+              other: Any other request
+      register: triage
+
+    - name: Display the decision for application-specific routing
+      ansible.builtin.debug:
+        var: triage.answers
+      when: not triage.skipped | default(false)
