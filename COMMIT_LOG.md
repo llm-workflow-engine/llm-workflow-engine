@@ -1,3 +1,9 @@
+### v0.23.0 - 10/12/2026
+
+* **Mon Oct 12 2026:** Add GPT-6.1 Sol, GPT-6 Sol/Luna, GPT-5.5 Pro, and GPT-5.4 Mini
+* **Mon Oct 12 2026:** remove unsupported OpenAI models
+* **Mon Oct 12 2026:** Add typed decision models for Python and Ansible
+
 ### v0.22.25 - 09/05/2026
 
 * **Sat Sep 05 2026:** GPT Astra
