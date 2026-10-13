@@ -53,6 +53,7 @@ dev = [
     "pytest",
     "pytest-datadir",
     "pip-tools",
+    "basedpyright",
     "flake8",
     "black",
 ]
