@@ -151,7 +151,7 @@ class ProviderBase(Plugin):
         defaults = defaults or {}
         llm_class = self.llm_factory()
         llm = llm_class(**defaults)
-        llm_defaults = llm.dict()
+        llm_defaults = llm.asdict()
         custom_config = self.customization_config()
         defaults = {k: v for k, v in llm_defaults.items() if k in custom_config}
         if self.default_model:

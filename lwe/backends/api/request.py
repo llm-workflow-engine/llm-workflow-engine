@@ -361,7 +361,7 @@ class ApiRequest:
     def iterate_streaming_response(self, messages, print_stream, stream_callback):
         response = None
         previous_chunks = []
-        self.log.debug(f"Streaming with LLM attributes: {self.llm.dict()}")
+        self.log.debug(f"Streaming with LLM attributes: {self.llm.asdict()}")
         provider_streaming_method = getattr(self.provider, "handle_streaming_chunk", None)
         for chunk in self.llm.stream(messages):
             if provider_streaming_method:
@@ -403,7 +403,7 @@ class ApiRequest:
 
     def execute_llm_non_streaming(self, messages):
         self.log.info("Starting non-streaming request")
-        self.log.debug(f"Non-streaming with LLM attributes: {self.llm.dict()}")
+        self.log.debug(f"Non-streaming with LLM attributes: {self.llm.asdict()}")
         provider_non_streaming_method = getattr(
             self.provider, "handle_non_streaming_response", None
         )
