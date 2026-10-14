@@ -1,4 +1,9 @@
+"""Provider interfaces and model customization support."""
+
+from __future__ import annotations
+
 from abc import abstractmethod
+from collections.abc import Callable
 import copy
 
 from typing import (
@@ -6,6 +11,7 @@ from typing import (
     Mapping,
 )
 
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 
 from lwe.core.plugin import Plugin
@@ -105,7 +111,7 @@ class ProviderBase(Plugin):
         return "provider"
 
     @property
-    def model_property_name(self):
+    def model_property_name(self) -> str:
         return "model_name"
 
     @property
@@ -354,7 +360,9 @@ class ProviderBase(Plugin):
                 self.log.warning(f"Provider {self.display_name} does not support tools")
         return llm
 
-    def prepare_messages_method(self):
+    def prepare_messages_method(
+        self,
+    ) -> Callable[[list[dict[str, Any]]], str | list[BaseMessage]]:
         return self.prepare_messages_for_llm_last_message
 
     def prepare_messages_for_llm_last_message(self, messages):
@@ -426,18 +434,18 @@ class ProviderBase(Plugin):
 class Provider(ProviderBase):
     @property
     @abstractmethod
-    def capabilities(self):
+    def capabilities(self) -> dict[str, bool]:
         pass
 
     @property
     @abstractmethod
-    def default_model(self):
+    def default_model(self) -> str | None:
         pass
 
     @abstractmethod
-    def llm_factory(self):
+    def llm_factory(self) -> type[BaseLanguageModel[Any]]:
         pass
 
     @abstractmethod
-    def customization_config(self):
+    def customization_config(self) -> dict[str, Any]:
         pass
