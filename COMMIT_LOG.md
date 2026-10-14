@@ -1,3 +1,9 @@
+### v0.23.1 - 10/13/2026
+
+* **Tue Oct 13 2026:** add type annotations for provider base class
+* **Tue Oct 13 2026:** packaging fix for development plugin installs
+* **Tue Oct 13 2026:** dict() -> asdict(), fix deprecation warning
+
 ### v0.23.0 - 10/12/2026
 
 * **Mon Oct 12 2026:** Add GPT-6.1 Sol, GPT-6 Sol/Luna, GPT-5.5 Pro, and GPT-5.4 Mini
