@@ -1,3 +1,7 @@
+### v0.23.2 - 10/22/2026
+
+* **Thu Oct 22 2026:** Support multimodal presets and explicit credentials in OpenAI compat
+
 ### v0.23.1 - 10/13/2026
 
 * **Tue Oct 13 2026:** add type annotations for provider base class
