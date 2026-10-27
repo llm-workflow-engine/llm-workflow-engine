@@ -187,6 +187,9 @@ class ProviderChatOpenai(Provider):
             "gpt-5.4-mini-2026-03-17": {
                 "max_tokens": 409600,
             },
+            "gpt-5.4-nano": {
+                "max_tokens": 409600,
+            },
             "gpt-5.4-pro": {
                 "max_tokens": 1047576,
             },
@@ -227,6 +230,9 @@ class ProviderChatOpenai(Provider):
                 "max_tokens": 1047576,
             },
             "gpt-6.1-sol": {
+                "max_tokens": 1047576,
+            },
+            "gpt-6.1-terra": {
                 "max_tokens": 1047576,
             },
         }
