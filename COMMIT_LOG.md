@@ -1,3 +1,7 @@
+### v0.23.3 - 10/26/2026
+
+* **Mon Oct 26 2026:** GPT 6.1 Terra, GPT 5.4 nano, default to gpt 5.4-mini
+
 ### v0.23.2 - 10/22/2026
 
 * **Thu Oct 22 2026:** Support multimodal presets and explicit credentials in OpenAI compat
