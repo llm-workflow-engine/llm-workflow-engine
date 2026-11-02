@@ -16,7 +16,7 @@ Requirements
 
 To use this project, you need:
 
-* Python 3.9 or later with pip installed.
+* Python 3.11 through 3.14 with pip installed.
 * A database backend (`SQLite <https://www.sqlite.org/>`_ by default, any configurable in `SQLAlchemy <https://www.sqlalchemy.org/>`_ allowed).
 * Optional:
     * `Pandoc <https://pandoc.org/>`_ for document extraction *other than* PDFs.
