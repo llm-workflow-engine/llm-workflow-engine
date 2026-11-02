@@ -1,3 +1,7 @@
+### v0.23.4 - 11/01/2026
+
+* **Sun Nov 01 2026:** Set supported Python versions to 3.11 through 3.14
+
 ### v0.23.3 - 10/26/2026
 
 * **Mon Oct 26 2026:** GPT 6.1 Terra, GPT 5.4 nano, default to gpt 5.4-mini
