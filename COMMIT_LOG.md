@@ -1,3 +1,7 @@
+### v0.23.5 - 11/17/2026
+
+* **Tue Nov 17 2026:** GPT 6.2 Astra/Sol
+
 ### v0.23.4 - 11/01/2026
 
 * **Sun Nov 01 2026:** Set supported Python versions to 3.11 through 3.14
