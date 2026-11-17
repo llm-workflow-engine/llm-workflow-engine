@@ -235,6 +235,12 @@ class ProviderChatOpenai(Provider):
             "gpt-6.1-terra": {
                 "max_tokens": 1047576,
             },
+            "gpt-6.2-astra": {
+                "max_tokens": 1047576,
+            },
+            "gpt-6.2-sol": {
+                "max_tokens": 1047576,
+            },
         }
 
     def prepare_messages_method(self):
