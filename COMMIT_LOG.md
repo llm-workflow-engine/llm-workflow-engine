@@ -1,3 +1,8 @@
+### v0.23.6 - 11/23/2026
+
+* **Mon Nov 23 2026:** Remove the redundant root requirements.txt
+* **Mon Nov 23 2026:** Support Python 3.15 with stable Ansible releases
+
 ### v0.23.5 - 11/17/2026
 
 * **Tue Nov 17 2026:** GPT 6.2 Astra/Sol
